@@ -1053,11 +1053,14 @@ function updatePenFeelings(horse, dt) {
     const family = sep.key === "BABY" || sep.key === "MOTHER";
 
     // Feel it
+    // Social fluffies mind it more, loners less (Traits.js)
+    const social =
+      typeof traitLonelinessMultiplier === "function" ? traitLonelinessMultiplier(horse) : 1;
     if (horse.happiness > HAPPINESS_MISERABLE_THRESHOLD) {
       horse.changeHappiness(
-        penned
+        (penned
           ? HAPPINESS_PENALTY_PEN_SEPARATED
-          : HAPPINESS_PENALTY_PEN_SEPARATED / 2,
+          : HAPPINESS_PENALTY_PEN_SEPARATED / 2) * social,
       );
     }
     horse.expressionOverride = family ? "MISERABLE" : "SAD";

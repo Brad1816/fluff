@@ -15,6 +15,9 @@ module.exports = [
         poopie.x = 500; poopie.y = 450; poopie.adopted = true;
         poopie.pottyTraining = 0;
         const nice = new Horse(0.4, null, "INDOORS", "unicorn", null, 1, 1, "male");
+        // A clear bright blue coat (genes 0-23: 8 red, 8 green, 8 blue bits)
+        for (let i = 0; i < 24; i++) nice.genes[i] = i >= 16 ? 1 : i >= 8 && i < 12 ? 1 : 0;
+        nice.processGenes();
         nice.x = 700; nice.y = 450; nice.adopted = true;
         nice.pottyTraining = 1;
         nice.personalities = ["smarty"];

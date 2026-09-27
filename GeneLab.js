@@ -232,6 +232,8 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
   };
   let sbTotal = 0;
   const samples = [];
+  const traitCount = {};
+  if (typeof TRAITS !== "undefined") for (const t of TRAITS) traitCount[t.key] = { high: 0, low: 0 };
 
   // Borrow the game's own combineGenes, with our repeatable randomness
   const realRandom = Math.random;
@@ -255,6 +257,15 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
       else if (d.size <= -2) count.small++;
       else count.average++;
       sbTotal += Math.min(1, (momSensitive ? 0.175 : 0.04) * Math.pow(4, d.sbPairs));
+      // Personality traits (Traits.js)
+      if (typeof TRAITS !== "undefined") {
+        for (const t of TRAITS) {
+          const sum = traitGeneSum(genes, t.key);
+          if (sum === null) continue;
+          if (sum >= 4) traitCount[t.key].high++;
+          else if (sum <= 1) traitCount[t.key].low++;
+        }
+      }
       if (samples.length < 80) samples.push({ genes, type, body: d.body });
     }
   } finally {
@@ -263,8 +274,11 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
 
   const pct = {};
   for (const key in count) pct[key] = count[key] / n;
+  const traits = {};
+  for (const key in traitCount) traits[key] = { high: traitCount[key].high / n, low: traitCount[key].low / n };
   return {
     pct,
+    traits,
     samples,
     alive: geneLabViability(momGenes, dadGenes),
     sensitive: sbTotal / n,
@@ -683,6 +697,20 @@ function _drawGeneLabPrediction(c) {
     _glText(c, "Sensitive baby:", col2, ry, "#cfcfcf", "13px Arial");
     const sb = result.sensitive;
     _glText(c, `${Math.round(sb * 100)}% chance each`, col2 + 110, ry, sb >= 0.25 ? "#ff6b6b" : sb >= 0.1 ? "#ffe066" : "#7dff8a", "bold 13px Arial");
+  }
+
+  // Personality traits (Traits.js): chance of each label, two columns
+  if (result.traits && typeof TRAITS !== "undefined") {
+    let ty = Math.max(ly, ry) + 30;
+    _glText(c, "PERSONALITY TRAITS (chance for each foal)", x, ty, "#f7d774", "bold 13px Arial");
+    ty += 19;
+    TRAITS.forEach((t, i) => {
+      const tr = result.traits[t.key] || { high: 0, low: 0 };
+      const tx = i % 2 === 0 ? x : col2;
+      const rowY = ty + Math.floor(i / 2) * 18;
+      _glText(c, `${t.high} ${Math.round(tr.high * 100)}%`, tx, rowY, "white", "13px Arial");
+      _glText(c, `·  ${t.low} ${Math.round(tr.low * 100)}%`, tx + 110, rowY, "#cfcfcf", "13px Arial");
+    });
   }
 
   _glText(

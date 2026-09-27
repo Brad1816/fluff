@@ -12,7 +12,7 @@ module.exports = [
       const r = await page.evaluate((seeded) => {
         const rnd = eval(seeded);
         const problems = [];
-        const gated = { pattern: 2, size: 3, carrier: 4 };
+        const gated = { pattern: 2, trait: 2, size: 3, carrier: 4 };
         const avg = {};
         for (let level = 1; level <= 5; level++) {
           let total = 0;

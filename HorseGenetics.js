@@ -109,10 +109,14 @@ class HorseGenetics {
         genes.push(Math.random() < 0.5 ? 0 : 1);
       }
     }
+    // Personality trait genes (Traits.js)
+    if (typeof ensureTraitGenes === "function") ensureTraitGenes(genes);
     return genes;
   }
 
   processGenes() {
+    // Older fluffies don't have personality trait genes yet (Traits.js)
+    if (typeof ensureTraitGenes === "function") ensureTraitGenes(this.horse.genes);
     // Decode Colors
     const getComponent = (startIdx) => {
       let sum = 0;
@@ -440,7 +444,23 @@ class HorseGenetics {
 
   combineGenes(otherGenes) {
     const babyGenes = [];
-    for (let i = 0; i < 103; i++) {
+    // 0-102: looks and health genes. 103+: personality traits (Traits.js)
+    const total = Math.max(
+      103,
+      typeof TRAIT_GENE_TOTAL === "number" ? TRAIT_GENE_TOTAL : 103,
+    );
+    for (let i = 0; i < total; i++) {
+      if (i >= 103) {
+        // A parent from before traits existed has none: use the other's
+        // gene, or a random one if neither has it
+        const mine = this.horse.genes[i];
+        const theirs = otherGenes[i];
+        let g = Math.random() < 0.5 ? theirs : mine;
+        if (g === undefined) g = mine !== undefined ? mine : theirs;
+        if (g === undefined) g = Math.random() < 0.5 ? 0 : 1;
+        babyGenes.push(g);
+        continue;
+      }
       // Special handling for miscarry genes (65-70)
       // One from mom's pair, one from dad's pair
       if (i === 65 || i === 67 || i === 69) {

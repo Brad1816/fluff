@@ -54,6 +54,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `GeneLab.js` | The **Gene Lab** machine (a shop item) and its screen that predicts what two fluffies' foals could be like. See section 9. |
 | `Orders.js` | **Customer orders**: making orders (`ORDER_REQUIREMENTS`), accepting, delivering, deadlines and reputation (`customerOrders`, saved). |
 | `OrderBoard.js` | Where orders are seen: the **bounty board** on Shopping Street, the **Computer** item (FluffList website), the orders screen with its deliver picker, and the "orders due" reminder. |
+| `Traits.js` | **Personality traits** (brave/timid, social/loner, greedy/picky eater, playful/lazy, grumpy/gentle): which genes, the labels, and how they change behaviour. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -551,4 +552,30 @@ A $3000 machine in the store's Pharmacy & Lab aisle. Place it anywhere and
   `minLevel`, `weight` (how often it's picked), `make` (its details and
   `value`, which adds to the reward), `label` and `matches(req, fluffy)`.
   The orders test checks new kinds automatically for labels and levels.
+
+### Personality traits (`Traits.js`)
+- **Genes**: five traits, 5 genes each (0 or 1), stored after the older
+  genes at 103-127 (`TRAIT_GENE_START`). `generateRandomGenes` adds them
+  for new fluffies, `processGenes` adds random ones to older fluffies
+  (`ensureTraitGenes`), and `combineGenes` passes them on like any other
+  gene (a parent from before traits: the other parent's gene is used).
+- **Labels**: gene sum 0-1 = low label, 2-3 = none ("Easygoing"), 4-5 =
+  high label. `traitValue(horse, key)` gives -1..+1, 0 for average, and
+  every effect scales with it, so an average fluffy behaves as before.
+  | Trait | Low / high | What it does |
+  |---|---|---|
+  | `bravery` | Timid / Brave | fear of grinder, cars, sprinkler, alicorns, smarties, corpses and blood (x1.5 .. x0.5) |
+  | `social` | Loner / Social | babbling, making friends and special friends; how much pens split from friends hurt (x0.5 .. x1.5) |
+  | `appetite` | Picky eater / Greedy | hunger drains x0.75 .. x1.25; how keen it is to eat |
+  | `energy` | Lazy / Playful | ball, blocks, TV, wandering vs sitting and lying down |
+  | `temper` | Gentle / Grumpy | complaining about puddles, smarty fights; gentle fluffies often don't hit back (a very gentle one only 1 time in 5) |
+- **Where the effects are hooked in**: `HorseBrain.think` (desire scores,
+  table `TRAIT_DESIRE_EFFECTS`), `Horse.update` (hunger, counterattacks),
+  `Fence.js` (pen sadness), `Horse` babbling (15% chance of a trait line,
+  `DIALOGUE.TRAIT` in `dialogue.js`).
+- **Shown in**: the magnifying glass panel ("Traits"), the family tree's
+  genetics panel (dots per trait), the Gene Lab (chance of each label per
+  foal), and customer orders from reputation level 2 ("Personality: Brave").
+- These are separate from the game's older `personalities` (smarty and the
+  backstories like mill escapee), which aren't inherited.
 

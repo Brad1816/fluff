@@ -67,6 +67,10 @@ class HorseBrain {
     // Score all desires
     let evaluatedDesires = this.desires.map((desire) => {
       let score = desire.evaluate(this.horse);
+      // Personality traits make some desires stronger or weaker (Traits.js)
+      if (score > 0 && typeof traitDesireMultiplier === "function") {
+        score *= traitDesireMultiplier(this.horse, desire.name);
+      }
 
       // Hysteresis
       if (this.currentDesire === desire && score > 0) {

@@ -102,6 +102,59 @@ const DIALOGUE = {
     },
   },
 
+  // Personality traits (Traits.js). Said now and then while babbling.
+  TRAIT: {
+    BRAVE: [
+      "Nu scawed! <Speaker> am bwavest fwuffy!",
+      "Munstahs nu scawe <speaker>!",
+      "<Speaker> wiww pwotect aww da fwens!",
+    ],
+    TIMID: [
+      "F-fwuffy scawed...",
+      "Pwease nu be woud...",
+      "Wan hide... hab scawies...",
+    ],
+    SOCIAL: [
+      "Wan pway wif aww da fwens!",
+      "<Speaker> wub make nyu fwens!",
+      "Hewwo! Wanna be fwens?",
+    ],
+    LONER: [
+      "<Speaker> wike quiet time...",
+      "Wan be awone fow wittwe bit...",
+      "Nu need fwens... am otay.",
+    ],
+    GREEDY: [
+      "Wan MOAW nummies!",
+      "Nummies am bestest! Gib moaw!",
+      "Tummy stiww hab woom fow nummies...",
+    ],
+    PICKY: [
+      "Nu wike dese nummies...",
+      "<Speaker> onwy wan speshuw nummies.",
+      "Nu hungwy... maybe wattew.",
+    ],
+    PLAYFUL: [
+      "Wan pway! Wan pway!",
+      "Chase da baww! Chase da baww!",
+      "Pway wif <speaker>?",
+    ],
+    LAZY: [
+      "<Speaker> tiwed... wan sweepies...",
+      "Nu wan wawk... too faw...",
+      "Otay wif jus' sittin'...",
+    ],
+    GRUMPY: [
+      "Hmph! Weave <speaker> awone!",
+      "Nu touch! Am gwumpy!",
+      "Dummeh noisy fwuffies...",
+    ],
+    GENTLE: [
+      "<Speaker> wub evewyone!",
+      "Gib huggies?",
+      "Be nice to fwens, otay?",
+    ],
+  },
   PERSONALITY: {
     TRUE_FERAL: [
       "Wub homesie... <speaker> nu wike meanie outsidies...",

@@ -2174,6 +2174,10 @@ function getFluffyInspectionInfo(f) {
   ];
   const [persText, persTone] = describeInspectionPersonality(f);
   about.push({ label: "Personality", value: persText, tone: persTone });
+  // Inherited personality traits (Traits.js)
+  if (typeof describeTraits === "function") {
+    about.push({ label: "Traits", value: describeTraits(f) });
+  }
   about.push({ label: "Mother", value: nameOf(f.motherId, "Unnamed fluffy") });
   about.push({ label: "Father", value: nameOf(f.fatherId, "Unnamed fluffy") });
   about.push({

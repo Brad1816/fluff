@@ -57,7 +57,9 @@ function recordFluffy(f) {
   rec.gender = f.gender;
   rec.type = f.type;
   rec.growth = f.growth;
-  if (!rec.genes && Array.isArray(f.genes)) rec.genes = f.genes.slice();
+  // (also refresh genes recorded before newer genes, like traits, existed)
+  if (Array.isArray(f.genes) && (!rec.genes || rec.genes.length < f.genes.length))
+    rec.genes = f.genes.slice();
   if (rec.fatherId === null && f.fatherId !== undefined && f.fatherId !== null)
     rec.fatherId = f.fatherId;
   // A mare that adopted it replaces motherId on the fluffy; keep the birth
@@ -700,12 +702,32 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
     _ftText(c, risk, x + 150, y, g.sbPairs >= 2 ? "#ff6b6b" : g.sbPairs === 1 ? "#ffe066" : "#9fe0a8", "bold 13px Arial");
     y += 21;
   }
+  // Personality traits (Traits.js): low label, 5 gene dots, high label
+  if (typeof TRAITS !== "undefined" && typeof traitGeneSum === "function") {
+    y += 8;
+    _ftText(c, "PERSONALITY TRAITS", x, y, "#f7d774", "bold 13px Arial");
+    y += 19;
+    for (const t of TRAITS) {
+      const sum = traitGeneSum(rec.genes, t.key);
+      const lowOn = sum !== null && sum <= 1;
+      const highOn = sum !== null && sum >= 4;
+      _ftText(c, t.low, x + 78, y, lowOn ? "#ffe066" : "#8a8a8a", lowOn ? "bold 13px Arial" : "13px Arial", "right");
+      for (let i = 0; i < TRAIT_GENES_EACH; i++) {
+        c.beginPath();
+        c.arc(x + 92 + i * 14, y - 5, 5, 0, Math.PI * 2);
+        c.fillStyle = sum === null ? "rgba(255,255,255,0.06)" : i < sum ? "#e0c0ff" : "rgba(255,255,255,0.12)";
+        c.fill();
+      }
+      _ftText(c, sum === null ? "unknown" : t.high, x + 92 + TRAIT_GENES_EACH * 14 + 4, y, highOn ? "#ffe066" : "#8a8a8a", highOn ? "bold 13px Arial" : "13px Arial");
+      y += 18;
+    }
+  }
   y += 6;
   c.font = "12px Arial";
   c.fillStyle = "rgba(255,255,255,0.6)";
   c.textAlign = "left";
   const note =
-    "Each foal gets every gene from one parent or the other at random. A ringed dot is how many a trait needs to show. Carriers are one short: two carriers can have a foal that shows it.";
+    "Foals get each gene from one parent or the other at random. Ringed dot = how many a trait needs to show.";
   const lines = typeof wrapText === "function" ? wrapText(c, note, pw - 32) : [note];
   for (const l of lines) {
     c.fillText(l, x, y);

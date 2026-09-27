@@ -965,6 +965,17 @@ class Horse {
       }
     }
 
+    // Now and then, say something that shows a personality trait (Traits.js)
+    if (
+      !text &&
+      this.adopted &&
+      !this.tooYoungToSpeak() &&
+      typeof getTraitBabble === "function" &&
+      Math.random() < 0.15
+    ) {
+      text = getTraitBabble(this);
+    }
+
     if (!text && this.happiness > 0.5) {
       if (!this.adopted && !getSceneConfig(this.scene).insidePlayerQuarters) {
         let key = this.tooYoungToSpeak()
@@ -2613,8 +2624,12 @@ class Horse {
             const dist = Math.sqrt(
               (this.x - attacker.x) ** 2 + (this.y - attacker.y) ** 2,
             );
-            // Retaliate if within reasonable reach
-            if (dist < 100) {
+            // Retaliate if within reasonable reach (gentle fluffies often
+            // don't: Traits.js)
+            if (
+              dist < 100 &&
+              (typeof traitWillRetaliate !== "function" || traitWillRetaliate(this))
+            ) {
               this.performAttack(attacker, "RETALIATION");
             }
           }
@@ -3047,9 +3062,13 @@ class Horse {
 
       // Hunger Logic
 
+      // Greedy fluffies get hungry faster, picky eaters slower (Traits.js)
+      const traitHunger =
+        typeof traitHungerMultiplier === "function" ? traitHungerMultiplier(this) : 1;
       this.hunger -=
         (dt / 450.0 + (dt / 225.0) * (1.0 - this.growth)) *
-        debugHungerMultiplier;
+        debugHungerMultiplier *
+        traitHunger;
 
       // Drug Metabolism & Bloodstream Logic
       this.updateMetabolism(dt);

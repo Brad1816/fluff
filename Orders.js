@@ -148,6 +148,17 @@ const ORDER_REQUIREMENTS = {
       return !!g && (r.big ? g.size >= 2 : g.size <= -2);
     },
   },
+  trait: {
+    // Personality traits (Traits.js)
+    minLevel: 2,
+    weight: 1.5,
+    make: (rnd) => {
+      const options = ["Brave", "Social", "Playful", "Gentle", "Picky eater"];
+      return { trait: options[Math.floor(rnd() * options.length)], value: 300 };
+    },
+    label: (r) => `Personality: ${r.trait}`,
+    matches: (r, f) => typeof hasTraitLabel === "function" && hasTraitLabel(f, r.trait),
+  },
   carrier: {
     minLevel: 4,
     weight: 1,
