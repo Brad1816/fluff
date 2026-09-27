@@ -57,6 +57,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Traits.js` | **Personality traits** (brave/timid, social/loner, greedy/picky eater, playful/lazy, grumpy/gentle): which genes, the labels, and how they change behaviour. See section 9. |
 | `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
 | `Bonds.js` | **Bonds and grudges between fluffies**: each fluffy's opinion of the others (`opinions`, `opinionWhy`), `getLiking`, becoming friends by spending time together, defending buddies, avoiding grudges. See section 9. |
+| `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -629,6 +630,36 @@ another.
   offers are refused; a grumpy, not-timid fluffy with a deep grudge (-0.6)
   may start a scuffle (`performAttack(..., "GRUDGE")`).
 - **Shown in** the magnifying glass panel: "Buddies" and "Grudges".
-- **Herds (future)**: groups of fluffies that all like each other can be
-  found from `getLiking`; that's the planned base for herds.
+- **Herds**: see `Herds.js` below. `getLiking` adds +0.2 for herd-mates
+  and -0.1 for members of rival herds, and members of different herds
+  don't bond by standing near each other.
+
+### Herds (`Herds.js`)
+Saved as `herdState` (`{ list, nextId }`); a herd is `{ id, name, leaderId,
+memberIds, colorIndex, formedAt }`. `updateHerds` runs every 3 seconds:
+- **Forming**: fluffies not in a herd, in the same scene, connected by
+  mutual liking of 0.45+ (`HERD_BOND`), 3 or more of them (`HERD_MIN_SIZE`),
+  become a herd with a name from `HERD_NAMES` ("Clover herd"). Family
+  counts as bonded from the start (`RELATIONSHIP_LIKING` in `Bonds.js`),
+  so families herd up straight away.
+- **Leader**: best `herdLeadershipScore`: grown up, brave, healthy, liked
+  by the others; smarties push themselves forward (+0.5). A lost leader is
+  replaced.
+- **Joining**: foals join mum's herd; others join a herd where they're
+  bonded with 2+ members, unless they dislike its leader.
+- **Leaving**: members whose average liking of herd-mates drops below 0.05
+  or who dislike the leader (liking -0.3, or a personal grudge of -0.5 even
+  if family). Herds under 2 members break up.
+- **Rivals**: members of different herds within 150px slowly dislike each
+  other (-0.0006/s, "rival herd"; about 8 minutes of contact to reach
+  dislike) and sometimes say so (`DIALOGUE.HERD.STRANGER`).
+- **Moving together**: `FollowHerdDesire` (score 47) sends members back
+  toward the leader when they're over 220px away.
+- **Seeing it**: H toggles coloured markers under each fluffy (★ = leader);
+  the magnifying glass has a "Herd" row. Messages appear when a herd with
+  your fluffies forms or gets a new leader.
+- **For the future park**: `herdOf`, `sameHerd`, `getHerdMembers`,
+  `getHerdLeader`, `getHerdCentre(h, scene)`. With 40 fluffies bonds and
+  herds add about 8% to the game's work; a much bigger park would want a
+  spatial grid for the "who's near whom" checks.
 

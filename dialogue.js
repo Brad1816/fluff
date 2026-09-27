@@ -102,6 +102,39 @@ const DIALOGUE = {
     },
   },
 
+  // Herds (Herds.js)
+  HERD: {
+    NEW_HERD: [
+      "Aww fwens stay togedda! Am hewd nao!",
+      "<Speaker> wiww be bestest hewd weadew!",
+      "Nyu hewd! Fowwow <speaker>!",
+    ],
+    JOIN: [
+      "<Speaker> am pawt ob <target>'s hewd nao!",
+      "Nyu hewd! Nyu famiwy!",
+      "<Speaker> fowwow <target>!",
+    ],
+    NEW_LEADER: [
+      "<Speaker> am hewd weadew nao!",
+      "Fowwow <speaker>, hewd!",
+      "<Speaker> wiww take cawe ob hewd...",
+    ],
+    LEFT: [
+      "<Speaker> nu wan be in dummeh hewd!",
+      "Nu wike <target>! <Speaker> go 'way!",
+      "<Speaker> find nyu hewd...",
+    ],
+    FOLLOW: [
+      "Wait fow <speaker>!",
+      "Hewd go dat way!",
+      "<Target>! Wait!",
+    ],
+    STRANGER: [
+      "Nu am <speaker>'s hewd! Go 'way!",
+      "Who dat? Nu pawt ob hewd!",
+      "Stwangew fwuffy! Stay back!",
+    ],
+  },
   // Bonds and grudges between fluffies (Bonds.js)
   BOND: {
     NEW_BUDDY: [

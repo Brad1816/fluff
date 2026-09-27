@@ -1392,6 +1392,8 @@ function updateSimulation(dt) {
   if (typeof updateFamilyRecords === "function") updateFamilyRecords(dt);
   // Bonds and grudges between fluffies (Bonds.js)
   if (typeof updateSocialBonds === "function") updateSocialBonds(dt);
+  // Herds forming, joining, leaving, rivalries (Herds.js)
+  if (typeof updateHerds === "function") updateHerds(dt);
   // Customer orders: new ones, deadlines (Orders.js)
   if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
   updatePuddles(dt);
@@ -1800,6 +1802,8 @@ function render() {
   for (const f of visibleFluffies) {
     if (f.isAlive) {
       if (f.speech.text) f.drawSpeechBubble(osCtx);
+      // Herd marker when H is on (Herds.js)
+      if (typeof drawHerdMarker === "function") drawHerdMarker(osCtx, f);
       if (f.currentStateKey === "SLEEPING") f.drawDream(osCtx);
       const isPairSelection =
         debugMenuAction === "pair" && debugPairFirst === f.id;
@@ -2016,6 +2020,11 @@ window.addEventListener("keydown", (e) => {
 
   if (e.code === "KeyN") {
     showFluffyNames = !showFluffyNames;
+    return;
+  }
+  // H shows which herd each fluffy is in (Herds.js)
+  if (e.code === "KeyH" && typeof showHerdMarkers !== "undefined") {
+    showHerdMarkers = !showHerdMarkers;
     return;
   }
   // R turns the fence piece you are holding

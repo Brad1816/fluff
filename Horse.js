@@ -231,6 +231,10 @@ class Horse {
       this.brain.addDesire(new SeekBuddyDesire());
       this.brain.addDesire(new AvoidGrudgeDesire());
     }
+    // Herds (Herds.js): stay near the herd's leader
+    if (typeof FollowHerdDesire !== "undefined") {
+      this.brain.addDesire(new FollowHerdDesire());
+    }
     this.id = nextFluffyId++;
     this.age = 0;
     this.motherId = motherId;

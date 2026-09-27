@@ -31,16 +31,17 @@ const OPINION_GRUDGE = -0.6;
 const OPINION_FADE_PER_MIN = 0.01;
 const BOND_NEAR = 130; // px: "spending time together"
 
+// Family is strong enough (0.45+) to count as a herd bond from day one
 const RELATIONSHIP_LIKING = {
   friend: 0.25,
   special_friend: 0.6,
-  mother: 0.45,
-  father: 0.35,
-  baby: 0.45,
-  child: 0.4,
-  baby_child: 0.45,
-  brother: 0.35,
-  sister: 0.35,
+  mother: 0.5,
+  father: 0.45,
+  baby: 0.5,
+  child: 0.5,
+  baby_child: 0.5,
+  brother: 0.45,
+  sister: 0.45,
   estranged_child: -0.2,
   rejected_baby: -0.2,
 };
@@ -65,6 +66,8 @@ function getLiking(a, b) {
     const simple = typeof getSimpleRelationship === "function" ? getSimpleRelationship(rel) : rel;
     bonus = RELATIONSHIP_LIKING[rel] ?? RELATIONSHIP_LIKING[simple] ?? 0;
   }
+  // Herd-mates like each other more, rival herds less (Herds.js)
+  if (typeof herdLikingBonus === "function") bonus += herdLikingBonus(a, b);
   return clamp(getOpinion(a, b) + bonus, -1, 1);
 }
 
@@ -184,7 +187,9 @@ function updateSocialBonds(dt) {
         if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(a, b)) continue;
         // Calm time together (sleeping side by side counts too)
         const calm = a.happiness > HAPPINESS_SAD_THRESHOLD && b.happiness > HAPPINESS_SAD_THRESHOLD;
-        if (calm && !a.isScared && !b.isScared) {
+        // Members of different herds don't warm to each other (Herds.js)
+        const rivals = typeof herdOf === "function" && herdOf(a) && herdOf(b) && herdOf(a) !== herdOf(b);
+        if (calm && !rivals && !a.isScared && !b.isScared) {
           // Social fluffies bond faster, loners slower
           const sa = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(a, "social") : 0);
           const sb = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(b, "social") : 0);

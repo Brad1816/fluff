@@ -1706,7 +1706,7 @@ function drawUI(ctx) {
       "• While dragging a fluffy, click on the door/arrow or press WASD to move it to the other side.",
       "• Shift click a placed item or a Fluffy to sell it.",
       "• Buy supplies at Fluff Mart: out the front door, then down to Shopping Street.",
-      "• Press N to toggle Fluffy names. Press B to toggle bed owner names.",
+      "• Press N to toggle Fluffy names, B for bed owners, H to show herds.",
       "• Press 0-9 to select a tool while you have it in your inventory.",
     ];
 
@@ -2185,6 +2185,10 @@ function getFluffyInspectionInfo(f) {
     value: sfId ? fluffyNames[sfId] || "Unnamed fluffy" : "None",
   });
   about.push({ label: "Friends", value: String(friendCount) });
+  // Which herd it's in (Herds.js)
+  if (f.isAlive && typeof describeHerd === "function") {
+    about.push({ label: "Herd", value: describeHerd(f) });
+  }
   // Buddies and grudges with other fluffies (Bonds.js)
   if (f.isAlive && typeof describeBuddies === "function") {
     about.push({ label: "Buddies", value: describeBuddies(f), tone: "" });

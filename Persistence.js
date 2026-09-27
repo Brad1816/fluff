@@ -117,6 +117,15 @@ const SAVED_GAME_STATE = [
   { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
   { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
   {
+    name: "herdState", // herds and their leaders (Herds.js)
+    get: () => herdState,
+    set: (v) => {
+      herdState = v;
+      if (typeof _herdChanged === "function") _herdChanged();
+    },
+    fresh: () => freshHerdState(),
+  },
+  {
     name: "customerOrders", // bounty board / FluffList orders and reputation (Orders.js)
     get: () => customerOrders,
     set: (v) => (customerOrders = v),
