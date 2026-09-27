@@ -930,6 +930,22 @@ function getFenceSteerPoint(horse) {
     return { x: horse.x, y: horse.y }; // stand still this step
   }
 
+  // The spot is on our side, but squeezed up against a fence, closer than a
+  // fluffy's body can get. Aim for the nearest spot it can really stand on
+  // instead, or it would keep walking into the fence and never arrive.
+  const rawGoal =
+    clamp(Math.floor((ty + off) / PEN_MAP_CELL), 0, map.rows - 1) * map.cols +
+    clamp(Math.floor(tx / PEN_MAP_CELL), 0, map.cols - 1);
+  if (map.blocked[rawGoal]) {
+    const np = nearestReachablePoint(horse, tx, ty);
+    if (np) {
+      horse.targetX = np.x;
+      horse.targetY = np.y;
+    }
+    horse._fenceSteer = null;
+    return { x: horse.x, y: horse.y }; // stand still this step
+  }
+
   // Reachable, but not in a straight line: follow a path round the fences.
   // The path is worked out now and then, not every frame.
   const now = typeof timePlayed !== "undefined" ? timePlayed : 0;
@@ -942,7 +958,8 @@ function getFenceSteerPoint(horse) {
     Math.hypot(st.x - horse.x, st.y - horse.y) < 12
   ) {
     const path = findPenPath(map, startIdx, goalIdx);
-    if (!path || !path.length) return null;
+    if (!path) return null;
+    if (!path.length) path.push(goalIdx); // already in the goal's square
     // Head for the furthest point along the path we can walk to in a
     // straight line (checking every few squares to keep it quick)
     const C = PEN_MAP_CELL;

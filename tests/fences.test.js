@@ -90,38 +90,47 @@ module.exports = [
   {
     name: "penned fluffies don't bump into the fence trying to reach food outside",
     run: async (page) => {
-      await page.evaluate(buildPen, {});
-      const r = await page.evaluate(() => {
-        __seedRandom(4);
-        fluffies.length = 0;
-        const penned = [];
-        for (let i = 0; i < 5; i++) {
-          const h = new Horse(0.4 + i * 0.15, null, "INDOORS", "earthy");
-          h.x = 640 + i * 40;
-          h.y = 420 + (i % 3) * 70;
-          h.adopted = true;
-          h.hunger = 0.4;
-          fluffies.push(h);
-          penned.push(h);
-        }
-        const bowl = new Bowl("trough", "INDOORS");
-        bowl.setPosition(1100, 560);
-        bowl.fill(10, "sketties");
-        objects.push(bowl);
-        let bumps = 0;
-        const original = resolveFenceCollision;
-        window.resolveFenceCollision = (h) => {
-          const x = h.x,
-            y = h.y;
-          original(h);
-          if (penned.includes(h) && (x !== h.x || y !== h.y)) bumps++;
-        };
-        __fastForward(180);
-        window.resolveFenceCollision = original;
-        return { bumps, food: bowl.food };
-      });
-      checkEqual(r.bumps, 0, "times penned fluffies walked into the fence");
-      checkEqual(r.food, 10, "food eaten through the fence");
+      // A few different random starts, since this problem only shows up
+      // now and then (e.g. a fluffy aiming for a spot too close to the fence)
+      for (const seed of [4, 8, 14]) {
+        await page.evaluate(() => {
+          for (let i = objects.length - 1; i >= 0; i--) {
+            if (objects[i].scene === "INDOORS") objects.splice(i, 1);
+          }
+        });
+        await page.evaluate(buildPen, {});
+        const r = await page.evaluate((seed) => {
+          __seedRandom(seed);
+          fluffies.length = 0;
+          const penned = [];
+          for (let i = 0; i < 5; i++) {
+            const h = new Horse(0.4 + i * 0.15, null, "INDOORS", "earthy");
+            h.x = 640 + i * 40;
+            h.y = 420 + (i % 3) * 70;
+            h.adopted = true;
+            h.hunger = 0.4;
+            fluffies.push(h);
+            penned.push(h);
+          }
+          const bowl = new Bowl("trough", "INDOORS");
+          bowl.setPosition(1100, 560);
+          bowl.fill(10, "sketties");
+          objects.push(bowl);
+          let bumps = 0;
+          const original = resolveFenceCollision;
+          window.resolveFenceCollision = (h) => {
+            const x = h.x,
+              y = h.y;
+            original(h);
+            if (penned.includes(h) && (x !== h.x || y !== h.y)) bumps++;
+          };
+          __fastForward(180);
+          window.resolveFenceCollision = original;
+          return { bumps, food: bowl.food };
+        }, seed);
+        checkEqual(r.bumps, 0, `times penned fluffies walked into the fence (start ${seed})`);
+        checkEqual(r.food, 10, `food eaten through the fence (start ${seed})`);
+      }
     },
   },
   {
