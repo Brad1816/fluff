@@ -33,6 +33,9 @@ and it runs. About 36,000 lines across ~60 files.
 - The game's width/height is the browser window size **when the page loads**
   (`globals.js`: `width = window.innerWidth`). Resizing the window just
   scales the canvas.
+- Game-wide values that are saved (money, timers, rooms bought...) are
+  listed once in `SAVED_GAME_STATE` in `Persistence.js`, which drives
+  saving, loading and starting a new game.
 
 ---
 
@@ -45,7 +48,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `globals.js` | Shared setup and settings: scene definitions (`SCENES`), mouse/keyboard state, the master lists, money, lots of tuning constants (happiness bonuses/penalties, thresholds), **the shop list `SPAWN_ACTIONS`**, accessories (`ACCESSORY_DB`), the tool/toolbox system, `WorldSettings` (the "Headcanon" options), helper functions (`clamp`, `lerp`, `isPointInRect`, `changeScene`, `handleDropping`, `setRelationship`). |
 | `script.js` | The **main loop** (`animate` → `updateSimulation` → `render`), feral spawning (`spawnFeralGroup`, `updateFerals`), sell offers, day care ageing, cars, **what happens when you click while holding something** (`attemptDrop`: using the stick/knife/brush etc. on a fluffy), keyboard shortcuts, startup. |
 | `UI.js` | Everything drawn on top of the world and most clicking: the shop buttons, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
-| `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** (resetting all state) happens in `handleWorldSettingsClick`. |
+| `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** happens in `handleWorldSettingsClick` (it resets everything in `SAVED_GAME_STATE`). |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -319,9 +322,18 @@ Add a key to the `DIALOGUE` object in `dialogue.js`, e.g.
 In `Cheats.js` `handleCheatCode`, add `else if (first === "mycode") { ... }`.
 
 ### Add something that must be saved
-Add it to the `saveData` object in `saveGame` and read it back in `loadGame`
-(both in `Persistence.js`, with a default for old saves), **and** reset it
-when a new game starts (`handleWorldSettingsClick` in `menu.js`).
+For a game-wide value (a new timer, counter, unlock...): declare it as
+usual (e.g. `let myTimer = 30;` in `globals.js`), then add one line to
+`SAVED_GAME_STATE` in `Persistence.js`:
+```js
+{ name: "myTimer", get: () => myTimer, set: (v) => (myTimer = v), fresh: () => 30 },
+```
+That's all: it's now saved, loaded (older saves without it get the `fresh`
+value), and reset when a new game starts. A test checks every field in
+the list survives saving and loading.
+
+Things that belong to one game but shouldn't be saved (open windows, the
+current sell offer...) go in `resetTemporaryGameState()` in the same file.
 
 ---
 

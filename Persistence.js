@@ -85,6 +85,94 @@ class SaveManager {
 
 const saveManager = new SaveManager();
 
+// ---------------------------------------------------------------------------
+// Game-wide state that is SAVED, and what it starts as in a new game.
+//
+// This one list is used by saveGame, loadGame and "New game", so anything
+// added here is saved, loaded (with the fresh value for older saves that
+// don't have it), and reset for a new game automatically.
+//
+//   name   key in the save file
+//   get    read the current value      set    change it
+//   fresh  its value in a brand new game
+//   load   optional: custom loading (e.g. for old save formats)
+// (The things with their own saving code - fluffies, objects, gibs, tools,
+// puddles, world settings - are handled separately in saveGame/loadGame.)
+// ---------------------------------------------------------------------------
+const SAVED_GAME_STATE = [
+  { name: "money", get: () => money, set: (v) => (money = v), fresh: () => STARTING_MONEY },
+  {
+    name: "timePlayed",
+    get: () => timePlayed,
+    set: (v) => (timePlayed = v),
+    fresh: () => 0,
+    load: (d) => (d.timePlayed !== undefined && !isNaN(d.timePlayed) ? d.timePlayed : 0),
+  },
+  { name: "nextFluffyId", get: () => nextFluffyId, set: (v) => (nextFluffyId = v), fresh: () => 0 },
+  { name: "nextObjectId", get: () => nextObjectId, set: (v) => (nextObjectId = v), fresh: () => 0 },
+  { name: "unlockedRoomsL", get: () => unlockedRoomsL, set: (v) => (unlockedRoomsL = v), fresh: () => 0 },
+  { name: "unlockedRoomsR", get: () => unlockedRoomsR, set: (v) => (unlockedRoomsR = v), fresh: () => 0 },
+  { name: "roomsPurchased", get: () => roomsPurchased, set: (v) => (roomsPurchased = v), fresh: () => 0 },
+  { name: "currentScene", get: () => currentScene, set: (v) => (currentScene = v), fresh: () => "INDOORS" },
+  { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
+  { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
+  { name: "sceneChatLogs", get: () => sceneChatLogs, set: (v) => (sceneChatLogs = v), fresh: () => ({}) },
+  { name: "sellRequestTimer", get: () => sellRequestTimer, set: (v) => (sellRequestTimer = v), fresh: () => sellRequestAverage },
+  { name: "feralTimer", get: () => feralTimer, set: (v) => (feralTimer = v), fresh: () => 0 },
+  {
+    name: "sceneGrassSpawnTimers",
+    get: () => sceneGrassSpawnTimers,
+    set: (v) => (sceneGrassSpawnTimers = v),
+    fresh: () => ({ RIVER: 15.0, OUTDOORS: 15.0, BACKYARD: 15.0 }),
+    // Old saves stored one timer per scene under different names
+    load: (d) =>
+      d.sceneGrassSpawnTimers || {
+        RIVER: d.riverGrassSpawnTimer ?? GRASS_SPAWN_INTERVAL_NO_GRASS,
+        OUTDOORS: d.outdoorsGrassSpawnTimer ?? GRASS_SPAWN_INTERVAL_NO_GRASS,
+        BACKYARD: d.backyardGrassSpawnTimer ?? GRASS_SPAWN_INTERVAL_NO_GRASS,
+      },
+  },
+  { name: "backyardFenceTier", get: () => backyardFenceTier, set: (v) => (backyardFenceTier = v), fresh: () => 0 },
+  { name: "backyardFenceBroken", get: () => backyardFenceBroken, set: (v) => (backyardFenceBroken = v), fresh: () => false },
+  { name: "backyardFenceBreakTimer", get: () => backyardFenceBreakTimer, set: (v) => (backyardFenceBreakTimer = v), fresh: () => 120.0 },
+  { name: "backyardInvasionTimer", get: () => backyardInvasionTimer, set: (v) => (backyardInvasionTimer = v), fresh: () => 60.0 },
+  { name: "nextHerdId", get: () => nextHerdId, set: (v) => (nextHerdId = v), fresh: () => 1 },
+  { name: "alleyBoxSpawnTimer", get: () => alleyBoxSpawnTimer, set: (v) => (alleyBoxSpawnTimer = v), fresh: () => 60.0 },
+  { name: "dayCareFluffies", get: () => dayCareFluffies, set: (v) => (dayCareFluffies = v), fresh: () => [] },
+  { name: "dayCareFeeTimer", get: () => dayCareFeeTimer, set: (v) => (dayCareFeeTimer = v), fresh: () => 60.0 },
+];
+
+// Things that are NOT saved but belong to one game, so they're cleared when
+// a game is started or loaded (open windows, cars, the current sell offer...)
+function resetTemporaryGameState() {
+  currentSellRequest = null;
+  gibs.length = 0;
+  cars.length = 0;
+  carSpawnTimer = 0;
+  showChatLog = false;
+  dayCareModalOpen = false;
+  dayCareBroughtPage = 0;
+  dayCareStoredPage = 0;
+  if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
+}
+
+// Everything in SAVED_GAME_STATE back to how a new game starts
+function resetSavedGameState() {
+  for (const field of SAVED_GAME_STATE) field.set(field.fresh());
+}
+
+function writeSavedGameState(saveData) {
+  for (const field of SAVED_GAME_STATE) saveData[field.name] = field.get();
+}
+
+function readSavedGameState(saveData) {
+  for (const field of SAVED_GAME_STATE) {
+    let value = field.load ? field.load(saveData) : saveData[field.name];
+    if (value === undefined || value === null) value = field.fresh();
+    field.set(value);
+  }
+}
+
 function loadObject(oData) {
   if (oData.scene === "alley_road") {
     oData.scene = "ALLEY_ROAD";
@@ -177,24 +265,9 @@ async function loadGame(slotName) {
     }
   }
 
-  money = saveData.money;
-  timePlayed =
-    saveData.timePlayed !== undefined && !isNaN(saveData.timePlayed)
-      ? saveData.timePlayed
-      : 0;
-  nextFluffyId = saveData.nextFluffyId;
-  nextObjectId = saveData.nextObjectId;
-  unlockedRoomsL = saveData.unlockedRoomsL;
-  unlockedRoomsR = saveData.unlockedRoomsR;
-  roomsPurchased = saveData.roomsPurchased;
-  currentScene = saveData.currentScene;
-
-  fluffyNames = saveData.fluffyNames;
-  relationships = saveData.relationships;
-  sceneChatLogs = saveData.sceneChatLogs || {};
-  dayCareFluffies = saveData.dayCareFluffies || [];
-  dayCareFeeTimer =
-    saveData.dayCareFeeTimer !== undefined ? saveData.dayCareFeeTimer : 60.0;
+  // Money, timers, rooms bought, names... (SAVED_GAME_STATE above)
+  readSavedGameState(saveData);
+  resetTemporaryGameState();
 
   if (
     saveData.saveFormatVersion === undefined ||
@@ -248,58 +321,6 @@ async function loadGame(slotName) {
 
   puddles.length = 0;
   puddles.push(...saveData.puddles);
-
-  sellRequestTimer = saveData.sellRequestTimer;
-  feralTimer = saveData.feralTimer;
-  if (saveData.sceneGrassSpawnTimers) {
-    sceneGrassSpawnTimers = saveData.sceneGrassSpawnTimers;
-  } else {
-    sceneGrassSpawnTimers = {
-      RIVER:
-        saveData.riverGrassSpawnTimer !== undefined
-          ? saveData.riverGrassSpawnTimer
-          : GRASS_SPAWN_INTERVAL_NO_GRASS,
-      OUTDOORS:
-        saveData.outdoorsGrassSpawnTimer !== undefined
-          ? saveData.outdoorsGrassSpawnTimer
-          : GRASS_SPAWN_INTERVAL_NO_GRASS,
-      BACKYARD:
-        saveData.backyardGrassSpawnTimer !== undefined
-          ? saveData.backyardGrassSpawnTimer
-          : GRASS_SPAWN_INTERVAL_NO_GRASS,
-    };
-  }
-  if (saveData.backyardFenceTier !== undefined) {
-    backyardFenceTier = saveData.backyardFenceTier;
-  } else {
-    backyardFenceTier = 0;
-  }
-  if (saveData.backyardFenceBroken !== undefined) {
-    backyardFenceBroken = saveData.backyardFenceBroken;
-  } else {
-    backyardFenceBroken = false;
-  }
-  if (saveData.backyardFenceBreakTimer !== undefined) {
-    backyardFenceBreakTimer = saveData.backyardFenceBreakTimer;
-  } else {
-    backyardFenceBreakTimer = 120.0;
-  }
-  if (saveData.backyardInvasionTimer !== undefined) {
-    backyardInvasionTimer = saveData.backyardInvasionTimer;
-  } else {
-    backyardInvasionTimer = 60.0;
-  }
-  if (saveData.nextHerdId !== undefined) {
-    nextHerdId = saveData.nextHerdId;
-  } else {
-    nextHerdId = 1;
-  }
-
-  if (saveData.alleyBoxSpawnTimer !== undefined) {
-    alleyBoxSpawnTimer = saveData.alleyBoxSpawnTimer;
-  } else {
-    alleyBoxSpawnTimer = 60.0;
-  }
 
   fluffies.length = 0;
   objects.length = 0;
@@ -561,32 +582,10 @@ async function saveGame(slotName) {
   }
 
   const saveData = {
-    money: money,
-    timePlayed: timePlayed,
     screenshot: screenshot,
     saveDate: new Date().toLocaleString(),
-    nextFluffyId: nextFluffyId,
-    nextObjectId: nextObjectId,
-    unlockedRoomsL: unlockedRoomsL,
-    unlockedRoomsR: unlockedRoomsR,
-    roomsPurchased: roomsPurchased,
-    currentScene: currentScene,
-    fluffyNames: fluffyNames,
-    relationships: relationships,
-    sceneChatLogs: sceneChatLogs,
     worldSettings: worldSettings.serialize(),
     puddles: puddles,
-    sellRequestTimer: sellRequestTimer,
-    feralTimer: feralTimer,
-    sceneGrassSpawnTimers: sceneGrassSpawnTimers,
-    backyardFenceTier: backyardFenceTier,
-    backyardFenceBroken: backyardFenceBroken,
-    backyardFenceBreakTimer: backyardFenceBreakTimer,
-    backyardInvasionTimer: backyardInvasionTimer,
-    nextHerdId: nextHerdId,
-    alleyBoxSpawnTimer: alleyBoxSpawnTimer,
-    dayCareFluffies: dayCareFluffies,
-    dayCareFeeTimer: dayCareFeeTimer,
     toolbox: (typeof toolbox !== "undefined" ? toolbox : []).map((t) =>
       typeof t.serialize === "function"
         ? t.serialize()
@@ -619,6 +618,9 @@ async function saveGame(slotName) {
     gibs: gibs.map((g) => g.serialize()),
     saveFormatVersion: saveFormatVersion,
   };
+
+  // Money, timers, rooms bought, names... (SAVED_GAME_STATE above)
+  writeSavedGameState(saveData);
 
   await saveManager.save(slotName, saveData);
 

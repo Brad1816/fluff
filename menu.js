@@ -518,30 +518,12 @@ function handleWorldSettingsClick() {
     transitionPhase = "IN";
     transitionTimer = 0;
 
-    money = STARTING_MONEY;
-    timePlayed = 0;
-    nextFluffyId = 0;
-    nextObjectId = 0;
-    unlockedRoomsL = 0;
-    unlockedRoomsR = 0;
-    roomsPurchased = 0;
-    currentScene = "INDOORS";
-
-    fluffyNames = {};
-    relationships = {};
-    sceneChatLogs = {};
-    showChatLog = false;
-    sceneGrassSpawnTimers = {
-      RIVER: 15.0,
-      OUTDOORS: 15.0,
-      BACKYARD: 15.0,
-    };
+    // Money, timers, rooms, names... back to their new-game values
+    // (the list is SAVED_GAME_STATE in Persistence.js)
+    resetSavedGameState();
+    resetTemporaryGameState();
 
     puddles.length = 0;
-
-    sellRequestTimer = sellRequestAverage;
-    feralTimer = 0;
-
     fluffies.length = 0;
     objects.length = 0;
     if (typeof toolbox !== "undefined") {
@@ -554,8 +536,6 @@ function handleWorldSettingsClick() {
         initDefaultToolbar();
       }
     }
-    cars.length = 0;
-    carSpawnTimer = 0;
 
     if (typeof FoalVendor !== "undefined") {
       objects.push(new FoalVendor("ALLEY"));
@@ -564,11 +544,6 @@ function handleWorldSettingsClick() {
     if (typeof DayCareDesk !== "undefined") {
       objects.push(new DayCareDesk("DAY_CARE"));
     }
-    dayCareFluffies = [];
-    dayCareFeeTimer = 60.0;
-    dayCareModalOpen = false;
-    dayCareBroughtPage = 0;
-    dayCareStoredPage = 0;
 
     // Spawn 100 grasses in each grassy scene
     for (const sceneKey in SCENES) {
