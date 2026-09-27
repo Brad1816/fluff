@@ -1889,6 +1889,81 @@ const DIALOGUE = {
       ],
     },
   },
+  // Separated from a friend or family member by a pen fence (Fence.js).
+  // INSIDE = the speaker is the one shut in the pen, OUTSIDE = the other one is.
+  PENNED: {
+    FRIEND: {
+      INSIDE: [
+        "Fwen! Fwen! Come pway wif <speaker>!",
+        "Wan go pway wif <Target>... mean fence nu wet <speaker> out...",
+        "Wai <speaker> stuck in dis box? Fwen am ova dewe...",
+        "Mistah fence, pwease wet <speaker> go see fwen!",
+        "<Target>!! <Speaker> am hewe! Nu fowget <speaker>!",
+      ],
+      OUTSIDE: [
+        "<Target> stuck in fence... nu am faiw...",
+        "Dummeh fence! Wet fwen out!",
+        "<Speaker> miss fwen... wan pway wif <Target>...",
+        "Fwen? Fwen can come out an' pway?",
+      ],
+    },
+    SPECIAL_FRIEND: {
+      INSIDE: [
+        "SPESHOW FWEN'! <Speaker> wan be wif speshow fwen'!",
+        "Nu can weach speshow fwen'... huu huu...",
+        "Speshow fwen' am so cwose... bu' fence am in de way...",
+      ],
+      OUTSIDE: [
+        "Speshow fwen' stuck in fence! Nu weave speshow fwen'!",
+        "<Speaker> wiww wait hewe fow speshow fwen'...",
+        "Pwease wet speshow fwen' out! Miss speshow fwen' su much!",
+      ],
+    },
+    MOTHER: {
+      INSIDE: [
+        "Mummah! Mummah! Wan be wif mummah!",
+        "Mummah am ova dewe... nu can go tu mummah... huu huu...",
+        "MUMMAH! <Speaker> am stuck! Hewp!",
+      ],
+      OUTSIDE: [
+        "Mummah stuck in fence! Nu take mummah 'way!",
+        "Mummah? Mummah come back tu <speaker>?",
+        "Wan mummah! Wan huggies fwom mummah!",
+      ],
+    },
+    BABY: {
+      INSIDE: [
+        "Babbeh! Mummah am hewe babbeh! Nu cwy!",
+        "Wet mummah out! Babbeh nee' mummah!",
+        "HUU HUU... babbeh am so cwose bu' mummah nu can weach...",
+      ],
+      OUTSIDE: [
+        "Babbeh stuck in fence! Wet babbeh go!",
+        "Nu take babbeh fwom mummah! Pwease!",
+        "Mummah am hewe babbeh! Mummah nu go 'way!",
+      ],
+    },
+    FATHER: {
+      DEFAULT: [
+        "Daddeh! Daddeh ova dewe!",
+        "Wan be wif daddeh...",
+      ],
+    },
+    SIBLING: {
+      DEFAULT: [
+        "Wan pway wif <Target>... fence am in de way...",
+        "<Target>! Come ova hewe!",
+        "Miss <Target>...",
+      ],
+    },
+    CHIRPY: ["Peep... peep...", "*sad chirp*", "Peep? Peep peep!"],
+    REUNITED: [
+      "<Target>!!! Togedda 'gain! Yay!",
+      "Nu mowe fence! Huggies!",
+      "Bestest happies! Can pway wif <Target> 'gain!",
+      "Yay! <Speaker> nu am stuck nu mowe!",
+    ],
+  },
   RETURN_HOME_REMARK: [
     "HUUUHUUUUU!!!! DADDEH BACK! <SPEAKER> TINK DADDEH GONE FOWEBAH!!!",
     "WAI DADDEH WEAVE <SPEAKER>? HUUU!!",

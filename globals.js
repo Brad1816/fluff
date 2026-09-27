@@ -1778,6 +1778,18 @@ const SPAWN_ACTIONS = [
     isItem: "bed",
   },
   {
+    name: "Fence",
+    desc: "A piece of fence for building pens. Fluffies can't walk through it, but you can still carry them over it.\n\nAfter buying, click to place it. Right click (or press R while holding it) to turn it. Pieces snap together.",
+    cost: 40,
+    isItem: "fence",
+  },
+  {
+    name: "Gate",
+    desc: "A fence piece that opens. Right click it to open or close it. Fluffies will walk through an open gate, and wait by a closed one.\n\nTo turn it, pick it up and press R.",
+    cost: 100,
+    isItem: "fence_gate",
+  },
+  {
     name: "FluffTV",
     desc: "Can play programming to teach or torture your fluffies. Right click TV to change the channel.",
     cost: 2000,

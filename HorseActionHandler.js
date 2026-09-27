@@ -114,12 +114,29 @@ class HorseActionHandler {
       // Still moving
       const speed = this.horse.speed;
       const moveStep = speed * dt;
-      const step = Math.min(dist, moveStep);
-      this.horse.x += step >= dist ? dx : (dx / dist) * step;
-      this.horse.y += step >= dist ? dy : (dy / dist) * step;
 
-      if (dist > 1) {
-        this.horse.facingRight = dx >= 0;
+      // Fences (Fence.js): if one is in the way, head for a point on the
+      // way round it instead of straight at the target
+      let mdx = dx,
+        mdy = dy,
+        mdist = dist;
+      if (typeof getFenceSteerPoint === "function") {
+        const sp = getFenceSteerPoint(this.horse);
+        if (sp) {
+          mdx = sp.x - this.horse.x;
+          mdy = sp.y - this.horse.y;
+          mdist = Math.sqrt(mdx * mdx + mdy * mdy);
+        }
+      }
+
+      if (mdist > 0.001) {
+        const step = Math.min(mdist, moveStep);
+        this.horse.x += step >= mdist ? mdx : (mdx / mdist) * step;
+        this.horse.y += step >= mdist ? mdy : (mdy / mdist) * step;
+      }
+
+      if (mdist > 1) {
+        this.horse.facingRight = mdx >= 0;
       }
 
       if (typeof objects !== "undefined" && Array.isArray(objects)) {

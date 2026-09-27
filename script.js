@@ -1475,9 +1475,18 @@ function updateSimulation(dt) {
 
   // Update Fluffies and handle deaths
   const now = Date.now();
+  if (typeof prepareFenceCollisions === "function") prepareFenceCollisions();
   for (let i = fluffies.length - 1; i >= 0; i--) {
     const f = fluffies[i];
     f.update(dt);
+    // Fluffies can't walk through fence pieces
+    if (typeof resolveFenceCollision === "function") {
+      resolveFenceCollision(f);
+    }
+    // ...and get sad if a pen separates them from friends or family
+    if (typeof updatePenFeelings === "function") {
+      updatePenFeelings(f, dt);
+    }
     if (f.scene === currentScene) {
       f.lastSeenPlayerTime = now;
     }
@@ -1989,6 +1998,14 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyN") {
     showFluffyNames = !showFluffyNames;
     return;
+  }
+  // R turns the fence piece you are holding
+  if (e.code === "KeyR" && typeof Fence !== "undefined") {
+    const heldFence = objects.find((o) => o instanceof Fence && o.isDragging);
+    if (heldFence) {
+      heldFence.rotate();
+      return;
+    }
   }
   if (e.code === "KeyB") {
     showBedNames = !showBedNames;

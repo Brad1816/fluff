@@ -1799,6 +1799,12 @@ class Horse {
 
   performAttack(target, intent = "SMARTY_VIOLENCE") {
     if (!target || !target.isAlive) return;
+    // Can't reach them through a fence
+    if (
+      typeof canFluffiesReachEachOther === "function" &&
+      !canFluffiesReachEachOther(this, target)
+    )
+      return;
 
     target.wasAttackedBy(this);
 
@@ -1878,6 +1884,12 @@ class Horse {
       return false;
     }
     if (!this.tinted || !this.tinted.torso) return false;
+    // Not through a fence
+    if (
+      typeof canFluffiesReachEachOther === "function" &&
+      !canFluffiesReachEachOther(this, friend)
+    )
+      return false;
 
     friend.y = this.y + this.tinted.torso.height * 0.25 * this.scale;
     const d = this.tinted.torso.width * 0.35 * this.scale;
@@ -3276,6 +3288,12 @@ class Horse {
             ) {
               // Accessibility Check
               if (this.currentCage !== bowl.currentCage) continue;
+              // Can't eat through a fence
+              if (
+                typeof fenceCanReachThing === "function" &&
+                !fenceCanReachThing(this, bowl)
+              )
+                continue;
 
               const dist = Math.sqrt(
                 (this.x - bowl.x) ** 2 + (this.y - bowl.y) ** 2,
@@ -4823,6 +4841,12 @@ class Horse {
   }
 
   attemptHugging(other) {
+    if (
+      typeof canFluffiesReachEachOther === "function" &&
+      other &&
+      !canFluffiesReachEachOther(this, other)
+    )
+      return;
     if (
       !other ||
       !other.isAlive ||

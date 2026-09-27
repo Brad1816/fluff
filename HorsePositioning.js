@@ -94,6 +94,7 @@ class HorsePositioning {
           o.hasFood() &&
           o.scene === this.horse.scene &&
           o.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, o) &&
           (!(o instanceof Bowl) ||
             (o.type !== "feeder" && o.type !== "mega_feeder")),
       );
@@ -139,6 +140,7 @@ class HorsePositioning {
         f !== this.horse &&
         f.scene === this.horse.scene &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         !this.horse.fluffyIsRelatedOrSpecialFriend(f)
       ) {
         const d = Math.sqrt(
@@ -169,6 +171,7 @@ class HorsePositioning {
         f.isAlive &&
         f.scene === this.horse.scene &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         !this.horse.fluffyIsRelatedOrSpecialFriend(f)
       ) {
         const d = Math.sqrt(
@@ -213,7 +216,8 @@ class HorsePositioning {
       if (
         f !== this.horse &&
         f.scene === this.horse.scene &&
-        f.currentCage === this.horse.currentCage
+        f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f)
       ) {
         if (
           f.matingState &&
@@ -285,7 +289,8 @@ class HorsePositioning {
       const bed = this.horse.claimedBed;
       if (
         bed.scene === this.horse.scene &&
-        bed.currentCage === this.horse.currentCage
+        bed.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, bed)
       ) {
         const targetY =
           bed.type === "cardboard_box"
@@ -316,7 +321,8 @@ class HorsePositioning {
         if (!(o instanceof Bed)) continue;
         if (
           o.scene !== this.horse.scene ||
-          o.currentCage !== this.horse.currentCage
+          (o.currentCage !== this.horse.currentCage ||
+            !fenceCanReachThing(this.horse, o))
         )
           continue;
         if (!o.canAccept(this.horse)) continue;
@@ -363,6 +369,7 @@ class HorsePositioning {
           f.scene === this.horse.scene &&
           f.currentStateKey === "SLEEPING" &&
           f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
           (!worldSettings.alicornIntolerance ||
             f.typeVisibleToOthers() !== "alicorn" ||
             this.horse.tolerantOfAlicorns())
@@ -436,6 +443,7 @@ class HorsePositioning {
 
       // Cage accessibility check
       if (this.horse.currentCage !== b.currentCage) continue;
+      if (!fenceCanReachThing(this.horse, b)) continue;
 
       const prio =
         b.priority !== undefined ? b.priority : getFoodPriority(b.foodType);
@@ -474,6 +482,7 @@ class HorsePositioning {
         f.isAlive &&
         f.scene === this.horse.scene &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         !f.placedOn &&
         f.lactatingTimer > 0,
     );
@@ -501,6 +510,7 @@ class HorsePositioning {
             f.isAlive &&
             f.scene === this.horse.scene &&
             f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
             f.lactatingTimer > 0,
         );
         if (mare) {
@@ -518,7 +528,8 @@ class HorsePositioning {
             (b.type === "feeder" || b.type === "mega_feeder") &&
             b.hasFood() &&
             b.scene === this.horse.scene &&
-            b.currentCage === this.horse.currentCage,
+            b.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, b),
         );
         if (feeder) {
           const d =
@@ -547,6 +558,7 @@ class HorsePositioning {
         b.hasFood() &&
         b.scene === this.horse.scene &&
         b.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, b) &&
         !isFeared(b.id),
     );
 
@@ -557,6 +569,7 @@ class HorsePositioning {
         f.isAlive &&
         f.scene === this.horse.scene &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         !f.placedOn &&
         !isFeared(f.id) &&
         f.lactatingTimer > 0,
@@ -623,6 +636,7 @@ class HorsePositioning {
         if (
           lb.scene === this.horse.scene &&
           lb.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, lb) &&
           lb.uses > 0
         ) {
           const d = (this.horse.x - lb.x) ** 2 + (this.horse.y - lb.y) ** 2;
@@ -676,7 +690,8 @@ class HorsePositioning {
         box.securedFluffy &&
         !isGagged &&
         box.scene === this.horse.scene &&
-        box.currentCage === this.horse.currentCage
+        box.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, box)
       ) {
         let x = box.getSeekingCoords(this.horse).x;
         let y = box.getSeekingCoords(this.horse).y;
@@ -702,7 +717,8 @@ class HorsePositioning {
       for (const lb of litterboxes) {
         if (
           lb.scene === this.horse.scene &&
-          lb.currentCage === this.horse.currentCage
+          lb.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, lb)
         ) {
           const d =
             (this.horse.x - lb.x) ** 2 + (this.horse.y - lb.y + 50) ** 2;
@@ -734,7 +750,8 @@ class HorsePositioning {
   isCloseToLitterbox(lb) {
     if (!lb) return false;
     if (lb.scene !== this.horse.scene) return false;
-    if (lb.currentCage !== this.horse.currentCage) return false;
+    if ((lb.currentCage !== this.horse.currentCage ||
+            !fenceCanReachThing(this.horse, lb))) return false;
     let lbx =
       lb instanceof LitterpalBox ? lb.getSeekingCoords(this.horse).x : lb.x;
     let lby =
@@ -788,6 +805,7 @@ class HorsePositioning {
         obj instanceof FluffTV &&
         obj.channel !== "OFF" &&
         obj.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, obj) &&
         obj.scene === this.horse.scene
       ) {
         const dist = Math.sqrt(
@@ -906,6 +924,7 @@ class HorsePositioning {
         f.scene === this.horse.scene &&
         !f.isDragging &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         placedOnValidForSpecialHuggies(f.placedOn) &&
         canFluffiesMate(this.horse, f, true)
       ) {
@@ -939,6 +958,7 @@ class HorsePositioning {
             f.scene === this.horse.scene &&
             !f.isDragging &&
             f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
             placedOnValidForSpecialHuggies(f.placedOn) &&
             f.growth >= 1.0 &&
             canFluffiesMate(this.horse, f, true),
@@ -957,6 +977,7 @@ class HorsePositioning {
         f.scene === this.horse.scene &&
         !f.isDragging &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         placedOnValidForSpecialHuggies(f.placedOn) &&
         canFluffiesMate(this.horse, f, true)
       ) {
@@ -989,6 +1010,7 @@ class HorsePositioning {
           f.scene === this.horse.scene &&
           !f.isDragging &&
           f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
           (allowPregnant || !f.isPregnant),
       );
     }
@@ -1013,6 +1035,7 @@ class HorsePositioning {
         f.id !== this.horse.id &&
         !f.isDragging &&
         f.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, f) &&
         !this.horse.fluffyIsRelatedOrSpecialFriend(f) &&
         !f.fearedFluffies.some((ff) => ff.id === this.horse.id) &&
         rels[f.id] === "friend" &&
@@ -1105,7 +1128,8 @@ class HorsePositioning {
           mom.litterboxUsed &&
           mom.claimedBed &&
           mom.claimedBed.scene === this.horse.scene &&
-          mom.claimedBed.currentCage === this.horse.currentCage
+          mom.claimedBed.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, mom.claimedBed)
         ) {
           const bed = mom.claimedBed;
           const targetX = clamp(
@@ -1148,7 +1172,8 @@ class HorsePositioning {
         mom &&
         mom.claimedBed &&
         mom.claimedBed.scene === this.horse.scene &&
-        mom.claimedBed.currentCage === this.horse.currentCage
+        mom.claimedBed.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, mom.claimedBed)
       ) {
         const bed = mom.claimedBed;
         const leashRadius = 250;
@@ -1174,7 +1199,8 @@ class HorsePositioning {
       this.horse.lactatingTimer > 0 &&
       this.horse.claimedBed &&
       this.horse.claimedBed.scene === this.horse.scene &&
-      this.horse.claimedBed.currentCage === this.horse.currentCage
+      this.horse.claimedBed.currentCage === this.horse.currentCage &&
+        fenceCanReachThing(this.horse, this.horse.claimedBed)
     ) {
       const rels = relationships[this.horse.id];
       const hasNursingFoal =
@@ -1292,16 +1318,49 @@ class HorsePositioning {
         : [];
     const avoidRadius = 120;
 
+    // If there are fences here, only wander to spots the fluffy can actually
+    // walk to, maybe the long way round through an open gate (so penned
+    // fluffies wander around inside their pen).
+    const hasFences =
+      typeof sceneHasFences === "function" &&
+      sceneHasFences(this.horse.scene);
+    const maxAttempts = hasFences ? 20 : 5;
+
     let targetX, targetY;
-    for (let attempt = 0; attempt < 5; attempt++) {
+    let goodX = this.horse.x,
+      goodY = this.horse.y;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       targetX = Math.random() * (width - margin - minX) + minX;
       targetY = Math.random() * (groundYMax - groundYMin) + groundYMin;
+      if (hasFences) {
+        // Later attempts look closer by, which works better in small pens
+        if (attempt >= 10) {
+          targetX = clamp(
+            this.horse.x + (Math.random() - 0.5) * 300,
+            minX,
+            width - margin,
+          );
+          targetY = clamp(
+            this.horse.y + (Math.random() - 0.5) * 200,
+            groundYMin,
+            groundYMax,
+          );
+        }
+        if (!canFluffyReach(this.horse, targetX, targetY)) continue;
+      }
+      goodX = targetX;
+      goodY = targetY;
       const tooClose = avoidObjects.some((o) => {
         const dx = targetX - o.x;
         const dy = targetY - o.y;
         return Math.sqrt(dx * dx + dy * dy) < avoidRadius;
       });
       if (!tooClose) break;
+    }
+    if (hasFences) {
+      // Use the last reachable spot found (or stay put if there was none)
+      targetX = goodX;
+      targetY = goodY;
     }
     this.horse.setTargetPosition(targetX, targetY);
   }

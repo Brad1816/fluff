@@ -1193,8 +1193,26 @@ class WanderDesire extends Desire {
         typeof height !== "undefined" ? height * 0.15 + 50 : 200,
         typeof height !== "undefined" ? height - 50 : 600,
       );
+      // Pens (Fence.js): pick somewhere this fluffy can actually walk to
+      let tx = x,
+        ty = y;
+      if (
+        typeof sceneHasFences === "function" &&
+        sceneHasFences(horse.scene) &&
+        !canFluffyReach(horse, tx, ty)
+      ) {
+        let found = false;
+        for (let i = 0; i < 12 && !found; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const d = 60 + Math.random() * 300;
+          tx = clamp(horse.x + Math.cos(a) * d, 100, width - 100);
+          ty = clamp(horse.y + Math.sin(a) * d, height * 0.15 + 50, height - 50);
+          found = canFluffyReach(horse, tx, ty);
+        }
+        if (!found) return true; // nowhere to go right now; just stay
+      }
       horse.initBehavior("MOVING");
-      horse.setTargetPosition(x, y);
+      horse.setTargetPosition(tx, ty);
     }
     return true;
   }

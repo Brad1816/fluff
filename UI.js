@@ -26,7 +26,14 @@ function drawUIMessages(ctx) {
 }
 
 function buyMenuSprite(ctx, action, btnSize) {
-  if (action.isItem === "safe_room") {
+  if (action.isItem === "fence" && typeof drawFenceIcon === "function") {
+    drawFenceIcon(ctx, btnSize);
+  } else if (
+    action.isItem === "fence_gate" &&
+    typeof drawGateIcon === "function"
+  ) {
+    drawGateIcon(ctx, btnSize);
+  } else if (action.isItem === "safe_room") {
     ctx.fillStyle = "#8B4513";
     ctx.fillRect(-15, -15, 30, 30);
     ctx.strokeStyle = "#000";
@@ -1857,177 +1864,18 @@ function drawUI(ctx) {
     let showSellTooltip = false;
     let sellTooltipText = "";
 
-    // Find best Item (Highest Y = Front-most)
+    // Find best Item (Highest Y = Front-most) - see ItemRegistry.js
     let bestItem = null;
     let maxY = -Infinity;
     let bestType = null;
+    let bestEntry = null;
 
-    for (const obj of objects) {
-      if (obj.scene !== currentScene) continue;
-      let type = null;
-      let hit = false;
-
-      if (obj instanceof Bowl) {
-        let bowlImg = images.kibble_bowl || images.bowl;
-        if (obj.type === "trough") bowlImg = images.trough;
-        if (obj.type === "mega_feeder") bowlImg = images.mega_baby_feeder;
-        if (bowlImg) {
-          const bw = bowlImg.width;
-          const bh = bowlImg.height;
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - bw / 2,
-            obj.y - bh,
-            bw,
-            bh,
-          );
-          if (hit) {
-            if (obj.type === "trough") type = "trough";
-            else if (obj.type === "mega_feeder") type = "mega_feeder";
-            else type = "bowl";
-          }
-        }
-      } else if (obj instanceof GoldenStatue) {
-        if (images.golden_statue) {
-          const img = images.golden_statue;
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - img.width / 2,
-            obj.y - img.height,
-            img.width,
-            img.height,
-          );
-          if (hit) type = "statue";
-        }
-      } else if (obj instanceof FluffTV) {
-        if (images.fluff_tv_off) {
-          const img = images.fluff_tv_off;
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - img.width / 2,
-            obj.y - img.height,
-            img.width,
-            img.height,
-          );
-          if (hit) type = "fluff_tv";
-        }
-      } else if (obj instanceof Bed) {
-        const bw = images.bed ? images.bed.width : BED_WIDTH;
-        const bh = images.bed ? images.bed.height : BED_HEIGHT;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-        if (hit) type = "bed";
-      } else if (obj instanceof FoodBag) {
-        if (images.food_bag) {
-          const img = images.food_bag;
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - img.width / 2,
-            obj.y - img.height,
-            img.width,
-            img.height,
-          );
-          if (hit) type = "bag";
-        }
-      } else if (
-        obj instanceof SorryStick ||
-        obj instanceof SprayBottle ||
-        obj instanceof Brush ||
-        obj instanceof Knife ||
-        obj instanceof SutureKit ||
-        obj instanceof TrashBag ||
-        obj instanceof Ball ||
-        obj instanceof Sponge ||
-        obj instanceof Block ||
-        obj instanceof AccessoryItem ||
-        (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
-        (typeof Syringe !== "undefined" && obj instanceof Syringe) ||
-        (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
-      ) {
-        hit = obj.hitTest(mouse.x, mouse.y);
-        if (hit) {
-          if (obj instanceof SorryStick) type = "stick";
-          else if (obj instanceof SprayBottle) type = "spray_bottle";
-          else if (obj instanceof Brush) type = "brush";
-          else if (obj instanceof Knife) type = obj.type;
-          else if (obj instanceof SutureKit) type = "suture_kit";
-          else if (obj instanceof TrashBag) type = "trash_bag";
-          else if (obj instanceof Ball) type = "ball";
-          else if (obj instanceof Sponge) type = "sponge";
-          else if (obj instanceof Block) type = "block";
-          else if (obj instanceof Sprinkler) type = "sprinkler";
-          else if (obj instanceof IVStand) type = "iv_stand";
-          else if (obj instanceof IVBag) type = "iv_bag";
-          else if (obj instanceof OperatingTable) type = "operating_table";
-          else if (obj instanceof ImmobilizationBoard)
-            type = "immobilization_board";
-          else if (obj instanceof LitterpalBox) type = "litterpal_box";
-          else if (obj instanceof MagnifyingGlass) type = "magnifying_glass";
-          else if (obj instanceof AccessoryItem) type = "accessory";
-          else if (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack)
-            type = "thumbtack";
-          else if (typeof Syringe !== "undefined" && obj instanceof Syringe)
-            type = "syringe";
-          else if (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
-            type = "cattle_prod";
-        }
-      } else if (obj instanceof Cage) {
-        if (images.cage) {
-          const img = images.cage;
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - img.width / 2,
-            obj.y - img.height / 2,
-            img.width,
-            img.height,
-          );
-          if (hit) type = "cage";
-        }
-      } else if (obj instanceof Litterbox) {
-        if (images.litterbox) {
-          const img = images.litterbox;
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - img.width / 2,
-            obj.y - img.height,
-            img.width,
-            img.height,
-          );
-          if (hit) type = "litterbox";
-        }
-      } else if (obj instanceof Grinder) {
-        const g = obj.bounds;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          g.left,
-          g.top,
-          g.right - g.left,
-          g.bottom - g.top,
-        );
-        if (hit) type = "grinder";
-      }
-
-      if (hit) {
-        const y = obj.getBottomY();
-        if (y > maxY) {
-          maxY = y;
-          bestItem = obj;
-          bestType = type;
-        }
-      }
+    const sellable = findSellableItemAt(mouse.x, mouse.y);
+    if (sellable) {
+      bestItem = sellable.item;
+      bestEntry = sellable.entry;
+      bestType = sellable.entry.sellType;
+      maxY = bestItem.getBottomY();
     }
 
     // Check Fluffies
@@ -2063,46 +1911,8 @@ function drawUI(ctx) {
           bestItem = null; // Can't sell unadopted, dead, or equipped fluffies
         }
       } else if (getSceneConfig(currentScene).insidePlayerQuarters) {
-        const action = SPAWN_ACTIONS.find((a) => {
-          if (bestType === "bag") {
-            return a.isItem === "food_bag" && a.foodType === bestItem.type;
-          }
-          if (bestType === "iv_bag") {
-            return a.isItem === "iv_bag" && a.bagType === bestItem.type;
-          }
-
-          let matchType = bestType;
-          if (bestType === "stick") matchType = "sorry_stick";
-          if (bestType === "spray_bottle") matchType = "spray_bottle";
-          if (bestType === "statue") matchType = "golden_statue";
-          if (bestType === "fluff_tv") matchType = "fluff_tv";
-
-          return a.isItem === matchType;
-        });
-
-        if (bestType === "accessory") {
-          const cost =
-            typeof ACCESSORY_DB !== "undefined" &&
-            ACCESSORY_DB[bestItem.accessoryId]
-              ? ACCESSORY_DB[bestItem.accessoryId].cost
-              : 0;
-          sellPrice = Math.floor(cost / 2);
-        } else if (action) {
-          let price = action.cost;
-          // Handle partially consumed items
-          if (bestType === "bag") {
-            if (bestItem.amount < 5) price = 0;
-          } else if (bestItem instanceof SutureKit) {
-            price = (bestItem.charges / 4) * action.cost;
-          } else if (
-            typeof TrashBag !== "undefined" &&
-            bestItem instanceof TrashBag
-          ) {
-            price =
-              ((5.0 - Math.min(5.0, bestItem.fillAmount)) / 5.0) * action.cost;
-          }
-          sellPrice = Math.floor(price / 2);
-        }
+        // What you'd actually get for it (ItemRegistry.js)
+        sellPrice = getItemSellValue(bestItem, bestEntry);
       }
       if (bestItem) showSellTooltip = true;
     }
@@ -3117,162 +2927,18 @@ function handleDayCareModalClick() {
 
 function sellModeClick() {
   if (mouse.rightDown || !isShiftPressed || dayCareModalOpen) return false;
-  // Find best Item (Highest Y = Front-most)
+  // Find best Item (Highest Y = Front-most) - see ItemRegistry.js
   let bestItem = null;
   let maxY = -Infinity;
   let bestType = null;
+  let bestEntry = null;
 
-  for (const obj of objects) {
-    if (obj.scene !== currentScene) continue;
-    let type = null;
-    let hit = false;
-
-    if (obj instanceof Bowl) {
-      let bowlImg = images.kibble_bowl || images.bowl;
-      if (obj.type === "trough") bowlImg = images.trough;
-      if (obj.type === "feeder") bowlImg = images.baby_feeder;
-      if (obj.type === "mega_feeder") bowlImg = images.mega_baby_feeder;
-      if (bowlImg) {
-        const bw = bowlImg.width;
-        const bh = bowlImg.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-        if (hit) {
-          if (obj.type === "trough") type = "trough";
-          else if (obj.type === "mega_feeder") type = "mega_feeder";
-          else if (obj.type === "feeder") type = "feeder";
-          else type = "bowl";
-        }
-      }
-    } else if (obj instanceof GoldenStatue) {
-      if (images.golden_statue) {
-        const img = images.golden_statue;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height,
-          img.width,
-          img.height,
-        );
-        if (hit) type = "statue";
-      }
-    } else if (obj instanceof FluffTV) {
-      if (images.fluff_tv_off) {
-        const img = images.fluff_tv_off;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height,
-          img.width,
-          img.height,
-        );
-        if (hit) type = "fluff_tv";
-      }
-    } else if (obj instanceof Bed) {
-      const bw = images.bed ? images.bed.width : BED_WIDTH;
-      const bh = images.bed ? images.bed.height : BED_HEIGHT;
-      hit = isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh);
-      if (hit) type = "bed";
-    } else if (obj instanceof FoodBag) {
-      if (images.food_bag) {
-        const img = images.food_bag;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height,
-          img.width,
-          img.height,
-        );
-        if (hit) type = "bag";
-      }
-    } else if (obj.hitTest) {
-      hit = obj.hitTest(mouse.x, mouse.y);
-      if (hit) {
-        if (obj instanceof SorryStick) type = "stick";
-        else if (obj instanceof SprayBottle) type = "spray_bottle";
-        else if (obj instanceof Brush) type = "brush";
-        else if (obj instanceof Knife) type = obj.type;
-        else if (obj instanceof SutureKit) type = "suture_kit";
-        else if (typeof TrashBag !== "undefined" && obj instanceof TrashBag)
-          type = "trash_bag";
-        else if (obj instanceof Ball) type = "ball";
-        else if (obj instanceof Sponge) type = "sponge";
-        else if (obj instanceof Block) type = "block";
-        else if (obj instanceof Sprinkler) type = "sprinkler";
-        else if (obj instanceof IVStand) type = "iv_stand";
-        else if (obj instanceof IVBag) type = "iv_bag";
-        else if (obj instanceof OperatingTable) type = "operating_table";
-        else if (obj instanceof ImmobilizationBoard)
-          type = "immobilization_board";
-        else if (obj instanceof LitterpalBox) type = "litterpal_box";
-        else if (obj instanceof MagnifyingGlass) type = "magnifying_glass";
-        else if (obj instanceof AccessoryItem) type = "accessory";
-        else if (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack)
-          type = "thumbtack";
-        else if (typeof Syringe !== "undefined" && obj instanceof Syringe)
-          type = "syringe";
-        else if (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
-          type = "cattle_prod";
-      }
-    } else if (obj instanceof Cage) {
-      if (type) continue;
-      if (images.cage) {
-        const img = images.cage;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height / 2,
-          img.width,
-          img.height,
-        );
-        if (hit) type = "cage";
-      }
-    } else if (obj instanceof Litterbox) {
-      if (images.litterbox) {
-        const img = images.litterbox;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height,
-          img.width,
-          img.height,
-        );
-        if (hit) type = "litterbox";
-      }
-    } else if (obj instanceof Grinder) {
-      if (images.grinder) {
-        const img = images.grinder;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height / 2,
-          img.width,
-          img.height,
-        );
-        if (hit) type = "grinder";
-      }
-    }
-
-    if (hit) {
-      const y = obj.getBottomY();
-      if (y > maxY) {
-        maxY = y;
-        bestItem = obj;
-        bestType = type;
-      }
-    }
+  const sellable = findSellableItemAt(mouse.x, mouse.y);
+  if (sellable) {
+    bestItem = sellable.item;
+    bestEntry = sellable.entry;
+    bestType = sellable.entry.sellType;
+    maxY = bestItem.getBottomY();
   }
 
   // Check Fluffies
@@ -3330,198 +2996,12 @@ function sellModeClick() {
 
     const moneyBeforeSell = showDebugMenu ? money : null;
 
-    if (bestType === "bowl") {
+    if (bestType !== "fluffy" && bestEntry) {
+      // Items: price and any clean-up come from ItemRegistry.js
       if (bestItem.isDragging) isGlobalDragging = false;
-      money += 7;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.bowl ? images.bowl.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "trough") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 37;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.trough ? images.trough.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "mega_feeder") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 750;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y -
-            (images.mega_baby_feeder ? images.mega_baby_feeder.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "bed") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      for (const id of bestItem.claimants) {
-        const f = fluffies.find((f) => f.id === id);
-        if (f) f.claimedBed = null;
-      }
-      money += 37;
-      poofs.push(
-        new Poof(bestItem.x, bestItem.y - BED_HEIGHT / 2, bestItem.scene),
-      );
-    } else if (bestType === "statue") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 5000;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y -
-            (images.golden_statue ? images.golden_statue.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "fluff_tv") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 1000;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y -
-            (images.fluff_tv_off ? images.fluff_tv_off.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "bag") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      const price =
-        bestItem.amount === 5
-          ? bestItem.type === "sketties"
-            ? 150
-            : bestItem.type === "formula"
-              ? 50
-              : 25
-          : 0;
-      money += price;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.food_bag ? images.food_bag.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "stick") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 25;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y -
-            (images.sorry_stick ? images.sorry_stick.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "brush") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 25;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.brush ? images.brush.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "knife") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 100;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.knife ? images.knife.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "cage") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 75;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.cage ? images.cage.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "litterbox") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 25;
-      poofs.push(
-        new Poof(
-          bestItem.x,
-          bestItem.y - (images.litterbox ? images.litterbox.height / 2 : 10),
-          bestItem.scene,
-        ),
-      );
-    } else if (bestType === "ball") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 5;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "sponge") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 10;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "block") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 5;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "grinder") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 50;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "sprinkler") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 500;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "iv_stand") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 100;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "iv_bag") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 100;
-      if (bestItem.attachedTo) {
-        bestItem.attachedTo.attachedBag = null;
-      }
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "operating_table") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 500;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "immobilization_board") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 125;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "litterpal_box") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 375;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "magnifying_glass") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 250;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "accessory") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      const cost =
-        typeof ACCESSORY_DB !== "undefined" &&
-        ACCESSORY_DB[bestItem.accessoryId]
-          ? ACCESSORY_DB[bestItem.accessoryId].cost
-          : 0;
-      money += Math.floor(cost / 2);
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
-    } else if (bestType === "cattle_prod") {
-      if (bestItem.isDragging) isGlobalDragging = false;
-      money += 750;
-      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
+      money += getItemSellValue(bestItem, bestEntry);
+      if (bestEntry.onSell) bestEntry.onSell(bestItem);
+      poofs.push(new Poof(bestItem.x, bestItem.y - 20, bestItem.scene));
     } else if (bestType === "fluffy") {
       if (bestItem.isDragging) isGlobalDragging = false;
       money += Math.floor(bestItem.calculatePrice() / 2);
@@ -3899,175 +3379,19 @@ function actionButtonsClick() {
           const sx = width / 2 + (Math.random() - 0.5) * 200;
           const sy = height / 2 + (Math.random() - 0.5) * 100;
 
-          if (action.isItem === "bowl") {
+          // World items are described in ItemRegistry.js
+          const itemType = getItemTypeForAction(action);
+          if (itemType) {
             if (!showDebugMenu) money -= action.cost;
-            const b = new Bowl("bowl", currentScene);
-            b.setPosition(sx, sy);
-            objects.push(b);
-          } else if (action.isItem === "trough") {
-            if (!showDebugMenu) money -= action.cost;
-            const b = new Bowl("trough", currentScene);
-            b.setPosition(sx, sy);
-            objects.push(b);
-          } else if (action.isItem === "feeder") {
-            if (!showDebugMenu) money -= action.cost;
-            const b = new Bowl("feeder", currentScene);
-            b.setPosition(sx, sy);
-            objects.push(b);
-          } else if (action.isItem === "mega_feeder") {
-            if (!showDebugMenu) money -= action.cost;
-            const b = new Bowl("mega_feeder", currentScene);
-            b.setPosition(sx, sy);
-            objects.push(b);
-          } else if (action.isItem === "grinder") {
-            if (!showDebugMenu) money -= action.cost;
-            const g = new Grinder(currentScene);
-            g.x = width / 2;
-            g.y = height / 2;
-            objects.push(g);
-          } else if (action.isItem === "cage") {
-            if (!showDebugMenu) money -= action.cost;
-            const c = new Cage(currentScene);
-            c.x = width / 2;
-            c.y = height / 2;
-            objects.push(c);
-          } else if (action.isItem === "litterbox") {
-            if (!showDebugMenu) money -= action.cost;
-            const lb = new Litterbox(currentScene);
-            lb.x = width / 2;
-            lb.y = height / 2;
-            objects.push(lb);
-          } else if (action.isItem === "operating_table") {
-            if (!showDebugMenu) money -= action.cost;
-            const ot = new OperatingTable(currentScene);
-            ot.x = width / 2;
-            ot.y = height / 2;
-            objects.push(ot);
-          } else if (action.isItem === "immobilization_board") {
-            if (!showDebugMenu) money -= action.cost;
-            const board = new ImmobilizationBoard(currentScene);
-            board.x = width / 2;
-            board.y = height / 2;
-            objects.push(board);
-          } else if (action.isItem === "iv_stand") {
-            if (!showDebugMenu) money -= action.cost;
-            const iv = new IVStand(currentScene);
-            iv.x = width / 2;
-            iv.y = height / 2;
-            objects.push(iv);
-          } else if (action.isItem === "iv_bag") {
-            if (!showDebugMenu) money -= action.cost;
-            const bag = new IVBag(currentScene, action.bagType);
-            bag.x = width / 2;
-            bag.y = height / 2;
-            objects.push(bag);
-          } else if (action.isItem === "syringe") {
-            if (!showDebugMenu) money -= action.cost;
-            const s = new Syringe(currentScene);
-            s.x = width / 2;
-            s.y = height / 2;
-            objects.push(s);
-          } else if (action.isItem === "cattle_prod") {
-            if (!showDebugMenu) money -= action.cost;
-            const cp = new CattleProd(currentScene);
-            cp.x = width / 2;
-            cp.y = height / 2;
-            objects.push(cp);
-          } else if (action.isItem === "bed") {
-            if (!showDebugMenu) money -= action.cost;
-            const bed = new Bed(currentScene);
-            bed.x = width / 2;
-            bed.y = height / 2;
-            objects.push(bed);
-          } else if (action.isItem === "golden_statue") {
-            if (!showDebugMenu) money -= action.cost;
-            const s = new GoldenStatue(currentScene);
-            s.setPosition(sx, sy);
-            objects.push(s);
-          } else if (action.isItem === "fluff_tv") {
-            if (!showDebugMenu) money -= action.cost;
-            const tv = new FluffTV(currentScene);
-            tv.setPosition(sx, sy);
-            objects.push(tv);
-          } else if (action.isItem === "food_bag") {
-            if (!showDebugMenu) money -= action.cost;
-            const bag = new FoodBag(action.foodType, currentScene);
-            bag.setPosition(sx, sy);
-            objects.push(bag);
-            bag.combineWithNearby();
-          } else if (action.isItem === "sorry_stick") {
-            if (!showDebugMenu) money -= action.cost;
-            const stick = new SorryStick(currentScene);
-            stick.setPosition(sx, sy);
-            objects.push(stick);
-          } else if (action.isItem === "spray_bottle") {
-            if (!showDebugMenu) money -= action.cost;
-            const spray = new SprayBottle(currentScene);
-            spray.setPosition(sx, sy);
-            objects.push(spray);
-          } else if (action.isItem === "knife" || action.isItem === "scalpel") {
-            if (!showDebugMenu) money -= action.cost;
-            const type = action.isItem;
-            const knife = new Knife(type, currentScene);
-            knife.setPosition(sx, sy);
-            objects.push(knife);
-          } else if (action.isItem === "suture_kit") {
-            if (!showDebugMenu) money -= action.cost;
-            const kit = new SutureKit(currentScene);
-            kit.setPosition(sx, sy);
-            objects.push(kit);
-          } else if (action.isItem === "trash_bag") {
-            if (!showDebugMenu) money -= action.cost;
-            const bag = new TrashBag(currentScene);
-            bag.setPosition(sx, sy);
-            objects.push(bag);
-          } else if (action.isItem === "ball") {
-            if (!showDebugMenu) money -= action.cost;
-            const ball = new Ball(sx, sy, currentScene);
-            objects.push(ball);
-          } else if (action.isItem === "sponge") {
-            if (!showDebugMenu) money -= action.cost;
-            const s = new Sponge(currentScene);
-            s.setPosition(sx, sy);
-            objects.push(s);
-          } else if (action.isItem === "thumbtack") {
-            if (!showDebugMenu) money -= action.cost;
-            const tack = new Thumbtack(currentScene);
-            tack.setPosition(sx, sy);
-            objects.push(tack);
-          } else if (action.isItem === "block") {
-            if (!showDebugMenu) money -= action.cost;
-            const b = new Block(sx, sy, currentScene);
-            objects.push(b);
-          } else if (action.isItem === "brush") {
-            if (!showDebugMenu) money -= action.cost;
-            const b = new Brush(currentScene);
-            b.setPosition(sx, sy);
-            objects.push(b);
-          } else if (action.isItem === "sprinkler") {
-            if (!showDebugMenu) money -= action.cost;
-            const s = new Sprinkler(currentScene);
-            s.x = width / 2;
-            s.y = height / 2;
-            objects.push(s);
-          } else if (action.isItem === "litterpal_box") {
-            if (!showDebugMenu) money -= action.cost;
-            const b = new LitterpalBox(currentScene);
-            b.x = width / 2;
-            b.y = height / 2;
-            objects.push(b);
-          } else if (action.isItem === "magnifying_glass") {
-            if (!showDebugMenu) money -= action.cost;
-            const m = new MagnifyingGlass(currentScene);
-            m.setPosition(sx, sy);
-            objects.push(m);
-          } else if (action.isItem === "accessory") {
-            if (!showDebugMenu) money -= action.cost;
-            const obj = new AccessoryItem(currentScene, action.accessoryId);
-            obj.x = sx;
-            obj.y = sy;
+            const obj = itemType.create(action, sx, sy);
             objects.push(obj);
+            if (itemType.afterCreate) itemType.afterCreate(obj);
+            const px = itemType.poofAtMouse ? mouse.x : obj.x;
+            const py = itemType.poofAtMouse ? mouse.y : obj.y;
+            poofs.push(new Poof(px, py, currentScene));
+            return true;
           } else {
+            // Anything else in the shop is a fluffy
             if (!showDebugMenu) money -= action.cost;
             const h = new Horse(action.growth, null, currentScene, action.type);
             h.x = sx;
@@ -4075,14 +3399,7 @@ function actionButtonsClick() {
             fluffies.push(h);
           }
 
-          // sx/sy might be wrong for center spawn, but poof should be at center for grinder/cage
-          let poofX = sx,
-            poofY = sy;
-          if (action.isItem === "grinder" || action.isItem === "cage") {
-            poofX = width / 2;
-            poofY = height / 2;
-          }
-          poofs.push(new Poof(poofX, poofY, currentScene));
+          poofs.push(new Poof(sx, sy, currentScene));
         }
         return true;
       }
@@ -4207,6 +3524,27 @@ canvas.addEventListener("mousedown", (e) => {
 
   // 3. Right Click: Cycle Cage Tags
   if (mouse.rightDown) {
+    // Fence pieces: turn the one being carried, or the one under the mouse
+    // (right clicking a placed gate opens or closes it instead)
+    if (typeof Fence !== "undefined") {
+      const fence =
+        objects.find((o) => o instanceof Fence && o.isDragging) ||
+        objects
+          .filter(
+            (o) =>
+              o instanceof Fence &&
+              o.scene === currentScene &&
+              o.hitTest(mouse.x, mouse.y),
+          )
+          .sort((a, b) => b.getBottomY() - a.getBottomY())[0];
+      if (fence) {
+        // A placed gate opens/closes; anything else (or a held gate) turns
+        if (fence.isGate && !fence.isDragging) fence.toggleGate();
+        else fence.rotate();
+        mouse.rightDown = false;
+        return;
+      }
+    }
     for (const obj of objects) {
       if (obj instanceof Cage && obj.scene === currentScene) {
         if (images.cage) {
@@ -4519,116 +3857,8 @@ canvas.addEventListener("mousedown", (e) => {
       continue;
     }
 
-    let hit = false;
-
-    if (obj instanceof Bowl) {
-      let img = null;
-      if (obj.type === "feeder") img = images.baby_feeder;
-      else if (obj.type === "trough") img = images.trough;
-      else if (obj.type === "mega_feeder") img = images.mega_baby_feeder;
-      else img = images.kibble_bowl || images.bowl;
-      if (img) {
-        bw = img.width;
-        bh = img.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-      }
-    } else if (obj instanceof GoldenStatue) {
-      if (images.golden_statue) {
-        bw = images.golden_statue.width;
-        bh = images.golden_statue.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-      }
-    } else if (obj instanceof FluffTV) {
-      if (images.fluff_tv_off) {
-        bw = images.fluff_tv_off.width;
-        bh = images.fluff_tv_off.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-      }
-    } else if (obj instanceof FoodBag) {
-      if (images.food_bag) {
-        bw = images.food_bag.width;
-        bh = images.food_bag.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-      }
-    } else if (obj instanceof Cage) {
-      if (images.cage) {
-        bw = images.cage.width;
-        bh = images.cage.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh / 2,
-          bw,
-          bh,
-        );
-      }
-    } else if (obj instanceof FoalInACan) {
-      bw = images.foal_in_a_can ? images.foal_in_a_can.width : 60;
-      bh = images.foal_in_a_can ? images.foal_in_a_can.height : 70;
-      hit = isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh);
-    } else if (obj instanceof Litterbox) {
-      if (images.litterbox) {
-        bw = images.litterbox.width;
-        bh = images.litterbox.height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh,
-          bw,
-          bh,
-        );
-      }
-    } else if (obj instanceof Bed) {
-      bw = images.bed ? images.bed.width : BED_WIDTH;
-      bh = images.bed ? images.bed.height : BED_HEIGHT;
-      hit = isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh);
-    } else if (obj instanceof Grinder) {
-      const g = obj.bounds;
-      hit =
-        obj.currentSpeed <= 0 &&
-        isPointInRect(
-          mouse.x,
-          mouse.y,
-          g.left,
-          g.top,
-          g.right - g.left,
-          g.bottom - g.top,
-        );
-    } else if (obj instanceof Sprinkler) {
-      hit = obj.hitTest(mouse.x, mouse.y);
-    } else if (obj.hitTest) {
-      hit = obj.hitTest(mouse.x, mouse.y);
-    }
+    // Is the click on this item, and can it be picked up? (ItemRegistry.js)
+    const hit = itemCanBePickedUpAt(obj, mouse.x, mouse.y);
 
     if (hit) {
       if (
