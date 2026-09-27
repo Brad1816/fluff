@@ -3728,20 +3728,6 @@ canvas.addEventListener("mousedown", (e) => {
       cancelPendingConnections();
       obj.isDragging = true;
       isGlobalDragging = true;
-      if (
-        typeof TOOL_SLOTS !== "undefined" &&
-        typeof grabbedToolIDs !== "undefined"
-      ) {
-        const slot = TOOL_SLOTS.find((s) => s.check(obj));
-        if (slot) {
-          if (grabbedToolSlotKey !== slot.key) {
-            grabbedToolSlotKey = slot.key;
-            grabbedToolIDs = [obj.id];
-          } else if (!grabbedToolIDs.includes(obj.id)) {
-            grabbedToolIDs.push(obj.id);
-          }
-        }
-      }
       let img = null;
       if (obj instanceof Knife) img = images.knife;
       else if (obj instanceof SutureKit) img = images.suture_kit;

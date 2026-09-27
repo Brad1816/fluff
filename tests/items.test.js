@@ -285,6 +285,49 @@ module.exports = [
     },
   },
   {
+    name: "tools: names, pictures, saving, and default toolbar slots",
+    run: async (page) => {
+      const problems = await page.evaluate(() => {
+        const problems = [];
+        toolbox.length = 0;
+        for (const a of SPAWN_ACTIONS.filter((a) => isToolAction(a))) {
+          const tool = createToolFromAction(a);
+          if (!tool) {
+            problems.push(`${a.name}: couldn't be made`);
+            continue;
+          }
+          if (!isToolObject(tool)) problems.push(`${a.name}: not treated as a tool`);
+          if (!matchesToolAction(tool, a)) problems.push(`${a.name}: doesn't match its shop entry`);
+          if (!getToolName(tool) || getToolName(tool) === "Tool") problems.push(`${a.name}: no name`);
+          if (!getToolDesc(tool)) problems.push(`${a.name}: no description`);
+          if (!getToolImage(tool)) problems.push(`${a.name}: no picture`);
+          const data = JSON.parse(JSON.stringify(tool.serialize()));
+          if (!isToolData(data)) problems.push(`${a.name}: save data not seen as a tool`);
+          const back = createToolFromData(data);
+          if (!back || JSON.stringify(back.serialize()) !== JSON.stringify(data))
+            problems.push(`${a.name}: changed after saving and loading`);
+          toolbox.push(tool);
+        }
+        // Tooltips show how much is left
+        const kit = new SutureKit("INDOORS");
+        kit.charges = 2;
+        if (!getToolFullName(kit).includes("2 uses left"))
+          problems.push(`suture kit tooltip: "${getToolFullName(kit)}"`);
+        // Default number keys
+        initDefaultToolbar();
+        const slots = Object.fromEntries(
+          toolbarSlots.map((s) => [s.key, s.tool ? getToolTypeKey(s.tool) : null]),
+        );
+        const expected = { 1: "sponge", 2: "brush", 4: "magnifying_glass", 5: "knife", 8: "scalpel", 9: "syringe", 0: "cattle_prod" };
+        for (const [k, v] of Object.entries(expected)) {
+          if (slots[k] !== v) problems.push(`toolbar key ${k} has ${slots[k]}, expected ${v}`);
+        }
+        return problems;
+      });
+      check(problems.length === 0, problems.join("; "));
+    },
+  },
+  {
     name: "every item comes back the same after saving and loading",
     run: async (page) => {
       await page.evaluate(PAGE_HELPERS);

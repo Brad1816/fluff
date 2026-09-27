@@ -46,7 +46,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `script.js` | The **main loop** (`animate` → `updateSimulation` → `render`), feral spawning (`spawnFeralGroup`, `updateFerals`), sell offers, day care ageing, cars, **what happens when you click while holding something** (`attemptDrop`: using the stick/knife/brush etc. on a fluffy), keyboard shortcuts, startup. |
 | `UI.js` | Everything drawn on top of the world and most clicking: the shop buttons, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** (resetting all state) happens in `handleWorldSettingsClick`. |
-| `ItemRegistry.js` | **One description per item type**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it. See recipe 6. |
+| `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
 | `dialogue.js` | Every line fluffies can say (`DIALOGUE`), plus `getDialogue()` and baby-talk/muffle filters. |
@@ -241,8 +241,8 @@ handles dropping into cages and dropping onto door/arrow portals to move scenes.
 **Two kinds of purchases:**
 - **World items** (bowl, bed, cage, fence...) go into `objects`.
 - **Tools** (sponge, brush, stick, knife, syringe...) go into your `toolbox`
-  and are equipped with the number keys. See `isToolObject`, `TOOL_SLOTS`,
-  `createToolFromAction` in `globals.js`.
+  and are equipped with the number keys. Each tool is described in
+  `ItemRegistry.js` (see "Add a new tool" in section 6).
 
 Keyboard: Esc pause · WASD change scene · N names · B bed names · 0–9 tools ·
 R turn held fence · **Space cheat code**.
@@ -284,6 +284,26 @@ registry entry (all explained at the top of `ItemRegistry.js`):
 - `inCage: "never"`: stop it being dropped into cages
 - `canPickUp`, `onSell`, `usedUp`, `afterCreate`, `shopItem`, `poofAtMouse`
 
+### Add a new tool (goes in the toolbox)
+Same as an item, but in its `ItemRegistry.js` entry also add a `tool`
+section (copy the Brush one and change it):
+```js
+tool: {
+  className: "MyTool",                        // as in serialize()
+  create: (scene) => new MyTool(scene),
+  key: "my_tool",                             // what kind of tool it is
+  toolbarKey: "2",                            // default number key (optional)
+  name: "Tool",                               // short name on the toolbar
+  fullName: "My Tool",                        // tooltip title (optional)
+  desc: "What it does, for the tooltip.",
+  image: () => images.my_tool,
+},
+```
+Optional: `multi: true` (can own several), `punishment: true` (counts as
+discipline), `placeableInWorld: true` (can be put down, like thumbtacks).
+What the tool *does* when you click a fluffy with it is in `attemptDrop`
+in `script.js`.
+
 ### Add a new fluffy behaviour (desire)
 1. In `HorseBrain.js`: `class MyDesire extends Desire { constructor(){ super("MyDesire"); } evaluate(horse){ return score; } execute(horse){ ...; return true; } }`
 2. Register it in the `Horse` constructor: `this.brain.addDesire(new MyDesire());`
@@ -317,8 +337,8 @@ change. `zip_project.sh` runs them before packaging, too.
 
 - **Item registry.** Selling, the sell tooltip, picking up, buying,
   loading, right-click actions, shop icons and "can it go in a cage?" all go
-  through `ItemRegistry.js`. (Tools also have their own lists in
-  `globals.js`: `isToolObject`, `createToolFromAction` and friends.)
+  through `ItemRegistry.js`, and so does everything about tools (the
+  `tool` section of their entries).
 - **Sell prices**: every item sells for **half its shop price** (worked out
   from `SPAWN_ACTIONS`, so changing a shop price changes the sell price too).
   Partly used items are worth less (`usedUp` in `ItemRegistry.js`). Opened

@@ -1820,203 +1820,72 @@ const DEBUG_ACTIONS = [
   },
 ];
 
-const punishmentTools = ["SorryStick", "SprayBottle", "Thumbtack"];
+// ---- What each tool is -----------------------------------------------------
+// Everything about individual tools (names, pictures, which ones can be
+// owned more than once...) is described in ItemRegistry.js (the `tool`
+// section of each tool's entry). These functions just look it up.
 
+// Stick, spray bottle, thumbtack. Also works on saved tool data.
 function isPunishmentTool(o) {
   if (!o) return false;
-  const name = o.constructor ? o.constructor.name : o.classType;
-  if (punishmentTools.includes(name) || punishmentTools.includes(o.classType))
-    return true;
-  return (
-    (typeof SorryStick !== "undefined" && o instanceof SorryStick) ||
-    (typeof SprayBottle !== "undefined" && o instanceof SprayBottle) ||
-    (typeof Thumbtack !== "undefined" && o instanceof Thumbtack)
-  );
+  const entry = getToolEntry(o) || (o.classType ? getToolEntryForData(o) : null);
+  return !!(entry && entry.tool.punishment);
 }
 
-// While the thumbtack works as a stick, it shouldn't occupy the toolbar since it has a non-stick purpose as well
-const punishmentToolsForToolbarPurposes = ["SorryStick", "SprayBottle"];
-
+// Stick and spray bottle share the "discipline" toolbar slot
 function isPunishmentToolForToolbarPurposes(o) {
   if (!o) return false;
-  const name = o.constructor ? o.constructor.name : o.classType;
-  if (
-    punishmentToolsForToolbarPurposes.includes(name) ||
-    punishmentToolsForToolbarPurposes.includes(o.classType)
-  )
-    return true;
-  return (
-    (typeof SorryStick !== "undefined" && o instanceof SorryStick) ||
-    (typeof SprayBottle !== "undefined" && o instanceof SprayBottle)
-  );
+  const entry = getToolEntry(o) || (o.classType ? getToolEntryForData(o) : null);
+  return !!(entry && entry.tool.punishmentToolbar);
 }
 
+// Tools that can be put down in the world (thumbtack, IV bag)
 function isPlaceableWorldTool(obj) {
-  if (!obj) return false;
-  return (
-    (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
-    (typeof IVBag !== "undefined" && obj instanceof IVBag)
-  );
+  const entry = getToolEntry(obj);
+  return !!(entry && entry.tool.placeableInWorld);
 }
 
 function isToolObject(obj) {
-  if (!obj) return false;
-  return (
-    (typeof Sponge !== "undefined" && obj instanceof Sponge) ||
-    (typeof Brush !== "undefined" && obj instanceof Brush) ||
-    (typeof Knife !== "undefined" && obj instanceof Knife) ||
-    (typeof SutureKit !== "undefined" && obj instanceof SutureKit) ||
-    (typeof TrashBag !== "undefined" && obj instanceof TrashBag) ||
-    (typeof SorryStick !== "undefined" && obj instanceof SorryStick) ||
-    (typeof SprayBottle !== "undefined" && obj instanceof SprayBottle) ||
-    (typeof MagnifyingGlass !== "undefined" && obj instanceof MagnifyingGlass) ||
-    (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
-    (typeof Syringe !== "undefined" && obj instanceof Syringe) ||
-    (typeof CattleProd !== "undefined" && obj instanceof CattleProd) ||
-    (typeof IVBag !== "undefined" && obj instanceof IVBag && !obj.attachedTo)
-  );
+  const entry = getToolEntry(obj);
+  return !!(entry && (!entry.tool.onlyIf || entry.tool.onlyIf(obj)));
 }
 
+// Is this saved data a tool? ({ classType: "Knife", ... })
 function isToolData(oData) {
-  if (!oData) return false;
-  const type = oData.classType;
-  if (
-    [
-      "Sponge",
-      "Brush",
-      "Knife",
-      "SutureKit",
-      "TrashBag",
-      "SorryStick",
-      "SprayBottle",
-      "MagnifyingGlass",
-      "Thumbtack",
-      "Syringe",
-      "CattleProd",
-    ].includes(type)
-  ) {
-    return true;
-  }
-  if (type === "IVBag" && oData.attachedToId == null) {
-    return true;
-  }
-  return false;
+  const entry = getToolEntryForData(oData);
+  return !!(entry && (!entry.tool.dataOnlyIf || entry.tool.dataOnlyIf(oData)));
 }
 
+// Is this shop entry a tool?
 function isToolAction(action) {
-  if (!action || !action.isItem) return false;
-  return [
-    "sponge",
-    "brush",
-    "sorry_stick",
-    "spray_bottle",
-    "magnifying_glass",
-    "knife",
-    "scalpel",
-    "suture_kit",
-    "trash_bag",
-    "thumbtack",
-    "syringe",
-    "cattle_prod",
-    "iv_bag",
-  ].includes(action.isItem);
+  return !!getToolEntryForAction(action);
 }
 
+// Can you own more than one of these? (shop entry / tool)
 function isMultiPurchaseToolAction(action) {
-  if (!action || !action.isItem) return false;
-  return (
-    action.isItem === "iv_bag" ||
-    action.isItem === "thumbtack" ||
-    action.isItem === "suture_kit" ||
-    action.isItem === "trash_bag"
-  );
+  const entry = getToolEntryForAction(action);
+  return !!(entry && entry.tool.multi);
 }
 
 function isMultiPurchaseTool(tool) {
-  if (!tool) return false;
-  if (typeof IVBag !== "undefined" && tool instanceof IVBag) return true;
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack) return true;
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit) return true;
-  if (typeof TrashBag !== "undefined" && tool instanceof TrashBag) return true;
-  return false;
+  const entry = getToolEntry(tool);
+  return !!(entry && entry.tool.multi);
 }
 
+// Which kind of tool this is (e.g. "knife", "iv_bag_tpn")
 function getToolTypeKey(tool) {
   if (!tool) return null;
-  if (typeof Sponge !== "undefined" && tool instanceof Sponge) return "sponge";
-  if (typeof Brush !== "undefined" && tool instanceof Brush) return "brush";
-  if (typeof SorryStick !== "undefined" && tool instanceof SorryStick)
-    return "sorry_stick";
-  if (typeof SprayBottle !== "undefined" && tool instanceof SprayBottle)
-    return "spray_bottle";
-  if (typeof MagnifyingGlass !== "undefined" && tool instanceof MagnifyingGlass)
-    return "magnifying_glass";
-  if (typeof Knife !== "undefined" && tool instanceof Knife) {
-    return tool.type === "scalpel" ? "scalpel" : "knife";
-  }
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit)
-    return "suture_kit";
-  if (typeof TrashBag !== "undefined" && tool instanceof TrashBag)
-    return "trash_bag";
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack)
-    return "thumbtack";
-  if (typeof Syringe !== "undefined" && tool instanceof Syringe)
-    return "syringe";
-  if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
-    return "cattle_prod";
-  if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
-    return "iv_bag_" + (tool.type || "tpn");
-  }
+  const entry = getToolEntry(tool);
+  if (entry) return toolField(entry, "key", tool);
   return tool.classType || tool.constructor?.name || null;
 }
 
+// Is this tool the thing that shop entry sells?
 function matchesToolAction(tool, action) {
   if (!tool || !action) return false;
-  switch (action.isItem) {
-    case "sponge":
-      return typeof Sponge !== "undefined" && tool instanceof Sponge;
-    case "brush":
-      return typeof Brush !== "undefined" && tool instanceof Brush;
-    case "sorry_stick":
-      return typeof SorryStick !== "undefined" && tool instanceof SorryStick;
-    case "spray_bottle":
-      return typeof SprayBottle !== "undefined" && tool instanceof SprayBottle;
-    case "magnifying_glass":
-      return (
-        typeof MagnifyingGlass !== "undefined" &&
-        tool instanceof MagnifyingGlass
-      );
-    case "knife":
-      return (
-        typeof Knife !== "undefined" &&
-        tool instanceof Knife &&
-        tool.type === "knife"
-      );
-    case "scalpel":
-      return (
-        typeof Knife !== "undefined" &&
-        tool instanceof Knife &&
-        tool.type === "scalpel"
-      );
-    case "suture_kit":
-      return typeof SutureKit !== "undefined" && tool instanceof SutureKit;
-    case "trash_bag":
-      return typeof TrashBag !== "undefined" && tool instanceof TrashBag;
-    case "thumbtack":
-      return typeof Thumbtack !== "undefined" && tool instanceof Thumbtack;
-    case "syringe":
-      return typeof Syringe !== "undefined" && tool instanceof Syringe;
-    case "cattle_prod":
-      return typeof CattleProd !== "undefined" && tool instanceof CattleProd;
-    case "iv_bag":
-      return (
-        typeof IVBag !== "undefined" &&
-        tool instanceof IVBag &&
-        tool.type === action.bagType
-      );
-    default:
-      return false;
-  }
+  const entry = getToolEntry(tool);
+  if (!entry || entry !== getToolEntryForAction(action)) return false;
+  return !entry.tool.matchesAction || entry.tool.matchesAction(tool, action);
 }
 
 function isToolAlreadyOwned(action) {
@@ -2032,87 +1901,22 @@ function isToolAlreadyOwned(action) {
   );
 }
 
+// A new tool bought from the shop
 function createToolFromAction(action) {
+  const entry = getToolEntryForAction(action);
+  if (!entry) return null;
   const scene = typeof currentScene !== "undefined" ? currentScene : "INDOORS";
-  switch (action.isItem) {
-    case "sponge":
-      return new Sponge(scene);
-    case "brush":
-      return new Brush(scene);
-    case "sorry_stick":
-      return new SorryStick(scene);
-    case "spray_bottle":
-      return new SprayBottle(scene);
-    case "magnifying_glass":
-      return new MagnifyingGlass(scene);
-    case "knife":
-      return new Knife("knife", scene);
-    case "scalpel":
-      return new Knife("scalpel", scene);
-    case "suture_kit":
-      return new SutureKit(scene);
-    case "trash_bag":
-      return new TrashBag(scene);
-    case "thumbtack":
-      return new Thumbtack(scene);
-    case "syringe":
-      return new Syringe(scene);
-    case "cattle_prod":
-      return new CattleProd(scene);
-    case "iv_bag":
-      return new IVBag(scene, action.bagType);
-    default:
-      return null;
-  }
+  return entry.tool.create(scene, action);
 }
 
+// A tool loaded from a save
 function createToolFromData(oData) {
-  if (!oData) return null;
-  const type = oData.classType;
+  const entry = getToolEntryForData(oData);
+  if (!entry) return null;
   const scene =
     oData.scene ||
     (typeof currentScene !== "undefined" ? currentScene : "INDOORS");
-  let tool = null;
-  switch (type) {
-    case "Sponge":
-      tool = new Sponge(scene);
-      break;
-    case "Brush":
-      tool = new Brush(scene);
-      break;
-    case "SorryStick":
-      tool = new SorryStick(scene);
-      break;
-    case "SprayBottle":
-      tool = new SprayBottle(scene);
-      break;
-    case "MagnifyingGlass":
-      tool = new MagnifyingGlass(scene);
-      break;
-    case "Knife":
-      tool = new Knife(oData.type || "knife", scene);
-      break;
-    case "SutureKit":
-      tool = new SutureKit(scene);
-      break;
-    case "TrashBag":
-      tool = new TrashBag(scene);
-      break;
-    case "Thumbtack":
-      tool = new Thumbtack(scene);
-      break;
-    case "Syringe":
-      tool = new Syringe(scene);
-      break;
-    case "CattleProd":
-      tool = new CattleProd(scene);
-      break;
-    case "IVBag":
-      tool = new IVBag(scene, oData.type || "tpn");
-      break;
-    default:
-      return null;
-  }
+  const tool = entry.tool.create(scene, oData);
   if (oData.id !== undefined && oData.id !== null) {
     tool.id = oData.id;
   }
@@ -2369,100 +2173,24 @@ function unequipCurrentTool() {
   }
 }
 
+// Short name (toolbar), full name and description (tooltip)
 function getToolName(tool) {
   if (!tool) return "";
-  if (typeof Sponge !== "undefined" && tool instanceof Sponge) return "Sponge";
-  if (typeof Brush !== "undefined" && tool instanceof Brush) return "Brush";
-  if (typeof SorryStick !== "undefined" && tool instanceof SorryStick)
-    return "Stick";
-  if (typeof SprayBottle !== "undefined" && tool instanceof SprayBottle)
-    return "Spray";
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack)
-    return "Tack";
-  if (typeof MagnifyingGlass !== "undefined" && tool instanceof MagnifyingGlass)
-    return "Glass";
-  if (typeof Knife !== "undefined" && tool instanceof Knife) {
-    return tool.type === "scalpel" ? "Scalpel" : "Knife";
-  }
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit)
-    return "Suture";
-  if (typeof TrashBag !== "undefined" && tool instanceof TrashBag)
-    return "Trash";
-  if (typeof Syringe !== "undefined" && tool instanceof Syringe)
-    return "Syringe";
-  if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
-    return "Prod";
-  if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
-    return (tool.type || "tpn").toUpperCase();
-  }
-  return tool.name || "Tool";
+  const entry = getToolEntry(tool);
+  return (entry && toolField(entry, "name", tool)) || tool.name || "Tool";
 }
 
 function getToolFullName(tool) {
   if (!tool) return "";
-  if (typeof Sponge !== "undefined" && tool instanceof Sponge) return "Sponge";
-  if (typeof Brush !== "undefined" && tool instanceof Brush) return "Brush";
-  if (typeof SorryStick !== "undefined" && tool instanceof SorryStick)
-    return "Sorry Stick";
-  if (typeof SprayBottle !== "undefined" && tool instanceof SprayBottle)
-    return "Spray Bottle";
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack)
-    return "Thumbtack";
-  if (typeof MagnifyingGlass !== "undefined" && tool instanceof MagnifyingGlass)
-    return "Magnifying Glass";
-  if (typeof Knife !== "undefined" && tool instanceof Knife) {
-    return tool.type === "scalpel" ? "Scalpel" : "Knife";
-  }
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit) {
-    return `Suture Kit (${tool.usesLeft ?? 4} uses left)`;
-  }
-  if (typeof TrashBag !== "undefined" && tool instanceof TrashBag) {
-    const count = tool.items ? tool.items.length : 0;
-    return `Trash Bag (${count} items)`;
-  }
-  if (typeof Syringe !== "undefined" && tool instanceof Syringe) {
-    return tool.fluidType
-      ? `Syringe (${tool.fluidType.toUpperCase()}: ${Math.round(tool.fluidAmount)}u)`
-      : "Syringe (Empty)";
-  }
-  if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
-    return "Cattle Prod";
-  if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
-    return `IV Bag (${(tool.type || "tpn").toUpperCase()})`;
-  }
-  return tool.name || "Tool";
+  const entry = getToolEntry(tool);
+  if (!entry) return tool.name || "Tool";
+  return toolField(entry, "fullName", tool) || toolField(entry, "name", tool);
 }
 
 function getToolDesc(tool) {
   if (!tool) return "";
-  if (typeof Sponge !== "undefined" && tool instanceof Sponge)
-    return "Clean messes by holding this over them.";
-  if (typeof Brush !== "undefined" && tool instanceof Brush)
-    return "Brush fluffies to reward them for good behavior.";
-  if (typeof SorryStick !== "undefined" && tool instanceof SorryStick)
-    return "Click fluffies with it to whack them.";
-  if (typeof SprayBottle !== "undefined" && tool instanceof SprayBottle)
-    return "Spray fluffies to discipline them.";
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack)
-    return "Can poke fluffies causing pain and minor bleeding.";
-  if (typeof MagnifyingGlass !== "undefined" && tool instanceof MagnifyingGlass)
-    return "Click on a fluffy to inspect and rename.";
-  if (typeof Knife !== "undefined" && tool instanceof Knife) {
-    return tool.type === "scalpel"
-      ? "Medical amputation without bleeding."
-      : "Used for amputation.";
-  }
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit)
-    return `Stops blood loss in amputated fluffies. ${tool.usesLeft ?? 4} uses left.`;
-  if (typeof TrashBag !== "undefined" && tool instanceof TrashBag)
-    return "Auto-picks up corpses/parts. Drop into grinder to dispose.";
-  if (typeof Syringe !== "undefined" && tool instanceof Syringe)
-    return "Click an IV bag to draw fluid, click fluffy to inject.";
-  if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
-    return "Electrocutes fluffies while grabbed and holding mouse down.";
-  if (typeof IVBag !== "undefined" && tool instanceof IVBag)
-    return `Bag of ${(tool.type || "tpn").toUpperCase()} solution for IV stand delivery.`;
-  return "";
+  const entry = getToolEntry(tool);
+  return (entry && toolField(entry, "desc", tool)) || "";
 }
 
 function isDrawableImage(img) {
@@ -2480,42 +2208,11 @@ function isDrawableImage(img) {
   );
 }
 
+// The tool's picture in the toolbox/toolbar
 function getToolImage(tool) {
   if (!tool || typeof images === "undefined") return null;
-  if (typeof Sponge !== "undefined" && tool instanceof Sponge)
-    return images.sponge;
-  if (typeof Brush !== "undefined" && tool instanceof Brush)
-    return images.brush;
-  if (typeof SorryStick !== "undefined" && tool instanceof SorryStick)
-    return images.sorry_stick;
-  if (typeof SprayBottle !== "undefined" && tool instanceof SprayBottle)
-    return images.spray_bottle;
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack)
-    return images.thumbtack;
-  if (typeof MagnifyingGlass !== "undefined" && tool instanceof MagnifyingGlass)
-    return images.magnifying_glass;
-  if (typeof Knife !== "undefined" && tool instanceof Knife)
-    return images[tool.type] || images.knife;
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit)
-    return images.suture_kit;
-  if (typeof TrashBag !== "undefined" && tool instanceof TrashBag) {
-    return typeof tool.getCurrentImage === "function"
-      ? tool.getCurrentImage()
-      : images.trash_bag_empty;
-  }
-  if (typeof Syringe !== "undefined" && tool instanceof Syringe)
-    return images.syringe;
-  if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
-    return images.cattle_prod;
-  if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
-    if (tool.tintedSprite && tool.tintedSprite.width > 0) return tool.tintedSprite;
-    if (typeof tool.createTintedSprite === "function") {
-      tool.createTintedSprite();
-      if (tool.tintedSprite && tool.tintedSprite.width > 0) return tool.tintedSprite;
-    }
-    return images.iv_bag;
-  }
-  return null;
+  const entry = getToolEntry(tool);
+  return entry && entry.tool.image ? entry.tool.image(tool) : null;
 }
 
 function serializeToolbarSlots() {
@@ -2569,60 +2266,16 @@ function initDefaultToolbar() {
   for (const slot of toolbarSlots) {
     slot.tool = null;
   }
-  const preferredKeys = [
-    {
-      key: "1",
-      check: (t) => typeof Sponge !== "undefined" && t instanceof Sponge,
-    },
-    {
-      key: "2",
-      check: (t) => typeof Brush !== "undefined" && t instanceof Brush,
-    },
-    {
-      key: "3",
-      check: (t) =>
-        (typeof SorryStick !== "undefined" && t instanceof SorryStick) ||
-        (typeof SprayBottle !== "undefined" && t instanceof SprayBottle) ||
-        (typeof Thumbtack !== "undefined" && t instanceof Thumbtack),
-    },
-    {
-      key: "4",
-      check: (t) =>
-        typeof MagnifyingGlass !== "undefined" &&
-        t instanceof MagnifyingGlass,
-    },
-    {
-      key: "5",
-      check: (t) =>
-        typeof Knife !== "undefined" &&
-        t instanceof Knife &&
-        t.type === "knife",
-    },
-    {
-      key: "6",
-      check: (t) => typeof SutureKit !== "undefined" && t instanceof SutureKit,
-    },
-    {
-      key: "7",
-      check: (t) => typeof TrashBag !== "undefined" && t instanceof TrashBag,
-    },
-    {
-      key: "8",
-      check: (t) =>
-        typeof Knife !== "undefined" &&
-        t instanceof Knife &&
-        t.type === "scalpel",
-    },
-    {
-      key: "9",
-      check: (t) => typeof Syringe !== "undefined" && t instanceof Syringe,
-    },
-    {
-      key: "0",
-      check: (t) =>
-        typeof CattleProd !== "undefined" && t instanceof CattleProd,
-    },
-  ];
+  // Which slot each tool prefers is `toolbarKey` in ItemRegistry.js
+  const preferredKeys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map(
+    (key) => ({
+      key,
+      check: (t) => {
+        const entry = getToolEntry(t);
+        return !!(entry && entry.tool.toolbarKey === key);
+      },
+    }),
+  );
   const assigned = new Set();
   const assignedKinds = new Set();
   for (const pref of preferredKeys) {
@@ -2655,144 +2308,6 @@ function initDefaultToolbar() {
         assigned.add(tool);
         if (key) assignedKinds.add(key);
       }
-    }
-  }
-}
-
-const TOOL_SLOTS = [
-  {
-    key: "1",
-    check: (o) => o instanceof Sponge,
-    getImage: () => images.sponge,
-    name: "Sponge",
-  },
-  {
-    key: "2",
-    check: (o) => o instanceof Brush,
-    getImage: () => images.brush,
-    name: "Brush",
-  },
-  {
-    key: "3",
-    check: (o) => isPunishmentToolForToolbarPurposes(o),
-    getImage: (o) => {
-      if (typeof Thumbtack !== "undefined" && o instanceof Thumbtack)
-        return images.thumbtack;
-      if (typeof SprayBottle !== "undefined" && o instanceof SprayBottle)
-        return images.spray_bottle;
-      if (typeof SorryStick !== "undefined" && o instanceof SorryStick)
-        return images.sorry_stick;
-      if (typeof objects !== "undefined") {
-        const found = objects.find((x) => isPunishmentTool(x));
-        if (typeof Thumbtack !== "undefined" && found instanceof Thumbtack)
-          return images.thumbtack;
-        if (typeof SprayBottle !== "undefined" && found instanceof SprayBottle)
-          return images.spray_bottle;
-      }
-      return images.sorry_stick;
-    },
-    name: "Discipline",
-  },
-  {
-    key: "4",
-    check: (o) => o instanceof MagnifyingGlass,
-    getImage: () => images.magnifying_glass,
-    name: "Glass",
-  },
-  {
-    key: "5",
-    check: (o) =>
-      o instanceof Knife &&
-      (o.type === "scalpel" ||
-        !objects.some((x) => x instanceof Knife && x.type === "scalpel")),
-    getImage: (o) => images[o.type],
-    name: "Knife",
-  },
-  {
-    key: "6",
-    check: (o) => o instanceof SutureKit,
-    getImage: () => images.suture_kit,
-    name: "Suture",
-  },
-  {
-    key: "7",
-    check: (o) => typeof TrashBag !== "undefined" && o instanceof TrashBag,
-    getImage: (o) =>
-      o && o.getCurrentImage ? o.getCurrentImage() : images.trash_bag_empty,
-    name: "Bag",
-  },
-  {
-    key: "8",
-    check: (o) =>
-      o instanceof Knife &&
-      o.type === "knife" &&
-      objects.some((x) => x instanceof Knife && x.type === "scalpel"),
-    getImage: (o) => images[o.type],
-    name: "Knife",
-  },
-  {
-    key: "9",
-    check: (o) => typeof Syringe !== "undefined" && o instanceof Syringe,
-    getImage: () => images.syringe,
-    name: "Syringe",
-  },
-];
-
-let grabbedToolIDs = [];
-let grabbedToolSlotKey = null;
-
-function handleToolbarToolGrab(slot) {
-  if (typeof objects === "undefined") return;
-
-  const allInstances = objects.filter((o) => slot.check(o));
-  if (allInstances.length === 0) return;
-
-  // Don't hijack while carrying a fluffy
-  if (typeof fluffies !== "undefined" && fluffies.some((f) => f.isDragging))
-    return;
-
-  // Reset if a different kind of tool is grabbed
-  if (grabbedToolSlotKey !== slot.key) {
-    grabbedToolSlotKey = slot.key;
-    grabbedToolIDs = [];
-  }
-
-  // If only 1 instance exists total and we are currently dragging it, drop it (toggle behavior)
-  if (allInstances.length === 1 && allInstances[0].isDragging) {
-    allInstances[0].onDrop();
-    if (typeof isGlobalDragging !== "undefined") isGlobalDragging = false;
-    grabbedToolIDs = [];
-    return;
-  }
-
-  // Check for a different instance via list (prefer current scene, then any scene)
-  let nextTool =
-    allInstances.find(
-      (o) => !grabbedToolIDs.includes(o.id) && o.scene === currentScene,
-    ) || allInstances.find((o) => !grabbedToolIDs.includes(o.id));
-
-  // If there are no instances left in the list, empty the list and start over
-  if (!nextTool) {
-    grabbedToolIDs = [];
-    nextTool =
-      allInstances.find((o) => o.scene === currentScene) || allInstances[0];
-  }
-
-  if (nextTool) {
-    // Drop whatever tool or object is currently held
-    const held = objects.find((o) => o.isDragging);
-    if (held) {
-      held.onDrop();
-    }
-
-    nextTool.isDragging = true;
-    nextTool.dragOffset = { x: 0, y: 0 };
-    nextTool.scene = currentScene;
-    if (typeof isGlobalDragging !== "undefined") isGlobalDragging = true;
-
-    // Populate list with ID of tool when grabbed
-    if (!grabbedToolIDs.includes(nextTool.id)) {
-      grabbedToolIDs.push(nextTool.id);
     }
   }
 }
