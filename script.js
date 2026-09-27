@@ -457,6 +457,8 @@ function attemptDrop() {
               f.speak(getDialogue(key, f));
             }
             f.changeHappiness(HAPPINESS_BONUS_BRUSH);
+            // Builds trust in you (Memory.js)
+            if (typeof onFluffyBrushed === "function") onFluffyBrushed(f);
             f.expressionOverride = "GOOD_UPSIES";
             f.expressionOverrideTimer = 1.0;
             f.initBehavior("BENDING_2");
@@ -1491,6 +1493,10 @@ function updateSimulation(dt) {
     // ...and get sad if a pen separates them from friends or family
     if (typeof updatePenFeelings === "function") {
       updatePenFeelings(f, dt);
+    }
+    // Trust grows, fear fades (Memory.js)
+    if (typeof updatePlayerMemory === "function") {
+      updatePlayerMemory(f, dt);
     }
     if (f.scene === currentScene) {
       f.lastSeenPlayerTime = now;

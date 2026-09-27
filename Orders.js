@@ -148,6 +148,14 @@ const ORDER_REQUIREMENTS = {
       return !!g && (r.big ? g.size >= 2 : g.size <= -2);
     },
   },
+  tame: {
+    // Memory and trust (Memory.js)
+    minLevel: 1,
+    weight: 1.5,
+    make: () => ({ value: 250 }),
+    label: () => "Friendly with people (trusts you, not scared)",
+    matches: (r, f) => typeof isFriendlyWithPeople === "function" && isFriendlyWithPeople(f),
+  },
   trait: {
     // Personality traits (Traits.js)
     minLevel: 2,

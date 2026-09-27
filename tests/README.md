@@ -43,6 +43,7 @@ npm test -- fence
 | `genelab.test.js` | Gene Lab: predictions follow the inheritance rules (wings, carriers, born-alive odds), right-click to open, pick parents, pregnancy scan, related-pair warnings |
 | `orders.test.js` | Customer orders: requirements per reputation level, rewards grow with level, accept/deliver (wrong fluffies refused), 3-order limit, deadlines and reputation loss, new orders over time, saving, bounty board and computer open the screen |
 | `traits.test.js` | Personality traits: genes added to old fluffies, labels, foals inherit each gene from a parent, effects on fear/play/hunger/fighting back (and average fluffies unchanged), greedy fluffies really get hungrier, shown in the inspection panel, Gene Lab and orders |
+| `memory.test.js` | Memory and trust: hurting scares the victim and witnesses (not cars; brave less than timid), fear fades (gentle faster), brushing and feeding build trust, scared fluffies really back away from the hand, loving ones really come to it, pick-up reactions, saving, panel rows, orders |
 | `inspect.test.js` | The magnifying glass panel shows litter training, poopie colours, personality and age (set `INSPECT_SHOTS=folder` to save screenshots) |
 | `run-tests.js` | Runs everything (starts a small web server and the hidden browser) |
 | `helpers.js` | Shared bits: `check`, `checkEqual`, `buildPen` |

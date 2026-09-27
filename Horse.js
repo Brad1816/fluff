@@ -55,6 +55,10 @@ function notifyViolence(
   isTraining = false,
   isAmputation = false,
 ) {
+  // Victim and witnesses remember it was you (Memory.js)
+  if (typeof notePlayerViolence === "function") {
+    notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation);
+  }
   if (victim.placedOn && isAmputation) {
     victim.fearOfOperatingTable = true;
   }
@@ -217,6 +221,11 @@ class Horse {
     this.brain.addDesire(new WanderDesire());
     this.brain.addDesire(new SitDesire());
     this.brain.addDesire(new LieDownDesire());
+    // Memory and trust (Memory.js): back away from / come to your hand
+    if (typeof FleePlayerDesire !== "undefined") {
+      this.brain.addDesire(new FleePlayerDesire());
+      this.brain.addDesire(new SeekPlayerDesire());
+    }
     this.id = nextFluffyId++;
     this.age = 0;
     this.motherId = motherId;
@@ -335,6 +344,12 @@ class Horse {
     this.adopted = this.scene
       ? getSceneConfig(this.scene).insidePlayerQuarters
       : false;
+    // How it feels about you (Memory.js)
+    this.playerTrust =
+      typeof TRUST_START === "number" ? (this.adopted ? TRUST_START : TRUST_START_FERAL) : 0.5;
+    this.playerFear = 0;
+    this.playerMemories = [];
+    this.lastHurtByPlayerAt = null;
     this.nextTapTime = Math.random() * 10; // Initialize random start
 
     this.isPregnant = false;
@@ -4963,6 +4978,10 @@ class Horse {
       personalities: [...this.personalities],
       adopted: this.adopted,
       traumaMemory: JSON.parse(JSON.stringify(this.traumaMemory)),
+      playerTrust: this.playerTrust,
+      playerFear: this.playerFear,
+      playerMemories: JSON.parse(JSON.stringify(this.playerMemories || [])),
+      lastHurtByPlayerAt: this.lastHurtByPlayerAt,
       isPregnant: this.isPregnant,
       sexuality: this.sexuality || "heterosexual",
       sensitiveBaby: this.sensitiveBaby,
@@ -5098,6 +5117,11 @@ class Horse {
     horse.personalities = data.personalities;
     horse.adopted = data.adopted;
     horse.traumaMemory = data.traumaMemory;
+    // Memory and trust (Memory.js); older saves keep the defaults
+    if (typeof data.playerTrust === "number") horse.playerTrust = data.playerTrust;
+    if (typeof data.playerFear === "number") horse.playerFear = data.playerFear;
+    if (Array.isArray(data.playerMemories)) horse.playerMemories = data.playerMemories;
+    if (typeof data.lastHurtByPlayerAt === "number") horse.lastHurtByPlayerAt = data.lastHurtByPlayerAt;
     horse.isPregnant = data.isPregnant;
     horse.sexuality = data.sexuality || "heterosexual";
     horse.sensitiveBaby = data.sensitiveBaby || false;

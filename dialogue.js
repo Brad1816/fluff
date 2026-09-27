@@ -102,6 +102,29 @@ const DIALOGUE = {
     },
   },
 
+  // Memory and trust (Memory.js)
+  TRUST: {
+    FLEE: [
+      "Nu! Nu hand! Pwease nu huwt <speaker>!",
+      "Scawy hand! Wun!",
+      "<Speaker> sowwy! <Speaker> sowwy!",
+    ],
+    SEEK: [
+      "Daddeh! Daddeh! Hewwo!",
+      "<Speaker> wub daddeh! Gib pettie?",
+      "Daddeh hewe! Yay!",
+    ],
+    UPSIES_SCARED: [
+      "NUUU! Pwease nu hab huwties!",
+      "S-sowwy daddeh! Pwease nu!",
+      "Pwease be nice to <speaker>...",
+    ],
+    UPSIES_HAPPY: [
+      "Upsies! <Speaker> wub upsies!",
+      "Wub daddeh! Bestest huggies!",
+      "Wheee! Upsies!",
+    ],
+  },
   // Personality traits (Traits.js). Said now and then while babbling.
   TRAIT: {
     BRAVE: [

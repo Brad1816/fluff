@@ -2185,6 +2185,10 @@ function getFluffyInspectionInfo(f) {
     value: sfId ? fluffyNames[sfId] || "Unnamed fluffy" : "None",
   });
   about.push({ label: "Friends", value: String(friendCount) });
+  // Recent things you did to it (Memory.js)
+  if (f.isAlive && typeof describePlayerMemories === "function") {
+    about.push({ label: "Remembers", value: describePlayerMemories(f) });
+  }
 
   const care = [];
   if (!f.isAlive) {
@@ -2215,6 +2219,11 @@ function getFluffyInspectionInfo(f) {
     if (f.isAlive) {
       care.push({ label: "Pregnant", value: f.isPregnant ? "Yes" : "No", tone: f.isPregnant ? "ok" : "" });
     }
+  }
+  // How it feels about you and what it remembers (Memory.js)
+  if (f.isAlive && typeof describePlayerFeeling === "function") {
+    const [feel, feelTone] = describePlayerFeeling(f);
+    care.push({ label: "Feels about you", value: feel, tone: feelTone });
   }
   const missing = f.getMissingBodyPartsText
     ? f.getMissingBodyPartsText()
@@ -3866,6 +3875,8 @@ canvas.addEventListener("mousedown", (e) => {
 
     cancelPendingConnections();
     f.isDragging = true;
+    // Scared fluffies panic, trusting ones like it (Memory.js)
+    if (typeof onFluffyPickedUp === "function") onFluffyPickedUp(f);
     isGlobalDragging = true;
     if (f.placedOn) {
       f.placedOn.releaseFluffy();

@@ -55,6 +55,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Orders.js` | **Customer orders**: making orders (`ORDER_REQUIREMENTS`), accepting, delivering, deadlines and reputation (`customerOrders`, saved). |
 | `OrderBoard.js` | Where orders are seen: the **bounty board** on Shopping Street, the **Computer** item (FluffList website), the orders screen with its deliver picker, and the "orders due" reminder. |
 | `Traits.js` | **Personality traits** (brave/timid, social/loner, greedy/picky eater, playful/lazy, grumpy/gentle): which genes, the labels, and how they change behaviour. See section 9. |
+| `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -578,4 +579,29 @@ A $3000 machine in the store's Pharmacy & Lab aisle. Place it anywhere and
   foal), and customer orders from reputation level 2 ("Personality: Brave").
 - These are separate from the game's older `personalities` (smarty and the
   backstories like mill escapee), which aren't inherited.
+
+### Memory and trust (`Memory.js`)
+Each fluffy remembers how you (the hand / mouse cursor) treat it. Saved
+with the fluffy: `playerTrust` (0-1, starts 0.5 at home, 0.35 for ferals),
+`playerFear` (0-1) and `playerMemories` (last 5 things, newest first).
+- **Fear goes up** when you hurt it (`notePlayerViolence`, called at the
+  start of `notifyViolence` in `Horse.js`): stick/spray 0.12, tack/needle
+  0.2, cattle prod 0.25, knife 0.3 (+0.2 if something's cut off), grinder
+  0.5; half for potty training. Fluffies that see or hear it get 0.03
+  (0.08 if it's their family or special friend; double if it died). Cars
+  don't count. Brave fluffies get less, timid more. Hurting also costs
+  trust (60% of the fear added).
+- **Fear fades** by 0.03 per game minute, starting a minute after the last
+  hurt; gentle fluffies forgive 1.5x faster, grumpy ones 0.5x.
+- **Trust goes up** from brushing (+0.05, also calms fear a little), eating
+  at home, being happy with you around, and being picked up when it
+  already loves you. Social fluffies warm up faster.
+- **Behaviour**: `FleePlayerDesire`: scared (fear 0.45+) fluffies back away
+  when your hand comes within 170px. `SeekPlayerDesire`: fluffies that
+  love you (trust 0.75+, fear under 0.2) trot over to your hand now and
+  then (at most every 45s). `onFluffyPickedUp` (from the mousedown code):
+  scared ones cry and may wet themselves, loving ones say "Upsies!".
+  Lines are in `DIALOGUE.TRUST`.
+- **Shown in** the magnifying glass panel ("Feels about you", "Remembers")
+  and used by the "Friendly with people" customer order requirement.
 
