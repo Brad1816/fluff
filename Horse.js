@@ -2546,7 +2546,7 @@ class Horse {
 
     this.physics.updateTablePhysics(dt);
 
-    const topWallHeight = height * 0.15;
+    const topWallHeight = sceneTop(this.scene);
     const groundYMin = topWallHeight + 50;
 
     // State-based expressions
@@ -4159,12 +4159,12 @@ class Horse {
     this._pendingWalkAwayX = clamp(
       this.x + Math.cos(angle) * walkAwayDist,
       100,
-      width - 100,
+      sceneW(this.scene) - 100,
     );
-    const groundYMax = this.scene === "BACKYARD" ? height - 120 : height - 50;
+    const groundYMax = this.scene === "BACKYARD" ? height - 120 : sceneH(this.scene) - 50;
     this._pendingWalkAwayY = clamp(
       this.y + Math.sin(angle) * walkAwayDist,
-      height * 0.15 + 50,
+      sceneTop(this.scene) + 50,
       groundYMax,
     );
 

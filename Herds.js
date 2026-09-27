@@ -367,7 +367,7 @@ class FollowHerdDesire extends Desire {
     const angle = Math.random() * Math.PI * 2;
     const r = 40 + Math.random() * 60;
     horse.initBehavior("MOVING");
-    horse.setTargetPosition(clamp(t.x + Math.cos(angle) * r, 40, width - 40), t.y + Math.sin(angle) * r * 0.5);
+    horse.setTargetPosition(clamp(t.x + Math.cos(angle) * r, 40, sceneW(horse.scene) - 40), t.y + Math.sin(angle) * r * 0.5);
     if (Math.random() < 0.15) _say(horse, ["HERD", "FOLLOW"], getHerdLeader(herdOf(horse)));
     return true;
   }

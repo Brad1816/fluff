@@ -153,11 +153,13 @@ class Fence {
     this.y = Math.round(this.y / FENCE_GRID) * FENCE_GRID;
 
     // Keep the fence on the floor (below the back wall, inside the screen)
-    const topWallHeight = height * 0.15;
+    const topWallHeight = typeof sceneTop === "function" ? sceneTop(this.scene) : height * 0.15;
+    const W = typeof sceneW === "function" ? sceneW(this.scene) : width;
+    const H = typeof sceneH === "function" ? sceneH(this.scene) : height;
     const minY = Math.ceil((topWallHeight + 40) / FENCE_GRID) * FENCE_GRID;
     const len = FENCE_SEGMENT_LENGTH;
-    const maxX = this.orientation === "h" ? width - len : width;
-    const maxY = this.orientation === "h" ? height : height - len;
+    const maxX = this.orientation === "h" ? W - len : W;
+    const maxY = this.orientation === "h" ? H : H - len;
     this.x = clamp(this.x, 0, Math.floor(maxX / FENCE_GRID) * FENCE_GRID);
     this.y = clamp(this.y, minY, Math.floor(maxY / FENCE_GRID) * FENCE_GRID);
   }
@@ -654,18 +656,22 @@ function getPenMap(scene) {
   if (!sceneHasFences(scene)) return null;
   const sig = fenceSignatureByScene[scene];
   const cached = penMapCache[scene];
-  if (cached && cached.sig === sig && cached.w === width && cached.h === height)
+  // Area size: the park is bigger than the screen (Park.js)
+  const W = typeof sceneW === "function" ? sceneW(scene) : width;
+  const H = typeof sceneH === "function" ? sceneH(scene) : height;
+  const top = typeof sceneTop === "function" ? sceneTop(scene) : height * 0.15;
+  if (cached && cached.sig === sig && cached.w === W && cached.h === H)
     return cached;
 
   const C = PEN_MAP_CELL;
-  const cols = Math.ceil(width / C);
-  const rows = Math.ceil(height / C);
+  const cols = Math.ceil(W / C);
+  const rows = Math.ceil(H / C);
   const blocked = new Uint8Array(cols * rows);
 
   // Floor limits: fluffies' hooves never go above this line (the back wall)
   // or below the bottom of the screen
-  const minFeetY = height * 0.15 + 50 + fenceFootOffset(null) - C;
-  const maxFeetY = height;
+  const minFeetY = top + 50 + fenceFootOffset(null) - C;
+  const maxFeetY = H;
   for (let r = 0; r < rows; r++) {
     const cy = r * C + C / 2;
     if (cy < minFeetY || cy > maxFeetY) {
@@ -730,8 +736,8 @@ function getPenMap(scene) {
 
   const map = {
     sig,
-    w: width,
-    h: height,
+    w: W,
+    h: H,
     cols,
     rows,
     blocked,

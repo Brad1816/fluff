@@ -329,7 +329,7 @@ class SeekBuddyDesire extends Desire {
     if (!b || !b.isAlive) return false;
     const side = horse.x < b.x ? -1 : 1;
     horse.initBehavior("MOVING");
-    horse.setTargetPosition(clamp(b.x + side * 60, 40, width - 40), b.y + (Math.random() - 0.5) * 30);
+    horse.setTargetPosition(clamp(b.x + side * 60, 40, sceneW(horse.scene) - 40), b.y + (Math.random() - 0.5) * 30);
     return true;
   }
 }

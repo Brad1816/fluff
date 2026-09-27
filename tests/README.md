@@ -46,6 +46,7 @@ npm test -- fence
 | `memory.test.js` | Memory and trust: hurting scares the victim and witnesses (not cars; brave less than timid), fear fades (gentle faster), brushing and feeding build trust, scared fluffies really back away from the hand, loving ones really come to it, pick-up reactions, saving, panel rows, orders |
 | `bonds.test.js` | Bonds and grudges: time together turns into friendship, attacks make grudges and witnesses side with their buddy (and sometimes defend), grudges block friendship, keep fluffies apart and fade, a fluffy really walks to its buddy, saving |
 | `herds.test.js` | Herds: families form a named herd with a grown-up leader, foals and friends join, members who hate the leader leave, new leaders, tiny herds break up, herd bonus and rivalry, members catch up with the leader, saving |
+| `park.test.js` | Fluffy Park: in from the river, dragging / wheel / keys / map move the view, out again; clicking the right fluffy after scrolling and dropping it in the right place; carrying one out takes you both; fluffies and fences use the whole park; other areas unchanged |
 | `inspect.test.js` | The magnifying glass panel shows litter training, poopie colours, personality and age (set `INSPECT_SHOTS=folder` to save screenshots) |
 | `run-tests.js` | Runs everything (starts a small web server and the hidden browser) |
 | `helpers.js` | Shared bits: `check`, `checkEqual`, `buildPen` |

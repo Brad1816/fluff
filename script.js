@@ -1274,6 +1274,10 @@ function animate(timestamp) {
   // Cap catch-up to 2 seconds to prevent heavy lag after long inactivity
   if (elapsed > 2.0) elapsed = 2.0;
 
+  // Park camera (Park.js); game logic sees world mouse positions
+  if (typeof updateParkCamera === "function") updateParkCamera(elapsed);
+  if (typeof mouseToWorld === "function") mouseToWorld();
+
   const fixedStep = 0.016; // ~60fps steps for physics stability
   while (elapsed > 0) {
     const dt = Math.min(elapsed, fixedStep);
@@ -1689,7 +1693,17 @@ function render() {
   const offScreenCanvas = new OffscreenCanvas(width, height);
   const osCtx = offScreenCanvas.getContext("2d");
 
+  // Fluffy Park: draw the world through the camera (Park.js)
+  const parkCam =
+    typeof isCameraScene === "function" && isCameraScene(currentScene) ? camera : null;
+  if (parkCam) {
+    if (typeof mouseToWorld === "function") mouseToWorld();
+    osCtx.save();
+    osCtx.translate(-Math.round(parkCam.x), -Math.round(parkCam.y));
+  }
+
   drawBackground(osCtx);
+  if (parkCam && typeof drawParkScenery === "function") drawParkScenery(osCtx);
 
   if (typeof drawRoad !== "undefined") {
     drawRoad(osCtx);
@@ -1701,8 +1715,10 @@ function render() {
   drawDoorBackground(osCtx);
 
   // Filter visible renderables
-  const visibleObjects = objects.filter((o) => o.scene === currentScene);
-  const visibleFluffies = fluffies.filter((f) => f.scene === currentScene);
+  // (in the park, skip things far off screen)
+  const onScreen = (o) => !parkCam || o.isDragging || isOnParkScreen(o.x, o.y);
+  const visibleObjects = objects.filter((o) => o.scene === currentScene && onScreen(o));
+  const visibleFluffies = fluffies.filter((f) => f.scene === currentScene && onScreen(f));
   const visibleGibs = gibs.filter(
     (g) => g.scene === currentScene && !g.grinder,
   );
@@ -1796,7 +1812,16 @@ function render() {
   }
 
   drawVFX(osCtx);
+  if (parkCam) {
+    osCtx.restore();
+    if (typeof mouseToScreen === "function") mouseToScreen();
+  }
   drawUI(osCtx);
+  if (parkCam) {
+    osCtx.save();
+    osCtx.translate(-Math.round(parkCam.x), -Math.round(parkCam.y));
+    if (typeof mouseToWorld === "function") mouseToWorld();
+  }
 
   // Draw Speech Bubbles and Dreams above everything else
   for (const f of visibleFluffies) {
@@ -1888,11 +1913,17 @@ function render() {
   }
 
   drawTVMessages(osCtx);
+  if (parkCam) {
+    osCtx.restore();
+    if (typeof mouseToScreen === "function") mouseToScreen();
+  }
 
   // Final blit to main canvas
   ctx.drawImage(offScreenCanvas, 0, 0);
 
   drawPortals();
+  // Park title and map (Park.js)
+  if (typeof drawParkHud === "function") drawParkHud(ctx);
   // Store shelf hover highlight (Store.js)
   if (typeof drawStoreOverlay === "function") drawStoreOverlay(ctx);
   // Bounty board hover label (OrderBoard.js)
@@ -1989,7 +2020,11 @@ window.addEventListener("keydown", (e) => {
   if (!document.hasFocus()) return;
 
   let requestedDir = null;
-  if (e.code === "KeyW") requestedDir = "UP";
+  // In the park WASD looks around instead (Park.js)
+  const inPark = typeof isCameraScene === "function" && isCameraScene(currentScene);
+  if (inPark) {
+    // nothing: handled by the park's own key listener
+  } else if (e.code === "KeyW") requestedDir = "UP";
   else if (e.code === "KeyA") requestedDir = "LEFT";
   else if (e.code === "KeyS") requestedDir = "DOWN";
   else if (e.code === "KeyD") requestedDir = "RIGHT";

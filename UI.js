@@ -3683,6 +3683,14 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
+  // The park's map in the corner (Park.js)
+  if (typeof parkMinimapClick === "function" && parkMinimapClick()) {
+    return;
+  }
+
+  // In the park, what's below works with world positions (Park.js)
+  if (typeof mouseToWorld === "function") mouseToWorld();
+
   // 0. Check Sell Mode (Shift Click)
   if (sellModeClick()) {
     return;
@@ -3693,6 +3701,9 @@ canvas.addEventListener("mousedown", (e) => {
   if (attemptDrop()) {
     return;
   }
+
+  // Buttons and menus: screen positions again
+  if (typeof mouseToScreen === "function") mouseToScreen();
 
   // 2. Check Action Buttons
   if (actionButtonsClick()) {
@@ -3750,6 +3761,9 @@ canvas.addEventListener("mousedown", (e) => {
       return;
     }
   }
+
+  // Things in the world: world positions (Park.js)
+  if (typeof mouseToWorld === "function") mouseToWorld();
 
   // 3. Right Click: each item's right-click action is in ItemRegistry.js
   // (cage tags, TV channels, sprinkler on/off, gates, turning fences...)
@@ -4175,6 +4189,9 @@ canvas.addEventListener("mousedown", (e) => {
     }
   }
 
+  // Arrows and doors are on the screen (Park.js)
+  if (typeof mouseToScreen === "function") mouseToScreen();
+
   // Check Portal Click
   const portals = getScenePortals(currentScene);
   for (const p of portals) {
@@ -4196,6 +4213,9 @@ canvas.addEventListener("mousedown", (e) => {
       return;
     }
   }
+
+  // Clicked on nothing in the park: drag the view (Park.js)
+  if (typeof startParkPan === "function") startParkPan();
 });
 
 window.addEventListener("resize", () => {
@@ -4208,6 +4228,21 @@ function playerQuartersAndNotBackyard(scene) {
 
 function getScenePortals(scene) {
   const portals = [];
+
+  // Fluffy Park (Park.js): its only exit is back to the river
+  if (typeof isCameraScene === "function" && isCameraScene(scene)) {
+    return [
+      {
+        type: "arrow_right",
+        x: width - 80,
+        y: height / 2 - 40,
+        w: 60,
+        h: 80,
+        target: "RIVER",
+        label: "Back to the River",
+      },
+    ];
+  }
 
   // The shopping street and store aisles are set up in Store.js
   if (typeof getStorePortals === "function") {
@@ -4346,6 +4381,18 @@ function getScenePortals(scene) {
       label: "To Shopping Street",
     });
   } else if (scene === "RIVER") {
+    // Left Arrow -> PARK (Park.js)
+    if (typeof PARK_SCENE !== "undefined") {
+      portals.push({
+        type: "arrow_left",
+        x: 20,
+        y: height / 2 - 40,
+        w: 60,
+        h: 80,
+        target: PARK_SCENE,
+        label: "To Fluffy Park",
+      });
+    }
     // Right Arrow -> OUTDOORS
     portals.push({
       type: "arrow_right",
@@ -4451,7 +4498,12 @@ function drawBackground(c = ctx) {
   if (img && img.width > 0) {
     const pattern = c.createPattern(img, "repeat");
     c.fillStyle = pattern;
-    c.fillRect(0, 0, width, height);
+    // In the park the camera is applied, so fill the part being looked at
+    if (typeof isCameraScene === "function" && isCameraScene(currentScene)) {
+      c.fillRect(camera.x, camera.y, width, height);
+    } else {
+      c.fillRect(0, 0, width, height);
+    }
   }
 }
 

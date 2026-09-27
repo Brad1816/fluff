@@ -265,14 +265,16 @@ class SeekPlayerDesire extends Desire {
     if (gameTimeMs() - this.lastTime < 45000) return 0;
     if (typeof isAnyScreenOpen === "function" && isAnyScreenOpen()) return 0;
     // Only if your hand is somewhere on the floor
-    if (mouse.y < height * 0.15 + 40 || mouse.y > height - 40) return 0;
+    const sm = screenMouse();
+    if (sm.y < sceneTop(horse.scene) + 40 && !isCameraScene(horse.scene)) return 0;
+    if (sm.y > height - 40) return 0;
     if (_handNear(horse, 120)) return 0; // already there
     return 47; // a bit above an idle wander (45) or going to a buddy (46)
   }
   execute(horse) {
     this.lastTime = gameTimeMs();
-    let tx = clamp(mouse.x + (Math.random() - 0.5) * 60, 60, width - 60);
-    let ty = clamp(mouse.y + 60, height * 0.15 + 60, height - 60);
+    let tx = clamp(mouse.x + (Math.random() - 0.5) * 60, 60, sceneW(horse.scene) - 60);
+    let ty = clamp(mouse.y + 60, sceneTop(horse.scene) + 60, sceneH(horse.scene) - 60);
     if (typeof nearestReachablePoint === "function" && typeof canFluffyReach === "function" && !canFluffyReach(horse, tx, ty)) {
       const p = nearestReachablePoint(horse, tx, ty);
       if (!p) return false;

@@ -1083,17 +1083,17 @@ class HorsePositioning {
       return;
     }
 
-    const topWallHeight = height * 0.15;
+    const topWallHeight = sceneTop(this.horse.scene);
     const margin = 100;
     let minX = margin;
 
     const groundYMin = topWallHeight + 50;
     const groundYMax =
-      this.horse.scene === "BACKYARD" ? height - 120 : height - 50;
+      this.horse.scene === "BACKYARD" ? sceneH(this.horse.scene) - 120 : sceneH(this.horse.scene) - 50;
 
     if (this.horse.isFrantic && this.horse.hunger > 0.5) {
       // Frantic random movement
-      let x = Math.random() * (width - margin - minX) + minX;
+      let x = Math.random() * (sceneW(this.horse.scene) - margin - minX) + minX;
       let y = Math.random() * (groundYMax - groundYMin) + groundYMin;
       this.horse.setTargetPosition(x, y);
       return;
@@ -1107,7 +1107,7 @@ class HorsePositioning {
       let targetX = doorCenterX + (Math.random() - 0.5) * 150;
       let targetY = doorBottomY + 50 + Math.random() * 100;
 
-      targetX = clamp(targetX, minX, width - margin);
+      targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
       targetY = clamp(targetY, groundYMin, groundYMax);
 
       this.horse.setTargetPosition(targetX, targetY);
@@ -1135,7 +1135,7 @@ class HorsePositioning {
           const targetX = clamp(
             bed.x + (Math.random() - 0.5) * 100,
             minX,
-            width - margin,
+            sceneW(this.horse.scene) - margin,
           );
           const targetY = clamp(
             bed.y + (Math.random() - 0.5) * 50,
@@ -1149,7 +1149,7 @@ class HorsePositioning {
         let targetX = mom.x + (Math.random() - 0.5) * 150;
         let targetY = mom.y + (Math.random() - 0.5) * 100;
         targetY = clamp(this.horse.targetY, groundYMin, groundYMax);
-        targetX = clamp(this.horse.targetX, minX, width - margin);
+        targetX = clamp(this.horse.targetX, minX, sceneW(this.horse.scene) - margin);
 
         this.horse.setTargetPosition(targetX, targetY);
         return;
@@ -1182,7 +1182,7 @@ class HorsePositioning {
         const targetX = clamp(
           bed.x + Math.cos(angle) * dist,
           minX,
-          width - margin,
+          sceneW(this.horse.scene) - margin,
         );
         const targetY = clamp(
           bed.y + Math.sin(angle) * dist,
@@ -1219,7 +1219,7 @@ class HorsePositioning {
         const targetX = clamp(
           bed.x + Math.cos(angle) * dist,
           minX,
-          width - margin,
+          sceneW(this.horse.scene) - margin,
         );
         const targetY = clamp(
           bed.y + Math.sin(angle) * dist,
@@ -1243,7 +1243,7 @@ class HorsePositioning {
           let targetX = child.x + (Math.random() - 0.5) * 250;
           let targetY = child.y + (Math.random() - 0.5) * 150;
           targetY = clamp(targetY, groundYMin, groundYMax);
-          targetX = clamp(targetX, minX, width - margin);
+          targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
 
           this.horse.setTargetPosition(targetX, targetY);
           return;
@@ -1266,7 +1266,7 @@ class HorsePositioning {
           let targetX = friend.x + (Math.random() - 0.5) * 20;
           let targetY = friend.y + (Math.random() - 0.5) * 10;
           targetY = clamp(targetY, groundYMin, groundYMax);
-          targetX = clamp(targetX, minX, width - margin);
+          targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
           this.horse.setTargetPosition(targetX, targetY);
           return;
         }
@@ -1297,7 +1297,7 @@ class HorsePositioning {
         let targetX = closestFriend.x + (Math.random() - 0.5) * 80;
         let targetY = closestFriend.y + (Math.random() - 0.5) * 40;
         targetY = clamp(targetY, groundYMin, groundYMax);
-        targetX = clamp(targetX, minX, width - margin);
+        targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
         this.horse.setTargetPosition(targetX, targetY);
         return;
       }
@@ -1330,7 +1330,7 @@ class HorsePositioning {
     let goodX = this.horse.x,
       goodY = this.horse.y;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      targetX = Math.random() * (width - margin - minX) + minX;
+      targetX = Math.random() * (sceneW(this.horse.scene) - margin - minX) + minX;
       targetY = Math.random() * (groundYMax - groundYMin) + groundYMin;
       if (hasFences) {
         // Later attempts look closer by, which works better in small pens
@@ -1338,7 +1338,7 @@ class HorsePositioning {
           targetX = clamp(
             this.horse.x + (Math.random() - 0.5) * 300,
             minX,
-            width - margin,
+            sceneW(this.horse.scene) - margin,
           );
           targetY = clamp(
             this.horse.y + (Math.random() - 0.5) * 200,
@@ -1627,11 +1627,11 @@ class HorsePositioning {
     let ty = this.horse.y + Math.sin(angle) * runDist;
 
     // Clamp
-    const topWallHeight = height * 0.15;
+    const topWallHeight = sceneTop(this.horse.scene);
     const groundYMin = topWallHeight + 50;
     const groundYMax =
-      this.horse.scene === "BACKYARD" ? height - 120 : height - 50;
-    tx = clamp(tx, 100, width - 100);
+      this.horse.scene === "BACKYARD" ? sceneH(this.horse.scene) - 120 : sceneH(this.horse.scene) - 50;
+    tx = clamp(tx, 100, sceneW(this.horse.scene) - 100);
     ty = clamp(ty, groundYMin, groundYMax);
 
     return { x: tx, y: ty };

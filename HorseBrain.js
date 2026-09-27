@@ -1171,15 +1171,12 @@ class WanderDesire extends Desire {
     }
     if (!horse.isMovingOrRunning()) {
       const angle = Math.random() * Math.PI * 2;
-      const x = clamp(
-        horse.x + Math.cos(angle) * magX,
-        100,
-        typeof width !== "undefined" ? width - 100 : 800,
-      );
+      // (area size: the park is bigger than the screen, Park.js)
+      const x = clamp(horse.x + Math.cos(angle) * magX, 100, sceneW(horse.scene) - 100);
       const y = clamp(
         horse.y + Math.sin(angle) * magY,
-        typeof height !== "undefined" ? height * 0.15 + 50 : 200,
-        typeof height !== "undefined" ? height - 50 : 600,
+        sceneTop(horse.scene) + 50,
+        sceneH(horse.scene) - 50,
       );
       // Pens (Fence.js): pick somewhere this fluffy can actually walk to
       let tx = x,
@@ -1193,8 +1190,8 @@ class WanderDesire extends Desire {
         for (let i = 0; i < 12 && !found; i++) {
           const a = Math.random() * Math.PI * 2;
           const d = 60 + Math.random() * 300;
-          tx = clamp(horse.x + Math.cos(a) * d, 100, width - 100);
-          ty = clamp(horse.y + Math.sin(a) * d, height * 0.15 + 50, height - 50);
+          tx = clamp(horse.x + Math.cos(a) * d, 100, sceneW(horse.scene) - 100);
+          ty = clamp(horse.y + Math.sin(a) * d, sceneTop(horse.scene) + 50, sceneH(horse.scene) - 50);
           found = canFluffyReach(horse, tx, ty);
         }
         if (!found) return true; // nowhere to go right now; just stay

@@ -201,6 +201,9 @@ function updateMouse(e) {
   // Transform to Game Space
   mouse.x = (clientX - offsetX) / scale;
   mouse.y = (clientY - offsetY) / scale;
+  // Screen position kept separately for the park's camera (Park.js)
+  mouse.sx = mouse.x;
+  mouse.sy = mouse.y;
 }
 
 // Global mouse listeners (Capturing to update state before other listeners)
@@ -229,15 +232,21 @@ window.addEventListener("mouseup", (e) => {
   if (e.button === 2) mouse.rightDown = false;
 });
 
-window.addEventListener("wheel", (e) => {
-  e.preventDefault();
-  if (showChatLog && typeof handleChatLogScroll === "function") {
-    handleChatLogScroll(e.deltaY);
-  }
-  if (showSaveList && typeof handleSaveListScroll === "function") {
-    handleSaveListScroll(e.deltaY);
-  }
-});
+window.addEventListener(
+  "wheel",
+  (e) => {
+    e.preventDefault();
+    if (showChatLog && typeof handleChatLogScroll === "function") {
+      handleChatLogScroll(e.deltaY);
+    }
+    if (showSaveList && typeof handleSaveListScroll === "function") {
+      handleSaveListScroll(e.deltaY);
+    }
+  },
+  // Needed for preventDefault to work (browsers make wheel listeners
+  // "passive" otherwise, and log an error on every scroll)
+  { passive: false },
+);
 
 window.addEventListener("contextmenu", (e) => {
   e.preventDefault();
@@ -786,7 +795,10 @@ function changeScene(newScene) {
     }
   }
 
+  const oldScene = currentScene;
   currentScene = newScene;
+  // Park camera starts where you walk in (Park.js)
+  if (typeof onEnterScene === "function") onEnterScene(newScene, oldScene);
 }
 
 function wrapText(ctx, text, maxWidth) {
@@ -883,20 +895,31 @@ function handleDropping(item) {
     }
   }
 
-  const topWallHeight = height * 0.15;
-  const groundYMin = topWallHeight + 50;
-
   if (typeof getScenePortals !== "undefined") {
     const portals = getScenePortals(item.scene);
+    // Portals are on the screen, so compare with the screen mouse (Park.js)
+    const sm = typeof screenMouse === "function" ? screenMouse() : mouse;
     for (const p of portals) {
       if (p.locked) continue;
-      if (isPointInRect(mouse.x, mouse.y, p.x, p.y, p.w, p.h)) {
-        item.scene = p.target;
+      if (isPointInRect(sm.x, sm.y, p.x, p.y, p.w, p.h)) {
+        const leavingPark = typeof isCameraScene === "function" && isCameraScene(item.scene);
+        const t = p.target;
+        const tw = typeof sceneW === "function" ? sceneW(t) : width;
+        const th = typeof sceneH === "function" ? sceneH(t) : height;
+        const groundYMin = (typeof sceneTop === "function" ? sceneTop(t) : height * 0.15) + 50;
+        item.scene = t;
         if (p.type === "door") item.y = Math.max(item.y, groundYMin);
-        if (p.type === "arrow_left") item.x = width - 100;
+        if (p.type === "arrow_left") item.x = tw - 100;
         if (p.type === "arrow_right") item.x = 100;
         if (p.type === "arrow_down") item.y = groundYMin + 20;
-        if (p.type === "arrow_up") item.y = height - 120;
+        if (p.type === "arrow_up") item.y = th - 120;
+        // Park positions can be far outside a normal screen
+        if (leavingPark || (typeof isCameraScene === "function" && isCameraScene(t))) {
+          item.x = clamp(item.x, 60, tw - 60);
+          item.y = clamp(item.y, groundYMin, th - 60);
+        }
+        // Leaving the park: you go too, so the camera doesn't get left behind
+        if (leavingPark) changeScene(t);
         return true; // Transitioned
       }
     }

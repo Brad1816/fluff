@@ -58,6 +58,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
 | `Bonds.js` | **Bonds and grudges between fluffies**: each fluffy's opinion of the others (`opinions`, `opinionWhy`), `getLiking`, becoming friends by spending time together, defending buddies, avoiding grudges. See section 9. |
 | `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
+| `Park.js` | **Fluffy Park**: the big area bigger than the screen (River → left arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -662,4 +663,36 @@ memberIds, colorIndex, formedAt }`. `updateHerds` runs every 3 seconds:
   `getHerdLeader`, `getHerdCentre(h, scene)`. With 40 fluffies bonds and
   herds add about 8% to the game's work; a much bigger park would want a
   spatial grid for the "who's near whom" checks.
+
+### Fluffy Park and the camera (`Park.js`)
+The park (`PARK`, from the River's left arrow) is 3 screens wide and 2.4
+screens tall (`PARK_W`, `PARK_H`). You look around by dragging the grass,
+the mouse wheel / trackpad, WASD or the arrow keys (in the park WASD looks
+around instead of travelling), clicking or dragging on the map in the
+corner, or carrying something to the screen edge. The exit arrow on the
+right goes back to the River; clicking it while carrying something takes
+you *and* it (anywhere else that would throw it through on its own).
+- **The camera** (`camera.x/y`) only matters in the park. Everything there
+  has world positions; `render()` in `script.js` draws the world through
+  the camera, skips things far off screen, then draws buttons and windows
+  on top in screen positions.
+- **The mouse** keeps its screen position in `mouse.sx/sy`. In the park,
+  `mouse.x/y` is switched between world (`mouseToWorld()`) and screen
+  (`mouseToScreen()`): world for the game logic (animate, before
+  `updateSimulation`), for drawing the world, and in the mousedown handler
+  for dropping, picking up and right-clicking; screen for buttons, menus,
+  windows and arrows. Outside the park these do nothing, so the rest of the
+  game (and the tests that set `mouse.x` by hand) is untouched.
+  `screenMouse()` gives the screen position in any mode.
+- **Area size**: `sceneW(scene)`, `sceneH(scene)`, `sceneTop(scene)` (where
+  the floor starts; the park has no back wall). Used wherever fluffies pick
+  somewhere to go (`_pickNewTarget`, `getRunawayTarget`, wandering, walking
+  away, coming to your hand, buddies, herds), by fences and the pen map, and
+  when things are dropped through arrows into or out of the park.
+- **Scenery**: trees, rocks and flowers are placed the same every time
+  (`PARK_SCENERY`, seeded) and only drawn when on screen; a hedge marks the
+  edges. They're just pictures for now (stage 2 adds food and water).
+- Also fixed along the way: the mouse-wheel listener in `globals.js` is now
+  `passive: false`, so its `preventDefault` works instead of logging an
+  error on every scroll.
 
