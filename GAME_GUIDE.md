@@ -155,8 +155,10 @@ horse.initBehavior("MOVING");              // start walking...
 horse.setTargetPosition(food.x, food.y);   // ...to here
 return true;
 ```
-Many desires rate-limit themselves with `performance.now()`, which counts
-**real** time, not game time.
+Many desires rate-limit themselves with timers. Always use `gameTimeMs()`
+(from globals.js) for these, never `performance.now()` or `Date.now()`:
+`gameTimeMs()` follows the game clock, so it pauses with the game, would
+speed up with a fast-forward button, and makes the tests repeatable.
 
 ### States (what the body is doing)
 `horse.currentStateKey` is one of: `IDLE`, `MOVING`, `RUNNING`, `EATING`,

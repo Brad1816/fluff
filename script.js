@@ -1474,7 +1474,7 @@ function updateSimulation(dt) {
   updateDoorMessages(dt);
 
   // Update Fluffies and handle deaths
-  const now = Date.now();
+  const now = gameTimeMs();
   if (typeof prepareFenceCollisions === "function") prepareFenceCollisions();
   for (let i = fluffies.length - 1; i >= 0; i--) {
     const f = fluffies[i];

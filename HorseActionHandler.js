@@ -421,7 +421,7 @@ class HorseActionHandler {
 
     // Small cooldown to prevent instant normal/special huggies
     this.horse.specialHuggiesCooldown = 5;
-    this.horse.lastBabbleTime = Date.now();
+    this.horse.lastBabbleTime = gameTimeMs();
 
     this.horse.speak(getDialogue(proposeKey, this.horse, target));
     this.horse.speech.nextTime = 2 + Math.random();

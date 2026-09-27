@@ -549,9 +549,7 @@ class CareForBabiesDesire extends Desire {
   evaluate(horse) {
     if (horse.isScared || horse.isStacking) return 0;
     let timeSince =
-      typeof performance !== "undefined"
-        ? (performance.now() - this.lastCalledTime) / 1000
-        : 0.5;
+      (gameTimeMs() - this.lastCalledTime) / 1000;
     if (timeSince < 0.5) return 0;
     if (horse.speech.text) return 0; // Currently speaking
     if (horse.growth < 1.0) return 0; // Not adult
@@ -578,7 +576,7 @@ class CareForBabiesDesire extends Desire {
   }
   execute(horse) {
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
     return horse.positioning.scoutForBabies();
   }
 }
@@ -866,7 +864,7 @@ class SeekSpecialFriendDesire extends Desire {
   constructor() {
     super("SeekSpecialFriend");
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
   }
   evaluate(horse) {
     if (horse.isScared || horse.isStacking) return 0;
@@ -878,9 +876,7 @@ class SeekSpecialFriendDesire extends Desire {
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 0;
 
     let timeSince =
-      typeof performance !== "undefined"
-        ? (performance.now() - this.lastCalledTime) / 1000
-        : 30;
+      (gameTimeMs() - this.lastCalledTime) / 1000;
     if (timeSince < 0.5) return 0;
 
     const friend = horse.positioning.findSpecialFriend(false);
@@ -898,7 +894,7 @@ class SeekSpecialFriendDesire extends Desire {
   execute(horse) {
     if (!this.target || this.target.isPregnant) return false;
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
     horse.initBehavior("MOVING");
     horse.setTargetPosition(this.target.x, this.target.y);
     return true;
@@ -909,7 +905,7 @@ class MateDesire extends Desire {
   constructor() {
     super("Mate");
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
   }
   evaluate(horse) {
     if (horse.isScared || horse.isStacking) return 0;
@@ -924,9 +920,7 @@ class MateDesire extends Desire {
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 0;
 
     let timeSince =
-      typeof performance !== "undefined"
-        ? (performance.now() - this.lastCalledTime) / 1000
-        : 30;
+      (gameTimeMs() - this.lastCalledTime) / 1000;
     if (timeSince < 0.5) return 0;
 
     const friend = horse.positioning.findSpecialFriend();
@@ -949,7 +943,7 @@ class MateDesire extends Desire {
     if (!this.target || !placedOnValidForSpecialHuggies(this.target.placedOn))
       return false;
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
     return horse.actionHandler.executeMateWithSpecialFriend(this.target);
   }
 }
@@ -1034,14 +1028,14 @@ class BabbleToFriendsDesire extends Desire {
     }
     if (
       horse.lastBabbleTime &&
-      Date.now() - horse.lastBabbleTime < 2000 + Math.random() * 3000
+      gameTimeMs() - horse.lastBabbleTime < 2000 + Math.random() * 3000
     ) {
       return 0;
     }
     return 32;
   }
   execute(horse) {
-    horse.lastBabbleTime = Date.now();
+    horse.lastBabbleTime = gameTimeMs();
     return horse.actionHandler.executeBabbleToFriends();
   }
 }
@@ -1050,9 +1044,7 @@ class RandomBabbleDesire extends Desire {
   constructor() {
     super("RandomBabble");
     this.lastCalledTime =
-      typeof performance !== "undefined"
-        ? performance.now() - Math.random() * 5 * 1000
-        : 0;
+      gameTimeMs() - Math.random() * 5 * 1000;
   }
   evaluate(horse) {
     if (horse.sleepingOrTargetSet() || horse.isStacking) return 0;
@@ -1066,18 +1058,14 @@ class RandomBabbleDesire extends Desire {
       return 0;
     }
     let timeSince =
-      typeof performance !== "undefined"
-        ? (performance.now() - this.lastCalledTime) / 1000
-        : 30;
+      (gameTimeMs() - this.lastCalledTime) / 1000;
     if (timeSince < 15) return 0;
     let intensity = Math.min(1, (timeSince - 15) / 15);
     return intensity * 33;
   }
   execute(horse) {
     this.lastCalledTime =
-      typeof performance !== "undefined"
-        ? performance.now() - Math.random() * 5 * 1000
-        : 0;
+      gameTimeMs() - Math.random() * 5 * 1000;
     return horse.randomBabble();
   }
 }
@@ -1140,9 +1128,7 @@ class WanderDesire extends Desire {
     super("Wander");
     this.targetTime = 5 + Math.random() * 15;
     this.lastCalledTime =
-      typeof performance !== "undefined"
-        ? performance.now() - Math.random() * this.targetTime * 1000
-        : 0;
+      gameTimeMs() - Math.random() * this.targetTime * 1000;
   }
   evaluate(horse) {
     if (horse.isScared || horse.isStacking) return 0;
@@ -1153,9 +1139,7 @@ class WanderDesire extends Desire {
       score = 40;
     } else {
       let timeSince =
-        typeof performance !== "undefined"
-          ? (performance.now() - this.lastCalledTime) / 1000
-          : this.targetTime;
+        (gameTimeMs() - this.lastCalledTime) / 1000;
       if (timeSince >= this.targetTime) {
         score = 45;
       }
@@ -1173,7 +1157,7 @@ class WanderDesire extends Desire {
   }
   execute(horse) {
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
     this.targetTime = 5 + Math.random() * 15;
     let magX = Math.random() * 1000 + 150;
     let magY = Math.random() * 1000 + 150;
@@ -1223,9 +1207,7 @@ class SitDesire extends Desire {
     super("Sit");
     this.targetTime = 5 + Math.random() * 15;
     this.lastCalledTime =
-      typeof performance !== "undefined"
-        ? performance.now() - Math.random() * this.targetTime * 1000
-        : 0;
+      gameTimeMs() - Math.random() * this.targetTime * 1000;
   }
   evaluate(horse) {
     if (horse.sleepingOrTargetSet() || horse.isStacking) return 0;
@@ -1246,15 +1228,13 @@ class SitDesire extends Desire {
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 0;
 
     let timeSince =
-      typeof performance !== "undefined"
-        ? (performance.now() - this.lastCalledTime) / 1000
-        : this.targetTime;
+      (gameTimeMs() - this.lastCalledTime) / 1000;
     if (timeSince < this.targetTime) return 0;
     return 45;
   }
   execute(horse) {
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
     this.targetTime = 5 + Math.random() * 15;
     if (horse.currentStateKey !== "SITTING") {
       horse.initBehavior("SITTING");
@@ -1268,16 +1248,12 @@ class LieDownDesire extends Desire {
     super("LieDown");
     this.targetTime = 5 + Math.random() * 15;
     this.lastCalledTime =
-      typeof performance !== "undefined"
-        ? performance.now() - Math.random() * this.targetTime * 1000
-        : 0;
+      gameTimeMs() - Math.random() * this.targetTime * 1000;
   }
   evaluate(horse) {
     if (horse.sleepingOrTargetSet() || horse.isStacking) return 0;
     let timeSince =
-      typeof performance !== "undefined"
-        ? (performance.now() - this.lastCalledTime) / 1000
-        : this.targetTime;
+      (gameTimeMs() - this.lastCalledTime) / 1000;
     if (timeSince < this.targetTime) return 0;
 
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 100;
@@ -1291,7 +1267,7 @@ class LieDownDesire extends Desire {
   }
   execute(horse) {
     this.lastCalledTime =
-      typeof performance !== "undefined" ? performance.now() : 0;
+      gameTimeMs();
     this.targetTime = 5 + Math.random() * 15;
     if (horse.currentStateKey !== "LYING") {
       horse.initBehavior("LYING");

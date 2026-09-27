@@ -615,6 +615,13 @@ let savePreviewCache = new Map();
 let currentPauseScreenshot = null;
 let timePlayed = 0;
 
+// The game clock in milliseconds. Use this (not performance.now() or
+// Date.now()) for anything that should follow game time: it stops when the
+// game is paused and would speed up with a game-speed setting.
+function gameTimeMs() {
+  return timePlayed * 1000;
+}
+
 function formatTimePlayed(totalSeconds) {
   if (isNaN(totalSeconds) || totalSeconds < 0) totalSeconds = 0;
   const total = Math.floor(totalSeconds);
@@ -728,7 +735,7 @@ function changeScene(newScene) {
       typeof fluffies !== "undefined" &&
       typeof getDialogue !== "undefined"
     ) {
-      const now = Date.now();
+      const now = gameTimeMs();
       for (const f of fluffies) {
         if (
           f.isAlive &&

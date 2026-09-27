@@ -52,7 +52,7 @@ class Thumbtack {
 
           if (overlapX && overlapY) {
             currentInZone.add(f.id);
-            const now = Date.now ? Date.now() : +new Date();
+            const now = gameTimeMs();
             const cooldownMs =
               (typeof THUMBTACK_COOLDOWN !== "undefined"
                 ? THUMBTACK_COOLDOWN
@@ -110,7 +110,7 @@ class Thumbtack {
     const overlapY = fBottom >= tackBounds.top && fTop <= tackBounds.bottom;
 
     if (overlapX && overlapY) {
-      const now = Date.now ? Date.now() : +new Date();
+      const now = gameTimeMs();
       const cooldownMs =
         (typeof THUMBTACK_COOLDOWN !== "undefined" ? THUMBTACK_COOLDOWN : 1.5) *
         1000;

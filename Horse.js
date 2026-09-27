@@ -281,7 +281,7 @@ class Horse {
     this.stateTimer = 0;
     this.targetX = this.x;
     this.targetY = this.y;
-    this.lastSeenPlayerTime = Date.now();
+    this.lastSeenPlayerTime = gameTimeMs();
     this.perceivedRelationships = {}; // otherId -> { state: 'current'|'lost'|'forgotten'|'dead', timer: seconds }
     this.matingState = {
       isMating: false,
@@ -1015,6 +1015,16 @@ class Horse {
         (f) => f.id == otherId && f.isAlive && f.scene === this.scene,
       );
       if (relation === "estranged_child") {
+        continue;
+      }
+
+      // Not with someone on the other side of a fence: that's handled by
+      // the sad "pen feelings" in Fence.js instead of a happy chat
+      if (
+        other &&
+        typeof canFluffiesReachEachOther === "function" &&
+        !canFluffiesReachEachOther(this, other)
+      ) {
         continue;
       }
 
@@ -3001,7 +3011,7 @@ class Horse {
             ) {
               let text = null;
               const recent = recentOutdoorDialogue.filter(
-                (d) => Date.now() - d.time < 10000,
+                (d) => gameTimeMs() - d.time < 10000,
               );
 
               let key = null;
