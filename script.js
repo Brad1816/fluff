@@ -1681,6 +1681,8 @@ function render() {
   }
   renderPuddles(osCtx);
   drawForegroundBackground(osCtx);
+  // Shopping street shop front and store shelves (Store.js)
+  if (typeof drawStoreScenery === "function") drawStoreScenery(osCtx);
   drawDoorBackground(osCtx);
 
   // Filter visible renderables
@@ -1874,6 +1876,8 @@ function render() {
   ctx.drawImage(offScreenCanvas, 0, 0);
 
   drawPortals();
+  // Store shelf hover highlight (Store.js)
+  if (typeof drawStoreOverlay === "function") drawStoreOverlay(ctx);
   drawUI(ctx);
 
   if (gameState === "PAUSED") {

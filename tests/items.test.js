@@ -5,19 +5,15 @@ const { check } = require("./helpers");
 
 // Code that runs inside the game page, shared by the tests below
 const PAGE_HELPERS = () => {
-  // Click a shop button, exactly like the player would
+  // Walk into the right store aisle and click the shelf, like the player would
   window.__buy = (action) => {
-    itemMenuFilter = action.name;
-    itemMenuPage = 0;
-    const list = SPAWN_ACTIONS.filter((a) =>
-      a.name.toLowerCase().startsWith(action.name.toLowerCase()),
-    );
-    const i = list.indexOf(action);
-    mouse.x = 30 + (i % 7) * 45;
-    mouse.y = 140 + Math.floor(i / 7) * 45;
+    const aisle = getStoreAisleForAction(action);
+    const slot = getStoreShelfLayout(aisle).slots.find((s) => s.action === action);
+    changeScene(aisle.scene);
+    mouse.x = slot.iconX;
+    mouse.y = slot.iconY;
     mouse.rightDown = false;
-    actionButtonsClick();
-    itemMenuFilter = "";
+    storeShelfClick();
   };
   // Shop entries that are world items (not tools, not fluffies)
   window.__worldActions = () =>
@@ -66,13 +62,14 @@ module.exports = [
         const problems = [];
         for (const a of __worldActions()) {
           __clearScene();
+          __clearScene(getStoreAisleForAction(a).scene);
           money = 1000000;
           if (!getItemTypeForAction(a)) {
             problems.push(`${a.name}: no entry in ItemRegistry.js`);
             continue;
           }
           __buy(a);
-          const made = objects.filter((o) => o.scene === "INDOORS");
+          const made = objects.filter((o) => o.scene === currentScene);
           const spent = 1000000 - money;
           if (spent !== a.cost) problems.push(`${a.name}: cost $${spent}, shop says $${a.cost}`);
           if (made.length !== 1) {

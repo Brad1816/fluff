@@ -1553,16 +1553,20 @@ function drawUI(ctx) {
   const toggleBtnX = 10;
   const toggleBtnY = 50;
 
-  const text = showActionButtons ? "Hide Menu" : "Show Menu";
-  drawGlassButton(toggleBtnX, toggleBtnY, toggleBtnW, toggleBtnH, text, {
-    fontSize: 14,
-    borderRadius: 8,
-  });
+  // The item menu is only there in debug mode (see isItemMenuAvailable)
+  const menuAvailable = isItemMenuAvailable();
+  if (menuAvailable) {
+    const text = showActionButtons ? "Hide Menu" : "Show Menu";
+    drawGlassButton(toggleBtnX, toggleBtnY, toggleBtnW, toggleBtnH, text, {
+      fontSize: 14,
+      borderRadius: 8,
+    });
+  }
 
-  // Chat Log Button
+  // Chat Log Button (takes the menu button's place when there's no menu)
   const chatLogBtnW = 90;
   const chatLogBtnH = 30;
-  const chatLogBtnX = toggleBtnX + toggleBtnW + 5;
+  const chatLogBtnX = menuAvailable ? toggleBtnX + toggleBtnW + 5 : toggleBtnX;
   const chatLogBtnY = toggleBtnY;
 
   drawGlassButton(
@@ -1579,7 +1583,7 @@ function drawUI(ctx) {
     },
   );
 
-  if (showActionButtons) {
+  if (showActionButtons && menuAvailable) {
     // Filter Button
     const filterBtnW = 200;
     const filterBtnH = 30;
@@ -1671,34 +1675,14 @@ function drawUI(ctx) {
         });
 
         // Shop button picture (ItemRegistry.js: `icon` / `drawIcon`)
-        const shopIcon = getShopIcon(action);
-        const imgKey = shopIcon.imageKey;
-
-        if (
-          imgKey &&
-          typeof images !== "undefined" &&
-          images[imgKey] &&
-          images[imgKey].complete
-        ) {
-          const img = images[imgKey];
-          ctx.save();
-          const scale = Math.min(
-            (btnSize * 0.5) / img.width,
-            (btnSize * 0.5) / img.height,
-          );
-          ctx.translate(bx + btnSize / 2, by + btnSize * 0.4);
-          ctx.scale(scale, scale);
-          ctx.globalAlpha = disabled ? 0.3 : 1.0;
-          ctx.drawImage(img, -img.width / 2, -img.height / 2);
-          ctx.restore();
-        } else {
-          ctx.save();
-          ctx.translate(bx + btnSize / 2, by + btnSize * 0.4);
-          if (disabled) ctx.globalAlpha = 0.3;
-          if (shopIcon.draw) shopIcon.draw(ctx, btnSize);
-          else buyMenuSprite(ctx, action, btnSize);
-          ctx.restore();
-        }
+        drawShopActionIcon(
+          ctx,
+          action,
+          bx + btnSize / 2,
+          by + btnSize * 0.4,
+          btnSize * 0.5,
+          disabled,
+        );
 
         if (isPointInRect(mouse.x, mouse.y, bx, by, btnSize, btnSize)) {
           hoveredAction = action;
@@ -1707,54 +1691,7 @@ function drawUI(ctx) {
     });
 
     if (hoveredAction) {
-      ctx.font = "bold 12px Arial";
-      const padding = 10;
-      const maxTextWidth = 250;
-      const lines = wrapText(ctx, hoveredAction.desc, maxTextWidth);
-      if (
-        typeof isToolAlreadyOwned === "function" &&
-        isToolAlreadyOwned(hoveredAction)
-      ) {
-        lines.push("(Already owned)");
-      }
-
-      let descWidth = 0;
-      lines.forEach((line) => {
-        descWidth = Math.max(descWidth, ctx.measureText(line).width);
-      });
-
-      const costWidth = ctx.measureText(`Cost: $${hoveredAction.cost}`).width;
-      const textWidth = Math.max(descWidth, costWidth);
-
-      const lineHeight = 16;
-      const tw = textWidth + padding * 2;
-      const th = lines.length * lineHeight + 40; // description lines + cost + padding
-      const tx = clamp(mouse.x + 10, 0, width - tw - 10);
-      const ty = clamp(mouse.y + 10, 0, height - th - 10);
-
-      drawGlassButton(tx, ty, tw, th, "", {
-        forceNormal: true,
-        borderRadius: 8,
-        normalFill: "rgba(0, 0, 0, 0.5)",
-        hoverFill: "rgba(255, 255, 255, 0.75)",
-      });
-
-      ctx.textAlign = "left";
-      ctx.lineWidth = 2;
-      ctx.lineJoin = "round";
-
-      lines.forEach((line, i) => {
-        ctx.strokeStyle = "black";
-        ctx.strokeText(line, tx + padding, ty + 20 + i * lineHeight);
-        ctx.fillStyle = "white";
-        ctx.fillText(line, tx + padding, ty + 20 + i * lineHeight);
-      });
-
-      const costY = ty + 20 + lines.length * lineHeight + 10;
-      ctx.strokeStyle = "black";
-      ctx.strokeText(`Cost: $${hoveredAction.cost}`, tx + padding, costY);
-      ctx.fillStyle = "gold";
-      ctx.fillText(`Cost: $${hoveredAction.cost}`, tx + padding, costY);
+      drawShopTooltip(ctx, hoveredAction);
     }
   } else if (showChatLog) {
     drawChatLogPanel(ctx, toggleBtnY + toggleBtnH + 5);
@@ -1768,7 +1705,7 @@ function drawUI(ctx) {
       "• Click a fluffy or item to drag it. Click again to release it.",
       "• While dragging a fluffy, click on the door/arrow or press WASD to move it to the other side.",
       "• Shift click a placed item or a Fluffy to sell it.",
-      "• Hover over the action buttons in the top left to see what they do.",
+      "• Buy supplies at Fluff Mart: out the front door, then down to Shopping Street.",
       "• Press N to toggle Fluffy names. Press B to toggle bed owner names.",
       "• Press 0-9 to select a tool while you have it in your inventory.",
     ];
@@ -3328,18 +3265,175 @@ function drawChatLogPanel(ctx, panelY) {
   ctx.restore();
 }
 
+// ---------------------------------------------------------------------------
+// Buying something from the shop list (SPAWN_ACTIONS in globals.js).
+// Used by the store shelves (Store.js) and the debug-mode item menu.
+//   Tools go into the toolbox. World items are made at (sx, sy) in the
+//   current scene (options.exactSpot: even items that normally appear in
+//   the middle of the room). Returns the thing bought, or null.
+//   With the debug menu on, everything is free.
+// ---------------------------------------------------------------------------
+function buyShopAction(action, sx, sy, options = {}) {
+  const free = showDebugMenu;
+  const say = (msg) => {
+    if (options.quiet !== true && typeof addUIMessage === "function")
+      addUIMessage(msg);
+  };
+
+  if (typeof isToolAction === "function" && isToolAction(action)) {
+    if (typeof isToolAlreadyOwned === "function" && isToolAlreadyOwned(action)) {
+      say("You already own this tool.");
+      return null;
+    }
+    if (!free && money < action.cost) {
+      say("Not enough money!");
+      return null;
+    }
+    const tool = createToolFromAction(action);
+    if (!tool) return null;
+    if (!free) money -= action.cost;
+    addToolToToolbox(tool);
+    return tool;
+  }
+
+  if (!free && money < action.cost) {
+    say("Not enough money!");
+    return null;
+  }
+
+  // World items are described in ItemRegistry.js
+  const itemType = getItemTypeForAction(action);
+  if (itemType) {
+    if (!free) money -= action.cost;
+    const obj = itemType.create(action, sx, sy);
+    objects.push(obj);
+    if (itemType.afterCreate) itemType.afterCreate(obj);
+    // Some items normally appear in the middle of the room; the store wants
+    // everything at (sx, sy) on the floor (unless it's stuck to the mouse)
+    if (options.exactSpot && !obj.isDragging) {
+      if (typeof obj.setPosition === "function") obj.setPosition(sx, sy);
+      else {
+        obj.x = sx;
+        obj.y = sy;
+      }
+    }
+    const px = itemType.poofAtMouse ? mouse.x : obj.x;
+    const py = itemType.poofAtMouse ? mouse.y : obj.y;
+    poofs.push(new Poof(px, py, currentScene));
+    return obj;
+  }
+
+  // Anything else in the shop is a fluffy
+  if (!free) money -= action.cost;
+  const h = new Horse(action.growth, null, currentScene, action.type);
+  h.x = sx;
+  h.y = sy;
+  fluffies.push(h);
+  poofs.push(new Poof(sx, sy, currentScene));
+  return h;
+}
+
+// The item menu in the top left is only for the debug menu now; in normal
+// play things are bought at the store (Store.js).
+function isItemMenuAvailable() {
+  return showDebugMenu;
+}
+
+// Shop picture for an action, centred on (cx, cy), fitting in a box
+// size wide and sizeH tall (square if sizeH is left out)
+function drawShopActionIcon(c, action, cx, cy, size, disabled = false, sizeH = size) {
+  const shopIcon = getShopIcon(action);
+  const imgKey = shopIcon.imageKey;
+  c.save();
+  if (disabled) c.globalAlpha = 0.3;
+  if (
+    imgKey &&
+    typeof images !== "undefined" &&
+    images[imgKey] &&
+    images[imgKey].complete &&
+    images[imgKey].width > 0
+  ) {
+    const img = images[imgKey];
+    const scale = Math.min(size / img.width, sizeH / img.height);
+    c.translate(cx, cy);
+    c.scale(scale, scale);
+    c.drawImage(img, -img.width / 2, -img.height / 2);
+  } else {
+    // Drawn icons are made for a 40px button (about 30px across)
+    c.translate(cx, cy);
+    const k = Math.min(size, sizeH) / 30;
+    c.scale(k, k);
+    if (shopIcon.draw) shopIcon.draw(c, 40);
+    else buyMenuSprite(c, action, 40);
+  }
+  c.restore();
+}
+
+// The description + price box shown when hovering a shop item
+function drawShopTooltip(c, action, extraLines = []) {
+  c.font = "bold 12px Arial";
+  const padding = 10;
+  const maxTextWidth = 250;
+  const lines = wrapText(c, action.desc || action.name, maxTextWidth);
+  if (typeof isToolAlreadyOwned === "function" && isToolAlreadyOwned(action)) {
+    lines.push("(Already owned)");
+  }
+  lines.push(...extraLines);
+
+  let descWidth = 0;
+  lines.forEach((line) => {
+    descWidth = Math.max(descWidth, c.measureText(line).width);
+  });
+
+  const costText = `Cost: $${action.cost}`;
+  const costWidth = c.measureText(costText).width;
+  const textWidth = Math.max(descWidth, costWidth);
+
+  const lineHeight = 16;
+  const tw = textWidth + padding * 2;
+  const th = lines.length * lineHeight + 40;
+  const tx = clamp(mouse.x + 10, 0, width - tw - 10);
+  const ty = clamp(mouse.y + 10, 0, height - th - 10);
+
+  drawGlassButton(tx, ty, tw, th, "", {
+    forceNormal: true,
+    borderRadius: 8,
+    normalFill: "rgba(0, 0, 0, 0.5)",
+    hoverFill: "rgba(255, 255, 255, 0.75)",
+  });
+
+  c.textAlign = "left";
+  c.lineWidth = 2;
+  c.lineJoin = "round";
+
+  lines.forEach((line, i) => {
+    c.strokeStyle = "black";
+    c.strokeText(line, tx + padding, ty + 20 + i * lineHeight);
+    c.fillStyle = "white";
+    c.fillText(line, tx + padding, ty + 20 + i * lineHeight);
+  });
+
+  const costY = ty + 20 + lines.length * lineHeight + 10;
+  c.strokeStyle = "black";
+  c.strokeText(costText, tx + padding, costY);
+  c.fillStyle = "gold";
+  c.fillText(costText, tx + padding, costY);
+}
+
 function actionButtonsClick() {
   const toggleBtnW = 90;
   const toggleBtnH = 30;
   const toggleBtnX = 10;
   const toggleBtnY = 50;
 
+  const menuAvailable = isItemMenuAvailable();
   const chatLogBtnW = 90;
   const chatLogBtnH = 30;
-  const chatLogBtnX = toggleBtnX + toggleBtnW + 5;
+  const chatLogBtnX = menuAvailable ? toggleBtnX + toggleBtnW + 5 : toggleBtnX;
   const chatLogBtnY = toggleBtnY;
 
   if (
+    menuAvailable &&
     isPointInRect(
       mouse.x,
       mouse.y,
@@ -3386,7 +3480,7 @@ function actionButtonsClick() {
     }
   }
 
-  if (showActionButtons) {
+  if (showActionButtons && menuAvailable) {
     // Check Filter Button click
     const filterBtnW = 200;
     const filterBtnH = 30;
@@ -3465,52 +3559,9 @@ function actionButtonsClick() {
           return true;
         }
 
-        if (typeof isToolAction === "function" && isToolAction(action)) {
-          if (
-            typeof isToolAlreadyOwned === "function" &&
-            isToolAlreadyOwned(action)
-          ) {
-            if (typeof addUIMessage === "function") {
-              addUIMessage("You already own this tool.");
-            }
-            return true;
-          }
-          if (showDebugMenu || money >= action.cost) {
-            if (!showDebugMenu) money -= action.cost;
-            const tool = createToolFromAction(action);
-            if (tool) {
-              addToolToToolbox(tool);
-            }
-          }
-          return true;
-        }
-
-        if (showDebugMenu || money >= action.cost) {
-          const sx = width / 2 + (Math.random() - 0.5) * 200;
-          const sy = height / 2 + (Math.random() - 0.5) * 100;
-
-          // World items are described in ItemRegistry.js
-          const itemType = getItemTypeForAction(action);
-          if (itemType) {
-            if (!showDebugMenu) money -= action.cost;
-            const obj = itemType.create(action, sx, sy);
-            objects.push(obj);
-            if (itemType.afterCreate) itemType.afterCreate(obj);
-            const px = itemType.poofAtMouse ? mouse.x : obj.x;
-            const py = itemType.poofAtMouse ? mouse.y : obj.y;
-            poofs.push(new Poof(px, py, currentScene));
-            return true;
-          } else {
-            // Anything else in the shop is a fluffy
-            if (!showDebugMenu) money -= action.cost;
-            const h = new Horse(action.growth, null, currentScene, action.type);
-            h.x = sx;
-            h.y = sy;
-            fluffies.push(h);
-          }
-
-          poofs.push(new Poof(sx, sy, currentScene));
-        }
+        const sx = width / 2 + (Math.random() - 0.5) * 200;
+        const sy = height / 2 + (Math.random() - 0.5) * 100;
+        buyShopAction(action, sx, sy);
         return true;
       }
     }
@@ -3596,6 +3647,11 @@ canvas.addEventListener("mousedown", (e) => {
   }
 
   if (debugMenuClick()) {
+    return;
+  }
+
+  // Buying from a store shelf (Store.js)
+  if (typeof storeShelfClick === "function" && storeShelfClick()) {
     return;
   }
 
@@ -4088,6 +4144,12 @@ function playerQuartersAndNotBackyard(scene) {
 function getScenePortals(scene) {
   const portals = [];
 
+  // The shopping street and store aisles are set up in Store.js
+  if (typeof getStorePortals === "function") {
+    const storePortals = getStorePortals(scene);
+    if (storePortals) return storePortals;
+  }
+
   // Indoor Expansion Logic
   if (scene && playerQuartersAndNotBackyard(scene)) {
     let isMain = scene === "INDOORS";
@@ -4207,6 +4269,16 @@ function getScenePortals(scene) {
       h: 80,
       target: "ALLEY",
       label: "To Alley",
+    });
+    // Down Arrow -> SHOP_STREET (the store, Store.js)
+    portals.push({
+      type: "arrow_down",
+      x: width / 2 - 40,
+      y: height - 80,
+      w: 80,
+      h: 60,
+      target: "SHOP_STREET",
+      label: "To Shopping Street",
     });
   } else if (scene === "RIVER") {
     // Right Arrow -> OUTDOORS

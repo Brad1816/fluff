@@ -47,8 +47,9 @@ and it runs. About 36,000 lines across ~60 files.
 | `index.html` | Loads every script, in order. **New files must be added here.** |
 | `globals.js` | Shared setup and settings: scene definitions (`SCENES`), mouse/keyboard state, the master lists, money, lots of tuning constants (happiness bonuses/penalties, thresholds), **the shop list `SPAWN_ACTIONS`**, accessories (`ACCESSORY_DB`), the tool/toolbox system, `WorldSettings` (the "Headcanon" options), helper functions (`clamp`, `lerp`, `isPointInRect`, `changeScene`, `handleDropping`, `setRelationship`). |
 | `script.js` | The **main loop** (`animate` → `updateSimulation` → `render`), feral spawning (`spawnFeralGroup`, `updateFerals`), sell offers, day care ageing, cars, **what happens when you click while holding something** (`attemptDrop`: using the stick/knife/brush etc. on a fluffy), keyboard shortcuts, startup. |
-| `UI.js` | Everything drawn on top of the world and most clicking: the shop buttons, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
+| `UI.js` | Everything drawn on top of the world and most clicking: `buyShopAction` (buying anything from `SPAWN_ACTIONS`), the debug-mode item menu, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** happens in `handleWorldSettingsClick` (it resets everything in `SAVED_GAME_STATE`). |
+| `Store.js` | **Fluff Mart**: the Shopping Street scene (down from the garden), the store's aisle scenes, which items go in which aisle (`STORE_AISLES`), drawing the shelves and price tags, and buying by clicking a shelf. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -268,7 +269,9 @@ or `Fence.js` as a template:
 2. **`index.html`**: add `<script src="MyThing.js"></script>` **before** `ItemRegistry.js`.
 3. **Images**: put PNGs in `assets/` and add them to `imageSources` in `image_loader.js`.
 4. **Shop**: add an entry to `SPAWN_ACTIONS` in `globals.js`
-   (`name`, `desc`, `cost`, `isItem: "my_thing"`).
+   (`name`, `desc`, `cost`, `isItem: "my_thing"`), and put `"my_thing"` in
+   one of the aisles' `items` lists in `STORE_AISLES` (`Store.js`). If you
+   forget, it shows up in an extra "Odds & Ends" aisle at the end.
 5. **Registry**: in `ItemRegistry.js` add one entry to `ITEM_TYPES`, e.g.
    ```js
    {
@@ -285,7 +288,7 @@ That's all: buying, the sell tooltip, shift-click selling, picking up and
 saving/loading all read from the registry. Optional extras, also in the
 registry entry (all explained at the top of `ItemRegistry.js`):
 - `onRightClick(obj)`: what right-clicking it does (e.g. `(tv) => tv.nextChannel()`)
-- `icon: "image_key"` or `drawIcon(ctx, btnSize)`: its shop button picture
+- `icon: "image_key"` or `drawIcon(ctx, btnSize)`: its picture on the store shelf
 - `inCage: "never"`: stop it being dropped into cages
 - `canPickUp`, `onSell`, `usedUp`, `afterCreate`, `shopItem`, `poofAtMouse`
 
@@ -437,3 +440,32 @@ how mean it is to poopie fluffies; hidden when colorism is off in world
 settings), spayed/pregnant, missing parts, conditions (poisoned,
 toxoplasmosis, diarrhea, blindfolded, castration band, vaccinated...), and
 what it would sell for. Dead fluffies show cause of death instead of needs.
+
+### Fluff Mart, the store (`Store.js`)
+Things are bought at a store instead of from a menu.
+- **Getting there**: garden (outside the front door) → down arrow →
+  **Shopping Street** (`SHOP_STREET`) → store door → the aisles. The
+  "Back to Garden" arrow is at the top right of the street.
+- **Aisles**: each is its own scene, `STORE_FOOD`, `STORE_HOME`,
+  `STORE_CARE`, `STORE_PHARMACY`, `STORE_HARDWARE`, `STORE_FASHION`
+  (+ `STORE_MISC` "Odds & Ends" if anything isn't listed), with left/right
+  arrows between them and a down arrow back out to the street. Which items
+  are in which aisle is the `STORE_AISLES` list at the top of `Store.js`,
+  by the shop entry's `isItem`.
+- **Shelves**: `getStoreShelfLayout(aisle)` works out where each item sits
+  (3 shelves, as many columns as needed). `drawStoreAisle` draws the floor,
+  sign, shelves, pictures and price tags (green = affordable, red = too
+  expensive, "Owned" for tools you have). `drawStoreOverlay` draws the
+  hover highlight and description.
+- **Buying**: `storeShelfClick` (called from the `mousedown` handler) calls
+  `buyShopAction` in `UI.js`, the same code the debug item menu uses.
+  World items land on the floor in front of the shelves; tools go straight
+  into the toolbox; fence pieces stick to the mouse as usual.
+- **Carrying things home**: pick the item up, then walk with WASD (S out
+  of the store, W back to the garden, W in the front door). Clicking an
+  arrow while holding something *throws it through* to the next area
+  instead of walking with it (that's the game's normal behaviour).
+- **The old item menu** in the top left only appears with the debug menu
+  on (`isItemMenuAvailable()` in `UI.js`), where spawning is free.
+- The store scenes aren't "player quarters", so you can't sell things there.
+

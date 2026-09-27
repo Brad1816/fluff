@@ -36,8 +36,9 @@ npm test -- fence
 | File | What it checks |
 |---|---|
 | `smoke.test.js` | The game starts, runs for a while without errors, saves and loads, family chat lines |
-| `items.test.js` | Every shop item: can be bought, sells for half price, can be picked up, survives save/load (uses `ItemRegistry.js`, so new items are tested automatically) |
+| `items.test.js` | Every shop item: can be bought at the store, sells for half price, can be picked up, survives save/load (uses `ItemRegistry.js`, so new items are tested automatically) |
 | `fences.test.js` | Pens hold fluffies in and out, gates work, pen-aware fluffies, pen sadness, buying/turning/selling fence pieces |
+| `store.test.js` | Fluff Mart: every item is on a shelf once, walking there, buying, carrying things home with WASD, tools to the toolbox, not enough money, purchases land on the floor, the old menu is debug-only |
 | `inspect.test.js` | The magnifying glass panel shows litter training, poopie colours, personality and age (set `INSPECT_SHOTS=folder` to save screenshots) |
 | `run-tests.js` | Runs everything (starts a small web server and the hidden browser) |
 | `helpers.js` | Shared bits: `check`, `checkEqual`, `buildPen` |

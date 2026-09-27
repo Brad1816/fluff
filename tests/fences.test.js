@@ -211,14 +211,26 @@ module.exports = [
         fluffies.forEach((f) => (f.scene = "OUTDOORS"));
         __clearScene();
       });
-      // Buy a fence (it sticks to the mouse) and place it
-      await page.evaluate(() => (itemMenuFilter = "Fence"));
-      await page.mouse.click(30, 140);
+      // Buy a piece at the store (it sticks to the mouse) and carry it home:
+      // S = out of the store, W = back to the garden, W = in the front door
+      const buyAndCarryHome = async (name) => {
+        const spot = await page.evaluate((name) => {
+          const action = SPAWN_ACTIONS.find((a) => a.name === name);
+          const aisle = getStoreAisleForAction(action);
+          const slot = getStoreShelfLayout(aisle).slots.find((s) => s.action === action);
+          changeScene(aisle.scene);
+          return { x: slot.iconX, y: slot.iconY };
+        }, name);
+        await page.mouse.move(spot.x, spot.y);
+        await page.mouse.click(spot.x, spot.y);
+        for (const key of ["KeyS", "KeyW", "KeyW"]) await page.keyboard.press(key);
+      };
+      await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
+      await buyAndCarryHome("Fence");
       await page.mouse.move(680, 372);
       await page.mouse.click(680, 372);
       // Buy a gate, turn it with R, place it
-      await page.evaluate(() => (itemMenuFilter = "Gate"));
-      await page.mouse.click(30, 140);
+      await buyAndCarryHome("Gate");
       await page.mouse.move(960, 412);
       await page.keyboard.press("KeyR");
       await page.mouse.move(961, 412);
