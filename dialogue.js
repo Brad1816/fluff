@@ -102,6 +102,29 @@ const DIALOGUE = {
     },
   },
 
+  // Bonds and grudges between fluffies (Bonds.js)
+  BOND: {
+    NEW_BUDDY: [
+      "<Target> am <speaker>'s bestest fwen nao!",
+      "<Speaker> an' <target> am bestest fwens foweba!",
+      "Wub <target>! Awways pway togedda!",
+    ],
+    DEFEND: [
+      "NU HUWT <TARGET>! <SPEAKER> PWOTECT!",
+      "Weave <target> awone, meanie!",
+      "<Speaker> hewp <target>!",
+    ],
+    GRUMBLE: [
+      "Hmph... <target> am meanie fwuffy.",
+      "Nu wike <target>... go 'way.",
+      "<Speaker> nu fowget wat <target> did...",
+    ],
+    REFUSE: [
+      "Nu! Nu wan be fwens wif <target>!",
+      "<Target> am meanie! Nu fwens!",
+      "Go 'way <target>!",
+    ],
+  },
   // Memory and trust (Memory.js)
   TRUST: {
     FLEE: [

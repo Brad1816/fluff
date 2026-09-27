@@ -229,7 +229,7 @@ function _handNear(horse, radius) {
 class FleePlayerDesire extends Desire {
   constructor() {
     super("FleePlayer");
-    this.lastTime = 0;
+    this.lastTime = -Infinity;
   }
   evaluate(horse) {
     if (!horse.isAlive || horse.isDragging || horse.placedOn) return 0;
@@ -267,7 +267,7 @@ class SeekPlayerDesire extends Desire {
     // Only if your hand is somewhere on the floor
     if (mouse.y < height * 0.15 + 40 || mouse.y > height - 40) return 0;
     if (_handNear(horse, 120)) return 0; // already there
-    return 30;
+    return 47; // a bit above an idle wander (45) or going to a buddy (46)
   }
   execute(horse) {
     this.lastTime = gameTimeMs();

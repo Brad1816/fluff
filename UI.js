@@ -2185,6 +2185,12 @@ function getFluffyInspectionInfo(f) {
     value: sfId ? fluffyNames[sfId] || "Unnamed fluffy" : "None",
   });
   about.push({ label: "Friends", value: String(friendCount) });
+  // Buddies and grudges with other fluffies (Bonds.js)
+  if (f.isAlive && typeof describeBuddies === "function") {
+    about.push({ label: "Buddies", value: describeBuddies(f), tone: "" });
+    const grudges = describeGrudges(f);
+    about.push({ label: "Grudges", value: grudges, tone: grudges === "None" ? "" : "bad" });
+  }
   // Recent things you did to it (Memory.js)
   if (f.isAlive && typeof describePlayerMemories === "function") {
     about.push({ label: "Remembers", value: describePlayerMemories(f) });

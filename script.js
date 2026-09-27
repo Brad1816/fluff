@@ -1390,6 +1390,8 @@ function updateSimulation(dt) {
   timePlayed += dt;
   // Keep the family record book up to date (FamilyTree.js)
   if (typeof updateFamilyRecords === "function") updateFamilyRecords(dt);
+  // Bonds and grudges between fluffies (Bonds.js)
+  if (typeof updateSocialBonds === "function") updateSocialBonds(dt);
   // Customer orders: new ones, deadlines (Orders.js)
   if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
   updatePuddles(dt);

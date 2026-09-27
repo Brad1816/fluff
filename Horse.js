@@ -226,6 +226,11 @@ class Horse {
       this.brain.addDesire(new FleePlayerDesire());
       this.brain.addDesire(new SeekPlayerDesire());
     }
+    // Bonds and grudges (Bonds.js): hang out with buddies, avoid grudges
+    if (typeof SeekBuddyDesire !== "undefined") {
+      this.brain.addDesire(new SeekBuddyDesire());
+      this.brain.addDesire(new AvoidGrudgeDesire());
+    }
     this.id = nextFluffyId++;
     this.age = 0;
     this.motherId = motherId;
@@ -350,6 +355,9 @@ class Horse {
     this.playerFear = 0;
     this.playerMemories = [];
     this.lastHurtByPlayerAt = null;
+    // What it thinks of other fluffies (Bonds.js)
+    this.opinions = {};
+    this.opinionWhy = {};
     this.nextTapTime = Math.random() * 10; // Initialize random start
 
     this.isPregnant = false;
@@ -1076,6 +1084,7 @@ class Horse {
 
     this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
     other.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
+    if (typeof onFluffiesChatted === "function") onFluffiesChatted(this, other); // Bonds.js
 
     if (key2 == "father" && this.isSmarty()) {
       this.expressionOverride = "ANGRY_PUFFED";
@@ -1870,6 +1879,8 @@ class Horse {
 
     // Target reacts
     target.wasAttackedBy(this);
+    // Grudges, and buddies jumping in (Bonds.js)
+    if (typeof noteFluffyAttack === "function") noteFluffyAttack(this, target, intent);
     target.health -= 10;
     if (target.health <= 0) {
       const attackerName = fluffyNames[this.id] || "Fluffy";
@@ -1882,7 +1893,7 @@ class Horse {
     if (!target.tooYoungToSpeak()) {
       if (intent === "SMARTY_VIOLENCE") {
         target.speak(getDialogue(["HURT", "SMARTY"], target));
-      } else if (intent === "RETALIATION") {
+      } else if (intent === "RETALIATION" || intent === "GRUDGE") {
         target.speak(getDialogue(["HURT"], this));
       } else {
         target.speak(getDialogue(["HURT", "ALICORN_BABY"], target));
@@ -4826,6 +4837,15 @@ class Horse {
       this.typeVisibleToOthers() === "alicorn"
     ) {
       other.positioning.attemptAlicornFear(this, false);
+    } else if (
+      other.canHear() &&
+      typeof refusesFriendshipFrom === "function" &&
+      refusesFriendshipFrom(other, this)
+    ) {
+      // Holds a grudge (Bonds.js)
+      if (!other.tooYoungToSpeak()) other.speak(getDialogue(["BOND", "REFUSE"], other, this));
+      other.expressionOverride = "ANGRY_PUFFED";
+      other.expressionOverrideTimer = 3.0;
     } else if (other.canHear()) {
       other.acceptFriendship(this);
     }
@@ -4840,6 +4860,7 @@ class Horse {
 
     this.friendshipCooldowns[other.id] = 30;
     other.friendshipCooldowns[this.id] = 30;
+    if (typeof onFriendshipMade === "function") onFriendshipMade(this, other);
 
     if (this.happiness > WAN_DIE_THRESHOLD) {
       this.speak(getDialogue("ACCEPT_FRIEND", this));
@@ -4909,6 +4930,7 @@ class Horse {
     const duration = 2 + 4 * Math.random();
     this.initBehavior("HUGGING");
     other.initBehavior("HUGGING");
+    if (typeof onFluffiesHugged === "function") onFluffiesHugged(this, other); // Bonds.js
     this.stateTimer = duration;
     other.stateTimer = duration;
 
@@ -4982,6 +5004,8 @@ class Horse {
       playerFear: this.playerFear,
       playerMemories: JSON.parse(JSON.stringify(this.playerMemories || [])),
       lastHurtByPlayerAt: this.lastHurtByPlayerAt,
+      opinions: { ...(this.opinions || {}) },
+      opinionWhy: { ...(this.opinionWhy || {}) },
       isPregnant: this.isPregnant,
       sexuality: this.sexuality || "heterosexual",
       sensitiveBaby: this.sensitiveBaby,
@@ -5122,6 +5146,9 @@ class Horse {
     if (typeof data.playerFear === "number") horse.playerFear = data.playerFear;
     if (Array.isArray(data.playerMemories)) horse.playerMemories = data.playerMemories;
     if (typeof data.lastHurtByPlayerAt === "number") horse.lastHurtByPlayerAt = data.lastHurtByPlayerAt;
+    // Bonds and grudges (Bonds.js)
+    if (data.opinions && typeof data.opinions === "object") horse.opinions = data.opinions;
+    if (data.opinionWhy && typeof data.opinionWhy === "object") horse.opinionWhy = data.opinionWhy;
     horse.isPregnant = data.isPregnant;
     horse.sexuality = data.sexuality || "heterosexual";
     horse.sensitiveBaby = data.sensitiveBaby || false;

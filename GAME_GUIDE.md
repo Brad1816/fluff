@@ -56,6 +56,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `OrderBoard.js` | Where orders are seen: the **bounty board** on Shopping Street, the **Computer** item (FluffList website), the orders screen with its deliver picker, and the "orders due" reminder. |
 | `Traits.js` | **Personality traits** (brave/timid, social/loner, greedy/picky eater, playful/lazy, grumpy/gentle): which genes, the labels, and how they change behaviour. See section 9. |
 | `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
+| `Bonds.js` | **Bonds and grudges between fluffies**: each fluffy's opinion of the others (`opinions`, `opinionWhy`), `getLiking`, becoming friends by spending time together, defending buddies, avoiding grudges. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -596,7 +597,7 @@ with the fluffy: `playerTrust` (0-1, starts 0.5 at home, 0.35 for ferals),
 - **Trust goes up** from brushing (+0.05, also calms fear a little), eating
   at home, being happy with you around, and being picked up when it
   already loves you. Social fluffies warm up faster.
-- **Behaviour**: `FleePlayerDesire`: scared (fear 0.45+) fluffies back away
+- **Behaviour** (desire scores: flee 62-90, come to you 47): `FleePlayerDesire`: scared (fear 0.45+) fluffies back away
   when your hand comes within 170px. `SeekPlayerDesire`: fluffies that
   love you (trust 0.75+, fear under 0.2) trot over to your hand now and
   then (at most every 45s). `onFluffyPickedUp` (from the mousedown code):
@@ -604,4 +605,30 @@ with the fluffy: `playerTrust` (0-1, starts 0.5 at home, 0.35 for ferals),
   Lines are in `DIALOGUE.TRUST`.
 - **Shown in** the magnifying glass panel ("Feels about you", "Remembers")
   and used by the "Friendly with people" customer order requirement.
+
+### Bonds and grudges between fluffies (`Bonds.js`)
+Each fluffy has `opinions[otherId]` (-1..1) and `opinionWhy[otherId]` (a
+short reason for strong feelings), saved with it. `getLiking(a, b)` adds a
+bonus for family, friends and special friends (`RELATIONSHIP_LIKING`) and
+is the number to use whenever one fluffy "decides" how it feels about
+another.
+- **Goes up**: about +0.07 per minute spent calmly within 130px of each
+  other (`updateSocialBonds`, once a second; social fluffies faster,
+  loners slower; sleeping side by side counts), chatting +0.03, hugging
+  +0.08, becoming friends +0.2. When both like each other enough (0.5 and
+  0.2+) and aren't related, they **become friends by themselves**.
+- **Goes down**: being attacked -0.35 (reason "attacked it"); hitting back
+  -0.1; seeing someone hurt a fluffy you like -0.15 ("hurt its buddy");
+  bystanders think a bit less of bullies (-0.04).
+- **Fades** toward neutral at 0.01 per game minute.
+- **Buddies** (0.5+): `SeekBuddyDesire` walks over to hang out now and then
+  (score 46, every 25-45s); a brave buddy within reach jumps into a fight
+  to defend them half the time (uses the game's `counterattack`).
+- **Grudges** (-0.3 and below): `AvoidGrudgeDesire` walks away (unless
+  very grumpy); being near a grudge makes it unhappy and grumble; friendship
+  offers are refused; a grumpy, not-timid fluffy with a deep grudge (-0.6)
+  may start a scuffle (`performAttack(..., "GRUDGE")`).
+- **Shown in** the magnifying glass panel: "Buddies" and "Grudges".
+- **Herds (future)**: groups of fluffies that all like each other can be
+  found from `getLiking`; that's the planned base for herds.
 

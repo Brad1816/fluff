@@ -492,7 +492,9 @@ class HorseActionHandler {
           const rels = relationships[this.horse.id];
           const isRelated = rels && rels[f.id];
 
-          if (!isRelated) {
+          // Nobody offers friendship to someone they can't stand (Bonds.js)
+          const dislikes = typeof getLiking === "function" && getLiking(this.horse, f) < -0.1;
+          if (!isRelated && !dislikes) {
             this.horse.proposeFriendship(f);
             return true;
           }
@@ -539,6 +541,7 @@ class HorseActionHandler {
         rels[closestFriend.id] === "friend"
       ) {
         this.horse.speak(getDialogue(["HELLO", "FRIEND"], this.horse));
+        if (typeof onFluffiesChatted === "function") onFluffiesChatted(this.horse, closestFriend); // Bonds.js
       }
 
       if (minFriendDist < 50 && Math.random() < 0.3 && this.horse.canSee()) {
