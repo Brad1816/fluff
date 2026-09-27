@@ -50,6 +50,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `UI.js` | Everything drawn on top of the world and most clicking: `buyShopAction` (buying anything from `SPAWN_ACTIONS`), the debug-mode item menu, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** happens in `handleWorldSettingsClick` (it resets everything in `SAVED_GAME_STATE`). |
 | `Store.js` | **Fluff Mart**: the Shopping Street scene (down from the garden), the store's aisle scenes, which items go in which aisle (`STORE_AISLES`), drawing the shelves and price tags, and buying by clicking a shelf. See section 9. |
+| `FamilyTree.js` | **Family record book** (`fluffyRecords`: every fluffy you've owned, even after it dies or is sold, with its genes and parents) and the **family tree screen** with its genetics panel. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -468,4 +469,32 @@ Things are bought at a store instead of from a menu.
 - **The old item menu** in the top left only appears with the debug menu
   on (`isItemMenuAvailable()` in `UI.js`), where spawning is free.
 - The store scenes aren't "player quarters", so you can't sell things there.
+
+### Family tree and genetics (`FamilyTree.js`)
+Open it with the **Family tree** button in the magnifying glass panel.
+- **The record book** (`fluffyRecords`, saved in `SAVED_GAME_STATE`): the
+  game itself forgets a fluffy once it leaves the `fluffies` list, so
+  `syncFamilyRecords()` (about once a second, from `updateSimulation`)
+  writes down every fluffy you own (`adopted`) plus their parents: name,
+  gender, type, a copy of its genes, birth mother and father, foster mother
+  (if another mare adopted it: the game overwrites `motherId` then), when
+  it was born and its status: alive, dead (with cause), sold, at day care,
+  taken (by dogs) or gone. `noteFluffyLeft(f, "sold")` is called where
+  fluffies are sold (`UI.js`) and taken by dogs (`script.js`).
+- **The tree**: grandparents, parents, the fluffy (gold border), brothers
+  and sisters beside it (half-siblings labelled), and foals below. Blue
+  border = male, pink = female; dimmed = no longer alive. Click a card to
+  move the tree onto that fluffy; Back goes back. "Unknown" = parent never
+  known; "Not recorded" = known id but it was never in the book.
+- **Portraits** of fluffies that are gone are drawn from their saved genes
+  with a stand-in `Horse` that's thrown away (it puts `nextFluffyId` back
+  and removes its relationships entry, so the game isn't affected).
+- **Genetics panel** (right side, shows whoever the mouse is over):
+  coat/mane/eye colours, coat quality, size, and the inheritable traits as
+  dots: **wings** and **horn** show with 4 of 5 genes, **spots** and
+  **stripes** with 4 of 4, **gradient** with 2 of 4. One short = "carrier"
+  (two carriers can have a foal that shows it; each foal takes every gene
+  from one parent or the other at random, see `combineGenes`). With the
+  sensitive-baby world setting on it also shows that risk (matching pairs
+  in genes 65-70). `describeGenes(genes)` does the decoding.
 

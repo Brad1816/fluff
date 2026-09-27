@@ -2031,6 +2031,7 @@ function drawUI(ctx) {
   drawUIMessages(ctx);
   drawDebugWatcher();
   drawInspectionModal(ctx);
+  if (typeof drawFamilyTree === "function") drawFamilyTree(ctx);
   drawDayCareModal(ctx);
 }
 
@@ -2040,6 +2041,7 @@ function isAnyScreenOpen() {
   if (typeof dayCareModalOpen !== "undefined" && dayCareModalOpen) return true;
   if (typeof inspectedFluffy !== "undefined" && inspectedFluffy !== null)
     return true;
+  if (typeof isFamilyTreeOpen === "function" && isFamilyTreeOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -2253,6 +2255,7 @@ function getInspectionModalLayout() {
     btnW,
     btnH,
     nameBtnX: listX + 20,
+    treeBtnX: listX + listW / 2 - btnW / 2,
     closeBtnX: listX + listW - btnW - 20,
     btnY: listY + listH - 60,
   };
@@ -2340,6 +2343,7 @@ function drawInspectionModal(ctx) {
 
   if (typeof drawGlassButton !== "undefined") {
     drawGlassButton(L.nameBtnX, L.btnY, L.btnW, L.btnH, "Change name");
+    drawGlassButton(L.treeBtnX, L.btnY, L.btnW, L.btnH, "Family tree");
     drawGlassButton(L.closeBtnX, L.btnY, L.btnW, L.btnH, "Close");
   }
 }
@@ -2353,6 +2357,12 @@ function handleInspectionModalClick() {
     const f = inspectedFluffy;
     inspectedFluffy = null;
     openNameModal(f);
+    return true;
+  }
+  if (isPointInRect(mouse.x, mouse.y, L.treeBtnX, L.btnY, L.btnW, L.btnH)) {
+    const f = inspectedFluffy;
+    inspectedFluffy = null;
+    openFamilyTree(f.id); // FamilyTree.js
     return true;
   }
   if (isPointInRect(mouse.x, mouse.y, L.closeBtnX, L.btnY, L.btnW, L.btnH)) {
@@ -3052,6 +3062,7 @@ function sellModeClick() {
     } else if (bestType === "fluffy") {
       if (bestItem.isDragging) isGlobalDragging = false;
       money += Math.floor(bestItem.calculatePrice() / 2);
+      if (typeof noteFluffyLeft === "function") noteFluffyLeft(bestItem, "sold");
       poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
       const idx = fluffies.indexOf(bestItem);
       if (idx > -1) fluffies.splice(idx, 1);
@@ -3584,6 +3595,10 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
+  if (typeof handleFamilyTreeClick === "function" && handleFamilyTreeClick()) {
+    return;
+  }
+
   if (handleInspectionModalClick()) {
     return;
   }
@@ -3610,6 +3625,7 @@ canvas.addEventListener("mousedown", (e) => {
       );
       if (victimIdx > -1) {
         if (!showDebugMenu) money += currentSellRequest.price;
+        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold");
         fluffies.splice(victimIdx, 1);
       }
       currentSellRequest = null;
@@ -3676,6 +3692,7 @@ canvas.addEventListener("mousedown", (e) => {
       );
       if (victimIdx > -1) {
         if (!showDebugMenu) money += currentSellRequest.price;
+        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold");
         fluffies.splice(victimIdx, 1);
         currentSellRequest = null;
         return;

@@ -1241,6 +1241,7 @@ function updateFerals(dt) {
 
         // Remove all victims
         for (const victim of allToRemove) {
+          if (typeof noteFluffyLeft === "function") noteFluffyLeft(victim, "taken");
           const idx = fluffies.indexOf(victim);
           if (idx > -1) fluffies.splice(idx, 1);
         }
@@ -1385,6 +1386,8 @@ function updateDayCare(dt) {
 
 function updateSimulation(dt) {
   timePlayed += dt;
+  // Keep the family record book up to date (FamilyTree.js)
+  if (typeof updateFamilyRecords === "function") updateFamilyRecords(dt);
   updatePuddles(dt);
   updateDayCare(dt);
 

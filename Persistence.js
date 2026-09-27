@@ -116,6 +116,12 @@ const SAVED_GAME_STATE = [
   { name: "currentScene", get: () => currentScene, set: (v) => (currentScene = v), fresh: () => "INDOORS" },
   { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
   { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
+  {
+    name: "fluffyRecords", // the family record book (FamilyTree.js)
+    get: () => (syncFamilyRecords(), fluffyRecords),
+    set: (v) => (fluffyRecords = v),
+    fresh: () => ({}),
+  },
   { name: "sceneChatLogs", get: () => sceneChatLogs, set: (v) => (sceneChatLogs = v), fresh: () => ({}) },
   { name: "sellRequestTimer", get: () => sellRequestTimer, set: (v) => (sellRequestTimer = v), fresh: () => sellRequestAverage },
   { name: "feralTimer", get: () => feralTimer, set: (v) => (feralTimer = v), fresh: () => 0 },
@@ -154,6 +160,7 @@ function resetTemporaryGameState() {
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;
   if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
+  if (typeof closeFamilyTree === "function") closeFamilyTree();
 }
 
 // Everything in SAVED_GAME_STATE back to how a new game starts
