@@ -1,0 +1,11 @@
+tests/node_modules/*
+*.zip
+GEMINI.md
+current_task.md
+project.md
+**/.DS_Store
+.ignore
+exf.sh
+*.py
+.antigravitycli
+AGENTS.md
