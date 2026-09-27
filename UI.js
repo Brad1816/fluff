@@ -26,14 +26,7 @@ function drawUIMessages(ctx) {
 }
 
 function buyMenuSprite(ctx, action, btnSize) {
-  if (action.isItem === "fence" && typeof drawFenceIcon === "function") {
-    drawFenceIcon(ctx, btnSize);
-  } else if (
-    action.isItem === "fence_gate" &&
-    typeof drawGateIcon === "function"
-  ) {
-    drawGateIcon(ctx, btnSize);
-  } else if (action.isItem === "safe_room") {
+  if (action.isItem === "safe_room") {
     ctx.fillStyle = "#8B4513";
     ctx.fillRect(-15, -15, 30, 30);
     ctx.strokeStyle = "#000";
@@ -1677,45 +1670,9 @@ function drawUI(ctx) {
           textOffsetY: 12,
         });
 
-        let imgKey = null;
-        if (action.isItem === "accessory") {
-          const accDef =
-            typeof ACCESSORY_DB !== "undefined"
-              ? ACCESSORY_DB[action.accessoryId]
-              : null;
-          if (accDef) imgKey = accDef.imageKey;
-        } else if (action.isItem === "food_bag") {
-          imgKey = "food_bag";
-        } else if (action.isItem === "iv_bag") {
-          imgKey = "iv_bag";
-        } else {
-          let map = {
-            sorry_stick: "sorry_stick",
-            spray_bottle: "spray_bottle",
-            golden_statue: "golden_statue",
-            fluff_tv: "fluff_tv_off",
-            bed: "bed",
-            litterbox: "litterbox",
-            safe_room: "fence",
-            breeding_cage: "cage",
-            bowl: "bowl",
-            trough: "trough",
-            water_bowl: "water_bowl_empty",
-            sponge: "sponge",
-            brush: "brush",
-            suture_kit: "suture_kit",
-            scalpel: "scalpel",
-            sprinkler: "sprinkler_off",
-            grinder: "grinder",
-            feeder: "baby_feeder",
-            mega_feeder: "mega_baby_feeder",
-            toy_ball: "ball_normal",
-            ball: "ball_normal",
-            block: "block_p",
-            trash_bag: "trash_bag_empty",
-          };
-          imgKey = map[action.isItem] || action.isItem;
-        }
+        // Shop button picture (ItemRegistry.js: `icon` / `drawIcon`)
+        const shopIcon = getShopIcon(action);
+        const imgKey = shopIcon.imageKey;
 
         if (
           imgKey &&
@@ -1734,11 +1691,12 @@ function drawUI(ctx) {
           ctx.globalAlpha = disabled ? 0.3 : 1.0;
           ctx.drawImage(img, -img.width / 2, -img.height / 2);
           ctx.restore();
-        } else if (typeof buyMenuSprite === "function") {
+        } else {
           ctx.save();
           ctx.translate(bx + btnSize / 2, by + btnSize * 0.4);
           if (disabled) ctx.globalAlpha = 0.3;
-          buyMenuSprite(ctx, action, btnSize);
+          if (shopIcon.draw) shopIcon.draw(ctx, btnSize);
+          else buyMenuSprite(ctx, action, btnSize);
           ctx.restore();
         }
 
@@ -3522,121 +3480,12 @@ canvas.addEventListener("mousedown", (e) => {
     }
   }
 
-  // 3. Right Click: Cycle Cage Tags
+  // 3. Right Click: each item's right-click action is in ItemRegistry.js
+  // (cage tags, TV channels, sprinkler on/off, gates, turning fences...)
   if (mouse.rightDown) {
-    // Fence pieces: turn the one being carried, or the one under the mouse
-    // (right clicking a placed gate opens or closes it instead)
-    if (typeof Fence !== "undefined") {
-      const fence =
-        objects.find((o) => o instanceof Fence && o.isDragging) ||
-        objects
-          .filter(
-            (o) =>
-              o instanceof Fence &&
-              o.scene === currentScene &&
-              o.hitTest(mouse.x, mouse.y),
-          )
-          .sort((a, b) => b.getBottomY() - a.getBottomY())[0];
-      if (fence) {
-        // A placed gate opens/closes; anything else (or a held gate) turns
-        if (fence.isGate && !fence.isDragging) fence.toggleGate();
-        else fence.rotate();
-        mouse.rightDown = false;
-        return;
-      }
-    }
-    for (const obj of objects) {
-      if (obj instanceof Cage && obj.scene === currentScene) {
-        if (images.cage) {
-          const img = images.cage;
-          const w = img.width * obj.scale;
-          const h = img.height * obj.scale;
-          if (
-            isPointInRect(mouse.x, mouse.y, obj.x - w / 2, obj.y - h / 2, w, h)
-          ) {
-            obj.cycleTag();
-            mouse.rightDown = false; // Prevent multiple cycles
-            return;
-          }
-        }
-      } else if (obj instanceof FoalInACan && obj.scene === currentScene) {
-        let bw = 60,
-          bh = 70;
-        if (
-          images.foal_in_a_can &&
-          images.foal_in_a_can.complete &&
-          images.foal_in_a_can.width > 0
-        ) {
-          bw = images.foal_in_a_can.width;
-          bh = images.foal_in_a_can.height;
-        }
-        if (
-          isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh)
-        ) {
-          obj.freeFoal();
-          mouse.rightDown = false;
-          return;
-        }
-      } else if (obj instanceof OperatingTable && obj.scene === currentScene) {
-        if (obj.hitTest(mouse.x, mouse.y)) {
-          obj.cycleCategory();
-          mouse.rightDown = false; // Prevent multiple cycles
-          return;
-        }
-      } else if (obj instanceof Sprinkler && obj.scene === currentScene) {
-        if (obj.hitTest(mouse.x, mouse.y)) {
-          obj.isOn = !obj.isOn;
-          mouse.rightDown = false;
-          return;
-        }
-      } else if (obj instanceof FluffTV && obj.scene === currentScene) {
-        if (obj.hitTest(mouse.x, mouse.y)) {
-          obj.nextChannel();
-          mouse.rightDown = false;
-          return;
-        }
-      } else if (obj instanceof IVStand && obj.scene === currentScene) {
-        if (obj.hitTest(mouse.x, mouse.y)) {
-          if (obj.attachedBag) {
-            const bag = obj.attachedBag;
-            bag.attachedTo = null;
-            obj.attachedBag = null;
-            obj.connectedFluffy = null;
-            obj.isConnecting = false;
-
-            // Move bag to cursor for easy grabbing or just drop nearby
-            bag.x = mouse.x;
-            bag.y = mouse.y;
-
-            if (typeof addToolToToolbox === "function") {
-              addToolToToolbox(bag);
-            }
-
-            if (typeof Poof !== "undefined") {
-              poofs.push(new Poof(bag.x, bag.y, currentScene));
-            }
-          }
-          mouse.rightDown = false;
-          return;
-        }
-      } else if (
-        ((typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
-          (typeof IVBag !== "undefined" &&
-            obj instanceof IVBag &&
-            !obj.attachedTo)) &&
-        obj.scene === currentScene
-      ) {
-        if (obj.hitTest(mouse.x, mouse.y)) {
-          if (typeof addToolToToolbox === "function") {
-            addToolToToolbox(obj);
-          }
-          if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
-            poofs.push(new Poof(obj.x, obj.y, currentScene));
-          }
-          mouse.rightDown = false;
-          return;
-        }
-      }
+    if (handleItemRightClick(mouse.x, mouse.y)) {
+      mouse.rightDown = false; // only once per click
+      return;
     }
   }
 

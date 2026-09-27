@@ -44,6 +44,19 @@
 //              Optional. Runs after the new item is added to the world.
 //   poofAtMouse
 //              Optional. true = the purchase "poof" appears at the mouse.
+//   onRightClick(obj)
+//              Optional. What right-clicking it does (e.g. change the TV
+//              channel). Return false to let the click go to whatever is
+//              behind it instead.
+//   onRightClickHeld(obj)
+//              Optional. What right-clicking does while you're carrying it.
+//   icon       Optional. The image key for its shop button (default: the
+//              shop `isItem` name), or a function(action) returning one.
+//   drawIcon(ctx, btnSize)
+//              Optional. Draws the shop button picture instead of an image.
+//   inCage     Optional. Can it be dropped into a cage? "yes" (default),
+//              "never" (dropping it in a cage leaves it outside the cage),
+//              or "ignore" (dropping never changes its cage).
 //
 // Note: tools (stick, brush, knife, syringe...) are bought into the toolbox
 // by createToolFromAction() in globals.js, not by `create` here.
@@ -105,6 +118,7 @@ const ITEM_TYPES = [
   {
     sellType: "feeder",
     is: (o) => o instanceof Bowl && o.type === "feeder",
+    icon: "baby_feeder",
     hitTest: imageHit(bowlImage),
     sellable: true,
     create: (a, sx, sy) => atSpot(new Bowl("feeder", currentScene), sx, sy),
@@ -112,6 +126,7 @@ const ITEM_TYPES = [
   {
     sellType: "mega_feeder",
     is: (o) => o instanceof Bowl && o.type === "mega_feeder",
+    icon: "mega_baby_feeder",
     hitTest: imageHit(bowlImage),
     sellable: true,
     create: (a, sx, sy) =>
@@ -121,6 +136,8 @@ const ITEM_TYPES = [
     sellType: "bag",
     shopItem: "food_bag",
     is: (o) => o instanceof FoodBag,
+    icon: "food_bag",
+    inCage: "never",
     hitTest: imageHit("food_bag"),
     sellable: true,
     // Only a full bag can be sold back
@@ -159,21 +176,31 @@ const ITEM_TYPES = [
   {
     sellType: "fluff_tv",
     is: (o) => o instanceof FluffTV,
+    icon: "fluff_tv_off",
     hitTest: imageHit("fluff_tv_off"),
     sellable: true,
+    onRightClick: (tv) => tv.nextChannel(),
     create: (a, sx, sy) => atSpot(new FluffTV(currentScene), sx, sy),
   },
   {
     sellType: "fence",
     is: (o) => typeof Fence !== "undefined" && o instanceof Fence && !o.isGate,
+    drawIcon: (ctx, btnSize) => drawFenceIcon(ctx, btnSize),
+    inCage: "never",
     sellable: true,
+    onRightClick: (fence) => fence.rotate(),
+    onRightClickHeld: (fence) => fence.rotate(),
     create: () => createHeldFence(false),
     poofAtMouse: true,
   },
   {
     sellType: "fence_gate",
     is: (o) => typeof Fence !== "undefined" && o instanceof Fence && o.isGate,
+    drawIcon: (ctx, btnSize) => drawGateIcon(ctx, btnSize),
+    inCage: "never",
     sellable: true,
+    onRightClick: (gate) => gate.toggleGate(),
+    onRightClickHeld: (gate) => gate.rotate(),
     create: () => createHeldFence(true),
     poofAtMouse: true,
   },
@@ -182,8 +209,10 @@ const ITEM_TYPES = [
   {
     sellType: "cage",
     is: (o) => o instanceof Cage,
+    inCage: "ignore", // cages can't go in cages
     hitTest: imageHit("cage", "center"),
     sellable: true,
+    onRightClick: (cage) => cage.cycleTag(), // none / breeding / sell
     create: () => centered(new Cage(currentScene)),
   },
   {
@@ -196,12 +225,14 @@ const ITEM_TYPES = [
   {
     sellType: "litterpal_box",
     is: (o) => o instanceof LitterpalBox,
+    inCage: "never",
     sellable: true,
     create: () => centered(new LitterpalBox(currentScene)),
   },
   {
     sellType: "grinder",
     is: (o) => o instanceof Grinder,
+    inCage: "never",
     hitTest: (o, x, y) => {
       const g = o.bounds;
       return isPointInRect(x, y, g.left, g.top, g.right - g.left, g.bottom - g.top);
@@ -213,25 +244,49 @@ const ITEM_TYPES = [
   {
     sellType: "operating_table",
     is: (o) => o instanceof OperatingTable,
+    inCage: "never",
     sellable: true,
+    // choose which body part the table amputates
+    onRightClick: (table) => table.cycleCategory(),
     create: () => centered(new OperatingTable(currentScene)),
   },
   {
     sellType: "immobilization_board",
     is: (o) => o instanceof ImmobilizationBoard,
+    inCage: "never",
     sellable: true,
     create: () => centered(new ImmobilizationBoard(currentScene)),
   },
   {
     sellType: "sprinkler",
     is: (o) => o instanceof Sprinkler,
+    icon: "sprinkler_off",
+    inCage: "never",
     sellable: true,
+    onRightClick: (s) => {
+      s.isOn = !s.isOn;
+    },
     create: () => centered(new Sprinkler(currentScene)),
   },
   {
     sellType: "iv_stand",
     is: (o) => o instanceof IVStand,
+    inCage: "never",
     sellable: true,
+    // Take the IV bag off the stand and put it back in the toolbox
+    onRightClick: (stand) => {
+      if (stand.attachedBag) {
+        const bag = stand.attachedBag;
+        bag.attachedTo = null;
+        stand.attachedBag = null;
+        stand.connectedFluffy = null;
+        stand.isConnecting = false;
+        bag.x = mouse.x;
+        bag.y = mouse.y;
+        if (typeof addToolToToolbox === "function") addToolToToolbox(bag);
+        poofs.push(new Poof(bag.x, bag.y, currentScene));
+      }
+    },
     create: () => centered(new IVStand(currentScene)),
   },
 
@@ -239,18 +294,25 @@ const ITEM_TYPES = [
   {
     sellType: "ball",
     is: (o) => o instanceof Ball,
+    icon: "ball_normal",
     sellable: true,
     create: (a, sx, sy) => new Ball(sx, sy, currentScene),
   },
   {
     sellType: "block",
     is: (o) => o instanceof Block,
+    icon: "block_p",
     sellable: true,
     create: (a, sx, sy) => new Block(sx, sy, currentScene),
   },
   {
     sellType: "accessory",
     is: (o) => o instanceof AccessoryItem,
+    icon: (action) => {
+      const def =
+        typeof ACCESSORY_DB !== "undefined" ? ACCESSORY_DB[action.accessoryId] : null;
+      return def ? def.imageKey : null;
+    },
     sellable: true,
     create: (a, sx, sy) => {
       const obj = new AccessoryItem(currentScene, a.accessoryId);
@@ -261,24 +323,34 @@ const ITEM_TYPES = [
   },
 
   // ---- Tools (bought into the toolbox, but can be sold if in the world) ----
-  { sellType: "stick", shopItem: "sorry_stick", is: (o) => o instanceof SorryStick, sellable: true },
-  { sellType: "spray_bottle", is: (o) => o instanceof SprayBottle, sellable: true },
-  { sellType: "brush", is: (o) => o instanceof Brush, sellable: true },
-  { sellType: "knife", is: (o) => o instanceof Knife && o.type === "knife", sellable: true },
-  { sellType: "scalpel", is: (o) => o instanceof Knife && o.type === "scalpel", sellable: true },
-  { sellType: "suture_kit", is: (o) => o instanceof SutureKit, sellable: true,
+  { sellType: "stick", shopItem: "sorry_stick", is: (o) => o instanceof SorryStick, inCage: "never", sellable: true },
+  { sellType: "spray_bottle", is: (o) => o instanceof SprayBottle, inCage: "never", sellable: true },
+  { sellType: "brush", is: (o) => o instanceof Brush, inCage: "never", sellable: true },
+  { sellType: "knife", is: (o) => o instanceof Knife && o.type === "knife", inCage: "never", sellable: true },
+  { sellType: "scalpel", is: (o) => o instanceof Knife && o.type === "scalpel", inCage: "never", sellable: true },
+  { sellType: "suture_kit", is: (o) => o instanceof SutureKit, inCage: "never", sellable: true,
     usedUp: (o) => 1 - (o.charges || 0) / 4 },
-  { sellType: "trash_bag", is: (o) => typeof TrashBag !== "undefined" && o instanceof TrashBag, sellable: true,
+  { sellType: "trash_bag", is: (o) => typeof TrashBag !== "undefined" && o instanceof TrashBag,
+    icon: "trash_bag_empty", inCage: "never", sellable: true,
     usedUp: (o) => Math.min(5, o.fillAmount || 0) / 5 },
-  { sellType: "sponge", is: (o) => o instanceof Sponge, sellable: true },
-  { sellType: "magnifying_glass", is: (o) => o instanceof MagnifyingGlass, sellable: true },
-  { sellType: "thumbtack", is: (o) => typeof Thumbtack !== "undefined" && o instanceof Thumbtack, sellable: true },
-  { sellType: "syringe", is: (o) => typeof Syringe !== "undefined" && o instanceof Syringe, sellable: true },
-  { sellType: "cattle_prod", is: (o) => typeof CattleProd !== "undefined" && o instanceof CattleProd, sellable: true },
+  { sellType: "sponge", is: (o) => o instanceof Sponge, inCage: "never", sellable: true },
+  { sellType: "magnifying_glass", is: (o) => o instanceof MagnifyingGlass, inCage: "never", sellable: true },
+  {
+    sellType: "thumbtack",
+    is: (o) => typeof Thumbtack !== "undefined" && o instanceof Thumbtack,
+    inCage: "never",
+    sellable: true,
+    onRightClick: (tack) => putBackInToolbox(tack),
+  },
+  { sellType: "syringe", is: (o) => typeof Syringe !== "undefined" && o instanceof Syringe, inCage: "never", sellable: true },
+  { sellType: "cattle_prod", is: (o) => typeof CattleProd !== "undefined" && o instanceof CattleProd, inCage: "never", sellable: true },
   {
     sellType: "iv_bag",
     is: (o) => o instanceof IVBag,
+    inCage: "never",
     sellable: true,
+    // A loose bag goes back in the toolbox (one on a stand: see the stand)
+    onRightClick: (bag) => (bag.attachedTo ? false : putBackInToolbox(bag)),
     onSell: (bag) => {
       if (bag.attachedTo) bag.attachedTo.attachedBag = null;
     },
@@ -288,13 +360,27 @@ const ITEM_TYPES = [
   {
     sellType: "foal_in_a_can",
     is: (o) => o instanceof FoalInACan,
+    inCage: "ignore",
+    onRightClick: (can) => can.freeFoal(), // let the foal out
     hitTest: (o, x, y) => {
       const bw = images.foal_in_a_can ? images.foal_in_a_can.width : 60;
       const bh = images.foal_in_a_can ? images.foal_in_a_can.height : 70;
       return isPointInRect(x, y, o.x - bw / 2, o.y - bh, bw, bh);
     },
   },
+  {
+    // Plain table (the Table and Rack above are special kinds of this)
+    sellType: "fluffy_table",
+    is: (o) => o instanceof FluffyTable,
+    inCage: "never",
+  },
 ];
+
+// Right-click helper: put a tool lying in the world back in the toolbox
+function putBackInToolbox(tool) {
+  if (typeof addToolToToolbox === "function") addToolToToolbox(tool);
+  poofs.push(new Poof(tool.x, tool.y, currentScene));
+}
 
 // How to re-create each class when loading a save (the rest of the saved
 // data is then filled in by the object's own deserialize()).
@@ -418,6 +504,51 @@ function getItemTypeForAction(action) {
       (e) => e.create && (e.shopItem || e.sellType) === action.isItem,
     ) || null
   );
+}
+
+// Right-click: returns true if something handled the click.
+// First anything being carried, then the front-most item under the mouse.
+function handleItemRightClick(x, y) {
+  for (const obj of objects) {
+    if (!obj.isDragging) continue;
+    const entry = getItemType(obj);
+    if (entry && entry.onRightClickHeld) {
+      entry.onRightClickHeld(obj);
+      return true;
+    }
+  }
+  const candidates = [];
+  for (const obj of objects) {
+    if (obj.scene !== currentScene || obj.isDragging) continue;
+    const entry = getItemType(obj);
+    if (!entry || !entry.onRightClick) continue;
+    if (itemHitTest(obj, x, y)) candidates.push({ obj, entry });
+  }
+  candidates.sort((a, b) => b.obj.getBottomY() - a.obj.getBottomY());
+  for (const { obj, entry } of candidates) {
+    if (entry.onRightClick(obj) !== false) return true;
+  }
+  return false;
+}
+
+// Shop button picture: { imageKey } or { draw(ctx, btnSize) }
+function getShopIcon(action) {
+  const entry = ITEM_TYPES.find(
+    (e) => (e.shopItem || e.sellType) === action.isItem,
+  );
+  if (entry && entry.drawIcon) return { draw: entry.drawIcon };
+  if (entry && entry.icon) {
+    return {
+      imageKey: typeof entry.icon === "function" ? entry.icon(action) : entry.icon,
+    };
+  }
+  return { imageKey: action.isItem };
+}
+
+// Dropping an item: "yes", "never" or "ignore" (see `inCage` at the top)
+function itemCageRule(obj) {
+  const entry = getItemType(obj);
+  return (entry && entry.inCage) || "yes";
 }
 
 // Re-create an object from save data (or null if the class is unknown)

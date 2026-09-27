@@ -178,6 +178,113 @@ module.exports = [
     },
   },
   {
+    name: "right-clicking items does their action",
+    run: async (page) => {
+      await page.evaluate(PAGE_HELPERS);
+      const problems = await page.evaluate(() => {
+        const problems = [];
+        fluffies.length = 0;
+        const rightClick = (obj) => {
+          const spot = __findClickSpot(obj, (x, y) => itemHitTest(obj, x, y));
+          mouse.x = spot.x;
+          mouse.y = spot.y;
+          mouse.rightDown = true;
+          canvas.dispatchEvent(
+            new MouseEvent("mousedown", { clientX: spot.x, clientY: spot.y, button: 2, bubbles: true }),
+          );
+          mouse.rightDown = false;
+        };
+        const place = (obj) => {
+          __clearScene();
+          obj.x = 640;
+          obj.y = 450;
+          if (obj instanceof Fence) obj.setPosition(640, 450);
+          objects.push(obj);
+          obj.update(0.001);
+          return obj;
+        };
+        const cage = place(new Cage("INDOORS"));
+        rightClick(cage);
+        if (cage.tag !== "breeding") problems.push(`cage tag is "${cage.tag}", expected "breeding"`);
+        const tv = place(new FluffTV("INDOORS"));
+        const ch = JSON.stringify(tv.serialize());
+        rightClick(tv);
+        if (JSON.stringify(tv.serialize()) === ch) problems.push("TV channel didn't change");
+        const sprinkler = place(new Sprinkler("INDOORS"));
+        const wasOn = sprinkler.isOn;
+        rightClick(sprinkler);
+        if (sprinkler.isOn === wasOn) problems.push("sprinkler didn't switch");
+        const gate = place(new Fence("INDOORS", "h", true));
+        rightClick(gate);
+        if (!gate.isOpen) problems.push("gate didn't open");
+        const fence = place(new Fence("INDOORS", "h"));
+        rightClick(fence);
+        if (fence.orientation !== "v") problems.push("fence didn't turn");
+        toolbox.length = 0;
+        const tack = place(new Thumbtack("INDOORS"));
+        rightClick(tack);
+        if (!toolbox.includes(tack)) problems.push("thumbtack didn't go back in the toolbox");
+        return problems;
+      });
+      check(problems.length === 0, problems.join("; "));
+    },
+  },
+  {
+    name: "only the right items can be dropped into a cage",
+    run: async (page) => {
+      const problems = await page.evaluate(() => {
+        const problems = [];
+        const cases = [
+          ["Bowl", () => new Bowl("bowl", "INDOORS"), true],
+          ["Bed", () => new Bed("INDOORS"), true],
+          ["Ball", () => new Ball(0, 0, "INDOORS"), true],
+          ["Crown", () => new AccessoryItem("INDOORS", "crown"), true],
+          ["Grinder", () => new Grinder("INDOORS"), false],
+          ["Table", () => new OperatingTable("INDOORS"), false],
+          ["IV stand", () => new IVStand("INDOORS"), false],
+          ["Sprinkler", () => new Sprinkler("INDOORS"), false],
+          ["Food bag", () => new FoodBag("kibble", "INDOORS"), false],
+          ["Fence", () => new Fence("INDOORS", "h"), false],
+        ];
+        for (const [name, make, shouldGoIn] of cases) {
+          __clearScene();
+          const cage = new Cage("INDOORS");
+          cage.x = 640;
+          cage.y = 450;
+          objects.push(cage);
+          cage.update(0.001);
+          const obj = make();
+          obj.x = cage.x;
+          obj.y = cage.y;
+          objects.push(obj);
+          obj.isDragging = true;
+          mouse.x = 640;
+          mouse.y = 450;
+          obj.onDrop();
+          const inCage = obj.currentCage === cage;
+          if (inCage !== shouldGoIn)
+            problems.push(`${name}: ${inCage ? "went into" : "didn't go into"} the cage`);
+        }
+        return problems;
+      });
+      check(problems.length === 0, problems.join("; "));
+    },
+  },
+  {
+    name: "every shop button has a picture",
+    run: async (page) => {
+      const missing = await page.evaluate(() =>
+        SPAWN_ACTIONS.filter((a) => a.isItem)
+          .filter((a) => {
+            const icon = getShopIcon(a);
+            return !icon.draw && !(icon.imageKey && images[icon.imageKey]);
+          })
+          .map((a) => a.name),
+      );
+      check(missing.length === 0, "no picture for: " + missing.join(", "));
+    },
+  },
+  {
     name: "every item comes back the same after saving and loading",
     run: async (page) => {
       await page.evaluate(PAGE_HELPERS);

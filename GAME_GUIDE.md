@@ -46,7 +46,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `script.js` | The **main loop** (`animate` → `updateSimulation` → `render`), feral spawning (`spawnFeralGroup`, `updateFerals`), sell offers, day care ageing, cars, **what happens when you click while holding something** (`attemptDrop`: using the stick/knife/brush etc. on a fluffy), keyboard shortcuts, startup. |
 | `UI.js` | Everything drawn on top of the world and most clicking: the shop buttons, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** (resetting all state) happens in `handleWorldSettingsClick`. |
-| `ItemRegistry.js` | **One description per item type**: its click area, sell price, how the shop creates it, how saves re-create it. Used by the UI and saving code. See recipe 6. |
+| `ItemRegistry.js` | **One description per item type**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it. See recipe 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
 | `dialogue.js` | Every line fluffies can say (`DIALOGUE`), plus `getDialogue()` and baby-talk/muffle filters. |
@@ -277,12 +277,12 @@ or `Fence.js` as a template:
    and one line to `SAVED_CLASSES`: `MyThing: (d) => new MyThing(d.scene),`
 
 That's all: buying, the sell tooltip, shift-click selling, picking up and
-saving/loading all read from the registry. Optional extras:
-- **Shop icon**: the `map` in `drawUI` (search `golden_statue: "golden_statue"`)
-  maps `isItem` → image key, or draw one in `buyMenuSprite` (both in `UI.js`).
-- **Right-click action**: the right-click block of the `mousedown` handler in `UI.js`.
-- **Special entry fields**: `canPickUp`, `onSell`, `afterCreate`, `shopItem`,
-  `poofAtMouse`, all explained at the top of `ItemRegistry.js`.
+saving/loading all read from the registry. Optional extras, also in the
+registry entry (all explained at the top of `ItemRegistry.js`):
+- `onRightClick(obj)`: what right-clicking it does (e.g. `(tv) => tv.nextChannel()`)
+- `icon: "image_key"` or `drawIcon(ctx, btnSize)`: its shop button picture
+- `inCage: "never"`: stop it being dropped into cages
+- `canPickUp`, `onSell`, `usedUp`, `afterCreate`, `shopItem`, `poofAtMouse`
 
 ### Add a new fluffy behaviour (desire)
 1. In `HorseBrain.js`: `class MyDesire extends Desire { constructor(){ super("MyDesire"); } evaluate(horse){ return score; } execute(horse){ ...; return true; } }`
@@ -315,9 +315,10 @@ change. `zip_project.sh` runs them before packaging, too.
 
 ## 8. Gotchas worth knowing
 
-- **Item registry.** Selling, the sell tooltip, picking up, buying and
-  loading all go through `ItemRegistry.js`. Right-click actions and shop
-  icons are still separate (in `UI.js`).
+- **Item registry.** Selling, the sell tooltip, picking up, buying,
+  loading, right-click actions, shop icons and "can it go in a cage?" all go
+  through `ItemRegistry.js`. (Tools also have their own lists in
+  `globals.js`: `isToolObject`, `createToolFromAction` and friends.)
 - **Sell prices**: every item sells for **half its shop price** (worked out
   from `SPAWN_ACTIONS`, so changing a shop price changes the sell price too).
   Partly used items are worth less (`usedUp` in `ItemRegistry.js`). Opened
@@ -375,7 +376,7 @@ change. `zip_project.sh` runs them before packaging, too.
   gets a happy `PENNED.REUNITED` moment. Tuning numbers:
   `HAPPINESS_PENALTY_PEN_SEPARATED`, `HAPPINESS_BONUS_PEN_REUNITED`.
 - Touch points: `index.html`, `globals.js` (shop entries), `ItemRegistry.js`
-  (buying, selling, picking up, loading), `UI.js` (right-click, shop icons), `script.js` (collision + feelings hooks,
+  (buying, selling, picking up, right-click, icons, loading), `script.js` (collision + feelings hooks,
   R key), `Persistence.js` (loading), `HorsePositioning.js`,
   `HorseActionHandler.js`, `HorseBrain.js`, `Horse.js`, `dialogue.js`.
 - Originals of every changed file are in `_backup_before_fence/`.

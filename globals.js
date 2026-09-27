@@ -849,45 +849,14 @@ function handleDropping(item) {
     return;
   }
 
-  // Cage assignment: assign item to cage if it's dropped inside one
+  // Cage assignment: assign item to cage if it's dropped inside one.
+  // Which items can go in cages is set by `inCage` in ItemRegistry.js.
   if (typeof objects !== "undefined") {
-    // Exclusion list: grinders, tables, and cages themselves (cannot be in another cage)
-    if (typeof Grinder !== "undefined" && item instanceof Grinder) {
+    const rule =
+      typeof itemCageRule === "function" ? itemCageRule(item) : "yes";
+    if (rule === "never") {
       item.currentCage = null;
-    } else if (typeof IVStand !== "undefined" && item instanceof IVStand) {
-      item.currentCage = null;
-    } else if (typeof IVBag !== "undefined" && item instanceof IVBag) {
-      item.currentCage = null;
-    } else if (
-      typeof FluffyTable !== "undefined" &&
-      item instanceof FluffyTable
-    ) {
-      item.currentCage = null;
-    } else if (typeof Cage !== "undefined" && item instanceof Cage) {
-      // Do nothing, cages don't have currentCage
-    } else if (
-      typeof FoalInACan !== "undefined" &&
-      item instanceof FoalInACan
-    ) {
-      // Do nothing
-    } else if (
-      (typeof Knife !== "undefined" && item instanceof Knife) ||
-      (typeof SutureKit !== "undefined" && item instanceof SutureKit) ||
-      (typeof TrashBag !== "undefined" && item instanceof TrashBag) ||
-      (typeof SorryStick !== "undefined" && item instanceof SorryStick) ||
-      (typeof SprayBottle !== "undefined" && item instanceof SprayBottle) ||
-      (typeof Sponge !== "undefined" && item instanceof Sponge) ||
-      (typeof Brush !== "undefined" && item instanceof Brush) ||
-      (typeof FoodBag !== "undefined" && item instanceof FoodBag) ||
-      (typeof MagnifyingGlass !== "undefined" &&
-        item instanceof MagnifyingGlass) ||
-      (typeof Sprinkler !== "undefined" && item instanceof Sprinkler) ||
-      (typeof Thumbtack !== "undefined" && item instanceof Thumbtack) ||
-      (typeof Syringe !== "undefined" && item instanceof Syringe) ||
-      (typeof CattleProd !== "undefined" && item instanceof CattleProd)
-    ) {
-      item.currentCage = null;
-    } else {
+    } else if (rule === "yes") {
       item.currentCage = null;
       const cages = objects.filter(
         (o) => o instanceof Cage && o.scene === item.scene,
@@ -905,18 +874,6 @@ function handleDropping(item) {
         }
       }
     }
-  }
-
-  if (
-    item.currentCage &&
-    ((typeof Sponge !== "undefined" && item instanceof Sponge) ||
-      (typeof SorryStick !== "undefined" && item instanceof SorryStick) ||
-      (typeof SutureKit !== "undefined" && item instanceof SutureKit) ||
-      (typeof TrashBag !== "undefined" && item instanceof TrashBag) ||
-      (typeof Brush !== "undefined" && item instanceof Brush) ||
-      (typeof Knife !== "undefined" && item instanceof Knife))
-  ) {
-    item.angle = 0;
   }
 
   const topWallHeight = height * 0.15;
