@@ -211,6 +211,15 @@ const ITEM_TYPES = [
     create: (a, sx, sy) => atSpot(new GeneLab(currentScene), sx, sy),
   },
   {
+    sellType: "computer", // OrderBoard.js: FluffList customer orders
+    is: (o) => typeof Computer !== "undefined" && o instanceof Computer,
+    drawIcon: (ctx, btnSize) => drawComputerIcon(ctx, btnSize),
+    inCage: "never",
+    sellable: true,
+    onRightClick: () => openOrdersScreen("web"),
+    create: (a, sx, sy) => atSpot(new Computer(currentScene), sx, sy),
+  },
+  {
     sellType: "fence",
     is: (o) => typeof Fence !== "undefined" && o instanceof Fence && !o.isGate,
     drawIcon: (ctx, btnSize) => drawFenceIcon(ctx, btnSize),
@@ -657,6 +666,7 @@ const SAVED_CLASSES = {
   FoalInACan: (d) => new FoalInACan(d.scene),
   FluffTV: (d) => new FluffTV(d.scene),
   GeneLab: (d) => new GeneLab(d.scene),
+  Computer: (d) => new Computer(d.scene),
   Bowl: (d) => new Bowl(d.type, d.scene),
   Grass: (d) => new Grass(d.x, d.y, d.scene),
   Thumbtack: (d) => new Thumbtack(d.scene),

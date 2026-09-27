@@ -41,6 +41,7 @@ npm test -- fence
 | `store.test.js` | Fluff Mart: every item is on a shelf once, walking there, buying, carrying things home with WASD, tools to the toolbox, not enough money, purchases land on the floor, the old menu is debug-only |
 | `familytree.test.js` | The family record book (dead/sold/gone fluffies are remembered, foster mums, saving), the tree screen (open, click around, Back, Close) and reading carrier genes |
 | `genelab.test.js` | Gene Lab: predictions follow the inheritance rules (wings, carriers, born-alive odds), right-click to open, pick parents, pregnancy scan, related-pair warnings |
+| `orders.test.js` | Customer orders: requirements per reputation level, rewards grow with level, accept/deliver (wrong fluffies refused), 3-order limit, deadlines and reputation loss, new orders over time, saving, bounty board and computer open the screen |
 | `inspect.test.js` | The magnifying glass panel shows litter training, poopie colours, personality and age (set `INSPECT_SHOTS=folder` to save screenshots) |
 | `run-tests.js` | Runs everything (starts a small web server and the hidden browser) |
 | `helpers.js` | Shared bits: `check`, `checkEqual`, `buildPen` |

@@ -35,6 +35,7 @@ const STORE_AISLES = [
       "ball",
       "block",
       "fluff_tv",
+      "computer",
       "golden_statue",
     ],
   },
@@ -315,6 +316,8 @@ function storeShelfClick() {
 function drawStoreScenery(c) {
   if (currentScene === "SHOP_STREET") {
     drawShopStreet(c);
+    // Customer orders board (OrderBoard.js)
+    if (typeof drawBountyBoard === "function") drawBountyBoard(c);
   } else if (isStoreScene(currentScene)) {
     const aisle = getStoreAisleForScene(currentScene);
     if (aisle) drawStoreAisle(c, aisle);

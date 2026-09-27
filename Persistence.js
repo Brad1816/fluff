@@ -117,6 +117,12 @@ const SAVED_GAME_STATE = [
   { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
   { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
   {
+    name: "customerOrders", // bounty board / FluffList orders and reputation (Orders.js)
+    get: () => customerOrders,
+    set: (v) => (customerOrders = v),
+    fresh: () => freshCustomerOrders(),
+  },
+  {
     name: "fluffyRecords", // the family record book (FamilyTree.js)
     get: () => (syncFamilyRecords(), fluffyRecords),
     set: (v) => (fluffyRecords = v),
@@ -162,6 +168,7 @@ function resetTemporaryGameState() {
   if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
   if (typeof closeFamilyTree === "function") closeFamilyTree();
   if (typeof closeGeneLab === "function") closeGeneLab();
+  if (typeof closeOrdersScreen === "function") closeOrdersScreen();
 }
 
 // Everything in SAVED_GAME_STATE back to how a new game starts

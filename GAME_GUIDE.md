@@ -52,6 +52,8 @@ and it runs. About 36,000 lines across ~60 files.
 | `Store.js` | **Fluff Mart**: the Shopping Street scene (down from the garden), the store's aisle scenes, which items go in which aisle (`STORE_AISLES`), drawing the shelves and price tags, and buying by clicking a shelf. See section 9. |
 | `FamilyTree.js` | **Family record book** (`fluffyRecords`: every fluffy you've owned, even after it dies or is sold, with its genes and parents) and the **family tree screen** with its genetics panel. See section 9. |
 | `GeneLab.js` | The **Gene Lab** machine (a shop item) and its screen that predicts what two fluffies' foals could be like. See section 9. |
+| `Orders.js` | **Customer orders**: making orders (`ORDER_REQUIREMENTS`), accepting, delivering, deadlines and reputation (`customerOrders`, saved). |
+| `OrderBoard.js` | Where orders are seen: the **bounty board** on Shopping Street, the **Computer** item (FluffList website), the orders screen with its deliver picker, and the "orders due" reminder. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -523,4 +525,30 @@ A $3000 machine in the store's Pharmacy & Lab aisle. Place it anywhere and
 - **Related pairs** get a warning from `describeFamilyRelation` (parent,
   siblings, half-siblings, grandparent, aunt/uncle, cousins) using the
   family record book.
+
+### Customer orders (`Orders.js`, `OrderBoard.js`)
+- **Where**: the **bounty board** on Shopping Street (left-click it) and
+  **FluffList** on the **Computer** ($1500, Home & Play aisle; right-click
+  it). Both open the same screen: "Wanted" (posted orders) on the left,
+  "Your orders" (accepted, max `ORDER_MAX_ACTIVE` = 3) on the right.
+- **An order** is a customer, a note, 1-4 requirements and a reward. It
+  leaves the board after `ORDER_BOARD_LIFETIME` (15 game min) if nobody
+  takes it. Once accepted it's due in 10 + 5 x (number of requirements)
+  game minutes. A reminder in the bottom right shows the next deadline
+  (red under 3 minutes, plus a message at 3 minutes).
+- **Delivering**: "Deliver" opens a list of your fluffies with a tick or
+  cross for every requirement; only a fluffy with all ticks can be sent.
+  The courier takes it (like selling it: the family record says "sold")
+  and you're paid the reward.
+- **Reputation**: +1 per requirement for each filled order, -3 for a missed
+  deadline, -2 for giving up. Levels (`ORDER_REP_LEVELS`): Backyard (0),
+  Known (5), Trusted (15), Renowned (30), Master breeder (55). Higher levels
+  mean more orders on the board (3 + level/2), more requirements, bigger
+  rewards (+30% per level), and unlock harder requirements: patterns and
+  exact coat colours (level 2), alicorns and size (3), hidden carrier genes
+  (4, which is where the Gene Lab helps).
+- **Adding a requirement**: add an entry to `ORDER_REQUIREMENTS` with
+  `minLevel`, `weight` (how often it's picked), `make` (its details and
+  `value`, which adds to the reward), `label` and `matches(req, fluffy)`.
+  The orders test checks new kinds automatically for labels and levels.
 

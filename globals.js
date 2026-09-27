@@ -1765,6 +1765,12 @@ const SPAWN_ACTIONS = [
     cost: 3000,
     isItem: "gene_lab",
   },
+  {
+    name: "Computer",
+    desc: "Browse FluffList from home: see customer orders, accept them and deliver fluffies without walking to the bounty board. Right-click it to use.",
+    cost: 1500,
+    isItem: "computer",
+  },
 ];
 
 const DEBUG_ACTIONS = [

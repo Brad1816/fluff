@@ -2033,6 +2033,8 @@ function drawUI(ctx) {
   drawInspectionModal(ctx);
   if (typeof drawFamilyTree === "function") drawFamilyTree(ctx);
   if (typeof drawGeneLab === "function") drawGeneLab(ctx);
+  if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
+  if (typeof drawOrdersScreen === "function") drawOrdersScreen(ctx);
   drawDayCareModal(ctx);
 }
 
@@ -2044,6 +2046,7 @@ function isAnyScreenOpen() {
     return true;
   if (typeof isFamilyTreeOpen === "function" && isFamilyTreeOpen()) return true;
   if (typeof isGeneLabOpen === "function" && isGeneLabOpen()) return true;
+  if (typeof isOrdersScreenOpen === "function" && isOrdersScreenOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -3605,6 +3608,10 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
+  if (typeof handleOrdersScreenClick === "function" && handleOrdersScreenClick()) {
+    return;
+  }
+
   if (handleInspectionModalClick()) {
     return;
   }
@@ -3674,6 +3681,11 @@ canvas.addEventListener("mousedown", (e) => {
 
   // Buying from a store shelf (Store.js)
   if (typeof storeShelfClick === "function" && storeShelfClick()) {
+    return;
+  }
+
+  // The bounty board on Shopping Street (OrderBoard.js)
+  if (typeof bountyBoardClick === "function" && bountyBoardClick()) {
     return;
   }
 

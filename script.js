@@ -1388,6 +1388,8 @@ function updateSimulation(dt) {
   timePlayed += dt;
   // Keep the family record book up to date (FamilyTree.js)
   if (typeof updateFamilyRecords === "function") updateFamilyRecords(dt);
+  // Customer orders: new ones, deadlines (Orders.js)
+  if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
   updatePuddles(dt);
   updateDayCare(dt);
 
@@ -1881,6 +1883,8 @@ function render() {
   drawPortals();
   // Store shelf hover highlight (Store.js)
   if (typeof drawStoreOverlay === "function") drawStoreOverlay(ctx);
+  // Bounty board hover label (OrderBoard.js)
+  if (typeof drawOrdersOverlay === "function") drawOrdersOverlay(ctx);
   drawUI(ctx);
 
   if (gameState === "PAUSED") {
