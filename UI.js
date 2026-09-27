@@ -2307,9 +2307,13 @@ function drawInspectionColumn(ctx, title, rows, x, y, colW) {
 
 function drawInspectionModal(ctx) {
   if (!inspectedFluffy) return;
+  // drawUI runs twice a frame: into the world buffer (speech bubbles are
+  // drawn on top of that afterwards) and then on the screen. Only draw on
+  // the screen pass, or bubbles show through the window.
+  if (ctx.canvas !== canvas) return;
 
   // Draw semi-transparent background over everything
-  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillStyle = "rgba(0,0,0,0.6)";
   ctx.fillRect(0, 0, width, height);
 
   const L = getInspectionModalLayout();
@@ -2319,7 +2323,7 @@ function drawInspectionModal(ctx) {
     drawGlassButton(L.listX, L.listY, L.listW, L.listH, "", {
       forceNormal: true,
       borderRadius: 12,
-      normalFill: "rgba(20, 10, 25, 0.88)",
+      normalFill: "rgb(20, 10, 25)",
       hoverFill: "rgba(255, 255, 255, 0.75)",
     });
   } else {
@@ -2391,9 +2395,10 @@ function handleInspectionModalClick() {
 
 function drawDayCareModal(ctx) {
   if (!dayCareModalOpen) return;
+  if (ctx.canvas !== canvas) return; // screen pass only (see drawInspectionModal)
 
   // Semi-transparent backdrop
-  ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+  ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
   ctx.fillRect(0, 0, width, height);
 
   const modalW = 760;
@@ -2405,7 +2410,7 @@ function drawDayCareModal(ctx) {
     drawGlassButton(modalX, modalY, modalW, modalH, "", {
       forceNormal: true,
       borderRadius: 16,
-      normalFill: "rgba(18, 22, 28, 0.85)",
+      normalFill: "rgb(18, 22, 28)",
       hoverFill: "rgba(255, 255, 255, 0.75)",
     });
   } else {
