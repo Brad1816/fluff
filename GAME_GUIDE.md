@@ -334,6 +334,15 @@ That's all: it's now saved, loaded (older saves without it get the `fresh`
 value), and reset when a new game starts. A test checks every field in
 the list survives saving and loading.
 
+### Show something new in the magnifying glass panel
+In `UI.js`, `getFluffyInspectionInfo(f)` builds two lists: `about` (left
+column) and `care` (right column). Push another row:
+```js
+care.push({ label: "Fleas", value: f.hasFleas ? "Yes" : "No", tone: f.hasFleas ? "bad" : "good" });
+```
+`tone` colours the value: `"good"` green, `"ok"` yellow, `"bad"` red,
+anything else white. The drawing and wrapping are automatic.
+
 Things that belong to one game but shouldn't be saved (open windows, the
 current sell offer...) go in `resetTemporaryGameState()` in the same file.
 
@@ -414,3 +423,17 @@ change. `zip_project.sh` runs them before packaging, too.
   R key), `Persistence.js` (loading), `HorsePositioning.js`,
   `HorseActionHandler.js`, `HorseBrain.js`, `Horse.js`, `dialogue.js`.
 - Originals of every changed file are in `_backup_before_fence/`.
+
+### Magnifying glass panel (`UI.js`)
+Dropping the magnifying glass on a fluffy opens a two-column panel.
+**About**: name, gender, type, age (foal % grown or adult), sexuality,
+personality (Smarty in red), parents, special friend, number of friends.
+**Health & care** (values colour-coded): happiness, hunger, health, sleep,
+**litter training** (`pottyTraining` 0-1, which is also the chance it
+looks for a litterbox), **coat** (colour name plus "poopie colours" /
+"a bit drab" / "nice colours", from `calculateColorismPerception()`, which
+measures distance from `POOPIE_ANCHORS`), **colour views** (`coloristDegree`,
+how mean it is to poopie fluffies; hidden when colorism is off in world
+settings), spayed/pregnant, missing parts, conditions (poisoned,
+toxoplasmosis, diarrhea, blindfolded, castration band, vaccinated...), and
+what it would sell for. Dead fluffies show cause of death instead of needs.

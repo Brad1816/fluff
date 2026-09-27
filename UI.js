@@ -2111,69 +2111,249 @@ function openInspectionModal(fluffy) {
   inspectedFluffy = fluffy;
 }
 
-function getFluffyInspectionLines(f) {
-  const name = fluffyNames[f.id] || "Fluffy";
-  const momName =
-    f.motherId !== null
-      ? fluffyNames[f.motherId] || "Unnamed fluffy"
-      : "Unknown";
-  const dadName =
-    f.fatherId !== null
-      ? fluffyNames[f.fatherId] || "Unnamed fluffy"
-      : "Unknown";
-  const sfId = Object.keys(relationships[f.id] || {}).find(
-    (id) => relationships[f.id][id] === "special_friend",
+// ---------------------------------------------------------------------------
+// Magnifying glass inspection panel
+//
+// getFluffyInspectionInfo(f) works out WHAT to show; drawInspectionModal()
+// only draws it. To add a new row, push another { label, value, tone } into
+// one of the lists below. tone colours the value:
+//   "good" = green, "ok" = yellow, "bad" = red, anything else = white.
+// ---------------------------------------------------------------------------
+const INSPECTION_TONE_COLORS = {
+  good: "#7dff8a",
+  ok: "#ffe066",
+  bad: "#ff6b6b",
+};
+
+function describeInspectionHappiness(f) {
+  if (f.happiness <= WAN_DIE_THRESHOLD) return ["Looping (wants to die)", "bad"];
+  if (f.happiness <= HAPPINESS_MISERABLE_THRESHOLD) return ["Miserable", "bad"];
+  if (f.happiness < HAPPINESS_SAD_THRESHOLD) return ["Unhappy", "ok"];
+  if (f.happiness > HAPPINESS_HAPPY_THRESHOLD) return ["Happy", "good"];
+  return ["Okay", ""];
+}
+
+function describeInspectionHunger(f) {
+  if (f.hunger > 0.7) return ["Full", "good"];
+  if (f.hunger > 0.4) return ["Peckish", ""];
+  if (f.hunger > 0.15) return ["Hungry", "ok"];
+  return ["Starving", "bad"];
+}
+
+function describeInspectionTiredness(f) {
+  const t = f.sleepDeprivation || 0;
+  if (t < 0.3) return ["Rested", "good"];
+  if (t < 0.7) return ["Tired", "ok"];
+  return ["Exhausted", "bad"];
+}
+
+// pottyTraining goes 0 -> 1. It's also the chance a fluffy bothers to
+// look for a litterbox when it needs to go (UseLitterboxDesire).
+function describeInspectionPottyTraining(f) {
+  const t = f.pottyTraining || 0;
+  if (t >= 1) return ["Fully trained", "good"];
+  if (t <= 0) return ["Not trained (poops anywhere)", "bad"];
+  const pct = Math.round(t * 100);
+  return [`Learning (uses box ${pct}% of the time)`, pct >= 50 ? "ok" : "bad"];
+}
+
+// calculateColorismPerception() is how far the coat is from the "poopie"
+// colours (POOPIE_ANCHORS in globals.js: poopie brown, drab green).
+// 0 = poopie coloured, 1 = nowhere near.
+function describeInspectionCoat(f) {
+  const colorName = f.getColorName ? f.getColorName() : "?";
+  const p = f.genetics ? f.genetics.calculateColorismPerception() : 1;
+  if (p < 0.5) return [`${colorName} - poopie colours!`, "bad"];
+  if (p < 0.9) return [`${colorName} - a bit drab`, "ok"];
+  return [`${colorName} - nice colours`, "good"];
+}
+
+// coloristDegree: how harshly this fluffy judges poopie-coloured fluffies
+// (mums may reject foals, special friend offers may be refused).
+function describeInspectionColorism(f) {
+  const d = f.coloristDegree || 0;
+  if (d < 0.2) return ["Doesn't care about colours", "good"];
+  if (d < 0.6) return ["A bit picky about colours", "ok"];
+  return ["Mean to poopie fluffies", "bad"];
+}
+
+function describeInspectionPersonality(f) {
+  const list = (f.personalities || []).map((p) =>
+    p
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" "),
   );
-  const sfName = sfId ? fluffyNames[sfId] || "Unnamed Fluffy" : "None";
+  if (list.length === 0) return ["Normal", ""];
+  const tone = f.isSmarty && f.isSmarty() ? "bad" : "";
+  return [list.join(", "), tone];
+}
 
-  let happinessStatus = "neutral";
-  if (f.happiness <= WAN_DIE_THRESHOLD) {
-    happinessStatus = "looping";
-  } else if (f.happiness <= HAPPINESS_MISERABLE_THRESHOLD) {
-    happinessStatus = "miserable";
-  } else if (f.happiness < HAPPINESS_SAD_THRESHOLD) {
-    happinessStatus = "unhappy";
-  } else if (f.happiness > HAPPINESS_HAPPY_THRESHOLD) {
-    happinessStatus = "happy";
-  } else {
-    happinessStatus = "neutral";
+function describeInspectionAge(f) {
+  const mins = Math.floor((f.age || 0) / 60);
+  const secs = Math.floor((f.age || 0) % 60);
+  const time = mins > 0 ? `${mins}m ${secs}s old` : `${secs}s old`;
+  if (f.growth < 1) {
+    return `Foal, ${Math.floor(f.growth * 100)}% grown (${time})`;
   }
+  return `Adult (${time})`;
+}
 
-  const infoLines = [
-    `Name: ${name}`,
-    `Gender: ${f.gender}`,
-    `Sexuality: ${f.sexuality || "heterosexual"}`,
-    `Type: ${f.type}`,
-    `Happiness: ${happinessStatus}`,
+function getInspectionConditions(f) {
+  const bad = [];
+  const good = [];
+  if (f.isSensitive && f.isSensitive()) bad.push("sensitive baby");
+  if (f.isPoisoned) bad.push("poisoned");
+  if (f.isToxoplasmosis) bad.push("toxoplasmosis");
+  if (f.isDiarrhea) bad.push("diarrhea");
+  if (f.isIncontinent) bad.push("incontinent");
+  if (f.accessories?.eyes?.id === "blindfold") bad.push("blindfolded");
+  if (f.accessories?.ABOVE_LUMPS?.id === "castration_band")
+    bad.push("castration band on");
+  if (f.isToxoVaccinated) good.push("toxo vaccinated");
+  return { bad, good };
+}
+
+function getFluffyInspectionInfo(f) {
+  const nameOf = (id, fallback) =>
+    id !== null && id !== undefined ? fluffyNames[id] || fallback : "Unknown";
+  const rels = relationships[f.id] || {};
+  const sfId = Object.keys(rels).find((id) => rels[id] === "special_friend");
+  const friendCount = Object.values(rels).filter((r) => r === "friend").length;
+
+  const about = [
+    { label: "Name", value: fluffyNames[f.id] || "Fluffy" },
+    { label: "Gender", value: f.gender },
+    { label: "Type", value: f.type },
+    { label: "Age", value: describeInspectionAge(f) },
+    { label: "Sexuality", value: f.sexuality || "heterosexual" },
   ];
-  if (f.gender === "female") {
-    infoLines.push(`Spayed: ${f.spayed ? "Yes" : "No"}`);
-    infoLines.push(`Pregnant: ${f.isPregnant ? "Yes" : "No"}`);
-  }
-  infoLines.push(`Special Friend: ${sfName}`);
-  infoLines.push(`Age: ${Math.floor(f.age)}s`);
-  infoLines.push(`Mother: ${momName}`);
-  infoLines.push(`Father: ${dadName}`);
+  const [persText, persTone] = describeInspectionPersonality(f);
+  about.push({ label: "Personality", value: persText, tone: persTone });
+  about.push({ label: "Mother", value: nameOf(f.motherId, "Unnamed fluffy") });
+  about.push({ label: "Father", value: nameOf(f.fatherId, "Unnamed fluffy") });
+  about.push({
+    label: "Special friend",
+    value: sfId ? fluffyNames[sfId] || "Unnamed fluffy" : "None",
+  });
+  about.push({ label: "Friends", value: String(friendCount) });
 
-  const missingPartsText = f.getMissingBodyPartsText
-    ? f.getMissingBodyPartsText()
-    : f.getMissingBodyParts && f.getMissingBodyParts().length > 0
-      ? f.getMissingBodyParts().join(", ")
-      : "none";
-  infoLines.push(`Missing body parts: ${missingPartsText}`);
-
+  const care = [];
   if (!f.isAlive) {
-    infoLines.push(`Cause of Death: ${f.causeOfDeath || "Unknown"}`);
-    if (f.lastDesire) {
-      infoLines.push(
-        `Last Desire: ${f.lastDesire.desire} (${f.lastDesire.value.toFixed(1)})`,
-      );
-    } else {
-      infoLines.push(`Last Desire: None`);
+    care.push({ label: "Cause of death", value: f.causeOfDeath || "Unknown", tone: "bad" });
+    care.push({
+      label: "Last desire",
+      value: f.lastDesire
+        ? `${f.lastDesire.desire} (${f.lastDesire.value.toFixed(1)})`
+        : "None",
+    });
+  } else {
+    const row = (label, [value, tone]) => care.push({ label, value, tone });
+    row("Happiness", describeInspectionHappiness(f));
+    row("Hunger", describeInspectionHunger(f));
+    const hp = Math.round(f.health);
+    care.push({ label: "Health", value: `${hp}/100`, tone: hp > 70 ? "good" : hp > 35 ? "ok" : "bad" });
+    row("Sleep", describeInspectionTiredness(f));
+  }
+  care.push({ label: "Litter trained", value: describeInspectionPottyTraining(f)[0], tone: describeInspectionPottyTraining(f)[1] });
+  const [coatText, coatTone] = describeInspectionCoat(f);
+  care.push({ label: "Coat", value: coatText, tone: coatTone });
+  if (typeof worldSettings === "undefined" || worldSettings.colorism) {
+    const [cText, cTone] = describeInspectionColorism(f);
+    care.push({ label: "Colour views", value: cText, tone: cTone });
+  }
+  if (f.gender === "female") {
+    care.push({ label: "Spayed", value: f.spayed ? "Yes" : "No" });
+    if (f.isAlive) {
+      care.push({ label: "Pregnant", value: f.isPregnant ? "Yes" : "No", tone: f.isPregnant ? "ok" : "" });
     }
   }
+  const missing = f.getMissingBodyPartsText
+    ? f.getMissingBodyPartsText()
+    : "none";
+  care.push({
+    label: "Missing parts",
+    value: missing,
+    tone: missing && missing !== "none" ? "bad" : "",
+  });
+  if (f.isAlive) {
+    const cond = getInspectionConditions(f);
+    const parts = [...cond.bad, ...cond.good];
+    care.push({
+      label: "Conditions",
+      value: parts.length ? parts.join(", ") : "none",
+      tone: cond.bad.length ? "bad" : cond.good.length ? "good" : "",
+    });
+    const hasAcc = Object.keys(f.accessories || {}).length > 0;
+    let sellText;
+    if (!f.canBeSold || !f.canBeSold()) sellText = "Can't be sold";
+    else if (hasAcc) sellText = "Remove accessories to sell";
+    else sellText = `$${Math.floor(f.calculatePrice() / 2)}`;
+    care.push({ label: "Sells for", value: sellText });
+  }
 
-  return infoLines;
+  return { about, care };
+}
+
+// Kept for anything that still wants plain text lines ("Label: value")
+function getFluffyInspectionLines(f) {
+  const info = getFluffyInspectionInfo(f);
+  return [...info.about, ...info.care].map((r) => `${r.label}: ${r.value}`);
+}
+
+function getInspectionModalLayout() {
+  const listW = Math.min(820, width - 40);
+  const listH = 560;
+  const listX = width / 2 - listW / 2;
+  const listY = height / 2 - listH / 2;
+  const btnW = 170;
+  const btnH = 40;
+  return {
+    listX,
+    listY,
+    listW,
+    listH,
+    btnW,
+    btnH,
+    nameBtnX: listX + 20,
+    closeBtnX: listX + listW - btnW - 20,
+    btnY: listY + listH - 60,
+  };
+}
+
+function drawInspectionColumn(ctx, title, rows, x, y, colW) {
+  ctx.textAlign = "left";
+  ctx.lineWidth = 2;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "black";
+
+  ctx.font = "bold 20px Arial";
+  ctx.fillStyle = "#ffd6f0";
+  ctx.strokeText(title, x, y);
+  ctx.fillText(title, x, y);
+  y += 30;
+
+  const labelW = 130;
+  const lineSpacing = 21;
+  for (const row of rows) {
+    ctx.font = "bold 15px Arial";
+    ctx.fillStyle = "#cfcfcf";
+    ctx.strokeText(row.label, x, y);
+    ctx.fillText(row.label, x, y);
+
+    ctx.font = "bold 15px Arial";
+    ctx.fillStyle = INSPECTION_TONE_COLORS[row.tone] || "white";
+    const wrapped =
+      typeof wrapText === "function"
+        ? wrapText(ctx, String(row.value), colW - labelW)
+        : [String(row.value)];
+    for (const sub of wrapped) {
+      ctx.strokeText(sub, x + labelW, y);
+      ctx.fillText(sub, x + labelW, y);
+      y += lineSpacing;
+    }
+    y += 3;
+  }
 }
 
 function drawInspectionModal(ctx) {
@@ -2183,22 +2363,19 @@ function drawInspectionModal(ctx) {
   ctx.fillStyle = "rgba(0,0,0,0.5)";
   ctx.fillRect(0, 0, width, height);
 
-  const listW = 440;
-  const listH = 540;
-  const listX = width / 2 - listW / 2;
-  const listY = height / 2 - listH / 2;
+  const L = getInspectionModalLayout();
 
   // Glass styling via UI's standard
   if (typeof drawGlassButton !== "undefined") {
-    drawGlassButton(listX, listY, listW, listH, "", {
+    drawGlassButton(L.listX, L.listY, L.listW, L.listH, "", {
       forceNormal: true,
       borderRadius: 12,
-      normalFill: "rgba(0, 0, 0, 0.5)",
+      normalFill: "rgba(20, 10, 25, 0.88)",
       hoverFill: "rgba(255, 255, 255, 0.75)",
     });
   } else {
     ctx.fillStyle = "rgba(0,0,0,0.8)";
-    ctx.fillRect(listX, listY, listW, listH);
+    ctx.fillRect(L.listX, L.listY, L.listW, L.listH);
   }
 
   const titleText = "Fluffy Inspection";
@@ -2208,71 +2385,46 @@ function drawInspectionModal(ctx) {
   ctx.lineWidth = 2;
   ctx.lineJoin = "round";
   ctx.strokeStyle = "black";
-  ctx.strokeText(titleText, width / 2, listY + 38);
-  ctx.fillText(titleText, width / 2, listY + 38);
+  ctx.strokeText(titleText, width / 2, L.listY + 38);
+  ctx.fillText(titleText, width / 2, L.listY + 38);
 
-  const f = inspectedFluffy;
-  const infoLines = getFluffyInspectionLines(f);
-
-  ctx.font = "bold 18px Arial";
-  ctx.textAlign = "left";
-  let currentY = listY + 75;
-  const lineSpacing = 24;
-  for (let i = 0; i < infoLines.length; i++) {
-    const line = infoLines[i];
-    const isDeath = line.startsWith("Cause of Death:");
-    ctx.fillStyle = isDeath ? "red" : "white";
-    ctx.strokeStyle = "black";
-
-    const wrapped =
-      typeof wrapText === "function" ? wrapText(ctx, line, listW - 60) : [line];
-    for (let j = 0; j < wrapped.length; j++) {
-      const subLine = wrapped[j];
-      ctx.strokeText(subLine, listX + 30, currentY);
-      ctx.fillText(subLine, listX + 30, currentY);
-      currentY += lineSpacing;
-    }
-  }
-
-  const btnW = 170;
-  const btnH = 40;
-  const nameBtnX = listX + 20;
-  const closeBtnX = listX + listW - btnW - 20;
-  const btnY = listY + listH - 60;
+  const info = getFluffyInspectionInfo(inspectedFluffy);
+  const colW = (L.listW - 60) / 2;
+  const colY = L.listY + 80;
+  drawInspectionColumn(ctx, "About", info.about, L.listX + 25, colY, colW - 10);
+  drawInspectionColumn(
+    ctx,
+    inspectedFluffy.isAlive ? "Health & care" : "Remains",
+    info.care,
+    L.listX + 35 + colW,
+    colY,
+    colW - 10,
+  );
 
   if (typeof drawGlassButton !== "undefined") {
-    drawGlassButton(nameBtnX, btnY, btnW, btnH, "Change name");
-    drawGlassButton(closeBtnX, btnY, btnW, btnH, "Close");
+    drawGlassButton(L.nameBtnX, L.btnY, L.btnW, L.btnH, "Change name");
+    drawGlassButton(L.closeBtnX, L.btnY, L.btnW, L.btnH, "Close");
   }
 }
 
 function handleInspectionModalClick() {
   if (!inspectedFluffy) return false;
 
-  const listW = 440;
-  const listH = 540;
-  const listX = width / 2 - listW / 2;
-  const listY = height / 2 - listH / 2;
+  const L = getInspectionModalLayout();
 
-  const btnW = 170;
-  const btnH = 40;
-  const nameBtnX = listX + 20;
-  const closeBtnX = listX + listW - btnW - 20;
-  const btnY = listY + listH - 60;
-
-  if (isPointInRect(mouse.x, mouse.y, nameBtnX, btnY, btnW, btnH)) {
+  if (isPointInRect(mouse.x, mouse.y, L.nameBtnX, L.btnY, L.btnW, L.btnH)) {
     const f = inspectedFluffy;
     inspectedFluffy = null;
     openNameModal(f);
     return true;
   }
-  if (isPointInRect(mouse.x, mouse.y, closeBtnX, btnY, btnW, btnH)) {
+  if (isPointInRect(mouse.x, mouse.y, L.closeBtnX, L.btnY, L.btnW, L.btnH)) {
     inspectedFluffy = null;
     return true;
   }
 
   // Absorb clicks on the modal background
-  if (isPointInRect(mouse.x, mouse.y, listX, listY, listW, listH)) {
+  if (isPointInRect(mouse.x, mouse.y, L.listX, L.listY, L.listW, L.listH)) {
     return true;
   }
 
