@@ -1051,7 +1051,7 @@ class Horse {
     this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
     other.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
 
-    if (key2 == "father" && this.personalies?.includes("smarty")) {
+    if (key2 == "father" && this.isSmarty()) {
       this.expressionOverride = "ANGRY_PUFFED";
       this.expressionOverrideTimer = 3.0;
       return getDialogue(["PERSONALITY", "SMARTY"], this, other);

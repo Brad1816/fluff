@@ -147,4 +147,24 @@ module.exports = [
       check(problems.length === 0, problems.join("; "));
     },
   },
+  {
+    name: "a smarty fluffy says its special line to its father",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene();
+        __seedRandom(3);
+        const dad = new Horse(1, null, "INDOORS", "earthy");
+        const kid = new Horse(1, null, "INDOORS", "earthy");
+        dad.x = 500; dad.y = 450; kid.x = 560; kid.y = 450;
+        kid.gender = "male";
+        kid.personalities = ["smarty"];
+        fluffies.push(dad, kid);
+        relationships[kid.id] = { [dad.id]: "father" };
+        relationships[dad.id] = { [kid.id]: "child" };
+        const line = kid.babbleFamilyDialogue();
+        return { line, smartyLines: DIALOGUE.PERSONALITY.SMARTY };
+      });
+      check(r.smartyLines.includes(r.line), "expected a SMARTY line, got: " + r.line);
+    },
+  },
 ];

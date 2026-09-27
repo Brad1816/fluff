@@ -35,7 +35,7 @@ npm test -- fence
 
 | File | What it checks |
 |---|---|
-| `smoke.test.js` | The game starts, runs for a while without errors, saves and loads |
+| `smoke.test.js` | The game starts, runs for a while without errors, saves and loads, family chat lines |
 | `items.test.js` | Every shop item: can be bought, sells for half price, can be picked up, survives save/load (uses `ItemRegistry.js`, so new items are tested automatically) |
 | `fences.test.js` | Pens hold fluffies in and out, gates work, pen-aware fluffies, pen sadness, buying/turning/selling fence pieces |
 | `run-tests.js` | Runs everything (starts a small web server and the hidden browser) |
