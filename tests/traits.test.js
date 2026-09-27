@@ -113,7 +113,8 @@ module.exports = [
         __clearScene();
         __seedRandom(2);
         const mk = (x, sum) => {
-          const h = new Horse(1, null, "INDOORS", "earthy");
+          // Mares: no smarties, so nobody gets beaten up mid-test
+          const h = new Horse(1, null, "INDOORS", "earthy", null, null, null, "female");
           set(h, "appetite", sum);
           h.x = x;
           h.y = 450;
