@@ -161,6 +161,7 @@ function resetTemporaryGameState() {
   dayCareStoredPage = 0;
   if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
   if (typeof closeFamilyTree === "function") closeFamilyTree();
+  if (typeof closeGeneLab === "function") closeGeneLab();
 }
 
 // Everything in SAVED_GAME_STATE back to how a new game starts

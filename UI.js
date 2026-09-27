@@ -2032,6 +2032,7 @@ function drawUI(ctx) {
   drawDebugWatcher();
   drawInspectionModal(ctx);
   if (typeof drawFamilyTree === "function") drawFamilyTree(ctx);
+  if (typeof drawGeneLab === "function") drawGeneLab(ctx);
   drawDayCareModal(ctx);
 }
 
@@ -2042,6 +2043,7 @@ function isAnyScreenOpen() {
   if (typeof inspectedFluffy !== "undefined" && inspectedFluffy !== null)
     return true;
   if (typeof isFamilyTreeOpen === "function" && isFamilyTreeOpen()) return true;
+  if (typeof isGeneLabOpen === "function" && isGeneLabOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -3596,6 +3598,10 @@ canvas.addEventListener("mousedown", (e) => {
   }
 
   if (typeof handleFamilyTreeClick === "function" && handleFamilyTreeClick()) {
+    return;
+  }
+
+  if (typeof handleGeneLabClick === "function" && handleGeneLabClick()) {
     return;
   }
 

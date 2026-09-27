@@ -1759,6 +1759,12 @@ const SPAWN_ACTIONS = [
     cost: 2000,
     isItem: "fluff_tv",
   },
+  {
+    name: "Gene Lab",
+    desc: "Predicts what two of your fluffies' foals could be like: type, patterns, coat colours, size and how many will be born alive. Right-click it to use.",
+    cost: 3000,
+    isItem: "gene_lab",
+  },
 ];
 
 const DEBUG_ACTIONS = [

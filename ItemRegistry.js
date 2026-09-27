@@ -202,6 +202,15 @@ const ITEM_TYPES = [
     create: (a, sx, sy) => atSpot(new FluffTV(currentScene), sx, sy),
   },
   {
+    sellType: "gene_lab", // GeneLab.js
+    is: (o) => typeof GeneLab !== "undefined" && o instanceof GeneLab,
+    drawIcon: (ctx, btnSize) => drawGeneLabIcon(ctx, btnSize),
+    inCage: "never",
+    sellable: true,
+    onRightClick: () => openGeneLab(),
+    create: (a, sx, sy) => atSpot(new GeneLab(currentScene), sx, sy),
+  },
+  {
     sellType: "fence",
     is: (o) => typeof Fence !== "undefined" && o instanceof Fence && !o.isGate,
     drawIcon: (ctx, btnSize) => drawFenceIcon(ctx, btnSize),
@@ -647,6 +656,7 @@ const SAVED_CLASSES = {
   FoalVendor: (d) => new FoalVendor(d.scene),
   FoalInACan: (d) => new FoalInACan(d.scene),
   FluffTV: (d) => new FluffTV(d.scene),
+  GeneLab: (d) => new GeneLab(d.scene),
   Bowl: (d) => new Bowl(d.type, d.scene),
   Grass: (d) => new Grass(d.x, d.y, d.scene),
   Thumbtack: (d) => new Thumbtack(d.scene),

@@ -295,28 +295,54 @@ const FT_BUTTONS = {
 
 // A fluffy to draw portraits with. Living fluffies draw themselves; for the
 // rest a stand-in is made from the saved genes (without touching the game).
-function _familyPortraitFluffy(rec) {
-  const live = fluffies.find((f) => f.id === rec.id);
-  if (live) return live;
-  if (!Array.isArray(rec.genes)) return null;
+// A throwaway fluffy made from a gene list, for drawing portraits (family
+// tree, gene lab). It never joins the game: its id is handed back and its
+// relationships entry removed.
+function makeStandInFluffy(genes, opts = {}) {
+  if (!Array.isArray(genes)) return null;
   const savedId = nextFluffyId;
   let h = null;
   try {
     h = new Horse(
-      rec.growth ?? 1,
+      opts.growth ?? 1,
       null,
       "FAMILY_TREE_PORTRAIT",
-      rec.type || "earthy",
-      rec.genes.slice(),
+      opts.type || "earthy",
+      genes.slice(),
       null,
       null,
-      rec.gender || null,
+      opts.gender || null,
     );
   } catch (e) {
     h = null;
   }
   if (h) delete relationships[h.id];
   nextFluffyId = savedId;
+  return h;
+}
+
+// Draw a fluffy's portrait into a new size x size canvas (null on failure)
+function drawFluffyPortraitCanvas(h, size) {
+  if (!h || typeof h.drawPortrait !== "function") return null;
+  try {
+    const canvas = new OffscreenCanvas(size, size);
+    const c = canvas.getContext("2d");
+    // drawPortrait centres on the body; the head sticks out up and right
+    h.drawPortrait(c, size * 0.44, size * 0.6, size * 0.78);
+    return canvas;
+  } catch (e) {
+    return null;
+  }
+}
+
+function _familyPortraitFluffy(rec) {
+  const live = fluffies.find((f) => f.id === rec.id);
+  if (live) return live;
+  const h = makeStandInFluffy(rec.genes, {
+    growth: rec.growth,
+    type: rec.type,
+    gender: rec.gender,
+  });
   if (h && rec.status === "dead") {
     h.isAlive = false;
     h.deathTimer = 999;
@@ -327,18 +353,7 @@ function _familyPortraitFluffy(rec) {
 function _familyPortrait(rec, size) {
   const key = rec.id + ":" + size;
   if (_familyPortraitCache[key] !== undefined) return _familyPortraitCache[key];
-  let canvas = null;
-  const h = _familyPortraitFluffy(rec);
-  if (h && typeof h.drawPortrait === "function") {
-    try {
-      canvas = new OffscreenCanvas(size, size);
-      const c = canvas.getContext("2d");
-      // drawPortrait centres on the body; the head sticks out up and right
-      h.drawPortrait(c, size * 0.44, size * 0.6, size * 0.78);
-    } catch (e) {
-      canvas = null;
-    }
-  }
+  const canvas = drawFluffyPortraitCanvas(_familyPortraitFluffy(rec), size);
   _familyPortraitCache[key] = canvas;
   return canvas;
 }

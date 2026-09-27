@@ -51,6 +51,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** happens in `handleWorldSettingsClick` (it resets everything in `SAVED_GAME_STATE`). |
 | `Store.js` | **Fluff Mart**: the Shopping Street scene (down from the garden), the store's aisle scenes, which items go in which aisle (`STORE_AISLES`), drawing the shelves and price tags, and buying by clicking a shelf. See section 9. |
 | `FamilyTree.js` | **Family record book** (`fluffyRecords`: every fluffy you've owned, even after it dies or is sold, with its genes and parents) and the **family tree screen** with its genetics panel. See section 9. |
+| `GeneLab.js` | The **Gene Lab** machine (a shop item) and its screen that predicts what two fluffies' foals could be like. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -448,7 +449,7 @@ Things are bought at a store instead of from a menu.
   **Shopping Street** (`SHOP_STREET`) → store door → the aisles. The
   "Back to Garden" arrow is at the top right of the street.
 - **Aisles**: each is its own scene, `STORE_FOOD`, `STORE_HOME`,
-  `STORE_CARE`, `STORE_PHARMACY`, `STORE_HARDWARE`, `STORE_FASHION`
+  `STORE_CARE`, `STORE_PHARMACY` (Pharmacy & Lab), `STORE_HARDWARE`, `STORE_FASHION`
   (+ `STORE_MISC` "Odds & Ends" if anything isn't listed), with left/right
   arrows between them and a down arrow back out to the street. Which items
   are in which aisle is the `STORE_AISLES` list at the top of `Store.js`,
@@ -497,4 +498,29 @@ Open it with the **Family tree** button in the magnifying glass panel.
   from one parent or the other at random, see `combineGenes`). With the
   sensitive-baby world setting on it also shows that risk (matching pairs
   in genes 65-70). `describeGenes(genes)` does the decoding.
+
+### Gene Lab (`GeneLab.js`)
+A $3000 machine in the store's Pharmacy & Lab aisle. Place it anywhere and
+**right-click** it (its `onRightClick` in `ItemRegistry.js` calls
+`openGeneLab()`).
+- **Screen**: pick a mother and a father from your living fluffies (the
+  dot is coat quality). If the mother is pregnant, the father list starts
+  with "This pregnancy" and it's picked automatically; the litter panel
+  then shows a **scan**: how many foals are coming and how many won't
+  survive (her `foalViability`).
+- **Predictions** (`computeLitterPrediction`): runs the game's own
+  `HorseGenetics.combineGenes` 400 times, with a seeded random number
+  generator swapped in for `Math.random` just for the loop (so it's
+  repeatable and the game's own randomness isn't touched), then counts
+  foal type, patterns, hidden wing/horn carriers, coat quality, size and
+  sensitive-baby chance. **Born alive** is worked out exactly
+  (`geneLabViability`) with the same rule as `triggerPregnancy`: for each
+  of the 3 gene pairs 65/66, 67/68, 69/70 one gene is picked from each
+  parent, and a match in any pair means the foal isn't viable.
+- **Example foals**: 7 pretend foals, picked so their types match the odds
+  (`geneLabExampleFoals`), drawn with `makeStandInFluffy` from
+  `FamilyTree.js`.
+- **Related pairs** get a warning from `describeFamilyRelation` (parent,
+  siblings, half-siblings, grandparent, aunt/uncle, cousins) using the
+  family record book.
 

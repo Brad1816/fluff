@@ -52,8 +52,8 @@ const STORE_AISLES = [
   },
   {
     id: "pharmacy",
-    name: "Pharmacy",
-    items: ["iv_stand", "iv_bag", "syringe"],
+    name: "Pharmacy & Lab",
+    items: ["iv_stand", "iv_bag", "syringe", "gene_lab"],
   },
   {
     id: "hardware",
