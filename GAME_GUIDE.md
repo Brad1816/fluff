@@ -58,6 +58,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
 | `Bonds.js` | **Bonds and grudges between fluffies**: each fluffy's opinion of the others (`opinions`, `opinionWhy`), `getLiking`, becoming friends by spending time together, defending buddies, avoiding grudges. See section 9. |
 | `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
+| `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
 | `Park.js` | **Fluffy Park**: the big area bigger than the screen (River → left arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
@@ -691,8 +692,41 @@ you *and* it (anywhere else that would throw it through on its own).
   when things are dropped through arrows into or out of the park.
 - **Scenery**: trees, rocks and flowers are placed the same every time
   (`PARK_SCENERY`, seeded) and only drawn when on screen; a hedge marks the
-  edges. They're just pictures for now (stage 2 adds food and water).
+  edges. Trees, rocks and flowers are just pictures; the food is below.
 - Also fixed along the way: the mouse-wheel listener in `globals.js` is now
   `passive: false`, so its `preventDefault` works instead of logging an
   error on every scroll.
+
+### Life in the park (`ParkLife.js`)
+- **Meadows** (`PARK_MEADOWS`, 7, seeded): patches of long grass. Grass
+  grows back inside them by itself (a new tuft every `MEADOW_SEED_EVERY`
+  seconds, up to `MEADOW_MAX_TUFTS` per meadow). Park grass doesn't spread
+  on its own (`Grass.update` skips the park). Outside meadows there's
+  nothing to eat. Pee and other puddles soak into the lawn anywhere in the
+  park (`Puddle.js`).
+- **Berry bushes** (`BerryBush`, 12, `PARK_BUSH_SPOTS`): a kind of `Grass`,
+  so fluffies find and eat berries with the same code. Up to `BERRY_MAX`
+  berries, one grows back every `BERRY_REGROW` seconds, and the bush never
+  goes away. Fluffies like berries more than grass.
+- **Choosing food in the park**: `scoutForHunger` normally picks the best
+  food anywhere, then the nearest. In the park that would send everyone
+  across the whole map, so there it scores `distance - priority x 150px`:
+  berries are worth a short extra walk, not a trek.
+- **Wild fluffies**: the park keeps about `PARK_WILD_TARGET` (16) wild ones.
+  When there are fewer, `spawnParkGroup()` brings a group in at the edge
+  (off screen if you're watching) every minute or two: families (mum, maybe
+  dad, 1-4 foals old enough to walk, with proper mum/dad links), single
+  mums, a few friends, or a loner. Families like each other, so they form
+  herds by themselves. They breed too; if the park goes over
+  `PARK_WILD_MAX` (30), a wild grown-up (loners first) wanders off now and
+  then, only while you're somewhere else. The dog clean-up in
+  `updateFerals` leaves living park fluffies alone.
+- **Setup**: `setupParkLife(true)` on a new game (bushes, meadow grass and 3
+  groups); `setupParkLife(false)` after loading adds bushes/grass to older
+  saves. The map shows meadows (light green) and bushes (purple when they
+  have berries).
+- **Tests** turn wild spawning off (`parkLife.enabled = false` in
+  `tests/run-tests.js`) so new fluffies don't surprise other tests; the
+  park tests turn it on. In a 10-minute run the park held 16-30 fluffies in
+  several herds with no one going hungry.
 

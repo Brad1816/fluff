@@ -302,6 +302,7 @@ function _drawParkFlowers(c, f) {
 // script.js render, after the background, with the camera applied
 function drawParkScenery(c) {
   if (!isCameraScene(currentScene)) return;
+  if (typeof drawParkMeadows === "function") drawParkMeadows(c);
   const x0 = camera.x - 200;
   const x1 = camera.x + width + 200;
   const y0 = camera.y - 200;
@@ -358,6 +359,7 @@ function drawParkHud(c) {
   c.fillRect(r.x, r.y, r.w, r.h);
   const sx = r.w / PARK_W;
   const sy = r.h / PARK_H;
+  if (typeof drawParkLifeOnMap === "function") drawParkLifeOnMap(c, r);
   c.fillStyle = "rgba(20, 90, 25, 0.9)";
   for (const it of PARK_SCENERY) {
     if (it.kind !== "tree") continue;

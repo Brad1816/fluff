@@ -71,6 +71,9 @@ async function openGame(browser, port) {
       for (let i = 0; i < seconds * 60; i++) updateSimulation(1 / 60);
     };
     // Empty a scene of items and all fluffies (not the whole world's grass)
+    // No wild fluffies wandering into the park during other tests
+    // (tests/park.test.js switches it back on)
+    if (typeof parkLife !== "undefined") parkLife.enabled = false;
     window.__clearScene = (scene = "INDOORS") => {
       for (let i = objects.length - 1; i >= 0; i--) {
         if (objects[i].scene === scene) objects.splice(i, 1);

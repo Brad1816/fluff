@@ -189,3 +189,155 @@ module.exports = [
     },
   },
 ];
+
+// ---- Life in the park (ParkLife.js) ----
+module.exports.push(
+  {
+    name: "park life: a new game has berry bushes, meadow grass and wild families",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        const inPark = objects.filter((o) => o.scene === "PARK");
+        const bushes = inPark.filter((o) => o instanceof BerryBush);
+        const grass = inPark.filter((o) => o instanceof Grass && !(o instanceof BerryBush));
+        const wild = fluffies.filter((f) => isParkWild(f));
+        return {
+          bushes: bushes.length,
+          grass: grass.length,
+          grassOutside: grass.filter((g) => !inParkMeadow(g.x, g.y)).length,
+          wild: wild.length,
+          inside: wild.every((f) => f.x > 0 && f.x < PARK_W && f.y > PARK_TOP && f.y < PARK_H),
+          meadows: PARK_MEADOWS.length,
+        };
+      });
+      checkEqual(r.bushes, 12, "berry bushes");
+      checkEqual(r.meadows, 7, "meadows");
+      check(r.grass >= 7 * 5, `grass tufts in the park: ${r.grass}`);
+      checkEqual(r.grassOutside, 0, "grass outside the meadows");
+      check(r.wild >= 5, `wild fluffies at the start: ${r.wild}`);
+      check(r.inside, "a wild fluffy is outside the park");
+    },
+  },
+  {
+    name: "park life: berry bushes are eaten and grow back; meadows regrow; they survive saving",
+    run: async (page) => {
+      const r = await page.evaluate(async () => {
+        __clearScene("PARK");
+        gameState = "PAUSED";
+        const bush = new BerryBush(1000, 800, "PARK", 2);
+        objects.push(bush);
+        const res = {};
+        res.eat1 = bush.eat();
+        res.eat2 = bush.eat();
+        res.eat3 = bush.eat();
+        res.empty = !bush.hasFood();
+        res.stillThere = !bush.isDestroyed;
+        for (let i = 0; i < 60; i++) bush.update(1);
+        res.regrew = bush.berries;
+        for (let i = 0; i < 600; i++) bush.update(1);
+        res.max = bush.berries;
+        // Meadows grow grass back after being grazed bare
+        for (let i = 0; i < 40; i++) updateParkLife(1);
+        const m = PARK_MEADOWS[0];
+        res.tufts = objects.filter(
+          (o) => o instanceof Grass && !(o instanceof BerryBush) && o.scene === "PARK" &&
+            ((o.x - m.x) / m.rx) ** 2 + ((o.y - m.y) / m.ry) ** 2 <= 1,
+        ).length;
+        for (let i = 0; i < 400; i++) updateParkLife(1);
+        res.tuftsLater = objects.filter(
+          (o) => o instanceof Grass && !(o instanceof BerryBush) && o.scene === "PARK" && inParkMeadow(o.x, o.y),
+        ).length;
+        // Save and load
+        bush.growth = 3;
+        await saveGame("__automated_test__");
+        objects.length = 0;
+        await loadGame("__automated_test__");
+        await saveManager.delete("__automated_test__");
+        gameState = "PAUSED";
+        const back = objects.find((o) => o instanceof BerryBush && Math.round(o.x) === 1000 && Math.round(o.y) === 800);
+        res.back = back ? back.berries : null;
+        res.bushesAfter = objects.filter((o) => o instanceof BerryBush).length;
+        return res;
+      });
+      check(r.eat1 && r.eat2 && !r.eat3, "a bush with 2 berries should feed exactly twice");
+      check(r.empty && r.stillThere, "an empty bush should stay, just empty");
+      checkEqual(r.regrew, 1, "berries after a minute");
+      checkEqual(r.max, 5, "berries after a long time");
+      check(r.tufts >= 5, `tufts in a grazed-bare meadow after 40s: ${r.tufts}`);
+      check(r.tuftsLater <= 7 * 10, `meadows don't overfill: ${r.tuftsLater}`);
+      checkEqual(r.back, 3, "berries after loading");
+      checkEqual(r.bushesAfter, 1, "bushes after loading (no extra ones added when the park has some)");
+    },
+  },
+  {
+    name: "park life: a hungry fluffy picks nearby food over berries across the park, and eats",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene("PARK");
+        __seedRandom(5);
+        const f = new Horse(1, null, "PARK", "earthy", null, null, null, "female");
+        f.x = 600;
+        f.y = 600;
+        f.hunger = 0.3;
+        fluffies.push(f);
+        const nearGrass = new Grass(750, 600, "PARK", 2);
+        const farBush = new BerryBush(2600, 1500, "PARK", 5);
+        const nearBush = new BerryBush(600, 820, "PARK", 5);
+        objects.push(nearGrass, farBush);
+        f.positioning.scoutForHunger();
+        const pickedWithoutBush = [f.targetX, f.targetY];
+        objects.push(nearBush);
+        f.positioning.scoutForHunger();
+        const pickedWithBush = [f.targetX, f.targetY];
+        __fastForward(20);
+        return { pickedWithoutBush, pickedWithBush, hunger: f.hunger, nearBerries: nearBush.berries };
+      });
+      checkEqual(JSON.stringify(r.pickedWithoutBush), JSON.stringify([750, 600]), "grass close by beats berries far away");
+      checkEqual(JSON.stringify(r.pickedWithBush), JSON.stringify([600, 820]), "berries a bit further beat grass");
+      check(r.hunger > 0.9, `hunger after 20s: ${r.hunger.toFixed(2)}`);
+      check(r.nearBerries < 5, "the nearby bush wasn't eaten from");
+    },
+  },
+  {
+    name: "park life: wild groups wander in at the edge, make herds, and stay (dogs don't take them)",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene("PARK");
+        __seedRandom(9);
+        herdState = freshHerdState();
+        _herdChanged();
+        parkLife.enabled = true;
+        parkLife.spawnTimer = 0;
+        changeScene("INDOORS");
+        const res = {};
+        const fam = spawnParkGroup("family");
+        res.famSize = fam.length;
+        res.atEdge = fam.every(
+          (f) => f.x < 250 || f.x > PARK_W - 250 || f.y < PARK_TOP + 250 || f.y > PARK_H - 250,
+        );
+        res.kidsHaveDad = fam.slice(2).every((k) => k.fatherId === fam[1].id && k.motherId === fam[0].id);
+        updateHerds(3);
+        res.famHerd = !!herdOf(fam[0]) && fam.every((f) => herdOf(f) === herdOf(fam[0]));
+        // The park fills up over a few minutes
+        for (let i = 0; i < 8 * 60; i++) {
+          updateParkLife(1);
+          updateFerals(1); // the dog clean-up
+        }
+        res.wild = countParkWild();
+        // Crowded: fluffies wander off while you're away
+        for (let i = 0; i < 12; i++) spawnParkGroup("friends");
+        res.crowded = countParkWild();
+        for (let i = 0; i < 20 * 60; i++) updateParkLife(1);
+        res.afterTrim = countParkWild();
+        parkLife.enabled = false;
+        return res;
+      });
+      check(r.famSize >= 3, `family size ${r.famSize}`);
+      check(r.atEdge, "family didn't arrive at the edge of the park");
+      check(r.kidsHaveDad, "foals don't know their mum and dad");
+      check(r.famHerd, "the family didn't make a herd");
+      check(r.wild >= 16 && r.wild <= 30, `wild fluffies after 8 minutes: ${r.wild}`);
+      check(r.crowded > 30, `crowded: ${r.crowded}`);
+      check(r.afterTrim <= 30 && r.afterTrim >= 25, `after a crowded park thins out: ${r.afterTrim}`);
+    },
+  },
+);

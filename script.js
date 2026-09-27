@@ -1195,6 +1195,8 @@ function updateFerals(dt) {
       return (
         (!config.insidePlayerQuarters ||
           (f.scene === "BACKYARD" && backyardFenceBroken)) &&
+        // Living park fluffies have their own comings and goings (ParkLife.js)
+        !(f.scene === "PARK" && f.isAlive) &&
         !f.isDragging &&
         f.scene !== currentScene &&
         (f.currentCage === null || f.currentCage === undefined)
@@ -1485,6 +1487,7 @@ function updateSimulation(dt) {
   }
 
   updateFerals(dt);
+  if (typeof updateParkLife === "function") updateParkLife(dt);
   updateMoneyAndRequests(dt);
   updateDoorMessages(dt);
 

@@ -433,6 +433,10 @@ class HorsePositioning {
     let bestBowl = null;
     let maxPriority = -Infinity;
     let minDst = Infinity;
+    // In the big park, distance matters too: better food is worth a walk,
+    // but not right across the park (each priority step = 150px)
+    const farAway = typeof isCameraScene === "function" && isCameraScene(this.horse.scene);
+    let bestScore = Infinity;
 
     for (const b of bowls) {
       if (b instanceof Bowl) {
@@ -448,6 +452,15 @@ class HorsePositioning {
       const prio =
         b.priority !== undefined ? b.priority : getFoodPriority(b.foodType);
       const dst = (this.horse.x - b.x) ** 2 + (this.horse.y - b.y) ** 2;
+
+      if (farAway) {
+        const score = Math.sqrt(dst) - prio * 150;
+        if (score < bestScore) {
+          bestScore = score;
+          bestBowl = b;
+        }
+        continue;
+      }
 
       if (prio > maxPriority) {
         maxPriority = prio;

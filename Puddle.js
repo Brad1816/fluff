@@ -10,6 +10,11 @@ function updatePuddles(dt) {
     if (grasses.length > 0) {
       puddles.forEach((puddle) => {
         if (!puddle.isGrowing) {
+          // The whole park is lawn, so everything soaks in there
+          if (puddle.scene === "PARK") {
+            if (puddle.points.length) puddle.isGrowing = true;
+            return;
+          }
           const nearGrass = puddle.points.some((p) =>
             grasses.some(
               (g) =>
@@ -68,8 +73,8 @@ function updatePuddles(dt) {
       const p = puddle.points[i];
 
       // Check if near any grass
-      let nearGrass = false;
-      if (typeof objects !== "undefined") {
+      let nearGrass = puddle.scene === "PARK"; // lawn everywhere in the park
+      if (!nearGrass && typeof objects !== "undefined") {
         nearGrass = objects.some(
           (o) =>
             o instanceof Grass &&

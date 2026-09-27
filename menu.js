@@ -570,6 +570,9 @@ function handleWorldSettingsClick() {
         }
       }
     }
+
+    // Fluffy Park: berry bushes, meadow grass and a few wild families
+    if (typeof setupParkLife === "function") setupParkLife(true);
     return;
   }
 

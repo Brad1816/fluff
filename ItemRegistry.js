@@ -669,6 +669,7 @@ const SAVED_CLASSES = {
   Computer: (d) => new Computer(d.scene),
   Bowl: (d) => new Bowl(d.type, d.scene),
   Grass: (d) => new Grass(d.x, d.y, d.scene),
+  BerryBush: (d) => new BerryBush(d.x, d.y, d.scene),
   Thumbtack: (d) => new Thumbtack(d.scene),
   Syringe: (d) => new Syringe(d.scene),
   CattleProd: (d) => new CattleProd(d.scene),

@@ -67,6 +67,9 @@ class Grass {
     // grows from 0 to 2, grows by 1 every two minutes (120 seconds)
     this.growth = Math.min(2, this.growth + dt / 120);
 
+    // In the park, grass only grows back in meadows (ParkLife.js does that)
+    if (typeof PARK_SCENE !== "undefined" && this.scene === PARK_SCENE) return;
+
     // Grass will occasionally spawn extra grass at 0.2 growth
     // if there are fewer than 5 grass in a radius around it
     if (this.growth >= 0.4) {

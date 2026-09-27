@@ -591,6 +591,9 @@ async function loadGame(slotName) {
     }
   }
 
+  // Fluffy Park food (saves from before the park had any)
+  if (typeof setupParkLife === "function") setupParkLife(false);
+
   console.log("Game loaded successfully!");
 }
 
