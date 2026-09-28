@@ -82,6 +82,9 @@ and it runs. About 36,000 lines across ~60 files.
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
 | `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
+| `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
+| `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
+| `UIPanels.js` | Shared drawing for pop-up screens: panel, title, rounded boxes, buttons, `fitText`. |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -118,6 +121,46 @@ helper, reachable as `horse.brain`, `horse.positioning`, and so on.
 | `HorseAnatomy.js` | `horse.anatomy` | Amputation, death, gibs, eating corpses, pregnancy start, births. |
 | `HorseGenetics.js` | `horse.genetics` | Genes → colours, mane/tail type, wings/horn; breeding (`combineGenes`); **price** (`calculatePrice`). |
 | `HorseRenderer.js` | `horse.renderer` | Drawing the fluffy from body-part images, tinted to its colours; face expressions; speech bubbles; dreams; portraits. |
+
+#### Adding things: the lists to use
+Several things are now one line to add, in the file of the feature itself:
+- **A pop-up screen**: `registerScreen({ name, layer, isOpen, close, draw,
+  click })` at the end of its file (`Screens.js`). Drawing, "is a screen
+  open?", clicks (top screen first), Esc and closing on new game/load all
+  come from the list. Layers: 5 magnifying glass, 10 family tree, 11 Gene
+  Lab, 12 orders, 13 day care, 20 goals, 21 help, 22 records, 23 vet, 30
+  morning report, 31 naming pop-up.
+- **Something that updates every step**: `registerSystem(name, update,
+  order)` at the end of its file (`Systems.js`); script.js
+  `updateSimulation` calls `updateSystems(dt)`. For "every N seconds" use a
+  `Ticker`: `const myTicker = new Ticker(5);` then in the update
+  `const step = myTicker.step(dt); if (!step) return;` (`step` is the
+  seconds since last time).
+- **Something saved with each fluffy**: add `{ name, fallback, clone }` to
+  `SAVED_HORSE_FIELDS` in HorseSave.js; saving and loading both read it.
+  (The game's original fields are still listed by hand in `serialize` and
+  `Horse.deserialize`.)
+- **Something saved with the game**: add an entry to `SAVED_GAME_STATE` in
+  Persistence.js (as before).
+- **Drawing a screen**: UIPanels.js has `drawScreenPanel(c, L, { theme })`
+  (dimmed background and panel; themes "pink" and "green"),
+  `drawPanelTitle`, `fillRoundRect`, `drawPanelButton(b, label, { enabled,
+  on })` and `fitText(c, text, maxW)`.
+
+#### Speed notes
+- Fluffies in areas you aren't looking at skip looks-only work each step
+  (blinking, eyes, wings, dreams, tears, body layout) and update their face
+  twice a second (Horse.update, HorseUpdate `_updateExpression` part).
+  Anything that needs an unseen fluffy's size calls `getExtentsForCage`,
+  which works out its layout then.
+- Who's being chased by a smarty is worked out once per step
+  (HorseRenderer `_chasedFluffies`), not once per fluffy.
+- render() reuses one offscreen buffer, room floors are drawn once per area
+  and window size (UIScenes `_backgroundFor`), and drawUI runs once per
+  frame, on the screen.
+- Measured with ~67 fluffies (20 at home, a full park): a game step went
+  from about 5ms to 3.9ms at home (7.1 to 5.4 in the park); drawing from 19
+  to 15ms at home, 12 to 6.4 in the park.
 
 #### How the Horse method files work
 Each of the `Horse*.js` method files calls `addHorseMethods({ ... })` with
@@ -427,6 +470,17 @@ them turns it back on itself (e.g. `names.test.js` sets
 `namingPopupsEnabled = true`). `__seedRandom(n)` makes random choices
 repeatable, `__fastForward(seconds)` runs the game quickly, and
 `__clearScene()` empties an area.
+
+**Running 4 at a time.** Tests run `TEST_WORKERS` at once (default 4; set
+`TEST_WORKERS=1` in the terminal to run them one by one, e.g. to read the
+output in order). Each worker has its own browser context, so saves don't
+clash. Game files are cached during a run. At the end it lists any failed
+tests and how long it took. A test must not depend on another test having
+run first.
+
+**Forcing a system to run now**: systems use a `Ticker` (Systems.js), so a
+test does `illnessTicker.fireNext(); updateIllness(0);` for exactly one
+tick.
 
 ## 8. Gotchas worth knowing
 
