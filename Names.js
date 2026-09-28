@@ -1,16 +1,14 @@
 // ---------------------------------------------------------------------------
-// Every fluffy gets a name of its own.
+// Fluffy names.
 //
-// Fluffies used to be "Fluffy" or "Unnamed fluffy" until you named them,
-// which made the herds, the family tree and the morning report hard to
-// follow. Now each fluffy is given a name when it appears (born, bought,
-// wandering into the park, loaded from an old save):
-//   - usually one that suits its coat colour (a pink fluffy might be Rosie
-//     or Bubblegum, a grey one Pebble or Smokey), sometimes a general one
-//   - never the same as a fluffy that's alive now: repeats get a number
-//     ("Pudding II", "Pudding III")
-// You can still rename any fluffy with the magnifying glass; your names are
-// kept. Names live in fluffyNames (already saved with the game).
+// Fluffies are just "Fluffy" until a human names them (the magnifying
+// glass "Change name" button). For a short while a build of the game gave
+// every fluffy an automatic name; cleanUpAutoNames() takes those back out
+// of saves made with that build, so those fluffies are "Fluffy" again.
+//
+// It only acts on a save where every fluffy has a name (the tell-tale sign
+// of that build - normally lots of fluffies are unnamed), and only removes
+// names from its lists (e.g. "Rosie", "Pudding II").
 // ---------------------------------------------------------------------------
 
 const NAMES_BY_COLOUR = {
@@ -34,59 +32,23 @@ const GENERAL_NAMES = [
   "Bean", "Chip", "Figgy", "Lolly", "Mopsy", "Nubbin", "Popcorn", "Scooter", "Sniffles", "Tootsie",
 ];
 
-const _ROMAN = ["", "", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
-function _namesInUse() {
-  const used = new Set();
-  if (typeof fluffies === "undefined" || typeof fluffyNames === "undefined") return used;
-  for (const f of fluffies) {
-    const n = fluffyNames[f.id];
-    if (n && f.isAlive) used.add(n);
-  }
-  return used;
+function _isAutoName(n) {
+  if (typeof n !== "string") return false;
+  const base = n.replace(/ (II|III|IV|V|VI|VII|VIII|IX|X|\d+)$/, "");
+  if (GENERAL_NAMES.includes(base)) return true;
+  return Object.values(NAMES_BY_COLOUR).some((list) => list.includes(base));
 }
 
-// A new name for fluffy `f` (doesn't store it)
-function pickFluffyName(f, used = _namesInUse()) {
-  let colour = null;
-  try {
-    colour = f && f.getColorName ? f.getColorName() : null;
-  } catch (e) {
-    colour = null;
-  }
-  const themed = NAMES_BY_COLOUR[colour];
-  const pool = themed && Math.random() < 0.65 ? themed : GENERAL_NAMES;
-  // Try a few free names first
-  for (let i = 0; i < 12; i++) {
-    const n = pool[Math.floor(Math.random() * pool.length)];
-    if (!used.has(n)) return n;
-  }
-  // All taken: number one of them
-  const base = pool[Math.floor(Math.random() * pool.length)];
-  for (let k = 2; k < 1000; k++) {
-    const n = `${base} ${k < _ROMAN.length ? _ROMAN[k] : k}`;
-    if (!used.has(n)) return n;
-  }
-  return `${base} ${f ? f.id : ""}`.trim();
-}
-
-// Give `f` a name if it hasn't got one
-function ensureFluffyName(f) {
-  if (!f || typeof fluffyNames === "undefined" || f.id === undefined) return null;
-  if (!fluffyNames[f.id]) fluffyNames[f.id] = pickFluffyName(f);
-  return fluffyNames[f.id];
-}
-
-// script.js updateSimulation: anyone still without a name gets one
-// (new arrivals, old saves). Cheap: only looks at fluffies without one.
-function updateFluffyNames() {
-  if (typeof fluffies === "undefined" || typeof fluffyNames === "undefined") return;
-  let used = null;
-  for (const f of fluffies) {
-    if (fluffyNames[f.id]) continue;
-    used = used || _namesInUse();
-    const n = pickFluffyName(f, used);
-    fluffyNames[f.id] = n;
-    used.add(n);
-  }
+// Persistence.js loadGame, after the fluffies are loaded. Returns how many
+// names were removed.
+function cleanUpAutoNames() {
+  if (typeof fluffies === "undefined" || typeof fluffyNames === "undefined") return 0;
+  if (fluffies.length < 5) return 0;
+  const allNamed = fluffies.every((f) => !!fluffyNames[f.id]);
+  if (!allNamed) return 0;
+  const auto = fluffies.filter((f) => _isAutoName(fluffyNames[f.id]));
+  if (auto.length < fluffies.length * 0.8) return 0; // looks like names you chose
+  for (const f of auto) delete fluffyNames[f.id];
+  return auto.length;
 }

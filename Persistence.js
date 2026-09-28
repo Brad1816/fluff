@@ -605,6 +605,9 @@ async function loadGame(slotName) {
     }
   }
 
+  // Undo the automatic names from one earlier build (Names.js)
+  if (typeof cleanUpAutoNames === "function") cleanUpAutoNames();
+
   // Fluffy Park food (saves from before the park had any)
   if (typeof setupParkLife === "function") setupParkLife(false);
 
