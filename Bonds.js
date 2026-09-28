@@ -235,6 +235,31 @@ function _grudgeNear(a, b, now, step) {
   }
 }
 
+// ---- Sleeping together ----
+
+// How much `horse` wants to go and sleep next to `sleeper`, as a distance
+// (smaller = better), or null for "no thanks". Used by scoutForSleep
+// (HorsePositioning.js), which used to pick the nearest sleeper anywhere -
+// so in the park every herd ended up in one big pile.
+//   - never someone it dislikes, or a member of another herd
+//   - herd-mates and family/buddies count as much closer
+//   - indoors, anyone else it doesn't mind; in the park, only a nearby
+//     stranger when neither is in a herd
+function sleepBuddyScore(horse, sleeper, dist) {
+  const liking = getLiking(horse, sleeper);
+  if (liking < 0) return null;
+  const hh = typeof herdOf === "function" ? herdOf(horse) : null;
+  const hs = typeof herdOf === "function" ? herdOf(sleeper) : null;
+  if (hh && hs && hh !== hs) return null; // rival herds sleep apart
+  if (hh && hh === hs) return dist - 600;
+  if (liking >= 0.25) return dist - 400;
+  // A stranger: indoors that's fine (as before). In the park only if it's
+  // close by, and never a herd member's pile (or a herd member joining one)
+  if (!(typeof isCameraScene === "function" && isCameraScene(horse.scene))) return dist;
+  if (hh || hs) return null;
+  return dist <= 250 ? dist : null;
+}
+
 // ---- For the magnifying glass panel ----
 
 function _fluffyName(id) {

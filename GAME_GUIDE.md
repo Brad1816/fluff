@@ -60,6 +60,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
 | `Territory.js` | **Herd territory in the park**: herds claim meadows, chase intruders off, and take meadows from smaller herds. See section 9 (Territory). |
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
+| `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
 | `Park.js` | **Fluffy Park**: the big area bigger than the screen (River → left arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
@@ -771,4 +772,27 @@ you *and* it (anywhere else that would throw it through on its own).
   times a second instead of every frame (`Horse.js`), and desires that
   want nothing aren't sorted (`HorseBrain.js`). A full park (~40 fluffies)
   went from about 4.8ms to 2.5ms of work per step.
+
+### Sleeping together (`Bonds.js sleepBuddyScore`)
+Tired fluffies used to walk to the nearest sleeping fluffy anywhere in the
+area, so in the big park every herd piled up in one heap. Now
+`scoutForSleep` (HorsePositioning.js) asks `sleepBuddyScore`: never next to
+someone it dislikes or a member of another herd; herd-mates first, then
+family and buddies; indoors any other fluffy is still fine, but in the park
+a stranger's pile only if it's within 250px and neither is in a herd. If
+nobody suits, it lies down where it is.
+
+### Fast forward (`GameSpeed.js`)
+- The clock next to "Chat Log" shows game time (`timePlayed`). The 1x / 2x
+  / 4x / 8x buttons (or F) set `gameSpeed`.
+- `animate()` in script.js runs the normal steps, then `runFastForward`
+  runs extra `updateSimulation` steps for the extra speed. The camera,
+  menus and area fades stay at normal speed.
+- It spends at most `FAST_FORWARD_BUDGET_MS` (25ms) per frame on the extra
+  steps so the screen doesn't freeze. If that's not enough (slow computer,
+  crowded park) the clock shows the real speed, e.g. "(really 2.9x)".
+- Everything should use the game clock (`timePlayed` / `gameTimeMs()`), not
+  `Date.now()`, so it speeds up too. (Only a couple of wiggle animations in
+  HorseRenderer.js use real time.)
+- New game and loading go back to 1x.
 

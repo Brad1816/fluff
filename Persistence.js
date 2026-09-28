@@ -171,6 +171,7 @@ function resetTemporaryGameState() {
   cars.length = 0;
   carSpawnTimer = 0;
   showChatLog = false;
+  if (typeof gameSpeed !== "undefined") gameSpeed = 1;
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;

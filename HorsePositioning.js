@@ -361,6 +361,7 @@ class HorsePositioning {
 
     let nearestSleeper = null;
     let minDist = Infinity;
+    let bestScore = Infinity;
 
     if (this.horse.canSee()) {
       for (const f of fluffies) {
@@ -377,10 +378,15 @@ class HorsePositioning {
           const d = Math.sqrt(
             (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
           );
+          // Only snuggle up with fluffies it gets on with: herd-mates,
+          // family and buddies first, never rivals (Bonds.js)
+          const score =
+            typeof sleepBuddyScore === "function" ? sleepBuddyScore(this.horse, f, d) : d;
+          if (score === null) continue;
 
-          if (d < minDist) {
+          if (score < bestScore) {
+            bestScore = score;
             minDist = d;
-
             nearestSleeper = f;
           }
         }

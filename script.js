@@ -1281,6 +1281,7 @@ function animate(timestamp) {
   if (typeof mouseToWorld === "function") mouseToWorld();
 
   const fixedStep = 0.016; // ~60fps steps for physics stability
+  const realElapsed = elapsed; // for fast forward (GameSpeed.js)
   while (elapsed > 0) {
     const dt = Math.min(elapsed, fixedStep);
     if (gameState === "PLAYING") {
@@ -1337,6 +1338,8 @@ function animate(timestamp) {
 
     elapsed -= dt;
   }
+  // Fast forward: extra game steps at 2x/4x/8x
+  if (typeof runFastForward === "function") runFastForward(realElapsed, fixedStep);
 
   render();
   requestAnimationFrame(animate);
@@ -2060,6 +2063,11 @@ window.addEventListener("keydown", (e) => {
 
   if (e.code === "KeyN") {
     showFluffyNames = !showFluffyNames;
+    return;
+  }
+  // F: fast forward to the next speed (GameSpeed.js)
+  if (e.code === "KeyF" && typeof nextGameSpeed === "function") {
+    nextGameSpeed();
     return;
   }
   // H shows which herd each fluffy is in (Herds.js)

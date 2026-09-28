@@ -1582,6 +1582,8 @@ function drawUI(ctx) {
       borderColor: showChatLog ? "rgba(100, 200, 255, 0.9)" : undefined,
     },
   );
+  // Game clock and fast-forward buttons (GameSpeed.js)
+  if (typeof drawGameSpeed === "function") drawGameSpeed(chatLogBtnX + chatLogBtnW);
 
   if (showActionButtons && menuAvailable) {
     // Filter Button
@@ -3475,6 +3477,9 @@ function actionButtonsClick() {
   const chatLogBtnH = 30;
   const chatLogBtnX = menuAvailable ? toggleBtnX + toggleBtnW + 5 : toggleBtnX;
   const chatLogBtnY = toggleBtnY;
+
+  // Fast-forward buttons (GameSpeed.js)
+  if (typeof gameSpeedClick === "function" && gameSpeedClick(chatLogBtnX + chatLogBtnW)) return true;
 
   if (
     menuAvailable &&
