@@ -116,7 +116,8 @@ function _sepSay(f, key, target = null) {
 }
 
 function _sepName(f) {
-  return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "a fluffy";
+  if (typeof fluffyDisplayName === "function") return fluffyDisplayName(f); // Names.js
+  return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "Fluffy";
 }
 
 // Old enough to remember this?

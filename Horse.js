@@ -1897,7 +1897,7 @@ class Horse {
     if (typeof noteFluffyAttack === "function") noteFluffyAttack(this, target, intent);
     target.health -= 10;
     if (target.health <= 0) {
-      const attackerName = fluffyNames[this.id] || "Fluffy";
+      const attackerName = typeof fluffyDisplayName === "function" ? fluffyDisplayName(this) : fluffyNames[this.id] || "Fluffy";
       target.die(null, `Killed by ${attackerName}`);
     } else {
       target.initBehavior("FLUFFY_KNOCKED_DOWN");
@@ -2227,8 +2227,9 @@ class Horse {
 
     if (this.scene === currentScene) {
       const speakerName =
-        (typeof fluffyNames !== "undefined" && fluffyNames[this.id]) ||
-        "Fluffy";
+        typeof fluffyDisplayName === "function"
+          ? fluffyDisplayName(this)
+          : (typeof fluffyNames !== "undefined" && fluffyNames[this.id]) || "Fluffy";
       const bodyColor =
         this.colors && this.colors.body ? this.colors.body : null;
       if (typeof logChatMessage === "function") {
@@ -3138,7 +3139,10 @@ class Horse {
 
       if (this.health <= 0) {
         if (this.lastAttackTimer > 0 && this.lastAttackerId !== null) {
-          const attackerName = fluffyNames[this.lastAttackerId] || "Fluffy";
+          const attackerName =
+            typeof fluffyDisplayNameById === "function"
+              ? fluffyDisplayNameById(this.lastAttackerId)
+              : fluffyNames[this.lastAttackerId] || "Fluffy";
           this.die(null, `Killed by ${attackerName}`);
         } else {
           this.die(null, "Bled to death");

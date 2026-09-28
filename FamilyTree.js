@@ -134,7 +134,10 @@ function getFamilyRecord(id) {
 
 function getFamilyName(rec) {
   if (!rec) return "Unknown";
-  return (typeof fluffyNames !== "undefined" && fluffyNames[rec.id]) || rec.name || "Unnamed fluffy";
+  const n = (typeof fluffyNames !== "undefined" && fluffyNames[rec.id]) || rec.name;
+  if (n) return n;
+  // Unnamed: "Fluffy (pink unicorn mare)" (Names.js)
+  return typeof describeRecordLooks === "function" ? `Fluffy (${describeRecordLooks(rec)})` : "Fluffy";
 }
 
 // Foals of a fluffy (as mother or father), oldest first

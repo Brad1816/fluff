@@ -62,7 +62,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
 | `WorldTime.js` | **Day and night, seasons, weather**: the clock, darkness, rain/snow/storms and what they do to fluffies and plants. See section 9 (Day, night and weather). |
 | `Separation.js` | **Taken from herd/family**: fluffies carried away from their herd, family or friends grieve, may be traumatised, and are overjoyed when brought back. See section 9 (Separation). |
-| `Names.js` | Fluffies stay "Fluffy" until you name them; removes automatic names left by one earlier build. |
+| `Names.js` | **Names**: fluffies are "Fluffy" until a human names them. Screens tell unnamed ones apart by looks ("Fluffy (pink unicorn mare)"), and a pop-up offers to name fluffies that become yours (one pop-up per litter). See section 9 (Names). |
 | `Wellbeing.js` | **Temperament**: happiness, trust, fear and trauma change a fluffy's price and how customers react. See section 9 (Temperament). |
 | `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
@@ -942,4 +942,30 @@ on the park's left side.
 - At 6:00 `updateDayReport` turns it into `dayReportShown` - a card with
   all of that - and fast forward drops to 1x. "Start the day", Esc or Enter
   closes it. It counts as an open screen.
+
+### Names (`Names.js`)
+- Fluffies are just "Fluffy" until a human names them; they call
+  themselves and each other "fwuffy" as before (`Horse.getName`).
+- **On the game's screens** an unnamed fluffy is described by its looks:
+  `fluffyDisplayName(f)` -> "Fluffy (pink unicorn mare)" (colour from
+  `getColorName`, type, and mare/stallion, filly/colt or foal).
+  `fluffyDisplayNameById(id)` also works for fluffies that are gone (from
+  the family records). Used by the magnifying glass, family tree, herds,
+  buddies/grudges, morning report, gene lab, orders, chat log, name tags
+  (N), bed labels and causes of death.
+- **Naming pop-up**: `updateNamingPopups` (once a second) notices fluffies
+  that have just become yours (born to one of yours, bought, brought home
+  - anything that turns `adopted` on) without a name. A single fluffy gets
+  its own pop-up; newborns are grouped by mum and shown as one litter
+  pop-up once she's finished giving birth. Type in the boxes (click a box,
+  or Tab / Enter / arrow keys to move), "Save names" (or Enter on the last
+  box), or "Leave as Fluffy" (Esc). Blank boxes stay Fluffy. The pop-up
+  takes the keyboard while open (a capture-phase listener), so typing
+  doesn't trigger game keys or the Space cheat box; fast forward drops to
+  1x. Fluffies already yours when a game is started or loaded don't pop
+  up (`resetNamingPopups`).
+- Day care no longer stores "Fluffy" as a name for unnamed fluffies.
+- `cleanUpAutoNames` removes the automatic names from one earlier build
+  (only when every fluffy in a save is named and nearly all names are
+  from that build's lists).
 

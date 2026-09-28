@@ -1410,6 +1410,8 @@ function updateSimulation(dt) {
   if (typeof updateWorldTime === "function") updateWorldTime(dt);
   // Fluffies missing the ones they were taken from (Separation.js)
   if (typeof updateSeparations === "function") updateSeparations(dt);
+  // Offer to name fluffies that have just become yours (Names.js)
+  if (typeof updateNamingPopups === "function") updateNamingPopups(dt);
   // What happened today, for the morning report (DayReport.js)
   if (typeof updateDayReport === "function") updateDayReport(dt);
   // Corpses rot away (Corpses.js)
@@ -1862,7 +1864,7 @@ function render() {
       const isPairSelection =
         debugMenuAction === "pair" && debugPairFirst === f.id;
       if (showFluffyNames || isPairSelection) {
-        const name = fluffyNames[f.id] || "Fluffy";
+        const name = fluffyDisplayNameById(f.id);
         const nameY = f.y + 45 * Math.sqrt(f.scale * 2.0);
         osCtx.save();
         osCtx.font = "bold 13px Arial";
@@ -1912,7 +1914,7 @@ function render() {
         obj.claimants.length === 0
       )
         continue;
-      const names = obj.claimants.map((id) => fluffyNames[id] || "Fluffy");
+      const names = obj.claimants.map((id) => fluffyDisplayNameById(id));
       const label = names.join(" & ");
       osCtx.save();
       osCtx.font = "bold 13px Arial";

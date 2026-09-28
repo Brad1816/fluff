@@ -141,7 +141,8 @@ function getHerdName(h) {
 }
 
 function getHerdLeaderName(h) {
-  return (typeof fluffyNames !== "undefined" && fluffyNames[h.leaderId]) || "a nameless fluffy";
+  if (typeof fluffyDisplayNameById === "function") return fluffyDisplayNameById(h.leaderId); // Names.js
+  return (typeof fluffyNames !== "undefined" && fluffyNames[h.leaderId]) || "Fluffy";
 }
 
 function getHerdColor(h) {

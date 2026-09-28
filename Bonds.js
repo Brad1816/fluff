@@ -299,7 +299,8 @@ function sleepSpotAwayFromRivals(horse, besidePile = false) {
 // ---- For the magnifying glass panel ----
 
 function _fluffyName(id) {
-  return (typeof fluffyNames !== "undefined" && fluffyNames[id]) || "Unnamed fluffy";
+  if (typeof fluffyDisplayNameById === "function") return fluffyDisplayNameById(id); // Names.js
+  return (typeof fluffyNames !== "undefined" && fluffyNames[id]) || "Fluffy";
 }
 
 function _isAround(id) {

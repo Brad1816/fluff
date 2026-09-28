@@ -49,7 +49,9 @@ function reportDayIndex() {
 }
 
 function _fluffyLabel(f) {
-  return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "unnamed";
+  // "Daisy" or "Fluffy (pink unicorn mare)" (Names.js)
+  if (typeof fluffyDisplayName === "function") return fluffyDisplayName(f);
+  return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "Fluffy";
 }
 
 function _pushNews(text) {

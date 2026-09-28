@@ -2040,6 +2040,8 @@ function drawUI(ctx) {
   drawDayCareModal(ctx);
   // Morning report on top of everything (DayReport.js)
   if (typeof drawDayReport === "function") drawDayReport(ctx);
+  // Naming a new fluffy / litter (Names.js)
+  if (typeof drawNamingPopup === "function") drawNamingPopup(ctx);
 }
 
 let inspectedFluffy = null;
@@ -2052,6 +2054,7 @@ function isAnyScreenOpen() {
   if (typeof isGeneLabOpen === "function" && isGeneLabOpen()) return true;
   if (typeof isOrdersScreenOpen === "function" && isOrdersScreenOpen()) return true;
   if (typeof isDayReportOpen === "function" && isDayReportOpen()) return true;
+  if (typeof isNamingPopupOpen === "function" && isNamingPopupOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -2164,14 +2167,19 @@ function getInspectionConditions(f) {
 }
 
 function getFluffyInspectionInfo(f) {
+  // Unnamed fluffies are shown as "Fluffy (pink unicorn mare)" (Names.js)
   const nameOf = (id, fallback) =>
-    id !== null && id !== undefined ? fluffyNames[id] || fallback : "Unknown";
+    id !== null && id !== undefined
+      ? typeof fluffyDisplayNameById === "function"
+        ? fluffyDisplayNameById(id, fallback)
+        : fluffyNames[id] || fallback
+      : "Unknown";
   const rels = relationships[f.id] || {};
   const sfId = Object.keys(rels).find((id) => rels[id] === "special_friend");
   const friendCount = Object.values(rels).filter((r) => r === "friend").length;
 
   const about = [
-    { label: "Name", value: fluffyNames[f.id] || "Fluffy" },
+    { label: "Name", value: typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : fluffyNames[f.id] || "Fluffy" },
     { label: "Gender", value: f.gender },
     { label: "Type", value: f.type },
     { label: "Age", value: describeInspectionAge(f) },
@@ -2187,7 +2195,7 @@ function getFluffyInspectionInfo(f) {
   about.push({ label: "Father", value: nameOf(f.fatherId, "Unnamed fluffy") });
   about.push({
     label: "Special friend",
-    value: sfId ? fluffyNames[sfId] || "Unnamed fluffy" : "None",
+    value: sfId ? nameOf(sfId, "Fluffy") : "None",
   });
   about.push({ label: "Friends", value: String(friendCount) });
   // Which herd it's in (Herds.js)
@@ -2942,10 +2950,8 @@ function handleDayCareModalClick() {
       data.happiness = 0.5;
       data.scene = "DAY_CARE";
       data.bodyColor = f.colors && f.colors.body ? f.colors.body : "#ffffff";
-      data.name =
-        typeof fluffyNames !== "undefined" && fluffyNames[f.id]
-          ? fluffyNames[f.id]
-          : "Fluffy";
+      // (null if nobody named it, so it doesn't come back named "Fluffy")
+      data.name = typeof fluffyNames !== "undefined" && fluffyNames[f.id] ? fluffyNames[f.id] : null;
       dayCareFluffies.push(data);
 
       if (!showDebugMenu) {
@@ -3653,7 +3659,11 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
-  // Morning report first: it's on top (DayReport.js)
+  // Naming pop-up, then the morning report: they're on top (Names.js, DayReport.js)
+  if (typeof handleNamingClick === "function" && handleNamingClick()) {
+    return;
+  }
+  // Morning report (DayReport.js)
   if (typeof handleDayReportClick === "function" && handleDayReportClick()) {
     return;
   }

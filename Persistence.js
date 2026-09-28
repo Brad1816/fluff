@@ -185,6 +185,7 @@ function resetTemporaryGameState() {
   showChatLog = false;
   if (typeof gameSpeed !== "undefined") gameSpeed = 1;
   if (typeof dayReportShown !== "undefined") dayReportShown = null;
+  if (typeof resetNamingPopups === "function") resetNamingPopups();
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;

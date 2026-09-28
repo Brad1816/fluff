@@ -395,8 +395,8 @@ function geneLabCandidates(gender) {
   return fluffies
     .filter((f) => f.isAlive && f.adopted && f.gender === gender)
     .sort((a, b) => {
-      const na = (fluffyNames[a.id] || "Fluffy").toLowerCase();
-      const nb = (fluffyNames[b.id] || "Fluffy").toLowerCase();
+      const na = (fluffyDisplayNameById(a.id)).toLowerCase();
+      const nb = (fluffyDisplayNameById(b.id)).toLowerCase();
       return na < nb ? -1 : na > nb ? 1 : a.id - b.id;
     });
 }
@@ -471,7 +471,7 @@ function _geneLabPair() {
     mom,
     momGenes: mom.genes,
     dadGenes: dad.genes,
-    dadName: fluffyNames[dad.id] || "Fluffy",
+    dadName: fluffyDisplayNameById(dad.id),
     dadId: dad.id,
     pregnancy: false,
   };
@@ -569,7 +569,7 @@ function _drawGeneLabList(c, gender, m) {
     const f = r.fluffy;
     const p = _geneLabPortrait("f" + f.id, () => f, 44);
     if (p) c.drawImage(p, r.x + 2, r.y + 1);
-    let name = fluffyNames[f.id] || "Fluffy";
+    let name = fluffyDisplayNameById(f.id);
     c.font = "bold 14px Arial";
     while (name.length > 3 && c.measureText(name).width > r.w - 60) name = name.slice(0, -2) + ".";
     _glText(c, name, r.x + 52, r.y + 20, "white", "bold 14px Arial");
@@ -609,7 +609,7 @@ function _drawGeneLabPrediction(c) {
   const { pair, result, relation } = pred;
   const x = px + 18;
   let y = 104;
-  const momName = fluffyNames[pair.mom.id] || "Fluffy";
+  const momName = fluffyDisplayNameById(pair.mom.id);
   _glText(c, `${momName} ♀  +  ${pair.dadName} ♂`, x, y, "white", "bold 20px Arial");
   if (pair.pregnancy) _glText(c, "(her current pregnancy)", x + c.measureText(`${momName} ♀  +  ${pair.dadName} ♂`).width + 12, y, "#f7d774", "13px Arial");
   y += 22;
