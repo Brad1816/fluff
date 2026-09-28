@@ -77,6 +77,7 @@ module.exports.push(
       const id = await page.evaluate(() => {
         __clearScene();
         tutorialTimer = 0;
+        namingPopupsEnabled = true;
         resetNamingPopups();
         updateNamingPopups(2); // takes stock of what's already yours
         const f = new Horse(1, null, "PARK", "earthy", null, null, null, "female");
@@ -111,6 +112,7 @@ module.exports.push(
       const ids = await page.evaluate(() => {
         __clearScene();
         tutorialTimer = 0;
+        namingPopupsEnabled = true;
         resetNamingPopups();
         const mum = new Horse(1, null, "INDOORS", "earthy", null, null, null, "female");
         mum.adopted = true;

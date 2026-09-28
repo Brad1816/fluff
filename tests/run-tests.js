@@ -77,6 +77,9 @@ async function openGame(browser, port) {
     // Clear weather for the whole test, so rain/snow don't change results
     // (tests/worldtime.test.js sets its own weather)
     if (typeof weatherState !== "undefined") weatherState.until = 1e9;
+    // No naming pop-ups for the fluffies tests make (tests/names.test.js
+    // and help.test.js turn them on)
+    if (typeof namingPopupsEnabled !== "undefined") namingPopupsEnabled = false;
     window.__clearScene = (scene = "INDOORS") => {
       for (let i = objects.length - 1; i >= 0; i--) {
         if (objects[i].scene === scene) objects.splice(i, 1);

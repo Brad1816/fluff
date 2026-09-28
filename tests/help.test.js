@@ -35,9 +35,13 @@ module.exports = [
       const r = await page.evaluate(() => {
         __clearScene();
         __clearScene("PARK");
+        namingPopupsEnabled = true;
         resetNamingPopups();
         updateNamingPopups(2);
         const [f] = spawnParkGroup("loner");
+        f.happiness = 0.5; // a wary, so-so wild fluffy
+        f.playerTrust = 0.2;
+        f.playerFear = 0.15;
         f.fromPark = true;
         f.scene = "INDOORS";
         f.adopted = true;

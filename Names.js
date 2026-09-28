@@ -182,6 +182,7 @@ function fluffyDisplayNameById(id, fallback = "Fluffy") {
 // ---------------------------------------------------------------------------
 
 const NAMING_MAX_LEN = 20;
+let namingPopupsEnabled = true; // tests switch this off (tests/names.test.js turns it back on)
 let namingQueue = []; // [{ ids: [...], kind: "litter" | "single", mumId }]
 let namingPopup = null; // { ids, kind, mumId, names: [], focus }
 let _namingKnown = null; // ids of your fluffies we've already seen
@@ -198,6 +199,7 @@ function _namingCandidates() {
 
 // script.js updateSimulation
 function updateNamingPopups(dt) {
+  if (!namingPopupsEnabled) return;
   _namingTimer -= dt;
   if (_namingTimer > 0) return;
   _namingTimer = 1;

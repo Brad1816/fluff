@@ -132,6 +132,8 @@ module.exports = [
         f.x = 250;
         f.y = 450;
         f.playerTrust = 0.95;
+        f.sleepDeprivation = 0; // wide awake
+        f.hunger = 1;
         // It's been a while since it last came over
         const seek = f.brain.desires.find((d) => d.name === "SeekPlayer");
         seek.lastTime = gameTimeMs() - 60000;
@@ -140,10 +142,12 @@ module.exports = [
       await page.mouse.move(1000, 450);
       const r = await page.evaluate(() => {
         const before = Math.hypot(__f.x - mouse.x, __f.y - mouse.y);
-        __fastForward(12);
-        return { before, after: Math.hypot(__f.x - mouse.x, __f.y - mouse.y) };
+        __seedRandom(5); // the same run every time (it used to fail now and then)
+        const log = [];
+        for (let i = 0; i < 12; i++) { __fastForward(1); log.push([Math.round(__f.x), __f.currentStateKey, __f.lastDesire && __f.lastDesire.desire, __f.brain.currentDesire && __f.brain.currentDesire.name, isAnyScreenOpen(), __f.sleepDeprivation.toFixed(2)].join(",")); }
+        return { before, after: Math.hypot(__f.x - mouse.x, __f.y - mouse.y), log, m: [mouse.x, mouse.y, mouse.sx, mouse.sy] };
       });
-      check(r.after < r.before - 250, `distance from the hand: ${Math.round(r.before)} -> ${Math.round(r.after)}`);
+      check(r.after < r.before - 250, `distance from the hand: ${Math.round(r.before)} -> ${Math.round(r.after)} ${JSON.stringify(r.m)} ${r.log.join(" | ")}`);
     },
   },
   {
