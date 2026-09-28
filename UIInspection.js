@@ -95,6 +95,8 @@ function describeInspectionPersonality(f) {
 }
 
 function describeInspectionAge(f) {
+  // In game days, with the life stage (Aging.js)
+  if (typeof describeAge === "function") return describeAge(f);
   const mins = Math.floor((f.age || 0) / 60);
   const secs = Math.floor((f.age || 0) % 60);
   const time = mins > 0 ? `${mins}m ${secs}s old` : `${secs}s old`;
@@ -137,7 +139,7 @@ function getFluffyInspectionInfo(f) {
     ...(typeof namedBy === "function" && namedBy(f) && namedBy(f) !== "you" ? [{ label: "Named by", value: namedBy(f) }] : []),
     { label: "Gender", value: f.gender },
     { label: "Type", value: f.type },
-    { label: "Age", value: describeInspectionAge(f) },
+    { label: "Age", value: describeInspectionAge(f), tone: typeof describeAgeTone === "function" ? describeAgeTone(f) : "" },
     { label: "Sexuality", value: f.sexuality || "heterosexual" },
   ];
   const [persText, persTone] = describeInspectionPersonality(f);
@@ -213,6 +215,9 @@ function getFluffyInspectionInfo(f) {
     // A wild fluffy getting used to you (Wellbeing.js)
     const settle = typeof settlingProgress === "function" ? settlingProgress(f) : null;
     if (settle !== null) care.push({ label: "Settling in", value: `${Math.round(settle * 100)}%`, tone: settle > 0.6 ? "ok" : "bad" });
+    // Abandoned, still missing its old owner (Abandoned.js)
+    const missing = typeof describeMissingOwner === "function" ? describeMissingOwner(f) : null;
+    if (missing) care.push({ label: "Old owner", value: missing[0], tone: missing[1] });
     // Getting used to alicorns (AlicornAcceptance.js)
     const ali = typeof describeAlicornFeeling === "function" ? describeAlicornFeeling(f) : null;
     if (ali) care.push({ label: "Alicorns", value: ali[0], tone: ali[1] });

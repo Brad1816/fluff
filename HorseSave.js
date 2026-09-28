@@ -71,6 +71,7 @@ addHorseMethods({
       lactatingTimer: this.lactatingTimer,
       alicornTolerance: this.alicornTolerance,
       alicornComfort: this.alicornComfort || 0,
+      missingOwner: this.missingOwner || 0,
       coloristDegree: this.coloristDegree,
       herdId: this.herdId,
       isPoisoned: this.isPoisoned,

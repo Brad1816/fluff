@@ -159,12 +159,31 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Age & old age",
+    lines: [
+      "Age is counted in game days (the clock by Chat Log).",
+      "",
+      "- Foals grow up in about a day and a half.",
+      "- From 16 days a fluffy is a senior: its mane and tail go grey.",
+      "- From 24 days it's elderly: slower, worth half as much, and",
+      "  elderly mares can't have foals any more.",
+      "- From 28 days it can die peacefully of old age; most live to",
+      "  about 35 days, none past 40.",
+      "",
+      "# Abandoned fluffies",
+      "- Some pets are dumped by their owners: half-grown, grown up or",
+      "  old. They have a name, and they miss their old owner, so they're",
+      "  sadder (and sell for less) until they get over it - faster once",
+      "  they're yours and trust you.",
+    ],
+  },
+  {
     title: "Names",
     lines: [
       'Fluffies are just "Fluffy" until a person names them.',
       "",
-      "- Runaways and lost pets had an owner, so they come with the name",
-      "  it gave them. Stock from breeders comes named too.",
+      "- Runaways, abandoned pets and lost pets had an owner, so they come",
+      "  with the name it gave them. Stock from breeders comes named too.",
       "- When a fluffy becomes yours (born, bought or brought home) a",
       "  pop-up offers to name it. A litter gets one pop-up for all foals.",
       '- Leave a box empty to keep it "Fluffy"; you can rename any fluffy',
@@ -206,7 +225,7 @@ function getHelpLayout() {
   const h = Math.min(580, height - 40);
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
-  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 66 + i * 40, w: 200, h: 32 }));
+  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 64 + i * 38, w: 200, h: 31 }));
   return { x, y, w, h, tabs, close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 } };
 }
 

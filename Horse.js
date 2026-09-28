@@ -860,6 +860,11 @@ class Horse {
     if (this.isPregnant) {
       this.speed *= 0.5;
     }
+
+    // Elderly fluffies are slower (Aging.js)
+    if (typeof isElderly === "function" && isElderly(this)) {
+      this.speed *= 0.75;
+    }
     if (this.limbs === undefined) {
       return;
     }
@@ -1859,6 +1864,7 @@ class Horse {
     horse.id = data.id;
     horse.alicornTolerance = data.alicornTolerance;
     horse.alicornComfort = data.alicornComfort || 0; // AlicornAcceptance.js
+    horse.missingOwner = data.missingOwner || 0; // Abandoned.js
     horse.coloristDegree = data.coloristDegree;
     horse.x = data.x;
     horse.y = data.y;

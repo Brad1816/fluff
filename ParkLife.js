@@ -223,9 +223,10 @@ function _parkEdgeSpot() {
 
 function _wildPersonality() {
   const r = Math.random();
-  if (r < 0.7) return ["true_feral"];
-  if (r < 0.9) return ["lost_from_herd"];
-  return ["runaway"];
+  if (r < 0.65) return ["true_feral"];
+  if (r < 0.83) return ["lost_from_herd"];
+  if (r < 0.93) return ["runaway"];
+  return ["abandoned"]; // dumped by an owner when older (Abandoned.js)
 }
 
 function _makeWild(growth, at, opts = {}) {
@@ -242,6 +243,10 @@ function _makeWild(growth, at, opts = {}) {
   h.playerTrust = 0.2 + Math.random() * 0.1;
   h.playerFear = 0.1 + Math.random() * 0.1;
   fluffies.push(h);
+  // A believable age (Aging.js); abandoned pets get theirs (Abandoned.js)
+  if (typeof setSpawnAge === "function") setSpawnAge(h);
+  if (typeof setupAbandoned === "function") setupAbandoned(h);
+  if (opts.youngAbandoned && typeof makeYoungAbandoned === "function") makeYoungAbandoned(h);
   // Runaways had an owner: they keep the name it gave them (Names.js)
   if (typeof giveOwnerName === "function") giveOwnerName(h);
   return h;
@@ -293,7 +298,7 @@ function spawnParkGroup(kind = null, at = null) {
         a.opinionWhy[b.id] = "travelled together";
       }
   } else {
-    group.push(_makeWild(1, at, { personalities: _wildPersonality() }));
+    group.push(_makeWild(1, at, { personalities: _wildPersonality(), youngAbandoned: Math.random() < 0.3 }));
   }
   return group;
 }

@@ -966,6 +966,9 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
     h.y = fy;
     h.personalities = [...h.personalities, ...personalities];
     fluffies.push(h);
+    // A believable age (Aging.js); abandoned pets get theirs (Abandoned.js)
+    if (typeof setSpawnAge === "function") setSpawnAge(h);
+    if (typeof setupAbandoned === "function") setupAbandoned(h);
     // Runaways had an owner: they keep the name it gave them (Names.js)
     if (typeof giveOwnerName === "function") giveOwnerName(h);
     return h;
@@ -977,6 +980,8 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
       personalities.push("abandoned_baby");
     } else {
       const pool = ["true_feral", "lost_from_herd", "runaway", "mill_escapee"];
+      // Dumped by an owner when older (Abandoned.js); not single mums
+      if (!isFemale) pool.push("abandoned");
       personalities.push(pool[Math.floor(Math.random() * pool.length)]);
     }
 
@@ -1000,9 +1005,11 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
             personalities.includes("mill_baby"))
         )
           continue;
+        if (p === "true_feral" && personalities.includes("abandoned")) continue;
         if (
           p === "runaway" &&
-          (personalities.includes("true_feral") ||
+          (personalities.includes("abandoned") ||
+            personalities.includes("true_feral") ||
             personalities.includes("abandoned_baby") ||
             personalities.includes("mill_escapee") ||
             personalities.includes("mill_baby"))
@@ -1032,6 +1039,7 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
 
   const adjustQuality = (personalities) => {
     if (personalities.includes("runaway")) return 0.6 + Math.random() * 0.4;
+    if (personalities.includes("abandoned")) return 0.5 + Math.random() * 0.4; // someone's pet
     if (
       personalities.includes("mill_escapee") ||
       personalities.includes("mill_baby")
@@ -1068,6 +1076,9 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
       null,
       p.includes("smarty") ? "male" : null,
     );
+    // An abandoned one on its own may have been dumped half grown (Abandoned.js)
+    const lone = fluffies[fluffies.length - 1];
+    if (typeof makeYoungAbandoned === "function" && lone && Math.random() < 0.3) makeYoungAbandoned(lone);
   } else if (scenario === "couple") {
     const p1 = getRandomPersonality();
     const h1 = spawnFeral(
@@ -1424,6 +1435,10 @@ function updateSimulation(dt) {
   if (typeof updateNightEvents === "function") updateNightEvents(dt);
   // Fluffies getting used to alicorns (AlicornAcceptance.js)
   if (typeof updateAlicornAcceptance === "function") updateAlicornAcceptance(dt);
+  // Growing old: greying and dying of old age (Aging.js)
+  if (typeof updateAging === "function") updateAging(dt);
+  // Abandoned fluffies missing their old owner (Abandoned.js)
+  if (typeof updateAbandoned === "function") updateAbandoned(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)

@@ -434,7 +434,8 @@ if (typeof window !== "undefined") {
 // ---------------------------------------------------------------------------
 // Names from a previous owner.
 //
-// Runaways (personality "runaway") and lost pets (NightEvents.js) had a
+// Runaways (personality "runaway"), abandoned pets ("abandoned",
+// Abandoned.js) and lost pets (NightEvents.js) had a
 // human owner before, so they arrive with the name that owner gave them.
 // giveOwnerName() is called where they're made (script.js spawnFeral,
 // ParkLife.js _makeWild, the lost pet night event), and once when a game is
@@ -462,7 +463,10 @@ const OWNER_NAMES = {
 let previousOwnerNames = {}; // fluffy id -> the name its old owner gave it
 
 function isFormerPet(f) {
-  return !!f && (!!f.lostPet || (Array.isArray(f.personalities) && f.personalities.includes("runaway")));
+  if (!f) return false;
+  if (f.lostPet) return true;
+  const p = Array.isArray(f.personalities) ? f.personalities : [];
+  return p.includes("runaway") || p.includes("abandoned"); // (Abandoned.js)
 }
 
 // Give a former pet its old name (once; not if it has one or had one)

@@ -77,6 +77,8 @@ and it runs. About 36,000 lines across ~60 files.
 | `NightEvents.js` | **Night in the park**: most nights a herd has something happen to it (a fox, a tummy bug, a bumper crop, newcomers...). See section 9 (Night events). |
 | `AlicornAcceptance.js` | **Getting used to alicorns**: scared fluffies slowly accept alicorns they spend time near. See section 9 (Alicorn acceptance). |
 | `StockMarket.js` | **Breeding stock market**: buy pedigree fluffies from other breeders (the "Breeding stock" tab of the orders screen). See section 9 (Breeding stock market). |
+| `Aging.js` | **Growing old**: life stages in game days, greying manes, slower/cheaper elderly fluffies, dying of old age. See section 9 (Growing old). |
+| `Abandoned.js` | **Abandoned pets**: fluffies dumped by an owner at any age, named, sad until they get over it. See section 9 (Abandoned pets). |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -1196,4 +1198,45 @@ came from an owner, so a name you clear isn't given back.
 breeder" (StockMarket.js) or null. The magnifying glass shows "Named by"
 unless it's you, and the "Give one of your fluffies a name" goal only
 counts names you gave.
+
+### Growing old (`Aging.js`)
+Age is `f.age` (game seconds since birth, saved); `ageDays(f)` divides by
+`DAY_LENGTH` (1,200s).
+- **Stages** (`lifeStage`): foal (growing, about 1.4 days: `GROW_UP_TIME`
+  1,680s), adult, senior from `SENIOR_DAYS` (16), elderly from
+  `ELDERLY_DAYS` (24). The magnifying glass shows "Adult, 5 days old" etc.
+- **Greying**: `greyAmount` goes 0 -> 1 from 16 to 28 days; `maneColorFor`
+  blends the mane/tail colour 80% of that toward silver. HorseRenderer
+  uses it when it makes its tinted images, and `updateAging` clears the
+  cached tints when the grey level moves a step (of 5).
+- **Elderly**: speed x0.75 (`Horse.updateSpeed`), mares can't get pregnant
+  (`tooOldToBreed`, checked in `HorseMating.triggerPregnancy`), price x0.5
+  (senior x0.8) in `calculatePrice`.
+- **Old age**: from `OLD_AGE_RISK_DAYS` (28) the chance of dying within a
+  day is `((days - 28) / 12)^2`; at `MAX_AGE_DAYS` (40) it always happens.
+  Most live to about 35. Cause of death "Old age"; you get "X died
+  peacefully of old age."
+- **Starting ages**: `setSpawnAge(f, minDays, maxDays)` gives fluffies that
+  turn up grown a believable age (default 1.9-13 days): called in
+  `spawnFeral` (script.js), `_makeWild` (ParkLife.js) and for bought stock
+  (2-10 days). Foals get `growth x GROW_UP_TIME`. Fluffies from before this
+  just carry on from the age they had.
+
+### Abandoned pets (`Abandoned.js`)
+Personality `"abandoned"` (shown as "Abandoned"): dumped by an owner when
+older. They turn up outside (one of the backstories in
+`spawnFeralGroup`'s personality pool, not for single mums) and in the park
+(7% of arrivals, `_wildPersonality`).
+- `setupAbandoned(f)`: 55% grown up (3-15 days), 45% senior or elderly
+  (16-31 days); `makeYoungAbandoned(f)` makes a lone one half grown (30% of
+  lone ones). Named by their old owner (Names.js `isFormerPet`), trust
+  0.45, fear 0.05, `missingOwner` 0.7-1 (saved).
+- **Missing the owner** (`updateAbandoned`, every second): happiness is
+  pulled so it settles at 0.6 - 0.3 x missingOwner instead of 0.6 (so ~0.3
+  at first: sad, and a lower temperament price). They sometimes say
+  `ABANDONED.MISS` lines. `missingOwner` fades over `ABANDON_GRIEF_DAYS` (5
+  game days): x(1 + trust) once yours, x0.5 in the wild, x0.6 if elderly.
+  At 0: +0.1 happiness, an `ABANDONED.OVER_IT` line and (if yours) "X has
+  got over its old owner." The magnifying glass shows "Old owner: Misses
+  its old owner (70%)".
 

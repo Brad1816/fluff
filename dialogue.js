@@ -199,6 +199,20 @@ const DIALOGUE = {
       "Nite-nite time...",
     ],
   },
+  // Abandoned fluffies missing their old owner (Abandoned.js)
+  ABANDONED: {
+    MISS: [
+      "Whewe owd daddeh go? Daddeh come back fow <speaker>?",
+      "Daddeh... <speaker> be gud nao... pwease come back...",
+      "Why daddeh weave <speaker> outsides? <Speaker> nu undewstan'...",
+      "Mebbe owd daddeh just fowget... mebbe come back tomowow...",
+    ],
+    OVER_IT: [
+      "<Speaker> nu sad 'bout owd daddeh nu mowe. Hab nyu home!",
+      "Owd daddeh gone... but <speaker> am otay nao!",
+      "<Speaker> am happy hewe! Bestest home!",
+    ],
+  },
   // Getting used to alicorns (AlicornAcceptance.js)
   ALICORN_ACCEPT: {
     DEFAULT: [
@@ -434,6 +448,13 @@ const DIALOGUE = {
       "Mummah? Whewe mummah?",
       "Whewe <speaker> mummah? Nee' huggies...",
       "Mummah fowget <speaker>?? Whewe am mummah?",
+    ],
+    // Dumped by an owner when older (Abandoned.js)
+    ABANDONED: [
+      "Owd daddeh say <speaker> am too much... nu wan <speaker> nu mowe...",
+      "Nyu daddeh nu weave <speaker> in box? Pwomise?",
+      "<Speaker> twy be gud fwuffy fow owd daddeh... nu enuff...",
+      "Nyu daddeh keep <speaker> foweba?",
     ],
   },
 

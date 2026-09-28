@@ -156,6 +156,7 @@ addHorseMethods({
         } else if (p === "mill_escapee") text = getDialogue(["PERSONALITY", "MILL_ESCAPE"], this);
         else if (p === "mill_baby") text = getDialogue(["PERSONALITY", "MILL_BABY"], this);
         else if (p === "abandoned_baby") text = getDialogue(["PERSONALITY", "ABANDONED_BABY"], this);
+        else if (p === "abandoned") text = getDialogue(["PERSONALITY", "ABANDONED"], this);
       }
     }
 

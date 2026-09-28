@@ -176,9 +176,11 @@ class HorseRenderer {
     else if (this.horse.maneType === 3) maneImg = images.mane_3;
     else if (this.horse.maneType === 4) maneImg = images.mane_4;
     else if (this.horse.maneType === 5) maneImg = images.mane_5;
+    // Greyer with age (Aging.js)
+    const maneColor = typeof maneColorFor === "function" ? maneColorFor(this.horse) : this.horse.colors.mane;
     this.tinted.mane = tintImage(
       maneImg,
-      this.horse.colors.mane,
+      maneColor,
       null,
       null,
       gradientConfig,
@@ -189,7 +191,7 @@ class HorseRenderer {
     else if (this.horse.tailType === 2) tailImg = images.tail_1;
     this.tinted.tail = tintImage(
       tailImg,
-      this.horse.colors.mane,
+      maneColor,
       null,
       null,
       gradientConfig,
