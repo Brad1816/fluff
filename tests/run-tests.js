@@ -8,6 +8,11 @@
 //   First time only:   npm run setup
 //   Every time:        npm test
 //   Only some tests:   npm test -- fence      (runs tests whose name has "fence")
+//
+// Tests run TEST_WORKERS at a time (default 4; set TEST_WORKERS=1 to run
+// one by one). Each worker has its own browser context, so saves and
+// settings (the browser's IndexedDB) don't clash between tests running side
+// by side. Results print as tests finish.
 // ---------------------------------------------------------------------------
 const http = require("http");
 const fs = require("fs");
@@ -34,7 +39,12 @@ function startServer() {
         res.writeHead(404);
         return res.end();
       }
-      res.writeHead(200, { "Content-Type": TYPES[path.extname(file)] || "application/octet-stream" });
+      // Cacheable for the length of a run, so each test's page loads the
+      // images from the browser's cache instead of the server again
+      res.writeHead(200, {
+        "Content-Type": TYPES[path.extname(file)] || "application/octet-stream",
+        "Cache-Control": "max-age=3600",
+      });
       res.end(data);
     });
   });
@@ -44,8 +54,8 @@ function startServer() {
 }
 
 // Open the game and start a new game. Returns once we're playing.
-async function openGame(browser, port) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+async function openGame(context, port) {
+  const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => {
@@ -113,25 +123,39 @@ function loadTests(filter) {
   const browser = await chromium.launch();
   let passed = 0;
   const failures = [];
+  const workers = Math.max(1, Math.min(tests.length, parseInt(process.env.TEST_WORKERS || "4", 10) || 1));
+  const startedAll = Date.now();
 
-  console.log(`Running ${tests.length} tests...\n`);
-  for (const t of tests) {
-    const started = Date.now();
-    const { page, errors } = await openGame(browser, port);
-    try {
-      await t.run(page);
-      if (errors.length) throw new Error("Game errors: " + errors.slice(0, 3).join(" | "));
-      passed++;
-      console.log(`  PASS  ${t.fullName}  (${((Date.now() - started) / 1000).toFixed(1)}s)`);
-    } catch (e) {
-      failures.push(t.fullName);
-      console.log(`  FAIL  ${t.fullName}\n        ${e.message}`);
+  console.log(`Running ${tests.length} tests (${workers} at a time)...\n`);
+  let next = 0;
+  const worker = async () => {
+    // Its own browser context: separate saves (IndexedDB) from other workers
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    while (next < tests.length) {
+      const t = tests[next++];
+      const started = Date.now();
+      let page = null;
+      try {
+        const opened = await openGame(context, port);
+        page = opened.page;
+        await t.run(page);
+        if (opened.errors.length) throw new Error("Game errors: " + opened.errors.slice(0, 3).join(" | "));
+        passed++;
+        console.log(`  PASS  ${t.fullName}  (${((Date.now() - started) / 1000).toFixed(1)}s)`);
+      } catch (e) {
+        failures.push(t.fullName);
+        console.log(`  FAIL  ${t.fullName}\n        ${e.message}`);
+      }
+      if (page) await page.close();
     }
-    await page.close();
-  }
+    await context.close();
+  };
+  await Promise.all(Array.from({ length: workers }, worker));
 
   await browser.close();
   server.close();
+  if (failures.length) console.log(`\nFailed:\n${failures.map((f) => "  " + f).join("\n")}`);
+  console.log(`\nTook ${Math.round((Date.now() - startedAll) / 1000)}s`);
   console.log(`\n${passed} passed, ${failures.length} failed`);
   process.exit(failures.length ? 1 : 0);
 })();
