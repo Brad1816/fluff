@@ -38,7 +38,7 @@ const ALICORN_INTRO_TRUST = 0.7; // how much it must trust you for introductions
 const ALICORN_FORGET_TIME = 6000; // seconds apart to lose it all again (5 game days)
 const ALICORN_TICK = 1;
 
-let _alicornTick = 0;
+const alicornTicker = new Ticker(ALICORN_TICK);
 
 function _alicornIntoleranceOn() {
   return typeof worldSettings === "undefined" || !!worldSettings.alicornIntolerance;
@@ -156,10 +156,8 @@ function noteAlicornAttack(attacker, target) {
 
 // script.js updateSimulation
 function updateAlicornAcceptance(dt) {
-  _alicornTick -= dt;
-  if (_alicornTick > 0) return;
-  const step = ALICORN_TICK - _alicornTick; // seconds since the last tick
-  _alicornTick = ALICORN_TICK;
+  const step = alicornTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   if (!_alicornIntoleranceOn()) return;
   const alicorns = fluffies.filter(_isVisibleAlicorn);
   for (const f of fluffies) {
@@ -181,3 +179,6 @@ function updateAlicornAcceptance(dt) {
     addAlicornComfort(f, gain);
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("alicornAcceptance", updateAlicornAcceptance, 120);

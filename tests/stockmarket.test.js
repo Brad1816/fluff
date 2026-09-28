@@ -93,11 +93,11 @@ module.exports = [
         out.temper = describeTemperament(f)[0];
         // The breeder's name doesn't complete the "name a fluffy" goal
         goalsState = freshGoalsState();
-        _goalsTimer = 0;
+        goalsTicker.fireNext();
         updateGoals(0);
         out.goalBefore = isGoalDone("name_one");
         fluffyNames[f.id] = "Mine";
-        _goalsTimer = 0;
+        goalsTicker.fireNext();
         updateGoals(0);
         out.goalAfter = isGoalDone("name_one");
         const rec = getFamilyRecord(f.id);
@@ -157,14 +157,14 @@ module.exports = [
         __seedRandom(14);
         const out = {};
         stockMarket = freshStockMarket();
-        _stockTimer = 0;
+        stockTicker.fireNext();
         updateStockMarket(0);
         const first = stockMarket.listings.map((l) => l.id);
-        _stockTimer = 0;
+        stockTicker.fireNext();
         updateStockMarket(0);
         out.sameDay = JSON.stringify(stockMarket.listings.map((l) => l.id)) === JSON.stringify(first);
         timePlayed += DAY_LENGTH;
-        _stockTimer = 0;
+        stockTicker.fireNext();
         updateStockMarket(0);
         out.nextDay = stockMarket.listings.length > 0 && !stockMarket.listings.some((l) => first.includes(l.id));
 

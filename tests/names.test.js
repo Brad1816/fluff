@@ -186,11 +186,11 @@ module.exports.push(
         fluffyNames[runaway.id] = previousOwnerNames[runaway.id];
         runaway.adopted = true;
         goalsState = freshGoalsState();
-        _goalsTimer = 0;
+        goalsTicker.fireNext();
         updateGoals(0);
         out.goalOwner = isGoalDone("name_one");
         fluffyNames[runaway.id] = "Mine";
-        _goalsTimer = 0;
+        goalsTicker.fireNext();
         updateGoals(0);
         out.goalMine = isGoalDone("name_one");
         out.byMine = namedBy(runaway);

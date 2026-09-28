@@ -1413,42 +1413,10 @@ function updateDayCare(dt) {
 
 function updateSimulation(dt) {
   timePlayed += dt;
-  // Keep the family record book up to date (FamilyTree.js)
-  if (typeof updateFamilyRecords === "function") updateFamilyRecords(dt);
-  // Bonds and grudges between fluffies (Bonds.js)
-  if (typeof updateSocialBonds === "function") updateSocialBonds(dt);
-  // Herds forming, joining, leaving, rivalries (Herds.js)
-  if (typeof updateHerds === "function") updateHerds(dt);
-  // Herds claiming and fighting over meadows in the park (Territory.js)
-  if (typeof updateTerritories === "function") updateTerritories(dt);
-  // Day, night and weather (WorldTime.js)
-  if (typeof updateWorldTime === "function") updateWorldTime(dt);
-  // Fluffies missing the ones they were taken from (Separation.js)
-  if (typeof updateSeparations === "function") updateSeparations(dt);
-  // Offer to name fluffies that have just become yours (Names.js)
-  if (typeof updateNamingPopups === "function") updateNamingPopups(dt);
-  // Wild fluffies settling in at home (Wellbeing.js)
-  if (typeof updateSettling === "function") updateSettling(dt);
-  // Breeder goals (Goals.js)
-  if (typeof updateGoals === "function") updateGoals(dt);
-  // What happened today, for the morning report (DayReport.js)
-  if (typeof updateDayReport === "function") updateDayReport(dt);
-  // Night-time events in the park: foxes, bumper crops... (NightEvents.js)
-  if (typeof updateNightEvents === "function") updateNightEvents(dt);
-  // Fluffies getting used to alicorns (AlicornAcceptance.js)
-  if (typeof updateAlicornAcceptance === "function") updateAlicornAcceptance(dt);
-  // Growing old: greying and dying of old age (Aging.js)
-  if (typeof updateAging === "function") updateAging(dt);
-  // Abandoned fluffies missing their old owner (Abandoned.js)
-  if (typeof updateAbandoned === "function") updateAbandoned(dt);
-  // Fluffy flu: symptoms and spreading (Illness.js)
-  if (typeof updateIllness === "function") updateIllness(dt);
-  // Corpses rot away (Corpses.js)
-  if (typeof updateCorpses === "function") updateCorpses(dt);
-  // Customer orders: new ones, deadlines (Orders.js)
-  if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
-  // Breeders' market restocks each morning (StockMarket.js)
-  if (typeof updateStockMarket === "function") updateStockMarket(dt);
+  // Every registered system: family records, bonds, herds, territory,
+  // weather, goals, flu, ageing... in order (Systems.js; each file
+  // registers its own with registerSystem)
+  updateSystems(dt);
   updatePuddles(dt);
   updateDayCare(dt);
 

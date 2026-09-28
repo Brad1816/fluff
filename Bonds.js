@@ -163,13 +163,11 @@ function noteFluffyAttack(attacker, victim, intent) {
 
 // ---- Every simulation step (script.js); does its work once a second ----
 
-let _bondTimer = 0;
+const bondsTicker = new Ticker(1.0);
 
 function updateSocialBonds(dt) {
-  _bondTimer -= dt;
-  if (_bondTimer > 0) return;
-  const step = 1.0 - _bondTimer; // seconds since last time
-  _bondTimer = 1.0;
+  const step = bondsTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   const fade = (OPINION_FADE_PER_MIN / 60) * step;
 
@@ -421,3 +419,6 @@ class AvoidGrudgeDesire extends Desire {
     return true;
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("bonds", updateSocialBonds, 20);

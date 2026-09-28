@@ -50,7 +50,7 @@ const MEADOW_NAMES = [
   "Mossy Flat",
 ];
 
-let _territoryTimer = 0;
+const territoryTicker = new Ticker(TERRITORY_TICK);
 
 function meadowName(idx) {
   return MEADOW_NAMES[idx % MEADOW_NAMES.length];
@@ -165,10 +165,8 @@ function _parkNews(text) {
 
 function updateTerritories(dt) {
   if (typeof _herdList !== "function" || typeof PARK_MEADOWS === "undefined") return;
-  _territoryTimer -= dt;
-  if (_territoryTimer > 0) return;
-  const step = TERRITORY_TICK - _territoryTimer;
-  _territoryTimer = TERRITORY_TICK;
+  const step = territoryTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   const now = _now();
   rebuildFluffyGrid();
 
@@ -560,3 +558,6 @@ function drawTerritoriesOnMap(c, r) {
     c.stroke();
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("territory", updateTerritories, 40);

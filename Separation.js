@@ -69,7 +69,7 @@ const BOND_WEIGHT = {
   sister: 0.6,
 };
 
-let _separationTimer = 0;
+const separationTicker = new Ticker(1);
 
 function _sepNow() {
   return typeof timePlayed === "number" ? timePlayed : 0;
@@ -244,10 +244,8 @@ function _anyAlive(s) {
 
 // script.js updateSimulation; works once a second
 function updateSeparations(dt) {
-  _separationTimer -= dt;
-  if (_separationTimer > 0) return;
-  const step = 1 - _separationTimer;
-  _separationTimer = 1;
+  const step = separationTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   const now = _sepNow();
   for (const f of fluffies) {
     if (f.isAlive && Array.isArray(f.traumas) && f.traumas.length) _traumaEffects(f, step);
@@ -333,3 +331,6 @@ function describeSeparation(f) {
   const who = s.names.slice(0, 2).join(", ") + (s.names.length > 2 ? "..." : "");
   return `${who} (${how})`;
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("separation", updateSeparations, 60);

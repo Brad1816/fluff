@@ -17,7 +17,7 @@ const ROT_START = 240; // 4 game minutes
 const ROT_FULL = 600; // 10
 const ROT_GONE = 780; // 13
 
-let _corpseTimer = 0;
+const corpsesTicker = new Ticker(1);
 
 // 0 = fresh, 1 = fully rotten
 function corpseRot(f) {
@@ -37,9 +37,7 @@ function corpseKeptForNow(f) {
 
 // script.js updateSimulation; checks once a second
 function updateCorpses(dt) {
-  _corpseTimer -= dt;
-  if (_corpseTimer > 0) return;
-  _corpseTimer = 1;
+  if (!corpsesTicker.step(dt)) return; // every 1s (Systems.js)
   for (let i = fluffies.length - 1; i >= 0; i--) {
     const f = fluffies[i];
     if (f.isAlive || (f.deathTimer || 0) < ROT_GONE || corpseKeptForNow(f)) continue;
@@ -82,3 +80,6 @@ function drawCorpseFlies(c, f) {
   }
   c.restore();
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("corpses", updateCorpses, 160);

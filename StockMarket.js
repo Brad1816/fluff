@@ -57,7 +57,7 @@ function freshStockMarket() {
 }
 
 let stockMarket = freshStockMarket();
-let _stockTimer = 0;
+const stockTicker = new Ticker(1);
 let _stockPortraits = {};
 
 // ---- Genes ----
@@ -221,9 +221,7 @@ function updateStockMarket(dt) {
   if (!stockMarket || typeof stockMarket !== "object") stockMarket = freshStockMarket();
   for (const [k, v] of Object.entries(freshStockMarket())) if (stockMarket[k] === undefined) stockMarket[k] = v;
   if (!Array.isArray(stockMarket.listings)) stockMarket.listings = [];
-  _stockTimer -= dt;
-  if (_stockTimer > 0) return;
-  _stockTimer = 1;
+  if (!stockTicker.step(dt)) return; // every 1s (Systems.js)
   const day = typeof reportDayIndex === "function" ? reportDayIndex() : 0;
   if (stockMarket.day !== day) {
     stockMarket.day = day;
@@ -414,3 +412,6 @@ function handleStockMarketClick(m) {
   }
   return false;
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("stockMarket", updateStockMarket, 180);

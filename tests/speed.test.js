@@ -63,7 +63,7 @@ module.exports = [
         };
         const red = fam(1000, 800);
         const blue = fam(2600, 1500);
-        _herdTimer = 0;
+        herdsTicker.fireNext();
         updateHerds(3);
         for (const f of [...red, ...blue]) f.initBehavior("SLEEPING");
         // A tired blue fluffy right next to the red pile

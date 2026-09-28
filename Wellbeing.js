@@ -93,7 +93,7 @@ function orderTemperamentReaction(f, reward) {
 // ---------------------------------------------------------------------------
 
 const SETTLED_AT = 0.95;
-let _settleTimer = 0;
+const settlingTicker = new Ticker(2);
 
 function startSettlingIn(f) {
   if (!f || f.settling) return;
@@ -112,9 +112,7 @@ function settlingProgress(f) {
 
 // script.js updateSimulation; checks every 2 seconds
 function updateSettling(dt) {
-  _settleTimer -= dt;
-  if (_settleTimer > 0) return;
-  _settleTimer = 2;
+  if (!settlingTicker.step(dt)) return; // every 2s (Systems.js)
   for (const f of fluffies) {
     if (!f.settling) continue;
     if (!f.isAlive || !f.adopted) {
@@ -128,3 +126,6 @@ function updateSettling(dt) {
     }
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("settling", updateSettling, 80);

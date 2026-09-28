@@ -24,7 +24,7 @@ function freshGoalsState() {
 
 let goalsState = freshGoalsState();
 let goalsOpen = false;
-let _goalsTimer = 0;
+const goalsTicker = new Ticker(2);
 
 function _yourFluffies() {
   return fluffies.filter((f) => f.adopted && f.isAlive);
@@ -209,9 +209,7 @@ function updateGoals(dt) {
   if (!goalsState.done) goalsState.done = {};
   if (!goalsState.stats) goalsState.stats = fresh.stats;
   for (const k in fresh.stats) if (goalsState.stats[k] === undefined) goalsState.stats[k] = 0;
-  _goalsTimer -= dt;
-  if (_goalsTimer > 0) return;
-  _goalsTimer = 2;
+  if (!goalsTicker.step(dt)) return; // every 2s (Systems.js)
   for (const g of GOALS) {
     if (isGoalDone(g.id)) continue;
     let met = false;
@@ -327,3 +325,6 @@ registerScreen({
   draw: (c) => drawGoals(c),
   click: () => handleGoalsClick(),
 });
+
+// Runs every simulation step (Systems.js)
+registerSystem("goals", updateGoals, 90);

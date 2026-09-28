@@ -83,7 +83,7 @@ module.exports = [
         };
         const red = fam(1000, 800);
         const blue = fam(2600, 1500);
-        _herdTimer = 0;
+        herdsTicker.fireNext();
         updateHerds(3);
         // Old friends from before, now in rival herds
         setRelationship(red[1].id, blue[1].id, "friend");

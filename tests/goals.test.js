@@ -103,7 +103,10 @@ module.exports = [
       const r = await page.evaluate(() => {
         __clearScene("PARK");
         const group = spawnParkGroup("friends");
-        return group.map((f) => ({ trust: f.playerTrust, fear: f.playerFear, mult: temperamentMultiplier(f) }));
+        // (abandoned pets are used to people - Abandoned.js - so leave them out)
+        return group
+          .filter((f) => !isAbandoned(f))
+          .map((f) => ({ trust: f.playerTrust, fear: f.playerFear, mult: temperamentMultiplier(f) }));
       });
       check(r.every((x) => x.trust <= 0.3 && x.fear >= 0.1), `trust/fear: ${JSON.stringify(r)}`);
       check(r.every((x) => x.mult < 0.95), `temperament: ${r.map((x) => x.mult.toFixed(2))}`);

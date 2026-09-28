@@ -30,7 +30,7 @@
 // (bred / age / soldFor feed the breeding records screen, BreedingRecords.js)
 // }
 let fluffyRecords = {};
-let _familySyncTimer = 0;
+const familyRecordsTicker = new Ticker(1.0);
 
 const FAMILY_STATUS_TEXT = {
   alive: "Alive",
@@ -164,9 +164,7 @@ function _guessBred(rec) {
 
 // Runs every simulation step (script.js); syncs about once a second
 function updateFamilyRecords(dt) {
-  _familySyncTimer -= dt;
-  if (_familySyncTimer <= 0) {
-    _familySyncTimer = 1.0;
+  if (familyRecordsTicker.step(dt)) {
     syncFamilyRecords();
   }
 }
@@ -890,3 +888,6 @@ registerScreen({
   draw: (c) => drawFamilyTree(c),
   click: () => handleFamilyTreeClick(),
 });
+
+// Runs every simulation step (Systems.js)
+registerSystem("familyRecords", updateFamilyRecords, 10);

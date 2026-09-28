@@ -34,7 +34,7 @@ const FLU_WILD_CHANCE = 0.08;
 const FLU_STRAY_CHANCE = 0.1;
 const ILLNESS_TICK = 5;
 
-let _illnessTimer = 0;
+const illnessTicker = new Ticker(ILLNESS_TICK);
 
 function hasFlu(f) {
   return !!(f && f.illness && f.illness.type === "flu");
@@ -103,10 +103,8 @@ function describeIllness(f) {
 
 // script.js updateSimulation (works every ILLNESS_TICK seconds)
 function updateIllness(dt) {
-  _illnessTimer -= dt;
-  if (_illnessTimer > 0) return;
-  const step = ILLNESS_TICK - _illnessTimer;
-  _illnessTimer = ILLNESS_TICK;
+  const step = illnessTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   const sick = [];
   for (const f of fluffies) {
     if (!hasFlu(f)) continue;
@@ -151,3 +149,6 @@ function updateIllness(dt) {
     }
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("illness", updateIllness, 150);

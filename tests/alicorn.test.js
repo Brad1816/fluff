@@ -27,7 +27,7 @@ const SETUP = `() => {
   };
   window.__tick = (seconds) => {
     for (let i = 0; i < seconds; i++) {
-      _alicornTick = 0;
+      alicornTicker.fireNext();
       updateAlicornAcceptance(0); // one 1-second tick
     }
   };

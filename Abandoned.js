@@ -23,7 +23,7 @@
 const ABANDON_GRIEF_DAYS = 5;
 const ABANDONED_TICK = 1;
 
-let _abandonedTimer = 0;
+const abandonedTicker = new Ticker(ABANDONED_TICK);
 
 function isAbandoned(f) {
   return !!f && Array.isArray(f.personalities) && f.personalities.includes("abandoned");
@@ -78,10 +78,8 @@ function abandonedRecoveryRate(f) {
 
 // script.js updateSimulation (works once a second)
 function updateAbandoned(dt) {
-  _abandonedTimer -= dt;
-  if (_abandonedTimer > 0) return;
-  const step = ABANDONED_TICK - _abandonedTimer;
-  _abandonedTimer = ABANDONED_TICK;
+  const step = abandonedTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   for (const f of fluffies) {
     if (!f.isAlive || !(f.missingOwner > 0)) continue;
     // Happiness settles lower: shifts the 0.6 it drifts to (Horse.update)
@@ -103,3 +101,6 @@ function updateAbandoned(dt) {
     }
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("abandoned", updateAbandoned, 140);

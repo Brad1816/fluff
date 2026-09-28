@@ -44,7 +44,7 @@ function freshDayStats() {
 
 let dayStats = freshDayStats();
 let dayReportShown = null; // the finished report on screen, or null
-let _dayReportTimer = 0;
+const dayReportTicker = new Ticker(1);
 
 function reportDayIndex() {
   const t = (typeof timePlayed === "number" ? timePlayed : 0) + (START_HOUR - REPORT_HOUR) * HOUR_LENGTH;
@@ -125,9 +125,7 @@ function _finishDay() {
 function updateDayReport(dt) {
   if (!dayStats || typeof dayStats !== "object") dayStats = freshDayStats();
   for (const [k, v] of Object.entries(freshDayStats())) if (dayStats[k] === undefined) dayStats[k] = v;
-  _dayReportTimer -= dt;
-  if (_dayReportTimer > 0) return;
-  _dayReportTimer = 1;
+  if (!dayReportTicker.step(dt)) return; // every 1s (Systems.js)
 
   const index = reportDayIndex();
   if (dayStats.day === null) _startDay(index);
@@ -327,3 +325,6 @@ registerScreen({
   draw: (c) => drawDayReport(c),
   click: () => handleDayReportClick(),
 });
+
+// Runs every simulation step (Systems.js)
+registerSystem("dayReport", updateDayReport, 100);

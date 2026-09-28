@@ -28,7 +28,7 @@ const OLD_AGE_RISK_DAYS = 28;
 const MAX_AGE_DAYS = 40;
 const AGING_TICK = 5; // seconds
 
-let _agingTimer = 0;
+const agingTicker = new Ticker(AGING_TICK);
 
 function ageDays(f) {
   return (f && f.age ? f.age : 0) / DAY_LENGTH;
@@ -121,10 +121,8 @@ function dieOfOldAge(f) {
 
 // script.js updateSimulation (works every AGING_TICK seconds)
 function updateAging(dt) {
-  _agingTimer -= dt;
-  if (_agingTimer > 0) return;
-  const step = AGING_TICK - _agingTimer;
-  _agingTimer = AGING_TICK;
+  const step = agingTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   for (const f of fluffies) {
     if (!f.isAlive) continue;
     // Greyer: redraw its mane and tail
@@ -142,3 +140,6 @@ function updateAging(dt) {
     }
   }
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("aging", updateAging, 130);

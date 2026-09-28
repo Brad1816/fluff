@@ -186,7 +186,7 @@ let namingPopupsEnabled = true; // tests switch this off (tests/names.test.js tu
 let namingQueue = []; // [{ ids: [...], kind: "litter" | "single", mumId }]
 let namingPopup = null; // { ids, kind, mumId, names: [], focus }
 let _namingKnown = null; // ids of your fluffies we've already seen
-let _namingTimer = 0;
+const namingTicker = new Ticker(1);
 const _pendingLitters = {}; // mumId -> [ids]
 
 function isNamingPopupOpen() {
@@ -200,9 +200,7 @@ function _namingCandidates() {
 // script.js updateSimulation
 function updateNamingPopups(dt) {
   if (!namingPopupsEnabled) return;
-  _namingTimer -= dt;
-  if (_namingTimer > 0) return;
-  _namingTimer = 1;
+  if (!namingTicker.step(dt)) return; // every 1s (Systems.js)
   // First look (new game, loaded save): everything already here is known
   if (!_namingKnown) {
     _namingKnown = new Set(_namingCandidates().map((f) => f.id));
@@ -511,3 +509,6 @@ registerScreen({
   escape: false, // it handles Esc itself (typing in its boxes)
   reset: () => resetNamingPopups(),
 });
+
+// Runs every simulation step (Systems.js)
+registerSystem("naming", updateNamingPopups, 70);

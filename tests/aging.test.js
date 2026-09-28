@@ -43,11 +43,11 @@ module.exports = [
         young.triggerPregnancy(dad);
         out.pregnant = [young.isPregnant, old.isPregnant];
         // Tints are redrawn when a fluffy goes greyer
-        _agingTimer = 0;
+        agingTicker.fireNext();
         updateAging(0);
         senior.renderer.tinted = { marker: true };
         senior.age = 26 * DAY_LENGTH;
-        _agingTimer = 0;
+        agingTicker.fireNext();
         updateAging(0);
         out.retinted = senior.renderer.tinted === null;
         return out;
@@ -86,7 +86,7 @@ module.exports = [
         // One game day of checks (ages held still)
         for (let t = 0; t < DAY_LENGTH; t += AGING_TICK) {
           for (const f of fluffies) if (f.isAlive) f.age = f.age; // unchanged
-          _agingTimer = 0;
+          agingTicker.fireNext();
           updateAging(0);
         }
         return {
@@ -153,7 +153,7 @@ module.exports = [
         f.missingOwner = 1;
         f.happiness = 0.6;
         for (let t = 0; t < 180; t++) {
-          _abandonedTimer = 0;
+          abandonedTicker.fireNext();
           updateAbandoned(0);
         }
         out.sadder = f.happiness;
@@ -168,7 +168,7 @@ module.exports = [
         mine.adopted = true;
         mine.playerTrust = 1;
         for (let t = 0; t < 1600; t++) {
-          _abandonedTimer = 0;
+          abandonedTicker.fireNext();
           updateAbandoned(0);
         }
         out.mine = mine.missingOwner;

@@ -44,7 +44,7 @@ function freshNightEvents() {
 
 let nightEvents = freshNightEvents();
 let nightPredators = []; // not saved
-let _nightTick = 0;
+const nightTicker = new Ticker(1);
 
 function _nightIndex() {
   // Changes at noon, so one night (evening to dawn) has one index
@@ -693,9 +693,7 @@ function updateNightEvents(dt) {
   if (!Array.isArray(nightEvents.planned)) nightEvents.planned = [];
   if (nightEvents.night === undefined) nightEvents.night = null;
 
-  _nightTick -= dt;
-  if (_nightTick > 0) return;
-  _nightTick = 1;
+  if (!nightTicker.step(dt)) return; // every 1s (Systems.js)
   if (typeof parkLife === "undefined" || !parkLife.enabled) return;
 
   const now = _nightNow();
@@ -748,3 +746,6 @@ function handleNightPredatorClick() {
 function resetNightPredators() {
   nightPredators = [];
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("nightEvents", updateNightEvents, 110);

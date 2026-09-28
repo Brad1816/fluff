@@ -25,9 +25,9 @@ const SETUP = `() => {
     return [mum, ...kids];
   };
   window.__loner = (x, y, name) => mare(null, x, y, name);
-  window.__herds = () => { _herdTimer = 0; updateHerds(3); };
+  window.__herds = () => { herdsTicker.fireNext(); updateHerds(3); };
   window.__territory = (seconds = 2) => {
-    for (let s = 0; s < seconds; s += 2) { _territoryTimer = 0; updateTerritories(0); } // one 2s tick each
+    for (let s = 0; s < seconds; s += 2) { territoryTicker.fireNext(); updateTerritories(0); } // one 2s tick each
   };
 }`;
 

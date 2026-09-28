@@ -17,7 +17,7 @@ const SETUP = `() => {
   };
   window.__tick = (seconds) => {
     for (let t = 0; t < seconds; t += ILLNESS_TICK) {
-      _illnessTimer = 0;
+      illnessTicker.fireNext();
       updateIllness(0);
     }
   };

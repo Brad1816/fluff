@@ -211,19 +211,19 @@ module.exports = [
           timePlayed = DAY_LENGTH * 3 + (22 - START_HOUR) * HOUR_LENGTH;
           out.hour = Math.round(gameHour());
           Math.random = () => 0.05; // always an event, and a second one
-          _nightTick = 0;
+          nightTicker.fireNext();
           updateNightEvents(0.016);
           Math.random = realRandom;
           out.planned = nightEvents.planned.map((p) => p.at);
           out.inNight = out.planned.every((at) => at > timePlayed && at < timePlayed + 7 * HOUR_LENGTH);
           // Planning again the same night does nothing
-          _nightTick = 0;
+          nightTicker.fireNext();
           updateNightEvents(0.016);
           out.sameNight = nightEvents.planned.length === out.planned.length;
           // Dawn: everything planned has happened
           timePlayed = Math.max(...out.planned) + 1;
           dayStats.nightEvents = [];
-          _nightTick = 0;
+          nightTicker.fireNext();
           updateNightEvents(0.016);
           __runFox();
           out.left = nightEvents.planned.length;

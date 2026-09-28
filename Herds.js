@@ -75,7 +75,7 @@ function freshHerdState() {
 
 let herdState = freshHerdState();
 let showHerdMarkers = false;
-let _herdTimer = 0;
+const herdsTicker = new Ticker(HERD_UPDATE_EVERY);
 let _herdIndex = null; // fluffy id -> herd (rebuilt when herds change)
 let _herdIndexKey = "";
 
@@ -265,10 +265,8 @@ function _leave(h, f, quietly = false) {
 
 function updateHerds(dt) {
   if (!herdState || !Array.isArray(herdState.list)) herdState = freshHerdState();
-  _herdTimer -= dt;
-  if (_herdTimer > 0) return;
-  const step = HERD_UPDATE_EVERY - _herdTimer;
-  _herdTimer = HERD_UPDATE_EVERY;
+  const step = herdsTicker.step(dt); // seconds since last time, or 0 (Systems.js)
+  if (!step) return;
   if (typeof getLiking !== "function") return;
 
   const alive = new Map(fluffies.filter((f) => f.isAlive).map((f) => [f.id, f]));
@@ -515,3 +513,6 @@ function drawHerdMarker(c, f) {
   }
   c.restore();
 }
+
+// Runs every simulation step (Systems.js)
+registerSystem("herds", updateHerds, 30);
