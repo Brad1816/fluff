@@ -72,7 +72,8 @@ module.exports = [
       checkEqual(s.money, 1000 - 25, "money after buying kibble");
       checkEqual(JSON.stringify(s.bags), JSON.stringify([{ scene: kibble.scene, dragging: false }]), "the bag is on the store floor");
 
-      // Pick it up and walk home: S (out of the store), W (garden), W (home)
+      // Pick it up and walk home: S (out of the store), S (garden - the
+      // street's way back is at the bottom), W (home)
       const spot = await page.evaluate(() => {
         const b = objects.find((o) => o instanceof FoodBag);
         // Straight up from its bottom, away from the edges
@@ -84,7 +85,7 @@ module.exports = [
       check(spot, "couldn't find the bag to click");
       await page.mouse.click(spot.x, spot.y);
       checkEqual(JSON.stringify((await state(page)).bags), JSON.stringify([{ scene: kibble.scene, dragging: true }]), "picked up the bag");
-      for (const key of ["KeyS", "KeyW", "KeyW"]) await page.keyboard.press(key);
+      for (const key of ["KeyS", "KeyS", "KeyW"]) await page.keyboard.press(key);
       await page.mouse.move(700, 500);
       await page.mouse.click(700, 500);
       s = await state(page);

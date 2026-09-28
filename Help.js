@@ -83,8 +83,8 @@ const HELP_TOPICS = [
   {
     title: "Fluffy shows",
     lines: [
-      'Every 3 days at 2 PM there\'s a fluffy show: the "Shows" tab on the',
-      "Bounty Board (Shopping Street) or FluffList (the Computer).",
+      "Every 3 days at 2 PM there's a fluffy show. Click the Show Hall on",
+      'Shopping Street, or use the "Shows" tab on the Bounty Board or FluffList.',
       "",
       "- Each show has a theme: Best Coat, Spots & Stripes, Best Unicorn,",
       "  Best Pegasus, Friendliest, Best Foal, Golden Oldies, Best Behaved.",
@@ -94,6 +94,8 @@ const HELP_TOPICS = [
       "  Missing parts, flu or poor health cost points.",
       "- Enter one fluffy for a small fee (withdraw for a refund before",
       "  the show). The other breeders get better as your reputation grows.",
+      "- Brush your entry within a day of the show: +5 with the judges.",
+      "- You watch it in the ring: the parade, the scores, the podium.",
       "- 1st, 2nd and 3rd win money, reputation and a ribbon. Ribbons raise",
       "  a fluffy's price, and 3 wins make it a Champion.",
     ],

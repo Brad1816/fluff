@@ -802,6 +802,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof vetClinicClick === "function" && vetClinicClick()) {
     return;
   }
+  // The show hall on Shopping Street (Shows.js)
+  if (typeof showHallClick === "function" && showHallClick()) {
+    return;
+  }
 
   // 3. Check Sell Request Click
   if (currentSellRequest && getSceneConfig(currentScene).insidePlayerQuarters) {

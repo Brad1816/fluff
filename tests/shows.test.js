@@ -321,6 +321,8 @@ module.exports = [
         const P = getShowResultsLayout();
         mouse.x = P.ok.x + 5;
         mouse.y = P.ok.y + 5;
+        clickScreens(); // first click skips to the end of the show
+        out.skipped = isShowResultsOpen() && isShowRingFinished();
         clickScreens();
         out.closed = !isShowResultsOpen();
         // Magnifying glass row
@@ -337,8 +339,128 @@ module.exports = [
       check(r.withdrawn, "withdrawn with a click");
       check(r.popup, "results pop up");
       checkEqual(r.drewPopup, true, "pop-up draws");
+      check(r.skipped, "Skip jumps to the end");
       check(r.closed, "closed with the button");
       checkEqual(r.row, "1 second", "ribbons row");
+    },
+  },
+  {
+    name: "shows: brushing grooms a fluffy for a day: +5 with the judges",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const f = __mk();
+        f.health = 100;
+        const t = getShowTheme("coat");
+        __show("coat", 1);
+        enterShow(f);
+        const before = showScore(f, t);
+        uiMessages.length = 0;
+        onFluffyGroomed(f);
+        const out = {
+          before,
+          after: showScore(f, t),
+          comment: showComment(f, t),
+          msg: uiMessages.some((m) => /groomed for the show/.test(m.text || m)),
+        };
+        uiMessages.length = 0;
+        onFluffyGroomed(f); // again: no second message
+        out.msg2 = uiMessages.some((m) => /groomed for the show/.test(m.text || m));
+        timePlayed += DAY_LENGTH + 1;
+        out.later = showScore(f, t);
+        return out;
+      }, SETUP);
+      checkEqual(r.after - r.before, 5, `groomed +5 (${r.before} -> ${r.after})`);
+      check(/beautifully groomed/.test(r.comment), r.comment);
+      check(r.msg, "tells you your entry is groomed");
+      check(!r.msg2, "only once");
+      checkEqual(r.later, r.before, "wears off after a day");
+    },
+  },
+  {
+    name: "shows: the ring - rivals have looks, parade order, replay; the Show Hall on Shopping Street",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const f = __mk();
+        __show("unicorn", 2);
+        const uni = __mk({ type: "unicorn" });
+        f.type = "earthy";
+        enterShow(uni);
+        const res = runShow();
+        const rivals = res.placings.filter((e) => !e.you);
+        const out = {
+          looks: rivals.every((e) => Array.isArray(e.genes)),
+          unicorns: rivals.filter((e) => stockTypeOfGenes(e.genes) === "unicorn" || stockTypeOfGenes(e.genes) === "alicorn").length,
+          n: rivals.length,
+          orders: res.placings.map((e) => e.order).sort((a, b) => a - b).join(","),
+          open: isShowResultsOpen(),
+          finished: isShowRingFinished(),
+        };
+        // Drawing every stage
+        out.draws = [];
+        for (const at of [0, 2, 5.5, 7, 12, 40]) {
+          _ringTime();
+          _ring.start = _ringClock() - at;
+          try {
+            drawShowResults(ctx);
+            out.draws.push(true);
+          } catch (e) {
+            out.draws.push(e.message);
+          }
+        }
+        closeShowResults();
+        out.canReplay = canReplayShow();
+        openOrdersScreen("web");
+        ordersTab = "shows";
+        const { s, ox, oy } = _osOrigin();
+        const b = showsLayout().replay;
+        mouse.x = ox + (b.x + b.w / 2) * s;
+        mouse.y = oy + (b.y + b.h / 2) * s;
+        clickScreens();
+        out.replaying = isShowResultsOpen() && !isShowRingFinished() && !ordersScreenMode;
+        closeShowResults();
+        // The Show Hall
+        changeScene("SHOP_STREET");
+        const H = getShowHallRect();
+        mouse.x = H.x + H.w / 2;
+        mouse.y = H.y + H.h / 2;
+        try {
+          drawShowHall(ctx);
+          out.hallDrew = true;
+        } catch (e) {
+          out.hallDrew = e.message;
+        }
+        ordersTab = "orders";
+        out.hallClick = showHallClick();
+        out.hallTab = ordersTab;
+        out.hallMode = ordersScreenMode;
+        closeOrdersScreen();
+        // Overlaps nothing else on the street
+        const rects = [getVetClinicRect(), getBountyBoardRect()];
+        out.overlap = rects.some((o) => !(o.x + o.w < H.x || H.x + H.w < o.x || o.y + o.h < H.y - 44 || H.y + H.h < o.y - 34));
+        // The way back to the garden is at the bottom now
+        const back = getScenePortals("SHOP_STREET").find((p) => p.target === "OUTDOORS");
+        out.back = back && { type: back.type, bottom: back.y > height / 2 };
+        out.noUp = !getScenePortals("SHOP_STREET").some((p) => p.type === "arrow_up");
+        changeScene("INDOORS");
+        mouse.x = H.x + H.w / 2;
+        mouse.y = H.y + H.h / 2;
+        out.notHome = showHallClick();
+        return out;
+      }, SETUP);
+      check(r.looks, "every rival has looks");
+      check(r.unicorns >= r.n - 1, `rivals in Best Unicorn are unicorns: ${r.unicorns}/${r.n}`);
+      checkEqual(r.orders, Array.from({ length: r.n + 1 }, (_, i) => i).join(","), "everyone has a place in the parade");
+      check(r.open && !r.finished, "the show plays out");
+      checkEqual(JSON.stringify(r.draws), JSON.stringify([true, true, true, true, true, true]), "draws at every stage");
+      check(r.canReplay && r.replaying, "watch it again from the Shows tab");
+      checkEqual(r.hallDrew, true, "the hall draws");
+      check(r.hallClick && r.hallTab === "shows" && r.hallMode === "board", "clicking the hall opens the Shows tab");
+      checkEqual(r.overlap, false, "the hall doesn't overlap the vet or the board");
+      checkEqual(JSON.stringify(r.back), JSON.stringify({ type: "arrow_down", bottom: true }), "back to the garden at the bottom");
+      check(r.noUp, "no arrow at the top any more");
+      checkEqual(r.notHome, false, "the hall is only on Shopping Street");
     },
   },
 ];

@@ -81,7 +81,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Abandoned.js` | **Abandoned pets**: fluffies dumped by an owner at any age, named, sad until they get over it. See section 9 (Abandoned pets). |
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
-| `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen), prizes, ribbons, champions, results pop-up. See section 9 (Fluffy shows). |
+| `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen, or the Show Hall on Shopping Street), grooming with the brush, prizes, ribbons, champions, watching it in the ring. See section 9 (Fluffy shows). |
 | `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
 | `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
@@ -574,7 +574,7 @@ what it would sell for. Dead fluffies show cause of death instead of needs.
 Things are bought at a store instead of from a menu.
 - **Getting there**: garden (outside the front door) → down arrow →
   **Shopping Street** (`SHOP_STREET`) → store door → the aisles. The
-  "Back to Garden" arrow is at the top right of the street.
+  "Back to Garden" arrow is at the bottom middle of the street (S key).
 - **Aisles**: each is its own scene, `STORE_FOOD`, `STORE_HOME`,
   `STORE_CARE`, `STORE_PHARMACY` (Pharmacy & Lab), `STORE_HARDWARE`, `STORE_FASHION`
   (+ `STORE_MISC` "Odds & Ends" if anything isn't listed), with left/right
@@ -1382,9 +1382,33 @@ before 10 AM, otherwise tomorrow.
   raise the price (`ribbonPriceMultiplier`, in `calculatePrice`: +15% a
   win, +7% a 2nd, +3% a 3rd, at most +60%). 3 wins = Champion
   (`isChampion`); the magnifying glass shows a "Ribbons" row.
-- **Results**: a pop-up (screen layer 29) after a show you entered, and
-  the morning report's news either way. `showState` (SAVED_GAME_STATE)
-  holds the next show, your entry, the last result and a short history.
+- **Results: the ring** (screen layer 29, `drawShowResults`): after a show
+  you entered it plays out in real time: the parade round the ring
+  (`RING_PARADE` 5s), the line-up, the judges' scores from last place to
+  first (`RING_REVEAL` 0.6s each), then the top three walk to the podium
+  and get rosettes (blue 1st, red 2nd, yellow 3rd; confetti if you placed).
+  The button says "Skip" until the end, then closes it. Rivals look like
+  their breeder's line (`_showRivalLooks`, using the stock market's
+  `_lineGrandparent`; unicorns for Best Unicorn and so on), and each
+  placing keeps `genes`, `growth`, `gender` and its parade `order`, so
+  "Watch again" on the Shows tab can replay the last show. Also on the
+  morning report's news either way. `showState` (SAVED_GAME_STATE) holds
+  the next show, your entry, the last result and a short history.
+- **Grooming**: brushing a fluffy (script.js brush code ->
+  `onFluffyGroomed`) sets `f.groomedAt` (saved). Within a game day of it,
+  `showScore` adds `SHOW_GROOM_BONUS` (5) and the judges say "beautifully
+  groomed". Brushing your entry tells you it's groomed (once).
+- **The Show Hall** on Shopping Street (`getShowHallRect`, bottom right,
+  below the vet; `drawShowHall` from Store.js `drawStoreScenery`): a poster
+  with the next show and your entry. Click it (`showHallClick`, UI.js
+  mousedown) for the orders screen on the Shows tab.
+
+### Shopping Street: the way back is at the bottom
+"Back to Garden" on Shopping Street is now an `arrow_down` at the bottom
+middle (Store.js `getStorePortals`), so S walks you back to the garden and
+W goes into Fluff Mart. Things carried back through it land near the
+bottom of the garden (the portal's `arriveAt: "bottom"`, handled in
+globals.js with the other arrows), by the garden's Shopping Street arrow.
 
 ### Bug fix: weather and customer orders stopped updating
 When the update calls became registered systems, `updateWorldTime` and

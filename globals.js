@@ -917,6 +917,7 @@ function handleDropping(item) {
         if (p.type === "arrow_right") item.x = 100;
         if (p.type === "arrow_down") item.y = groundYMin + 20;
         if (p.type === "arrow_up") item.y = th - 120;
+        if (p.arriveAt === "bottom") item.y = th - 120;
         // Park positions can be far outside a normal screen
         if (leavingPark || (typeof isCameraScene === "function" && isCameraScene(t))) {
           item.x = clamp(item.x, 60, tw - 60);

@@ -212,7 +212,7 @@ module.exports = [
         __clearScene();
       });
       // Buy a piece at the store (it sticks to the mouse) and carry it home:
-      // S = out of the store, W = back to the garden, W = in the front door
+      // S = out of the store, S = back to the garden, W = in the front door
       const buyAndCarryHome = async (name) => {
         const spot = await page.evaluate((name) => {
           const action = SPAWN_ACTIONS.find((a) => a.name === name);
@@ -223,7 +223,7 @@ module.exports = [
         }, name);
         await page.mouse.move(spot.x, spot.y);
         await page.mouse.click(spot.x, spot.y);
-        for (const key of ["KeyS", "KeyW", "KeyW"]) await page.keyboard.press(key);
+        for (const key of ["KeyS", "KeyS", "KeyW"]) await page.keyboard.press(key);
       };
       await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
       await buyAndCarryHome("Fence");

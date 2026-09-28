@@ -459,6 +459,8 @@ function attemptDrop() {
             f.changeHappiness(HAPPINESS_BONUS_BRUSH);
             // Builds trust in you (Memory.js)
             if (typeof onFluffyBrushed === "function") onFluffyBrushed(f);
+            // Groomed for a show (Shows.js)
+            if (typeof onFluffyGroomed === "function") onFluffyGroomed(f);
             f.expressionOverride = "GOOD_UPSIES";
             f.expressionOverrideTimer = 1.0;
             f.initBehavior("BENDING_2");

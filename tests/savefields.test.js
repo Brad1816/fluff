@@ -14,7 +14,7 @@ module.exports = [
           killedByPlayer: true, fromPark: true, settling: true, settleStart: 0.7, lastDesire: { desire: "Eat" },
           alicornComfort: 0.3, missingOwner: 0.6, lostPet: true, illness: { type: "flu", t: 50, known: true },
           fluImmuneUntil: 1234, fluVaccinated: true, vetCheckedAt: 77, vetNote: "fine", vetLife: "young",
-          ribbons: [{ place: 1, show: "Best Coat", day: 4 }],
+          ribbons: [{ place: 1, show: "Best Coat", day: 4 }], groomedAt: 321,
         };
         Object.assign(f, values);
         const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));

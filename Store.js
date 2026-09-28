@@ -159,13 +159,14 @@ function getStorePortals(scene) {
   if (scene === "SHOP_STREET") {
     return [
       {
-        type: "arrow_up",
-        x: width - 100,
-        y: 20,
+        type: "arrow_down",
+        x: width / 2 - 40,
+        y: height - 80,
         w: 80,
         h: 60,
         target: "OUTDOORS",
         label: "Back to Garden",
+        arriveAt: "bottom", // things carried back land by the garden's Shopping Street arrow
       },
       {
         type: "door",
@@ -320,6 +321,8 @@ function drawStoreScenery(c) {
     if (typeof drawBountyBoard === "function") drawBountyBoard(c);
     // The vet's clinic (Vet.js)
     if (typeof drawVetClinic === "function") drawVetClinic(c);
+    // The show hall (Shows.js)
+    if (typeof drawShowHall === "function") drawShowHall(c);
   } else if (isStoreScene(currentScene)) {
     const aisle = getStoreAisleForScene(currentScene);
     if (aisle) drawStoreAisle(c, aisle);
@@ -401,7 +404,7 @@ function drawShopStreet(c) {
 
   // Shop window on the right, with some stock showing
   const winX = doorRect.x + doorRect.w + 40;
-  const winW = width - winX - 130; // room for the "Back to Garden" arrow
+  const winW = width - winX - 30;
   const winY = 10;
   const winH = awnY - 16;
   if (winW > 60) {
