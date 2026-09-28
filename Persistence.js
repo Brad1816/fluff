@@ -193,6 +193,7 @@ function resetTemporaryGameState() {
   if (typeof dayReportShown !== "undefined") dayReportShown = null;
   if (typeof resetNamingPopups === "function") resetNamingPopups();
   if (typeof goalsOpen !== "undefined") goalsOpen = false;
+  if (typeof helpOpen !== "undefined") helpOpen = false;
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;

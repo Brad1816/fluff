@@ -211,6 +211,8 @@ function updateNamingPopups(dt) {
     _namingKnown.add(f.id);
     // Brought home from the park (Goals.js)
     if (f.fromPark && typeof noteGoalEvent === "function") noteGoalEvent("broughtHome");
+    // ...and starts settling in (Wellbeing.js)
+    if (f.fromPark && typeof startSettlingIn === "function") startSettlingIn(f);
     if (fluffyNames[f.id]) continue; // already has a name
     const newborn = f.motherId !== null && f.motherId !== undefined && f.growth < 0.1;
     if (newborn) {

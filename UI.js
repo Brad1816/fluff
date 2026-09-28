@@ -2038,8 +2038,9 @@ function drawUI(ctx) {
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   if (typeof drawOrdersScreen === "function") drawOrdersScreen(ctx);
   drawDayCareModal(ctx);
-  // Goals list (Goals.js)
+  // Goals list (Goals.js) and help (Help.js)
   if (typeof drawGoals === "function") drawGoals(ctx);
+  if (typeof drawHelp === "function") drawHelp(ctx);
   // Morning report on top of everything (DayReport.js)
   if (typeof drawDayReport === "function") drawDayReport(ctx);
   // Naming a new fluffy / litter (Names.js)
@@ -2058,6 +2059,7 @@ function isAnyScreenOpen() {
   if (typeof isDayReportOpen === "function" && isDayReportOpen()) return true;
   if (typeof isNamingPopupOpen === "function" && isNamingPopupOpen()) return true;
   if (typeof isGoalsOpen === "function" && isGoalsOpen()) return true;
+  if (typeof isHelpOpen === "function" && isHelpOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -2258,6 +2260,9 @@ function getFluffyInspectionInfo(f) {
   if (f.isAlive && typeof describePlayerFeeling === "function") {
     const [feel, feelTone] = describePlayerFeeling(f);
     care.push({ label: "Feels about you", value: feel, tone: feelTone });
+    // A wild fluffy getting used to you (Wellbeing.js)
+    const settle = typeof settlingProgress === "function" ? settlingProgress(f) : null;
+    if (settle !== null) care.push({ label: "Settling in", value: `${Math.round(settle * 100)}%`, tone: settle > 0.6 ? "ok" : "bad" });
     // Permanent scars from how it was taken (Separation.js)
     const scars = typeof describeTraumas === "function" ? describeTraumas(f) : null;
     if (scars) care.push({ label: "Trauma", value: scars, tone: "bad" });
@@ -3672,6 +3677,10 @@ canvas.addEventListener("mousedown", (e) => {
   }
   // Goals list (Goals.js)
   if (typeof handleGoalsClick === "function" && handleGoalsClick()) {
+    return;
+  }
+  // Help (Help.js)
+  if (typeof handleHelpClick === "function" && handleHelpClick()) {
     return;
   }
 

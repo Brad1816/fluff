@@ -5102,6 +5102,8 @@ class Horse {
       hurtByPlayerAt: this.hurtByPlayerAt ?? null,
       killedByPlayer: !!this.killedByPlayer,
       fromPark: !!this.fromPark,
+      settling: !!this.settling,
+      settleStart: this.settleStart ?? null,
       lastDesire: this.lastDesire
         ? JSON.parse(JSON.stringify(this.lastDesire))
         : null,
@@ -5260,6 +5262,8 @@ class Horse {
     horse.hurtByPlayerAt = data.hurtByPlayerAt ?? null;
     horse.killedByPlayer = !!data.killedByPlayer;
     horse.fromPark = !!data.fromPark;
+    horse.settling = !!data.settling;
+    horse.settleStart = data.settleStart ?? null;
     horse.castrationBandTimer =
       data.castrationBandTimer !== undefined
         ? data.castrationBandTimer

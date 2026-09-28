@@ -120,6 +120,15 @@ function drawGameSpeed(chatLogRight) {
         typeof isGoalsOpen === "function" && isGoalsOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
     });
   }
+  // Help button (Help.js)
+  const hb = getHelpButtonRect(chatLogRight);
+  if (typeof openHelp === "function" && typeof drawGlassButton === "function") {
+    drawGlassButton(hb.x, hb.y, hb.w, hb.h, "?", {
+      fontSize: 16,
+      borderRadius: 8,
+      normalFill: isHelpOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
+    });
+  }
   // Can't keep up? Say how fast it really is
   if (gameSpeed > 1 && actualGameSpeed < gameSpeed - 0.5) {
     const last = L.buttons[L.buttons.length - 1];
@@ -128,7 +137,7 @@ function drawGameSpeed(chatLogRight) {
     ctx.font = "12px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(`(really ${actualGameSpeed.toFixed(1)}x)`, gb.x + gb.w + 6, L.y + L.h / 2);
+    ctx.fillText(`(really ${actualGameSpeed.toFixed(1)}x)`, hb.x + hb.w + 6, L.y + L.h / 2);
     ctx.restore();
   }
 }
@@ -140,8 +149,20 @@ function getGoalsButtonRect(chatLogRight) {
   return { x: last.x + last.w + 8, y: L.y, w: 92, h: L.h };
 }
 
+// The "?" help button, after Goals
+function getHelpButtonRect(chatLogRight) {
+  const gb = getGoalsButtonRect(chatLogRight);
+  return { x: gb.x + gb.w + 6, y: gb.y, w: 30, h: gb.h };
+}
+
 // Mouse down on the buttons (screen positions). Returns true if handled.
 function gameSpeedClick(chatLogRight) {
+  const hb = getHelpButtonRect(chatLogRight);
+  if (typeof openHelp === "function" && isPointInRect(mouse.x, mouse.y, hb.x, hb.y, hb.w, hb.h)) {
+    if (isHelpOpen()) closeHelp();
+    else openHelp();
+    return true;
+  }
   const gb = getGoalsButtonRect(chatLogRight);
   if (typeof openGoals === "function" && isPointInRect(mouse.x, mouse.y, gb.x, gb.y, gb.w, gb.h)) {
     if (isGoalsOpen()) closeGoals();

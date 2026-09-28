@@ -66,6 +66,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Wellbeing.js` | **Temperament**: happiness, trust, fear and trauma change a fluffy's price and how customers react. See section 9 (Temperament). |
 | `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
 | `Goals.js` | **Breeder goals**: optional milestones with cash rewards (Goals button next to the speed buttons, or G). See section 9 (Goals). |
+| `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
@@ -1010,4 +1011,18 @@ level, and a 3-day home breeding run with 1 stallion and 3 mares):
   alicorn chances were cut too: abandoned babies 20% -> 1%, mill escapees
   10% -> 1%, the foal vendor's can 5% -> 0.5%. Breeding alicorns from
   carriers is unchanged.
+
+### Help and settling in
+- **Help** (`Help.js`): the "?" button after the Goals button, or F1,
+  opens "How it works" with topics on the left (Getting started,
+  Temperament & price, Fluffy Park, Herds & territory, Day night &
+  weather, Taking & trauma, Names, Keys). Text lives in `HELP_TOPICS`:
+  "" is a gap, "# " a small heading, "- " a bullet. Keep it up to date
+  when adding features.
+- **Settling in** (Wellbeing.js): a wild fluffy that becomes yours
+  (`f.fromPark`) starts settling in (`startSettlingIn`, called from
+  Names.js when it's first seen at home). The magnifying glass shows
+  "Settling in: 40%" - progress from its starting temperament to
+  Ordinary (`SETTLED_AT` 0.95). When it gets there you get "X has settled
+  in with you." (`updateSettling`). Saved as `settling` / `settleStart`.
 

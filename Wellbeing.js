@@ -84,3 +84,47 @@ function orderTemperamentReaction(f, reward) {
   }
   return { money: 0, repFactor: 1, message: null };
 }
+
+// ---------------------------------------------------------------------------
+// Settling in: a wild fluffy brought home from the park starts wary
+// (Nervous). As good care raises its trust and eases its fear, it settles
+// in; the magnifying glass shows "Settling in: 40%" until its temperament
+// reaches Ordinary (SETTLED_AT), then you get a message and the line goes.
+// ---------------------------------------------------------------------------
+
+const SETTLED_AT = 0.95;
+let _settleTimer = 0;
+
+function startSettlingIn(f) {
+  if (!f || f.settling) return;
+  const m = temperamentMultiplier(f);
+  if (m >= SETTLED_AT) return;
+  f.settling = true;
+  f.settleStart = m;
+}
+
+// 0..1, or null if it isn't settling in
+function settlingProgress(f) {
+  if (!f || !f.settling) return null;
+  const start = Math.min(f.settleStart ?? 0.7, SETTLED_AT - 0.05);
+  return Math.max(0, Math.min(1, (temperamentMultiplier(f) - start) / (SETTLED_AT - start)));
+}
+
+// script.js updateSimulation; checks every 2 seconds
+function updateSettling(dt) {
+  _settleTimer -= dt;
+  if (_settleTimer > 0) return;
+  _settleTimer = 2;
+  for (const f of fluffies) {
+    if (!f.settling) continue;
+    if (!f.isAlive || !f.adopted) {
+      if (!f.isAlive) f.settling = false;
+      continue;
+    }
+    if (temperamentMultiplier(f) >= SETTLED_AT) {
+      f.settling = false;
+      const who = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
+      if (typeof addUIMessage === "function") addUIMessage(`${who} has settled in with you.`);
+    }
+  }
+}

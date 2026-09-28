@@ -1412,6 +1412,8 @@ function updateSimulation(dt) {
   if (typeof updateSeparations === "function") updateSeparations(dt);
   // Offer to name fluffies that have just become yours (Names.js)
   if (typeof updateNamingPopups === "function") updateNamingPopups(dt);
+  // Wild fluffies settling in at home (Wellbeing.js)
+  if (typeof updateSettling === "function") updateSettling(dt);
   // Breeder goals (Goals.js)
   if (typeof updateGoals === "function") updateGoals(dt);
   // What happened today, for the morning report (DayReport.js)
@@ -2018,6 +2020,11 @@ window.addEventListener("keydown", (e) => {
       closeGoals();
       return;
     }
+    // Help (Help.js)
+    if (typeof isHelpOpen === "function" && isHelpOpen()) {
+      closeHelp();
+      return;
+    }
     if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
       inspectedFluffy = null;
       return;
@@ -2102,6 +2109,13 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "KeyN") {
     showFluffyNames = !showFluffyNames;
+    return;
+  }
+  // F1: help (Help.js)
+  if (e.code === "F1" && typeof isHelpOpen === "function") {
+    e.preventDefault();
+    if (isHelpOpen()) closeHelp();
+    else if (!isAnyScreenOpen()) openHelp();
     return;
   }
   // G: the goals list (Goals.js)
