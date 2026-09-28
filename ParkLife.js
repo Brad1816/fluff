@@ -374,6 +374,8 @@ function updateParkLife(dt) {
     const night = typeof isNightTime === "function" && isNightTime();
     if (n < PARK_WILD_TARGET && !night) {
       const group = spawnParkGroup();
+      // Some bring Fluffy flu with them (Illness.js)
+      if (typeof maybeCarryFlu === "function") for (const f of group) maybeCarryFlu(f, FLU_WILD_CHANCE);
       if (typeof noteDayEvent === "function") noteDayEvent("wildArrived", { count: group.length }); // morning report
     }
     parkLife.spawnTimer = n < PARK_WILD_TARGET / 2 ? 25 + Math.random() * 20 : 60 + Math.random() * 60;

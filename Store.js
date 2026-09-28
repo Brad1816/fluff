@@ -318,6 +318,8 @@ function drawStoreScenery(c) {
     drawShopStreet(c);
     // Customer orders board (OrderBoard.js)
     if (typeof drawBountyBoard === "function") drawBountyBoard(c);
+    // The vet's clinic (Vet.js)
+    if (typeof drawVetClinic === "function") drawVetClinic(c);
   } else if (isStoreScene(currentScene)) {
     const aisle = getStoreAisleForScene(currentScene);
     if (aisle) drawStoreAisle(c, aisle);

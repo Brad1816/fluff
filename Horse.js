@@ -1865,6 +1865,13 @@ class Horse {
     horse.alicornTolerance = data.alicornTolerance;
     horse.alicornComfort = data.alicornComfort || 0; // AlicornAcceptance.js
     horse.missingOwner = data.missingOwner || 0; // Abandoned.js
+    // Fluffy flu and the vet (Illness.js, Vet.js)
+    horse.illness = data.illness || null;
+    horse.fluImmuneUntil = data.fluImmuneUntil || 0;
+    horse.fluVaccinated = !!data.fluVaccinated;
+    if (data.vetCheckedAt !== null && data.vetCheckedAt !== undefined) horse.vetCheckedAt = data.vetCheckedAt;
+    horse.vetNote = data.vetNote || null;
+    horse.vetLife = data.vetLife || null;
     horse.coloristDegree = data.coloristDegree;
     horse.x = data.x;
     horse.y = data.y;

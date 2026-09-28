@@ -971,6 +971,8 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
     if (typeof setupAbandoned === "function") setupAbandoned(h);
     // Runaways had an owner: they keep the name it gave them (Names.js)
     if (typeof giveOwnerName === "function") giveOwnerName(h);
+    // Some strays bring Fluffy flu with them (Illness.js)
+    if (typeof maybeCarryFlu === "function") maybeCarryFlu(h, FLU_STRAY_CHANCE);
     return h;
   };
 
@@ -1439,6 +1441,8 @@ function updateSimulation(dt) {
   if (typeof updateAging === "function") updateAging(dt);
   // Abandoned fluffies missing their old owner (Abandoned.js)
   if (typeof updateAbandoned === "function") updateAbandoned(dt);
+  // Fluffy flu: symptoms and spreading (Illness.js)
+  if (typeof updateIllness === "function") updateIllness(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
@@ -2055,6 +2059,11 @@ window.addEventListener("keydown", (e) => {
     // Breeding records (BreedingRecords.js)
     if (typeof isRecordsOpen === "function" && isRecordsOpen()) {
       closeRecords();
+      return;
+    }
+    // The vet (Vet.js)
+    if (typeof isVetOpen === "function" && isVetOpen()) {
+      closeVet();
       return;
     }
     if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {

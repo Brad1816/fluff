@@ -534,6 +534,7 @@ function drawUI(ctx) {
   if (typeof drawGoals === "function") drawGoals(ctx);
   if (typeof drawHelp === "function") drawHelp(ctx);
   if (typeof drawBreedingRecords === "function") drawBreedingRecords(ctx);
+  if (typeof drawVet === "function") drawVet(ctx);
   // Morning report on top of everything (DayReport.js)
   if (typeof drawDayReport === "function") drawDayReport(ctx);
   // Naming a new fluffy / litter (Names.js)
@@ -554,6 +555,7 @@ function isAnyScreenOpen() {
   if (typeof isGoalsOpen === "function" && isGoalsOpen()) return true;
   if (typeof isHelpOpen === "function" && isHelpOpen()) return true;
   if (typeof isRecordsOpen === "function" && isRecordsOpen()) return true;
+  if (typeof isVetOpen === "function" && isVetOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -749,6 +751,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof handleRecordsClick === "function" && handleRecordsClick()) {
     return;
   }
+  // The vet (Vet.js)
+  if (typeof handleVetClick === "function" && handleVetClick()) {
+    return;
+  }
 
   if (typeof handleFamilyTreeClick === "function" && handleFamilyTreeClick()) {
     return;
@@ -853,6 +859,10 @@ canvas.addEventListener("mousedown", (e) => {
 
   // The bounty board on Shopping Street (OrderBoard.js)
   if (typeof bountyBoardClick === "function" && bountyBoardClick()) {
+    return;
+  }
+  // The vet's clinic on Shopping Street (Vet.js)
+  if (typeof vetClinicClick === "function" && vetClinicClick()) {
     return;
   }
 

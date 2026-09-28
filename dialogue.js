@@ -199,6 +199,16 @@ const DIALOGUE = {
       "Nite-nite time...",
     ],
   },
+  // Fluffy flu (Illness.js)
+  ILLNESS: {
+    FLU: [
+      "*ACHOO!* ...*sniffle*",
+      "Nosie am all dwippy... *achoo*",
+      "<Speaker> feew aww hot an' cowd... *cough cough*",
+      "*sniff* Huu... tummeh an' head am huwties...",
+      "*ACHOO!* *ACHOO!* Nu wike sneezies!",
+    ],
+  },
   // Abandoned fluffies missing their old owner (Abandoned.js)
   ABANDONED: {
     MISS: [

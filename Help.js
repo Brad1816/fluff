@@ -161,6 +161,27 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Health & the vet",
+    lines: [
+      "The FluffVet Clinic is on Shopping Street. Click it: the vet makes",
+      "house calls, so it all happens straight away.",
+      "",
+      "# Fluffy flu",
+      "- Some wild fluffies and strays carry it. It's catching before it",
+      "  shows, then they sneeze, feel miserable and lose health for about",
+      "  a day. Foals and elderly fluffies can die of it.",
+      "- It spreads to fluffies close by - but not through cage bars or",
+      "  fences. Keep new arrivals in a cage or pen for a day or two.",
+      "- Fluffies that get over it can't catch it again for a while.",
+      "",
+      "# The vet",
+      "- Check-up $20: finds flu before it shows, and says how long an",
+      "  old fluffy has left.",
+      "- Treatment: cures flu, poison, toxoplasmosis and the runs, stops",
+      "  bleeding and heals. Flu jab $40: can't catch flu.",
+    ],
+  },
+  {
     title: "Age & old age",
     lines: [
       "Age is counted in game days (the clock by Chat Log).",
@@ -227,7 +248,7 @@ function getHelpLayout() {
   const h = Math.min(580, height - 40);
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
-  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 64 + i * 38, w: 200, h: 31 }));
+  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 62 + i * 35, w: 200, h: 29 }));
   return { x, y, w, h, tabs, close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 } };
 }
 
@@ -263,7 +284,7 @@ function drawHelp(c) {
     c.fill();
     c.fillStyle = on ? "white" : "rgba(255,255,255,0.75)";
     c.font = on ? "bold 15px Arial" : "15px Arial";
-    c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 21);
+    c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 20);
   });
 
   // Text

@@ -118,6 +118,10 @@ function getInspectionConditions(f) {
   if (f.accessories?.ABOVE_LUMPS?.id === "castration_band")
     bad.push("castration band on");
   if (f.isToxoVaccinated) good.push("toxo vaccinated");
+  // Fluffy flu (Illness.js)
+  const ill = typeof describeIllness === "function" ? describeIllness(f) : null;
+  if (ill) bad.push(ill);
+  if (f.fluVaccinated) good.push("flu jab");
   return { bad, good };
 }
 

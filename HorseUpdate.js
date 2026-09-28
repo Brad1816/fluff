@@ -667,11 +667,13 @@ addHorseMethods({
       }
     }
 
-    // Health Regeneration (Disabled if poisoned or suffering toxoplasmosis)
+    // Health Regeneration (Disabled if poisoned, suffering toxoplasmosis,
+    // or ill with Fluffy flu - Illness.js)
     if (
       this.health < 100 &&
       this.bleedingTimer <= 0 &&
       !this.isPoisoned &&
+      !(typeof fluShowing === "function" && fluShowing(this)) &&
       (!this.isToxoplasmosis || (typeof worldSettings !== "undefined" && !worldSettings.toxoplasmosis))
     ) {
       this.health = Math.min(100, this.health + 5 * this.growth * dt);

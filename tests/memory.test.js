@@ -129,6 +129,8 @@ module.exports = [
         tutorialTimer = 0;
         const [f, other] = eval(makePair)();
         fluffies.splice(fluffies.indexOf(other), 1);
+        // Nobody else in the room to chat to instead
+        for (const o of fluffies.slice()) if (o !== f && o.scene === f.scene) fluffies.splice(fluffies.indexOf(o), 1);
         f.x = 250;
         f.y = 450;
         f.playerTrust = 0.95;
@@ -143,9 +145,15 @@ module.exports = [
       const r = await page.evaluate(() => {
         const before = Math.hypot(__f.x - mouse.x, __f.y - mouse.y);
         __seedRandom(5); // the same run every time (it used to fail now and then)
+        // The game kept running while the mouse moved: it may already have
+        // gone to where the hand was before. Start it fresh from here.
+        __f.initBehavior("IDLE");
+        __f.brain.desires.find((d) => d.name === "SeekPlayer").lastTime = gameTimeMs() - 60000;
         const log = [];
-        for (let i = 0; i < 12; i++) { __fastForward(1); log.push([Math.round(__f.x), __f.currentStateKey, __f.lastDesire && __f.lastDesire.desire, __f.brain.currentDesire && __f.brain.currentDesire.name, isAnyScreenOpen(), __f.sleepDeprivation.toFixed(2)].join(",")); }
-        return { before, after: Math.hypot(__f.x - mouse.x, __f.y - mouse.y), log, m: [mouse.x, mouse.y, mouse.sx, mouse.sy] };
+        let closest = Infinity;
+        for (let i = 0; i < 12; i++) { __fastForward(1); closest = Math.min(closest, Math.hypot(__f.x - mouse.x, __f.y - mouse.y)); log.push([Math.round(__f.x), __f.currentStateKey, __f.lastDesire && __f.lastDesire.desire, __f.brain.currentDesire && __f.brain.currentDesire.name, isAnyScreenOpen(), __f.sleepDeprivation.toFixed(2)].join(",")); }
+        // (the closest it got: afterwards it may wander off again)
+        return { before, after: closest, log, m: [mouse.x, mouse.y, mouse.sx, mouse.sy] };
       });
       check(r.after < r.before - 250, `distance from the hand: ${Math.round(r.before)} -> ${Math.round(r.after)} ${JSON.stringify(r.m)} ${r.log.join(" | ")}`);
     },

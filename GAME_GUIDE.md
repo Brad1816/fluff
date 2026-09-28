@@ -80,6 +80,8 @@ and it runs. About 36,000 lines across ~60 files.
 | `Aging.js` | **Growing old**: life stages in game days, greying manes, slower/cheaper elderly fluffies, dying of old age. See section 9 (Growing old). |
 | `Abandoned.js` | **Abandoned pets**: fluffies dumped by an owner at any age, named, sad until they get over it. See section 9 (Abandoned pets). |
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
+| `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
+| `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -1259,4 +1261,36 @@ Open with the **Records** button (between Goals and ?) or **L**.
   from `noteFluffyLeft(f, "sold", price)` at every sale (buyer at the door,
   shift-click/sell cage, customer orders); `rec.age` is updated each sync.
   `computeBreedingRecords()` works it all out (cached for 0.5s while open).
+
+### Fluffy flu and the vet (`Illness.js`, `Vet.js`)
+**Fluffy flu** (`f.illness = { type: "flu", t, known }`, saved):
+- 0 to `FLU_HIDDEN` (300s): no symptoms but catching (half as much). Only
+  a vet check-up finds it (`known`).
+- Then sick until `FLU_LENGTH` (1,800s): sneezes (`ILLNESS.FLU` lines and a
+  puff), looks miserable, loses `FLU_HEALTH_PER_DAY` (45) health a day, x2
+  for foals under half grown and the elderly, and doesn't heal naturally
+  meanwhile (HorseUpdate health regen checks `fluShowing`). Dies at 0
+  health ("Fluffy flu"). Afterwards immune for `FLU_IMMUNE_DAYS` (10).
+- **Spreading** (`updateIllness`, every 5s): to fluffies within
+  `FLU_RANGE` (160px) in the same area with `FLU_SPREAD_CHANCE` (2%, 1%
+  before symptoms) each tick - never between different cages or across
+  fences (`canFluffiesReachEachOther`), and never to jabbed or immune ones.
+- **Sources**: `FLU_WILD_CHANCE` (8%) of park arrivals, `FLU_STRAY_CHANCE`
+  (10%) of strays outside (`maybeCarryFlu`), and the night event (now
+  "Fluffy flu went round..."). Bought stock never has it.
+- You're told when one of yours shows it, and it's on the morning report.
+  The magnifying glass lists "Fluffy flu" (once known) and "flu jab".
+
+**The vet**: the FluffVet Clinic on Shopping Street (`drawVetClinic`,
+click it: `vetClinicClick`). House calls, so treatments happen at once.
+- Check-up $`VET_CHECK_PRICE` (20): finds hidden flu, lists problems, and
+  for seniors/elderly says roughly how long they have (`vetLifeNote`, based
+  on most living to 35 days). Stored as `vetCheckedAt`, `vetNote`,
+  `vetLife`.
+- Treat (`vetTreatmentPrice`: $30 + flu 60, poison 80, toxoplasmosis 100,
+  runs/incontinence 15, bleeding 30, hurt 20): cures all of those and heals
+  to 100. Only offered when something's wrong.
+- Flu jab $`VET_JAB_PRICE` (40): `fluVaccinated`, for good.
+- "Check everyone" and "Jab everyone" buttons; sick fluffies are listed
+  first. Free in debug mode.
 

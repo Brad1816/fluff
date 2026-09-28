@@ -171,9 +171,11 @@ const NIGHT_EVENTS = [
         f.isDiarrhea = true;
         f.expressionOverride = "MISERABLE";
         f.expressionOverrideTimer = 6;
+        // It's Fluffy flu, and it spreads (Illness.js)
+        if (typeof catchFlu === "function") catchFlu(f, FLU_HIDDEN);
         _nightSay(f, ["NIGHT", "SICK"]);
       }
-      return `A tummy bug went round ${g.label}: ${_plural(ill.length, "fluffy is", "fluffies are")} poorly.`;
+      return `Fluffy flu went round ${g.label}: ${_plural(ill.length, "fluffy is", "fluffies are")} poorly.`;
     },
   },
   {
