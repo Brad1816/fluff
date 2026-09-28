@@ -246,11 +246,7 @@ function getVetLayout() {
 }
 
 function _vetButton(c, b, label, enabled) {
-  if (typeof drawGlassButton !== "function") return;
-  c.save();
-  if (!enabled) c.globalAlpha = 0.4;
-  drawGlassButton(b.x, b.y, b.w, b.h, label, { fontSize: 13, borderRadius: 8 });
-  c.restore();
+  drawPanelButton(b, label, { enabled, fontSize: 13, ctx: c }); // UIPanels.js
 }
 
 function drawVet(c) {
@@ -258,18 +254,8 @@ function drawVet(c) {
   if (typeof ctx !== "undefined" && c !== ctx) return; // screen pass only
   const L = getVetLayout();
   c.save();
-  c.globalAlpha = 1;
-  c.textBaseline = "alphabetic";
-  c.fillStyle = "rgba(0,0,0,0.55)";
-  c.fillRect(0, 0, width, height);
-  c.fillStyle = "#1f2b2a";
-  c.strokeStyle = "rgba(120, 220, 180, 0.8)";
-  c.lineWidth = 3;
-  c.beginPath();
-  if (c.roundRect) c.roundRect(L.x, L.y, L.w, L.h, 16);
-  else c.rect(L.x, L.y, L.w, L.h);
-  c.fill();
-  c.stroke();
+  // Dimmed background and the panel (UIPanels.js)
+  drawScreenPanel(c, L, { theme: "green" });
 
   c.textAlign = "left";
   c.fillStyle = "#9ff0c8";
@@ -303,15 +289,12 @@ function drawVet(c) {
   for (const r of L.rows) {
     const f = r.f;
     c.fillStyle = "rgba(255,255,255,0.06)";
-    c.beginPath();
-    if (c.roundRect) c.roundRect(r.x, r.y, r.w, r.h, 8);
-    else c.rect(r.x, r.y, r.w, r.h);
-    c.fill();
+    fillRoundRect(c, r.x, r.y, r.w, r.h, 8);
     c.textAlign = "left";
     c.font = "bold 14px Arial";
     c.fillStyle = "white";
     const name = _vetName(f);
-    c.fillText(typeof _brFit === "function" ? _brFit(c, name, 200) : name, r.x + 20, r.y + 29);
+    c.fillText(fitText(c, name, 200), r.x + 20, r.y + 29);
     c.font = "13px Arial";
     const stage = typeof lifeStage === "function" ? lifeStage(f) : "";
     const days = typeof ageDays === "function" ? Math.floor(ageDays(f)) : 0;
@@ -326,14 +309,14 @@ function drawVet(c) {
     const [cond, tone] = vetCondition(f);
     c.fillStyle = tone === "bad" ? "#ff8a80" : tone === "good" ? "#9fe0a8" : "rgba(255,255,255,0.7)";
     const condW = r.check.x - (r.x + 450) - 10;
-    c.fillText(typeof _brFit === "function" ? _brFit(c, cond, condW) : cond, r.x + 450, r.y + 22);
+    c.fillText(fitText(c, cond, condW), r.x + 450, r.y + 22);
     c.fillStyle = "rgba(255,255,255,0.5)";
     c.font = "12px Arial";
     // Second line: flu jab, and what the vet said about its age
     const now = typeof timePlayed === "number" ? timePlayed : 0;
     const life = f.vetLife && f.vetCheckedAt !== undefined && now - f.vetCheckedAt < DAY_LENGTH ? ` · ${f.vetLife}` : "";
     const line2 = `${f.fluVaccinated ? "Flu jab: yes" : "Flu jab: no"}${life}`;
-    c.fillText(typeof _brFit === "function" ? _brFit(c, line2, condW) : line2, r.x + 450, r.y + 40);
+    c.fillText(fitText(c, line2, condW), r.x + 450, r.y + 40);
     const price = vetTreatmentPrice(f);
     _vetButton(c, r.check, `Check-up $${VET_CHECK_PRICE}`, true);
     _vetButton(c, r.treat, price ? `Treat $${price}` : "Treat", price > 0);

@@ -257,17 +257,8 @@ function drawHelp(c) {
   if (typeof ctx !== "undefined" && c !== ctx) return;
   const L = getHelpLayout();
   c.save();
-  c.globalAlpha = 1;
-  c.fillStyle = "rgba(0,0,0,0.5)";
-  c.fillRect(0, 0, width, height);
-  c.fillStyle = "#1f2433";
-  c.strokeStyle = "rgba(255, 214, 240, 0.8)";
-  c.lineWidth = 3;
-  c.beginPath();
-  if (c.roundRect) c.roundRect(L.x, L.y, L.w, L.h, 16);
-  else c.rect(L.x, L.y, L.w, L.h);
-  c.fill();
-  c.stroke();
+  // Dimmed background and the panel (UIPanels.js)
+  drawScreenPanel(c, L, { theme: "pink", dim: 0.5 });
   c.textBaseline = "alphabetic";
   c.textAlign = "left";
   c.fillStyle = "#ffd6f0";
@@ -278,10 +269,7 @@ function drawHelp(c) {
   L.tabs.forEach((t, i) => {
     const on = i === helpTopic;
     c.fillStyle = on ? "rgba(255, 170, 220, 0.25)" : "rgba(255,255,255,0.05)";
-    c.beginPath();
-    if (c.roundRect) c.roundRect(t.x, t.y, t.w, t.h, 8);
-    else c.rect(t.x, t.y, t.w, t.h);
-    c.fill();
+    fillRoundRect(c, t.x, t.y, t.w, t.h, 8);
     c.fillStyle = on ? "white" : "rgba(255,255,255,0.75)";
     c.font = on ? "bold 15px Arial" : "15px Arial";
     c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 20);

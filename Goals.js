@@ -257,17 +257,8 @@ function drawGoals(c) {
   if (typeof ctx !== "undefined" && c !== ctx) return;
   const L = getGoalsLayout();
   c.save();
-  c.globalAlpha = 1;
-  c.fillStyle = "rgba(0,0,0,0.5)";
-  c.fillRect(0, 0, width, height);
-  c.fillStyle = "#1f2433";
-  c.strokeStyle = "rgba(255, 214, 240, 0.8)";
-  c.lineWidth = 3;
-  c.beginPath();
-  if (c.roundRect) c.roundRect(L.x, L.y, L.w, L.h, 16);
-  else c.rect(L.x, L.y, L.w, L.h);
-  c.fill();
-  c.stroke();
+  // Dimmed background and the panel (UIPanels.js)
+  drawScreenPanel(c, L, { theme: "pink", dim: 0.5 });
   c.textAlign = "center";
   c.textBaseline = "alphabetic";
   c.fillStyle = "#ffd6f0";

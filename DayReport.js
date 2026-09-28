@@ -214,17 +214,8 @@ function drawDayReport(c) {
   if (typeof ctx !== "undefined" && c !== ctx) return; // screen pass only
   const L = getDayReportLayout();
   c.save();
-  c.globalAlpha = 1;
-  c.fillStyle = "rgba(0,0,0,0.55)";
-  c.fillRect(0, 0, width, height);
-  c.fillStyle = "#1f2433";
-  c.strokeStyle = "rgba(255, 214, 240, 0.8)";
-  c.lineWidth = 3;
-  c.beginPath();
-  if (c.roundRect) c.roundRect(L.x, L.y, L.w, L.h, 16);
-  else c.rect(L.x, L.y, L.w, L.h);
-  c.fill();
-  c.stroke();
+  // Dimmed background and the panel (UIPanels.js)
+  drawScreenPanel(c, L, { theme: "pink" });
 
   c.textBaseline = "alphabetic";
   c.textAlign = "center";
@@ -259,7 +250,7 @@ function drawDayReport(c) {
     c.fillText(label, L.x + 30, y);
     c.font = "15px Arial";
     c.fillStyle = color || "white";
-    c.fillText(_fit(c, value, L.w - 210), L.x + 180, y);
+    c.fillText(fitText(c, value, L.w - 210), L.x + 180, y);
     y += 26;
   }
 
@@ -274,7 +265,7 @@ function drawDayReport(c) {
     c.font = "14px Arial";
     for (const e of night) {
       c.fillStyle = e.good ? "#9fe0a8" : "#ff8a80";
-      c.fillText((e.good ? "▲ " : "▼ ") + _fit(c, e.text, L.w - 76), L.x + 34, y);
+      c.fillText((e.good ? "▲ " : "▼ ") + fitText(c, e.text, L.w - 76), L.x + 34, y);
       y += 20;
     }
   }
@@ -289,7 +280,7 @@ function drawDayReport(c) {
   c.fillStyle = "rgba(255,255,255,0.85)";
   const news = r.news.length ? r.news.slice(-5) : ["A quiet day."];
   for (const n of news) {
-    c.fillText("• " + _fit(c, n, L.w - 70), L.x + 34, y);
+    c.fillText("• " + fitText(c, n, L.w - 70), L.x + 34, y);
     y += 20;
   }
 
@@ -297,14 +288,6 @@ function drawDayReport(c) {
     drawGlassButton(L.btn.x, L.btn.y, L.btn.w, L.btn.h, "Start the day", { fontSize: 17, borderRadius: 10 });
   }
   c.restore();
-}
-
-// Shorten text to fit a width
-function _fit(c, text, maxW) {
-  if (c.measureText(text).width <= maxW) return text;
-  let t = text;
-  while (t.length > 3 && c.measureText(t + "…").width > maxW) t = t.slice(0, -1);
-  return t + "…";
 }
 
 // Mouse down (screen positions): any click on the card's button closes it;

@@ -216,13 +216,6 @@ function _brName(id) {
   return typeof fluffyDisplayNameById === "function" ? fluffyDisplayNameById(id) : getFamilyName(getFamilyRecord(id));
 }
 
-function _brFit(c, text, maxW) {
-  if (c.measureText(text).width <= maxW) return text;
-  let t = text;
-  while (t.length > 2 && c.measureText(t + "…").width > maxW) t = t.slice(0, -1);
-  return t + "…";
-}
-
 const _BR_TONES = { good: "#9fe0a8", bad: "#ff8a80", money: "#f7d774", "": "rgba(255,255,255,0.8)" };
 
 function _drawLitterRow(c, r) {
@@ -234,7 +227,7 @@ function _drawLitterRow(c, r) {
   c.font = "bold 14px Arial";
   c.fillStyle = "white";
   const dads = l.dadIds.length ? l.dadIds.map(_brName).join(" / ") : "unknown dad";
-  c.fillText(_brFit(c, `${_brName(l.mumId)} × ${dads}`, r.w - 330), r.x + 80, r.y + 22);
+  c.fillText(fitText(c, `${_brName(l.mumId)} × ${dads}`, r.w - 330), r.x + 80, r.y + 22);
   c.textAlign = "right";
   c.font = "13px Arial";
   c.fillStyle = "rgba(255,255,255,0.7)";
@@ -255,9 +248,9 @@ function _drawLitterRow(c, r) {
     c.font = "12px Arial";
     c.fillStyle = "white";
     const name = (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || f.name || (f.gender === "male" ? "colt" : "filly");
-    c.fillText(_brFit(c, `${name}${rare.length ? " ★" : ""}`, chipW - 26), cx + 20, cy - 8);
+    c.fillText(fitText(c, `${name}${rare.length ? " ★" : ""}`, chipW - 26), cx + 20, cy - 8);
     c.fillStyle = _BR_TONES[tone] || _BR_TONES[""];
-    c.fillText(_brFit(c, out, chipW - 26), cx + 20, cy + 8);
+    c.fillText(fitText(c, out, chipW - 26), cx + 20, cy + 8);
   });
   if (l.foals.length > 5) {
     c.textAlign = "right";
@@ -285,7 +278,7 @@ function _drawParentRow(c, r) {
   _brDot(c, col(0) + 7, r.y + 20, p.rec);
   c.font = "bold 14px Arial";
   c.fillStyle = "white";
-  c.fillText(_brFit(c, `${p.gender === "male" ? "♂" : "♀"} ${_brName(p.id)}`, col(1) - col(0) - 30), col(0) + 20, r.y + 25);
+  c.fillText(fitText(c, `${p.gender === "male" ? "♂" : "♀"} ${_brName(p.id)}`, col(1) - col(0) - 30), col(0) + 20, r.y + 25);
   c.font = "13px Arial";
   let status;
   let tone = "";
@@ -297,7 +290,7 @@ function _drawParentRow(c, r) {
     tone = p.status === "dead" ? "bad" : "";
   }
   c.fillStyle = _BR_TONES[tone];
-  c.fillText(_brFit(c, status, col(2) - col(1) - 8), col(1), r.y + 25);
+  c.fillText(fitText(c, status, col(2) - col(1) - 8), col(1), r.y + 25);
   c.fillStyle = "rgba(255,255,255,0.9)";
   c.fillText(String(p.litters), col(2), r.y + 25);
   c.fillText(String(p.foals), col(3), r.y + 25);
@@ -322,18 +315,8 @@ function drawBreedingRecords(c) {
   const data = computeBreedingRecords();
   const L = getRecordsLayout(data);
   c.save();
-  c.globalAlpha = 1;
-  c.textBaseline = "alphabetic";
-  c.fillStyle = "rgba(0,0,0,0.55)";
-  c.fillRect(0, 0, width, height);
-  c.fillStyle = "#1f2433";
-  c.strokeStyle = "rgba(255, 214, 240, 0.8)";
-  c.lineWidth = 3;
-  c.beginPath();
-  if (c.roundRect) c.roundRect(L.x, L.y, L.w, L.h, 16);
-  else c.rect(L.x, L.y, L.w, L.h);
-  c.fill();
-  c.stroke();
+  // Dimmed background and the panel (UIPanels.js)
+  drawScreenPanel(c, L, { theme: "pink" });
 
   c.textAlign = "left";
   c.fillStyle = "#ffd6f0";
@@ -386,10 +369,7 @@ function drawBreedingRecords(c) {
   for (const r of L.rows) {
     const over = isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
     c.fillStyle = over ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)";
-    c.beginPath();
-    if (c.roundRect) c.roundRect(r.x, r.y, r.w, r.h, 8);
-    else c.rect(r.x, r.y, r.w, r.h);
-    c.fill();
+    fillRoundRect(c, r.x, r.y, r.w, r.h, 8);
     if (recordsTab === "litters") _drawLitterRow(c, r);
     else _drawParentRow(c, r);
   }
