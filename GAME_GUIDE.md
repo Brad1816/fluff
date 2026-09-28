@@ -1103,3 +1103,11 @@ report lists it under "Last night in the park" (green = good, red = bad).
 - **Try it**: cheat `night` runs a random event now, `night fox` (or any
   id above) that one.
 
+### Family tree: foals of mares that spawned with them
+The record book (`FamilyTree.js`) used to write down only your fluffies
+and their parents, so a mare that turned up with foals (park families,
+single mums outside) showed no foals in her tree unless the foals were
+yours too. Now `shouldRecordFluffy` also takes living foals of anyone in
+the book, and opening a tree calls `recordLivingFamily`, which records the
+fluffy's living parents, foals, brothers and sisters straight away.
+

@@ -75,15 +75,39 @@ function recordFluffy(f) {
   return rec;
 }
 
-// Should this fluffy be in the book? Yours, or already known (a parent of one of yours)
+// Should this fluffy be in the book? Yours, already known (a parent of one
+// of yours), or a foal of someone in the book (so a mare you bring home, or
+// look at, has her foals in her tree even if they aren't yours)
 function shouldRecordFluffy(f) {
-  return f.adopted || !!fluffyRecords[f.id];
+  if (f.adopted || fluffyRecords[f.id]) return true;
+  return !!(
+    (f.motherId !== null && f.motherId !== undefined && fluffyRecords[f.motherId]) ||
+    (f.fatherId !== null && f.fatherId !== undefined && fluffyRecords[f.fatherId])
+  );
+}
+
+// Record a fluffy and its whole living family now: parents, foals, and
+// brothers and sisters (used when a family tree is opened)
+function recordLivingFamily(f) {
+  if (!f) return;
+  recordFluffy(f);
+  const isKin = (x) =>
+    x !== f &&
+    (x.id === f.motherId ||
+      x.id === f.fatherId ||
+      x.motherId === f.id ||
+      x.fatherId === f.id ||
+      (f.motherId !== null && f.motherId !== undefined && x.motherId === f.motherId) ||
+      (f.fatherId !== null && f.fatherId !== undefined && x.fatherId === f.fatherId));
+  for (const x of fluffies) if (isKin(x)) recordFluffy(x);
 }
 
 // Bring the whole book up to date with the fluffies that exist right now
 function syncFamilyRecords() {
   if (typeof fluffies === "undefined") return;
   const present = new Set();
+  // (foals are made after their mums, so they come later in the list and
+  // count as family of a known mum in the same pass)
   for (const f of fluffies) {
     present.add(String(f.id));
     if (!shouldRecordFluffy(f)) continue;
@@ -252,7 +276,7 @@ function isFamilyTreeOpen() {
 function openFamilyTree(fluffyId) {
   syncFamilyRecords();
   const f = fluffies.find((x) => x.id === fluffyId);
-  if (f) recordFluffy(f); // even a feral you're looking at
+  if (f) recordLivingFamily(f); // even a feral you're looking at, with its foals
   familyTreeHistory = [];
   familyTreeFocusId = fluffyId;
   _familyTreeCache = null;

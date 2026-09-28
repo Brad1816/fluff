@@ -176,4 +176,46 @@ module.exports = [
       checkEqual(JSON.stringify(r.spots), JSON.stringify([0, "none"]), "spots");
     },
   },
+  {
+    name: "a mare that spawned with foals has them in her family tree (park family, alley single mum)",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene("PARK");
+        __seedRandom(8);
+        fluffyRecords = {};
+        // A wild family in the park: open the mum's tree without taking her home
+        const group = spawnParkGroup("single_mom", { x: 800, y: 700 });
+        const mum = group.find((f) => f.growth >= 1);
+        const foals = group.filter((f) => f !== mum).map((f) => f.id);
+        openFamilyTree(mum.id);
+        const wildKids = getFamilyChildren(mum.id).map((x) => x.id);
+        const sibOfFoal = getFamilySiblings(foals[0]).map((x) => x.rec.id);
+        closeFamilyTree();
+
+        // Take only the mum home: her foals still show up
+        fluffyRecords = {};
+        mum.adopted = true;
+        syncFamilyRecords();
+        const homeKids = getFamilyChildren(mum.id).map((x) => x.id);
+
+        // A single mum turning up outside (script.js spawnFeralGroup)
+        fluffyRecords = {};
+        const before = fluffies.length;
+        spawnFeralGroup("OUTDOORS", "single_mom");
+        const spawned = fluffies.slice(before);
+        const mare = spawned.find((f) => f.growth >= 1);
+        const babies = spawned.filter((f) => f !== mare).map((f) => f.id);
+        openFamilyTree(mare.id);
+        const alleyKids = getFamilyChildren(mare.id).map((x) => x.id);
+        closeFamilyTree();
+        return { foals, wildKids, sibOfFoal, homeKids, babies, alleyKids };
+      });
+      const same = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+      check(r.foals.length > 0, "the park mum should have foals");
+      check(same(r.wildKids, r.foals), `wild mum's tree: ${r.wildKids} vs ${r.foals}`);
+      check(r.foals.length < 2 || r.sibOfFoal.length === r.foals.length - 1, `siblings ${r.sibOfFoal}`);
+      check(same(r.homeKids, r.foals), `mum taken home: ${r.homeKids} vs ${r.foals}`);
+      check(r.babies.length > 0 && same(r.alleyKids, r.babies), `alley mum: ${r.alleyKids} vs ${r.babies}`);
+    },
+  },
 ];
