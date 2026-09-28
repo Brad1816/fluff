@@ -410,3 +410,5 @@ function drawSkyAndWeather(c) {
   }
   c.restore();
 }
+
+registerSystem("worldTime", updateWorldTime, 50);

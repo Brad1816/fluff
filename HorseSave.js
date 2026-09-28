@@ -33,6 +33,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "vetCheckedAt", fallback: undefined }, // Vet.js
   { name: "vetNote", fallback: null },
   { name: "vetLife", fallback: null },
+  { name: "ribbons", fallback: [], clone: true }, // Shows.js
 ];
 
 function _savedCopy(v) {

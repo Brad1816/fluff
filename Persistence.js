@@ -141,6 +141,12 @@ const SAVED_GAME_STATE = [
     fresh: () => freshStockMarket(),
   },
   {
+    name: "showState", // fluffy shows: the next show, your entry, results (Shows.js)
+    get: () => showState,
+    set: (v) => (showState = v), // missing fields are filled in by updateShows
+    fresh: () => freshShowState(),
+  },
+  {
     name: "nightEvents", // tonight's planned park events (NightEvents.js)
     get: () => nightEvents,
     set: (v) => (nightEvents = v), // missing fields are filled in by updateNightEvents

@@ -9,7 +9,7 @@
 // Some goals count things over the whole game (fluffies sold, litters born
 // at home, wild fluffies brought home, best sale); those counts live in
 // goalsState.stats and are fed by noteGoalEvent() calls (DayReport.js,
-// Separation.js). Everything is saved (goalsState in SAVED_GAME_STATE).
+// Separation.js, Shows.js). Everything is saved (goalsState in SAVED_GAME_STATE).
 //
 // To add a goal: add an entry to GOALS with id, text, reward and
 // check(stats) -> true when done (optionally progress(stats) -> "3/10").
@@ -18,7 +18,7 @@
 function freshGoalsState() {
   return {
     done: {}, // id -> game time it was completed
-    stats: { sold: 0, bestSale: 0, litters: 0, broughtHome: 0 },
+    stats: { sold: 0, bestSale: 0, litters: 0, broughtHome: 0, showWins: 0 },
   };
 }
 
@@ -158,6 +158,12 @@ const GOALS = [
     progress: () => `${Math.min(20, _yourFluffies().length)}/20`,
   },
   {
+    id: "show_win",
+    text: "Win a fluffy show",
+    reward: 300,
+    check: (s) => s.showWins >= 1,
+  },
+  {
     id: "orders_10",
     text: "Fill 10 customer orders",
     reward: 1000,
@@ -169,6 +175,12 @@ const GOALS = [
     text: "Become a Trusted breeder (reputation)",
     reward: 1500,
     check: () => typeof getOrderLevel === "function" && getOrderLevel() >= 3,
+  },
+  {
+    id: "champion",
+    text: "Raise a champion (3 show wins)",
+    reward: 1000,
+    check: () => typeof isChampion === "function" && _yourFluffies().some((f) => isChampion(f)),
   },
   {
     id: "alicorn",
@@ -195,6 +207,8 @@ function noteGoalEvent(kind, info = {}) {
     s.litters = (s.litters || 0) + 1;
   } else if (kind === "broughtHome") {
     s.broughtHome = (s.broughtHome || 0) + 1;
+  } else if (kind === "showPlace") {
+    if (info.place === 1) s.showWins = (s.showWins || 0) + 1;
   }
 }
 
@@ -245,7 +259,8 @@ function isGoalsOpen() {
 
 function getGoalsLayout() {
   const w = 680;
-  const rowH = 27;
+  // Rows squeeze up a little on short windows so every goal fits
+  const rowH = Math.max(22, Math.min(27, Math.floor((height - 16 - 170) / GOALS.length)));
   const h = 110 + GOALS.length * rowH + 60;
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(Math.max(8, height / 2 - h / 2));

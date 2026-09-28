@@ -81,6 +81,24 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Fluffy shows",
+    lines: [
+      'Every 3 days at 2 PM there\'s a fluffy show: the "Shows" tab on the',
+      "Bounty Board (Shopping Street) or FluffList (the Computer).",
+      "",
+      "- Each show has a theme: Best Coat, Spots & Stripes, Best Unicorn,",
+      "  Best Pegasus, Friendliest, Best Foal, Golden Oldies, Best Behaved.",
+      "  From Trusted breeder there's sometimes a Supreme Championship.",
+      "- The tab lists the fluffies that can enter, with the judges' score.",
+      "  Coat colours count most, then temperament (happy, trusting, calm).",
+      "  Missing parts, flu or poor health cost points.",
+      "- Enter one fluffy for a small fee (withdraw for a refund before",
+      "  the show). The other breeders get better as your reputation grows.",
+      "- 1st, 2nd and 3rd win money, reputation and a ribbon. Ribbons raise",
+      "  a fluffy's price, and 3 wins make it a Champion.",
+    ],
+  },
+  {
     title: "Herds & territory",
     lines: [
       "- Fluffies that like each other form herds with a leader (press H to",
@@ -248,7 +266,7 @@ function getHelpLayout() {
   const h = Math.min(580, height - 40);
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
-  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 62 + i * 35, w: 200, h: 29 }));
+  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 62 + i * 33, w: 200, h: 28 }));
   return { x, y, w, h, tabs, close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 } };
 }
 

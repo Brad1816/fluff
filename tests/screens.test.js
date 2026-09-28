@@ -42,7 +42,7 @@ module.exports = [
         out.duplicate = threw;
         return out;
       });
-      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "goals", "help", "records", "vet", "dayReport", "naming"])
+      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "goals", "help", "records", "vet", "showResults", "dayReport", "naming"])
         check(r.names.includes(n), `${n} on the list: ${r.names}`);
       checkEqual(r.none, false, "none open at the start");
       checkEqual(JSON.stringify(r.bothOpen), JSON.stringify([true, true, true]), "both open");
@@ -52,6 +52,21 @@ module.exports = [
       checkEqual(JSON.stringify(r.click), JSON.stringify([false, true]), "click only reached the top screen");
       checkEqual(r.reset, false, "reset closes everything");
       checkEqual(r.duplicate, true, "a name can't be used twice");
+    },
+  },
+  {
+    name: "systems: every update is on the list, in order",
+    run: async (page) => {
+      const r = await page.evaluate(() => SYSTEMS.map((s) => [s.name, s.order]));
+      const want = [
+        "familyRecords", "bonds", "herds", "territory", "worldTime", "separation", "naming", "settling", "goals",
+        "dayReport", "nightEvents", "alicornAcceptance", "aging", "abandoned", "illness", "corpses", "orders",
+        "stockMarket", "shows",
+      ];
+      const names = r.map((x) => x[0]);
+      for (const n of want) check(names.includes(n), `${n} is registered: ${names}`);
+      const orders = r.map((x) => x[1]);
+      check(orders.every((o, i) => i === 0 || o >= orders[i - 1]), `run in order ${JSON.stringify(r)}`);
     },
   },
 ];

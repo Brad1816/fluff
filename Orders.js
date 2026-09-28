@@ -431,3 +431,5 @@ function formatOrderTime(seconds) {
   if (s >= 60) return `${Math.floor(s / 60)} min`;
   return `${s} s`;
 }
+
+registerSystem("orders", updateCustomerOrders, 170);

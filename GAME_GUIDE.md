@@ -81,6 +81,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Abandoned.js` | **Abandoned pets**: fluffies dumped by an owner at any age, named, sad until they get over it. See section 9 (Abandoned pets). |
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
+| `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen), prizes, ribbons, champions, results pop-up. See section 9 (Fluffy shows). |
 | `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
 | `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
@@ -128,14 +129,19 @@ Several things are now one line to add, in the file of the feature itself:
   click })` at the end of its file (`Screens.js`). Drawing, "is a screen
   open?", clicks (top screen first), Esc and closing on new game/load all
   come from the list. Layers: 5 magnifying glass, 10 family tree, 11 Gene
-  Lab, 12 orders, 13 day care, 20 goals, 21 help, 22 records, 23 vet, 30
-  morning report, 31 naming pop-up.
+  Lab, 12 orders, 13 day care, 20 goals, 21 help, 22 records, 23 vet, 29
+  show results, 30 morning report, 31 naming pop-up.
 - **Something that updates every step**: `registerSystem(name, update,
   order)` at the end of its file (`Systems.js`); script.js
   `updateSimulation` calls `updateSystems(dt)`. For "every N seconds" use a
   `Ticker`: `const myTicker = new Ticker(5);` then in the update
   `const step = myTicker.step(dt); if (!step) return;` (`step` is the
-  seconds since last time).
+  seconds since last time). Orders so far: 10 family records, 20 bonds,
+  30 herds, 40 territory, 50 weather/clock (`worldTime`), 60 separation,
+  70 naming, 80 settling in, 90 goals, 100 morning report, 110 night
+  events, 120 alicorn acceptance, 130 ageing, 140 abandoned pets, 150 flu,
+  160 corpses, 170 customer orders, 180 stock market, 190 shows. The
+  "systems" test checks every one of these is registered.
 - **Something saved with each fluffy**: add `{ name, fallback, clone }` to
   `SAVED_HORSE_FIELDS` in HorseSave.js; saving and loading both read it.
   (The game's original fields are still listed by hand in `serialize` and
@@ -1348,3 +1354,41 @@ click it: `vetClinicClick`). House calls, so treatments happen at once.
 - "Check everyone" and "Jab everyone" buttons; sick fluffies are listed
   first. Free in debug mode.
 
+### Fluffy shows (`Shows.js`)
+A show every `SHOW_EVERY_DAYS` (3) days at `SHOW_HOUR` (2 PM), on the
+"Shows" tab of the orders screen (third tab, OrderBoard.js routes it to
+`drawShowsPage` / `handleShowsClick`). The first show is today if it's
+before 10 AM, otherwise tomorrow.
+- **Themes** (`SHOW_THEMES`, each `eligible(f)` and `score(parts)`): Best
+  Coat, Spots & Stripes, Best Unicorn, Best Pegasus, Friendliest Fluffy,
+  Best Foal, Golden Oldies, Best Behaved, and from reputation level 3 a 1 in
+  4 chance of the Supreme Championship (`hard`: tougher rivals, 3x prizes).
+  The same theme never runs twice in a row.
+- **Judging** (`showParts`, each 0-100): coat (`showCoatScore`: 22 x
+  ln(colour price multiplier) - 5, so a plain coat ~50, a rare one 80+),
+  temper (`temperamentScore`), pattern (spots/stripes that show), trust,
+  happiness, health, litter training, type (earthy 30, unicorn/pegasus 70,
+  alicorn 100). `showConditionPenalty`: missing parts -25, flu -20,
+  diarrhoea -10, poor health. `showScore(f, theme)` is what the tab shows;
+  on the day the judges' mood adds -4..+4.
+- **Rivals** (`_showRivals`): 5-7 entries named after the stock market's
+  breeders, scores around 38 + 7 x reputation level (+12 when hard).
+- **Money**: prizes `showPrizes` = (150 + 75 x level) for 1st, half for
+  2nd, a quarter for 3rd; entry fee 15% of first prize. Withdrawing before
+  the show refunds it. A fluffy that's gone by show time just loses the fee.
+- **Placing top 3**: prize, reputation +3/+2/+1, a ribbon on the fluffy
+  (`f.ribbons`, saved in `SAVED_HORSE_FIELDS`), `noteGoalEvent("showPlace")`
+  (goals "Win a fluffy show" $300 and "Raise a champion" $1,000). Ribbons
+  raise the price (`ribbonPriceMultiplier`, in `calculatePrice`: +15% a
+  win, +7% a 2nd, +3% a 3rd, at most +60%). 3 wins = Champion
+  (`isChampion`); the magnifying glass shows a "Ribbons" row.
+- **Results**: a pop-up (screen layer 29) after a show you entered, and
+  the morning report's news either way. `showState` (SAVED_GAME_STATE)
+  holds the next show, your entry, the last result and a short history.
+
+### Bug fix: weather and customer orders stopped updating
+When the update calls became registered systems, `updateWorldTime` and
+`updateCustomerOrders` were left off the list, so the weather stopped
+changing and orders stopped expiring or being posted. Both are registered
+again (WorldTime.js, Orders.js), and `tests/systems.test.js` checks the
+whole list.

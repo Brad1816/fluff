@@ -3,7 +3,8 @@
 //   - the Bounty Board on Shopping Street (click it)
 //   - FluffList, the website on the Computer (a store item; right-click it)
 // Both open the same orders screen, just styled differently. It has two
-// tabs: "Orders" and "Breeding stock" (the breeders' market, StockMarket.js).
+// tabs: "Orders", "Breeding stock" (the breeders' market, StockMarket.js)
+// and "Shows" (Shows.js).
 // Also here: the little "orders due" reminder in the bottom right corner.
 // ---------------------------------------------------------------------------
 
@@ -244,7 +245,7 @@ function drawComputerIcon(ctx, btnSize) {
 // ======================= The orders screen =================================
 
 let ordersScreenMode = null; // null = closed, "board" or "web"
-let ordersTab = "orders"; // "orders" | "stock" (StockMarket.js)
+let ordersTab = "orders"; // "orders" | "stock" (StockMarket.js) | "shows" (Shows.js)
 let ordersDeliverId = null; // the order we're picking a fluffy for
 let ordersDeliverPage = 0;
 let _ordersPortraits = {};
@@ -344,6 +345,7 @@ function _ordersTabs() {
   return [
     { id: "orders", x: 250, y: 18, w: 110, h: 34, label: "Orders" },
     { id: "stock", x: 368, y: 18, w: 140, h: 34, label: "Breeding stock" },
+    { id: "shows", x: 516, y: 18, w: 90, h: 34, label: "Shows" },
   ].map((t) => ({ ...t, color: t.id === ordersTab ? on : off, hover: on }));
 }
 
@@ -541,9 +543,9 @@ function drawOrdersScreen(c) {
 
   // Reputation bar
   const rep = getOrderLevelInfo();
-  const bx = 540;
+  const bx = 630;
   _osText(c, `${rep.name} (level ${rep.level})`, bx, 30, "white", "bold 15px Arial");
-  const barW = 300;
+  const barW = 250;
   c.fillStyle = "rgba(255,255,255,0.25)";
   c.fillRect(bx, 38, barW, 12);
   const frac = rep.to === null ? 1 : (rep.points - rep.from) / (rep.to - rep.from);
@@ -556,6 +558,12 @@ function drawOrdersScreen(c) {
   // The breeders' market (StockMarket.js)
   if (ordersTab === "stock" && typeof drawStockMarketPage === "function") {
     drawStockMarketPage(c, theme, m);
+    c.restore();
+    return;
+  }
+  // Fluffy shows (Shows.js)
+  if (ordersTab === "shows" && typeof drawShowsPage === "function") {
+    drawShowsPage(c, theme, m);
     c.restore();
     return;
   }
@@ -637,6 +645,11 @@ function handleOrdersScreenClick() {
   }
   if (ordersTab === "stock") {
     if (typeof handleStockMarketClick === "function" && handleStockMarketClick(m)) return true;
+    if (m.x < 0 || m.y < 0 || m.x > OS_W || m.y > OS_H) closeOrdersScreen();
+    return true;
+  }
+  if (ordersTab === "shows") {
+    if (typeof handleShowsClick === "function" && handleShowsClick(m)) return true;
     if (m.x < 0 || m.y < 0 || m.x > OS_W || m.y > OS_H) closeOrdersScreen();
     return true;
   }

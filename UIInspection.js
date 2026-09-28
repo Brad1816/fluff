@@ -146,6 +146,9 @@ function getFluffyInspectionInfo(f) {
     { label: "Age", value: describeInspectionAge(f), tone: typeof describeAgeTone === "function" ? describeAgeTone(f) : "" },
     { label: "Sexuality", value: f.sexuality || "heterosexual" },
   ];
+  // Show ribbons (Shows.js)
+  const ribbons = typeof describeRibbons === "function" ? describeRibbons(f) : null;
+  if (ribbons) about.push({ label: "Ribbons", value: ribbons, tone: "good" });
   const [persText, persTone] = describeInspectionPersonality(f);
   about.push({ label: "Personality", value: persText, tone: persTone });
   // Inherited personality traits (Traits.js)
