@@ -110,3 +110,34 @@ module.exports = [
     },
   },
 ];
+
+module.exports.push(
+  {
+    name: "balance: alicorns are extremely rare in random fluffies; potty training adds a fair bonus",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __seedRandom(17);
+        const g = new Horse(1, null, "INDOORS", "earthy");
+        let alicorns = 0;
+        let pegasi = 0;
+        const n = 20000;
+        for (let i = 0; i < n; i++) {
+          const genes = g.generateRandomGenes(Math.random(), Math.random());
+          const w = genes.slice(53, 58).reduce((a, b) => a + b, 0) >= 4;
+          const h = genes.slice(58, 63).reduce((a, b) => a + b, 0) >= 4;
+          if (w && h) alicorns++;
+          else if (w) pegasi++;
+        }
+        const f = new Horse(1, null, "INDOORS", "earthy", null, 0.5, 0.5, "female");
+        f.pottyTraining = 0;
+        const untrained = f.calculatePrice();
+        f.pottyTraining = 1;
+        const trained = f.calculatePrice();
+        return { alicornShare: alicorns / n, pegasusShare: pegasi / n, untrained, trained };
+      });
+      check(r.alicornShare < 0.003, `alicorn share of random fluffies: ${r.alicornShare}`);
+      check(r.pegasusShare > 0.1, `pegasi should still be common: ${r.pegasusShare}`);
+      check(r.trained > r.untrained * 1.4 && r.trained < r.untrained * 1.6 + 60, `trained ${r.trained} vs untrained ${r.untrained}`);
+    },
+  },
+);

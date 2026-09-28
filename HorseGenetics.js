@@ -1,3 +1,8 @@
+// Share of random wing+horn fluffies allowed to stay alicorns (see
+// generateRandomGenes). Bred foals aren't affected: breeding for alicorns
+// still works.
+const ALICORN_RANDOM_KEEP = 0.03;
+
 class HorseGenetics {
   constructor(horse) {
     this.horse = horse;
@@ -108,6 +113,17 @@ class HorseGenetics {
       } else {
         genes.push(Math.random() < 0.5 ? 0 : 1);
       }
+    }
+    // Alicorns are meant to be extremely rare. With wing and horn genes each
+    // at 50/50, about 1 in 30 random fluffies would come out with both. So
+    // when a random fluffy gets both, usually one of them is knocked down to
+    // 3 of 5 genes: hidden (it can still be passed on to foals), not shown.
+    // Leaves about 1 in 1,000 random fluffies an alicorn.
+    const count = (from) => genes.slice(from, from + 5).reduce((s, g) => s + g, 0);
+    if (count(53) >= 4 && count(58) >= 4 && Math.random() > ALICORN_RANDOM_KEEP) {
+      const start = Math.random() < 0.5 ? 53 : 58; // lose the wings or the horn
+      const bits = [1, 1, 1, 0, 0].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < 5; i++) genes[start + i] = bits[i];
     }
     // Personality trait genes (Traits.js)
     if (typeof ensureTraitGenes === "function") ensureTraitGenes(genes);
@@ -339,8 +355,10 @@ class HorseGenetics {
     // Color Valuation
     price *= this.calculateColorMultiplier();
 
-    // Potty training bonus
-    price += 1000 * (this.horse.pottyTraining || 0);
+    // Potty training bonus: up to +50% and a little extra, so a trained
+    // fluffy is worth more but it doesn't swamp everything else
+    const trained = this.horse.pottyTraining || 0;
+    price = price * (1 + 0.5 * trained) + 50 * trained;
 
     // Temperament: happy, trusting fluffies are worth more, frightened or
     // traumatised ones less (Wellbeing.js)

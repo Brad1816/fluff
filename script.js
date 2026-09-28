@@ -1045,7 +1045,7 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
       personalities.includes("mill_baby")
     ) {
       const r = Math.random();
-      if (r < 0.1) return "alicorn";
+      if (r < 0.01) return "alicorn"; // alicorns are extremely rare
       if (r < 0.4) return "unicorn";
       if (r < 0.7) return "pegasus";
     }
@@ -1105,7 +1105,7 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
     spawnFeral(
       0.0,
       ["abandoned_baby"],
-      Math.random() < 0.2 ? "alicorn" : "earthy",
+      Math.random() < 0.01 ? "alicorn" : "earthy", // alicorns are extremely rare
     );
   } else if (scenario === "single_mom") {
     const p = getRandomPersonality(false, true);

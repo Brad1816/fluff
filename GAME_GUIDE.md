@@ -990,8 +990,8 @@ Measured with the test harness (300 sampled fluffies, 200 orders per
 level, and a 3-day home breeding run with 1 stallion and 3 mares):
 - Fluffy full price (buyers at the door pay this; selling yourself pays
   half): home-bred adults median ~$115 (10% under $25, 10% over $550),
-  newborns ~$30, wild adults ~$75. Potty training adds a flat $1,000, and
-  alicorns x30, which dwarf everything else.
+  newborns ~$30, wild adults ~$75. Alicorns are x30 (kept: they're the
+  jackpot).
 - Orders: median reward L1 $350, L2 $700, L3 $1,290, L4 $1,980, L5 $2,860.
 - Food: a $25 kibble bag fills a bowl 5 times (25 meals, $1 a meal); the
   breeding group ate about $35 of kibble a game day.
@@ -999,4 +999,15 @@ level, and a 3-day home breeding run with 1 stallion and 3 mares):
 - Change made: wild fluffies start wary (trust 0.2-0.3, fear 0.1-0.2), so
   fresh from the park they're about 0.8x price ("Nervous") until good care
   settles them in. Without this, the park was free money.
+- Change made: potty training used to add a flat $1,000 (ten times a
+  typical fluffy). Now a fully trained fluffy is worth +50% plus $50
+  (`HorseGenetics.calculatePrice`), e.g. $167 -> $301.
+- Change made: alicorns are extremely rare. Random genes gave about 1 in
+  30 fluffies both wings and a horn; now when that happens, 97% of the time
+  one of them is knocked down to a hidden 3-of-5 (`ALICORN_RANDOM_KEEP`,
+  HorseGenetics.js), leaving about 1 in 800 random fluffies an alicorn
+  (wild park fluffies, strays, shop foals of "any" type). The fixed
+  alicorn chances were cut too: abandoned babies 20% -> 1%, mill escapees
+  10% -> 1%, the foal vendor's can 5% -> 0.5%. Breeding alicorns from
+  carriers is unchanged.
 

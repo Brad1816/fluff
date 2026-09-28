@@ -4008,7 +4008,7 @@ canvas.addEventListener("mousedown", (e) => {
 
           const r = Math.random();
           let spawnType = "earthy";
-          if (r < 0.05) spawnType = "alicorn";
+          if (r < 0.005) spawnType = "alicorn"; // extremely rare (1 in 200)
           else if (r < 0.35) spawnType = "unicorn";
           else if (r < 0.65) spawnType = "pegasus";
           else spawnType = "earthy";
