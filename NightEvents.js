@@ -329,6 +329,7 @@ const NIGHT_EVENTS = [
       pet.playerTrust = 0.65 + Math.random() * 0.15;
       pet.playerFear = 0.02;
       pet.lostPet = true;
+      if (typeof giveOwnerName === "function") giveOwnerName(pet); // its owner's name (Names.js)
       _nightSay(pet, ["NIGHT", "LOST_PET"]);
       if (typeof noteDayEvent === "function") noteDayEvent("wildArrived", { count: 1 });
       return `A lost pet (a ${describeFluffyLooks(pet)}) wandered into the park near ${g.label}. It isn't afraid of people.`;

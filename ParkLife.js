@@ -242,6 +242,8 @@ function _makeWild(growth, at, opts = {}) {
   h.playerTrust = 0.2 + Math.random() * 0.1;
   h.playerFear = 0.1 + Math.random() * 0.1;
   fluffies.push(h);
+  // Runaways had an owner: they keep the name it gave them (Names.js)
+  if (typeof giveOwnerName === "function") giveOwnerName(h);
   return h;
 }
 

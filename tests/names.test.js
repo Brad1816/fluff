@@ -145,4 +145,81 @@ module.exports.push(
       check(!r.open, "pop-up still open");
     },
   },
+  {
+    name: "names: runaways and lost pets keep the name their old owner gave them",
+    run: async (page) => {
+      const r = await page.evaluate(async () => {
+        __clearScene("PARK");
+        __seedRandom(15);
+        previousOwnerNames = {};
+        const out = {};
+        const allOwner = [...OWNER_NAMES.female, ...OWNER_NAMES.male, ...OWNER_NAMES.any];
+        out.clash = allOwner.filter((n) => _isAutoName(n));
+        // In the park
+        const runaway = _makeWild(1, { x: 800, y: 700 }, { personalities: ["runaway"], gender: "male" });
+        const feral = _makeWild(1, { x: 800, y: 700 }, { personalities: ["true_feral"] });
+        out.runaway = fluffyNames[runaway.id];
+        out.maleName = OWNER_NAMES.male.includes(out.runaway) || OWNER_NAMES.any.includes(out.runaway);
+        out.feral = fluffyNames[feral.id] || null;
+        out.by = namedBy(runaway);
+        out.row = getFluffyInspectionInfo(runaway).about.find((x) => x.label === "Named by");
+        out.rowFeral = getFluffyInspectionInfo(feral).about.find((x) => x.label === "Named by") || null;
+        // Outside the house (script.js)
+        let outside = null;
+        for (let i = 0; i < 60 && !outside; i++) {
+          const before = fluffies.length;
+          spawnFeralGroup("OUTDOORS", "lone");
+          outside = fluffies.slice(before).find((f) => f.personalities.includes("runaway"));
+        }
+        out.outside = outside ? fluffyNames[outside.id] : "none spawned";
+        // A lost pet in the night (NightEvents.js)
+        herdState = freshHerdState();
+        _herdChanged();
+        runNightEvent("lost_pet");
+        const pet = fluffies.find((f) => f.lostPet);
+        out.pet = pet ? fluffyNames[pet.id] : null;
+        // Clear the name: it isn't given back
+        delete fluffyNames[runaway.id];
+        giveOwnerName(runaway);
+        out.cleared = fluffyNames[runaway.id] || null;
+        // The goal waits for a name you give
+        fluffyNames[runaway.id] = previousOwnerNames[runaway.id];
+        runaway.adopted = true;
+        goalsState = freshGoalsState();
+        _goalsTimer = 0;
+        updateGoals(0);
+        out.goalOwner = isGoalDone("name_one");
+        fluffyNames[runaway.id] = "Mine";
+        _goalsTimer = 0;
+        updateGoals(0);
+        out.goalMine = isGoalDone("name_one");
+        out.byMine = namedBy(runaway);
+        // Runaways in an older save get their names when it's loaded
+        const old = _makeWild(1, { x: 900, y: 700 }, { personalities: ["runaway"] });
+        delete fluffyNames[old.id];
+        delete previousOwnerNames[old.id];
+        gameState = "PAUSED";
+        await saveGame("__automated_test__");
+        await loadGame("__automated_test__");
+        gameState = "PLAYING";
+        out.loaded = fluffyNames[old.id] || null;
+        out.keptMap = previousOwnerNames[outside ? outside.id : -1] === out.outside;
+        return out;
+      });
+      checkEqual(r.clash.length, 0, `owner names that look like old automatic names: ${r.clash}`);
+      check(!!r.runaway && r.maleName, `runaway stallion's name: ${r.runaway}`);
+      checkEqual(r.feral, null, "true ferals have no name");
+      checkEqual(r.by, "its old owner", "named by");
+      check(r.row && r.row.value === "its old owner", JSON.stringify(r.row));
+      checkEqual(r.rowFeral, null, "no row for an unnamed fluffy");
+      check(r.outside && r.outside !== "none spawned", `runaway outside: ${r.outside}`);
+      check(!!r.pet, "lost pet named");
+      checkEqual(r.cleared, null, "a cleared name isn't given back");
+      checkEqual(r.goalOwner, false, "an old owner's name doesn't count for the goal");
+      checkEqual(r.goalMine, true, "your name does");
+      checkEqual(r.byMine, "you", "named by you now");
+      check(!!r.loaded, "runaway from an old save gets a name on loading");
+      check(r.keptMap, "which names came from owners is saved");
+    },
+  },
 );

@@ -163,6 +163,8 @@ const HELP_TOPICS = [
     lines: [
       'Fluffies are just "Fluffy" until a person names them.',
       "",
+      "- Runaways and lost pets had an owner, so they come with the name",
+      "  it gave them. Stock from breeders comes named too.",
       "- When a fluffy becomes yours (born, bought or brought home) a",
       "  pop-up offers to name it. A litter gets one pop-up for all foals.",
       '- Leave a box empty to keep it "Fluffy"; you can rename any fluffy',

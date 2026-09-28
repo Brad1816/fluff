@@ -55,13 +55,9 @@ const GOALS = [
     id: "name_one",
     text: "Give one of your fluffies a name",
     reward: 50,
-    // (a breeder's name for bought stock doesn't count - StockMarket.js)
+    // (a breeder's or old owner's name doesn't count - Names.js namedBy)
     check: () =>
-      _yourFluffies().some(
-        (f) =>
-          !!fluffyNames[f.id] &&
-          !(typeof stockMarket !== "undefined" && stockMarket.named && stockMarket.named[f.id] === fluffyNames[f.id]),
-      ),
+      _yourFluffies().some((f) => (typeof namedBy === "function" ? namedBy(f) === "you" : !!fluffyNames[f.id])),
   },
   {
     id: "sell_10",

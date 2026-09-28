@@ -133,6 +133,8 @@ function getFluffyInspectionInfo(f) {
 
   const about = [
     { label: "Name", value: typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : fluffyNames[f.id] || "Fluffy" },
+    // Named by its old owner (runaways, lost pets) or its breeder (Names.js)
+    ...(typeof namedBy === "function" && namedBy(f) && namedBy(f) !== "you" ? [{ label: "Named by", value: namedBy(f) }] : []),
     { label: "Gender", value: f.gender },
     { label: "Type", value: f.type },
     { label: "Age", value: describeInspectionAge(f) },

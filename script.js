@@ -966,6 +966,8 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
     h.y = fy;
     h.personalities = [...h.personalities, ...personalities];
     fluffies.push(h);
+    // Runaways had an owner: they keep the name it gave them (Names.js)
+    if (typeof giveOwnerName === "function") giveOwnerName(h);
     return h;
   };
 

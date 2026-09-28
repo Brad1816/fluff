@@ -1183,3 +1183,17 @@ stock).
 - **Saved**: `stockMarket` (`day`, `listings`, `nextId`, `bought`,
   `named`) in `SAVED_GAME_STATE`.
 
+### Names from a previous owner (`Names.js`)
+Runaways (personality `"runaway"`) and lost pets (`f.lostPet`, the night
+event) had a human owner, so they arrive with a name from `OWNER_NAMES`
+(female / male / either; none overlap the old automatic-name lists, so
+`cleanUpAutoNames` never touches them). `giveOwnerName(f)` is called where
+they're made: `spawnFeral` in script.js, `_makeWild` in ParkLife.js and the
+`lost_pet` night event; `nameFormerPets()` runs after loading a game for
+runaways from older saves. `previousOwnerNames` (saved) records which names
+came from an owner, so a name you clear isn't given back.
+`namedBy(f)` says who named a fluffy: "you", "its old owner", "its
+breeder" (StockMarket.js) or null. The magnifying glass shows "Named by"
+unless it's you, and the "Give one of your fluffies a name" goal only
+counts names you gave.
+

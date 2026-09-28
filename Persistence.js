@@ -129,6 +129,12 @@ const SAVED_GAME_STATE = [
     fresh: () => freshDayStats(),
   },
   {
+    name: "previousOwnerNames", // names runaways and lost pets came with (Names.js)
+    get: () => previousOwnerNames,
+    set: (v) => (previousOwnerNames = v && typeof v === "object" ? v : {}),
+    fresh: () => ({}),
+  },
+  {
     name: "stockMarket", // breeders' market listings (StockMarket.js)
     get: () => stockMarket,
     set: (v) => (stockMarket = v), // missing fields are filled in by updateStockMarket
@@ -629,6 +635,8 @@ async function loadGame(slotName) {
 
   // Undo the automatic names from one earlier build (Names.js)
   if (typeof cleanUpAutoNames === "function") cleanUpAutoNames();
+  // Runaways from before they came with names (Names.js)
+  if (typeof nameFormerPets === "function") nameFormerPets();
 
   // Fluffy Park food (saves from before the park had any)
   if (typeof setupParkLife === "function") setupParkLife(false);

@@ -430,3 +430,68 @@ if (typeof window !== "undefined") {
     true,
   );
 }
+
+// ---------------------------------------------------------------------------
+// Names from a previous owner.
+//
+// Runaways (personality "runaway") and lost pets (NightEvents.js) had a
+// human owner before, so they arrive with the name that owner gave them.
+// giveOwnerName() is called where they're made (script.js spawnFeral,
+// ParkLife.js _makeWild, the lost pet night event), and once when a game is
+// loaded for runaways that turned up before this existed.
+// previousOwnerNames (saved) remembers which names came from an owner, so:
+//   - the magnifying glass says "Named by: its old owner"
+//   - the "Give a fluffy a name" goal waits for a name you give
+//   - if you clear the name, it isn't given back
+// The lists don't share names with the old automatic names above, so
+// cleanUpAutoNames() never removes them.
+// ---------------------------------------------------------------------------
+
+const OWNER_NAMES = {
+  female: [
+    "Princess", "Duchess", "Lady", "Bella", "Dolly", "Lulu", "Coco", "Trixie", "Angel", "Sweetie",
+    "Sugarplum", "Twinkletoes", "Starlight", "Rainbow", "Sparkles", "Belle", "Missy", "Pinky", "Tulip", "Rosebud",
+  ],
+  male: [
+    "Mr. Fluffles", "Sir Hoofington", "Captain", "Buster", "Duke", "Oscar", "Rocky", "Charlie", "Teddy", "Buddy",
+    "Mr. Wiggles", "Prince", "Max", "Scout", "Rusty", "Tucker", "Jasper", "Milo", "Louie", "Chester",
+  ],
+  any: ["Lucky", "Cuddles", "Snowball", "Peanut", "Bubbles", "Cinnamon", "Buttons", "Sunshine", "Baby", "Taco"],
+};
+
+let previousOwnerNames = {}; // fluffy id -> the name its old owner gave it
+
+function isFormerPet(f) {
+  return !!f && (!!f.lostPet || (Array.isArray(f.personalities) && f.personalities.includes("runaway")));
+}
+
+// Give a former pet its old name (once; not if it has one or had one)
+function giveOwnerName(f) {
+  if (!f || !isFormerPet(f) || typeof fluffyNames === "undefined") return null;
+  if (fluffyNames[f.id] || previousOwnerNames[f.id] !== undefined) return null;
+  const used = new Set(Object.values(fluffyNames));
+  const pool = [...(OWNER_NAMES[f.gender] || []), ...OWNER_NAMES.any];
+  const fresh = pool.filter((n) => !used.has(n));
+  const name = (fresh.length ? fresh : pool)[Math.floor(Math.random() * (fresh.length || pool.length))];
+  fluffyNames[f.id] = name;
+  previousOwnerNames[f.id] = name;
+  return name;
+}
+
+// Persistence.js loadGame: runaways from before this existed
+function nameFormerPets() {
+  if (typeof fluffies === "undefined") return 0;
+  if (!previousOwnerNames || typeof previousOwnerNames !== "object") previousOwnerNames = {};
+  let n = 0;
+  for (const f of fluffies) if (f.isAlive && giveOwnerName(f)) n++;
+  return n;
+}
+
+// Who gave it its name: "you", "its old owner", "its breeder" or null (unnamed)
+function namedBy(f) {
+  if (!f || typeof fluffyNames === "undefined" || !fluffyNames[f.id]) return null;
+  const n = fluffyNames[f.id];
+  if (previousOwnerNames && previousOwnerNames[f.id] === n) return "its old owner";
+  if (typeof stockMarket !== "undefined" && stockMarket.named && stockMarket.named[f.id] === n) return "its breeder";
+  return "you";
+}
