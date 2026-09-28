@@ -239,6 +239,11 @@ function _formHerd(members) {
   _herdChanged();
   _say(leader, ["HERD", "NEW_HERD"]);
   _tellPlayer(h, `A new herd formed: the ${getHerdName(h)}, led by ${getHerdLeaderName(h)} (${members.length})`);
+  // Morning report (DayReport.js)
+  if (typeof noteDayEvent === "function" && (leader.scene === "PARK" || members.some((f) => f.adopted)))
+    noteDayEvent("news", {
+      text: `A new herd formed${leader.scene === "PARK" ? " in the park" : ""}: the ${getHerdName(h)}.`,
+    });
   return h;
 }
 
@@ -436,6 +441,7 @@ function _maybeSplit(h) {
         .some((f) => f.adopted)
     )
       _parkNews(text);
+    if (typeof noteDayEvent === "function") noteDayEvent("news", { text }); // morning report
   }
 }
 

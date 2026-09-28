@@ -148,6 +148,14 @@ const ORDER_REQUIREMENTS = {
       return !!g && (r.big ? g.size >= 2 : g.size <= -2);
     },
   },
+  untroubled: {
+    // Permanent trauma / grief (Separation.js, Wellbeing.js)
+    minLevel: 2,
+    weight: 1,
+    make: () => ({ value: 300 }),
+    label: () => "Raised gently (no lasting trauma)",
+    matches: (r, f) => typeof isUntroubled === "function" && isUntroubled(f),
+  },
   tame: {
     // Memory and trust (Memory.js)
     minLevel: 1,
@@ -345,8 +353,15 @@ function deliverCustomerOrder(orderId, fluffyId) {
   const before = getOrderLevel();
   customerOrders.active.splice(i, 1);
   customerOrders.filled++;
-  customerOrders.reputation += order.reqs.length;
-  if (!showDebugMenu) money += order.reward;
+  // The customer tips for a delightful fluffy, and pays less (and thinks
+  // less of you) for a frightened or damaged one (Wellbeing.js)
+  const reaction =
+    typeof orderTemperamentReaction === "function"
+      ? orderTemperamentReaction(f, order.reward)
+      : { money: 0, repFactor: 1, message: null };
+  customerOrders.reputation += Math.floor(order.reqs.length * reaction.repFactor);
+  if (!showDebugMenu) money += order.reward + reaction.money;
+  if (typeof noteDayEvent === "function") noteDayEvent("order", { money: order.reward + reaction.money });
 
   // The courier takes the fluffy away (like selling it)
   if (typeof noteFluffyLeft === "function") noteFluffyLeft(f, "sold");
@@ -360,6 +375,7 @@ function deliverCustomerOrder(orderId, fluffyId) {
 
   if (typeof addUIMessage === "function") {
     addUIMessage(`Order filled for ${order.customer}! +$${order.reward}`);
+    if (reaction.message) addUIMessage(reaction.message);
     const after = getOrderLevel();
     if (after > before) addUIMessage(`Reputation up: you're now a ${ORDER_REP_LEVELS[after - 1].name}!`);
   }

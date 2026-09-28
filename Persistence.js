@@ -117,6 +117,12 @@ const SAVED_GAME_STATE = [
   { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
   { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
   {
+    name: "dayStats", // what happened today, for the morning report (DayReport.js)
+    get: () => dayStats,
+    set: (v) => (dayStats = v), // missing fields are filled in by updateDayReport
+    fresh: () => freshDayStats(),
+  },
+  {
     name: "weatherState", // weather and snow on the ground (WorldTime.js)
     get: () => weatherState,
     set: (v) => (weatherState = v), // missing fields are filled in by updateWorldTime
@@ -178,6 +184,7 @@ function resetTemporaryGameState() {
   carSpawnTimer = 0;
   showChatLog = false;
   if (typeof gameSpeed !== "undefined") gameSpeed = 1;
+  if (typeof dayReportShown !== "undefined") dayReportShown = null;
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;

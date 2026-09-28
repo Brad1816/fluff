@@ -11,7 +11,8 @@ module.exports = [
         __clearScene("PARK");
         __clearScene("ALLEY_DAY_CARE");
         __seedRandom(8);
-        worldSettings.colorism = false; // mums always love their foals here
+        worldSettings.colorism = false;
+        worldSettings.alicornIntolerance = false; // mums always love their foals here
         tutorialTimer = 0;
         herdState = freshHerdState();
         _herdChanged();
@@ -92,6 +93,7 @@ module.exports = [
       const r = await page.evaluate(() => {
         __clearScene("PARK");
         worldSettings.colorism = false;
+        worldSettings.alicornIntolerance = false;
         herdState = freshHerdState();
         _herdChanged();
         const mk = (x, mom, growth = 1) => {
@@ -148,6 +150,7 @@ module.exports = [
         __clearScene("INDOORS");
         __seedRandom(5);
         worldSettings.colorism = false;
+        worldSettings.alicornIntolerance = false;
         herdState = freshHerdState();
         _herdChanged();
         gameState = "PAUSED";

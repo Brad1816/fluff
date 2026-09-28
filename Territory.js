@@ -342,6 +342,7 @@ function _takeOver(winner, loser, idx) {
   _tellPlayer(winner, text);
   _tellPlayer(loser, text);
   if (!ws.concat(ls).some((f) => f.adopted)) _parkNews(text);
+  if (typeof noteDayEvent === "function") noteDayEvent("news", { text }); // morning report
 }
 
 // ---- Desires (added in the Horse constructor) ----

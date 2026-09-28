@@ -62,6 +62,8 @@ and it runs. About 36,000 lines across ~60 files.
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
 | `WorldTime.js` | **Day and night, seasons, weather**: the clock, darkness, rain/snow/storms and what they do to fluffies and plants. See section 9 (Day, night and weather). |
 | `Separation.js` | **Taken from herd/family**: fluffies carried away from their herd, family or friends grieve, may be traumatised, and are overjoyed when brought back. See section 9 (Separation). |
+| `Wellbeing.js` | **Temperament**: happiness, trust, fear and trauma change a fluffy's price and how customers react. See section 9 (Temperament). |
+| `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
@@ -914,4 +916,29 @@ on the park's left side.
   `renderFrameCount`), and `Horse.hitTestAsSeen(x, y)` tests the click
   against that. A moving fluffy also gets 10px of leeway. Used for tools
   (knife, stick, tack...), picking up and the magnifying glass.
+
+### Temperament (`Wellbeing.js`)
+- `temperamentScore(f)` = 35% happiness + 35% trust in you + 30% not
+  being afraid of you, minus half its permanent trauma.
+  `temperamentMultiplier(f)` turns it into 0.4x-1.3x; an ordinary fluffy
+  is about 1x. Labels: Delightful pet, Good-natured, Ordinary, Nervous,
+  Damaged.
+- `HorseGenetics.calculatePrice` multiplies by it, so selling, the sell
+  cage and buyers at the door all pay for temperament. The magnifying
+  glass "Sells for" line shows e.g. "$240 (Good-natured +12%)".
+- Orders: delivering a fluffy at 1.15x or more gets a tip; under 0.85x the
+  customer pays less, and under 0.7x you only get half the reputation
+  (`orderTemperamentReaction`). New requirement (reputation level 2+):
+  "Raised gently (no lasting trauma)" (`isUntroubled`).
+
+### Morning report (`DayReport.js`)
+- A report day runs 6:00 AM to 6:00 AM. `dayStats` (saved) collects the
+  money at the start, your fluffies born / arriving / dying (compared once
+  a second), sales and orders (`noteDayEvent` from UI.js and Orders.js),
+  news (herds forming and splitting, meadows changing hands - Herds.js,
+  Territory.js), fluffies scarred for life (Separation.js), wild arrivals,
+  births and deaths in the park, and the weather.
+- At 6:00 `updateDayReport` turns it into `dayReportShown` - a card with
+  all of that - and fast forward drops to 1x. "Start the day", Esc or Enter
+  closes it. It counts as an open screen.
 

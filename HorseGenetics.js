@@ -342,6 +342,10 @@ class HorseGenetics {
     // Potty training bonus
     price += 1000 * (this.horse.pottyTraining || 0);
 
+    // Temperament: happy, trusting fluffies are worth more, frightened or
+    // traumatised ones less (Wellbeing.js)
+    if (typeof temperamentMultiplier === "function") price *= temperamentMultiplier(this.horse);
+
     return Math.floor(price);
   }
 

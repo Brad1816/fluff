@@ -2038,6 +2038,8 @@ function drawUI(ctx) {
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   if (typeof drawOrdersScreen === "function") drawOrdersScreen(ctx);
   drawDayCareModal(ctx);
+  // Morning report on top of everything (DayReport.js)
+  if (typeof drawDayReport === "function") drawDayReport(ctx);
 }
 
 let inspectedFluffy = null;
@@ -2049,6 +2051,7 @@ function isAnyScreenOpen() {
   if (typeof isFamilyTreeOpen === "function" && isFamilyTreeOpen()) return true;
   if (typeof isGeneLabOpen === "function" && isGeneLabOpen()) return true;
   if (typeof isOrdersScreenOpen === "function" && isOrdersScreenOpen()) return true;
+  if (typeof isDayReportOpen === "function" && isDayReportOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -2268,7 +2271,12 @@ function getFluffyInspectionInfo(f) {
     let sellText;
     if (!f.canBeSold || !f.canBeSold()) sellText = "Can't be sold";
     else if (hasAcc) sellText = "Remove accessories to sell";
-    else sellText = `$${Math.floor(f.calculatePrice() / 2)}`;
+    else {
+      sellText = `$${Math.floor(f.calculatePrice() / 2)}`;
+      // How its temperament changes the price (Wellbeing.js)
+      const pct = typeof temperamentPriceText === "function" ? temperamentPriceText(f) : "";
+      if (pct) sellText += ` (${describeTemperament(f)[0]} ${pct})`;
+    }
     care.push({ label: "Sells for", value: sellText });
   }
 
@@ -3108,6 +3116,7 @@ function sellModeClick() {
     } else if (bestType === "fluffy") {
       if (bestItem.isDragging) isGlobalDragging = false;
       money += Math.floor(bestItem.calculatePrice() / 2);
+      if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: Math.floor(bestItem.calculatePrice() / 2) });
       if (typeof noteFluffyLeft === "function") noteFluffyLeft(bestItem, "sold");
       poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
       const idx = fluffies.indexOf(bestItem);
@@ -3644,6 +3653,11 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
+  // Morning report first: it's on top (DayReport.js)
+  if (typeof handleDayReportClick === "function" && handleDayReportClick()) {
+    return;
+  }
+
   if (typeof handleFamilyTreeClick === "function" && handleFamilyTreeClick()) {
     return;
   }
@@ -3682,6 +3696,7 @@ canvas.addEventListener("mousedown", (e) => {
       );
       if (victimIdx > -1) {
         if (!showDebugMenu) money += currentSellRequest.price;
+        if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: currentSellRequest.price });
         if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold");
         fluffies.splice(victimIdx, 1);
       }
@@ -3765,6 +3780,7 @@ canvas.addEventListener("mousedown", (e) => {
       );
       if (victimIdx > -1) {
         if (!showDebugMenu) money += currentSellRequest.price;
+        if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: currentSellRequest.price });
         if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold");
         fluffies.splice(victimIdx, 1);
         currentSellRequest = null;

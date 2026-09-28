@@ -360,7 +360,10 @@ function updateParkLife(dt) {
     const n = countParkWild();
     // New groups arrive in the daytime (WorldTime.js)
     const night = typeof isNightTime === "function" && isNightTime();
-    if (n < PARK_WILD_TARGET && !night) spawnParkGroup();
+    if (n < PARK_WILD_TARGET && !night) {
+      const group = spawnParkGroup();
+      if (typeof noteDayEvent === "function") noteDayEvent("wildArrived", { count: group.length }); // morning report
+    }
     parkLife.spawnTimer = n < PARK_WILD_TARGET / 2 ? 25 + Math.random() * 20 : 60 + Math.random() * 60;
   }
 

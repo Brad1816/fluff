@@ -1410,6 +1410,8 @@ function updateSimulation(dt) {
   if (typeof updateWorldTime === "function") updateWorldTime(dt);
   // Fluffies missing the ones they were taken from (Separation.js)
   if (typeof updateSeparations === "function") updateSeparations(dt);
+  // What happened today, for the morning report (DayReport.js)
+  if (typeof updateDayReport === "function") updateDayReport(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
@@ -2002,6 +2004,11 @@ window.addEventListener("keydown", (e) => {
       dayCareModalOpen = false;
       return;
     }
+    // Morning report (DayReport.js)
+    if (typeof isDayReportOpen === "function" && isDayReportOpen()) {
+      closeDayReport();
+      return;
+    }
     if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
       inspectedFluffy = null;
       return;
@@ -2080,6 +2087,10 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
+  if ((e.code === "Enter" || e.code === "NumpadEnter") && typeof isDayReportOpen === "function" && isDayReportOpen()) {
+    closeDayReport();
+    return;
+  }
   if (e.code === "KeyN") {
     showFluffyNames = !showFluffyNames;
     return;
