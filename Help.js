@@ -62,6 +62,23 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Buying stock",
+    lines: [
+      'Other breeders sell pedigree fluffies: the "Breeding stock" tab on',
+      "the Bounty Board (Shopping Street) or FluffList (the Computer).",
+      "",
+      "- New stock every morning. Each breeder has a line: spots, stripes,",
+      "  white coats, wings, horns, pastel colours or cheap hardy earthies.",
+      "- The card shows the fluffy, its mum and dad, and its grandparents.",
+      "  A spotted grandma or pegasus dad means it may carry those genes",
+      "  hidden. After buying, the family tree and Gene Lab show them.",
+      "- Better reputation, better stock: unicorns and pegasi from Known",
+      "  breeder, more choice and the odd alicorn from Renowned breeder.",
+      "- Stock costs about twice what a buyer would pay for it: you buy to",
+      "  breed, not to sell on.",
+    ],
+  },
+  {
     title: "Herds & territory",
     lines: [
       "- Fluffies that like each other form herds with a leader (press H to",
@@ -187,7 +204,7 @@ function getHelpLayout() {
   const h = Math.min(580, height - 40);
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
-  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 70 + i * 44, w: 200, h: 36 }));
+  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 66 + i * 40, w: 200, h: 32 }));
   return { x, y, w, h, tabs, close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 } };
 }
 
@@ -223,7 +240,7 @@ function drawHelp(c) {
     c.fill();
     c.fillStyle = on ? "white" : "rgba(255,255,255,0.75)";
     c.font = on ? "bold 15px Arial" : "15px Arial";
-    c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 23);
+    c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 21);
   });
 
   // Text

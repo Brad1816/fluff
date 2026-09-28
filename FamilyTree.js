@@ -35,6 +35,7 @@ const FAMILY_STATUS_TEXT = {
   "day care": "At day care",
   taken: "Taken by dogs",
   gone: "Gone",
+  breeder: "With its breeder", // parents of bought stock (StockMarket.js)
 };
 
 // Write down (or update) everything we know about a fluffy that exists now
@@ -665,6 +666,9 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
   if (rec.bornAt !== null && rec.bornAt !== undefined) {
     const ago = Math.max(0, Math.round((now - rec.bornAt) / 60));
     _ftText(c, ago < 1 ? "Born just now" : `Born ${ago} min ago`, tx, y + 84, "#cfcfcf", "13px Arial");
+  } else if (rec.boughtFrom) {
+    // Bought stock (StockMarket.js)
+    _ftText(c, `From ${rec.boughtFrom}`, tx, y + 84, "#cfcfcf", "13px Arial");
   }
   y += 116;
 

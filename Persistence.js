@@ -129,6 +129,12 @@ const SAVED_GAME_STATE = [
     fresh: () => freshDayStats(),
   },
   {
+    name: "stockMarket", // breeders' market listings (StockMarket.js)
+    get: () => stockMarket,
+    set: (v) => (stockMarket = v), // missing fields are filled in by updateStockMarket
+    fresh: () => freshStockMarket(),
+  },
+  {
     name: "nightEvents", // tonight's planned park events (NightEvents.js)
     get: () => nightEvents,
     set: (v) => (nightEvents = v), // missing fields are filled in by updateNightEvents

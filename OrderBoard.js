@@ -2,8 +2,9 @@
 // Where you see customer orders (the orders themselves are in Orders.js):
 //   - the Bounty Board on Shopping Street (click it)
 //   - FluffList, the website on the Computer (a store item; right-click it)
-// Both open the same orders screen, just styled differently. Also here: the
-// little "orders due" reminder in the bottom right corner.
+// Both open the same orders screen, just styled differently. It has two
+// tabs: "Orders" and "Breeding stock" (the breeders' market, StockMarket.js).
+// Also here: the little "orders due" reminder in the bottom right corner.
 // ---------------------------------------------------------------------------
 
 // The posted / active order lists (empty if the save data is odd)
@@ -243,6 +244,7 @@ function drawComputerIcon(ctx, btnSize) {
 // ======================= The orders screen =================================
 
 let ordersScreenMode = null; // null = closed, "board" or "web"
+let ordersTab = "orders"; // "orders" | "stock" (StockMarket.js)
 let ordersDeliverId = null; // the order we're picking a fluffy for
 let ordersDeliverPage = 0;
 let _ordersPortraits = {};
@@ -333,6 +335,16 @@ function _osButton(c, b, m, theme, disabled = false) {
     c.stroke();
   }
   _osText(c, b.label, b.x + b.w / 2, b.y + b.h / 2 + 5, disabled ? "rgba(255,255,255,0.7)" : "white", "bold 14px Arial", "center");
+}
+
+// The two tabs in the header
+function _ordersTabs() {
+  const off = "rgba(0,0,0,0.3)";
+  const on = "rgba(255,255,255,0.3)";
+  return [
+    { id: "orders", x: 250, y: 18, w: 110, h: 34, label: "Orders" },
+    { id: "stock", x: 368, y: 18, w: 140, h: 34, label: "Breeding stock" },
+  ].map((t) => ({ ...t, color: t.id === ordersTab ? on : off, hover: on }));
 }
 
 // Where everything goes (so drawing and clicking agree)
@@ -520,12 +532,16 @@ function drawOrdersScreen(c) {
   c.fillRect(0, 0, OS_W, 70);
   c.restore();
 
-  _osText(c, theme.title, 24, 44, "white", "bold 28px Arial");
-  _osText(c, theme.subtitle, 24 + (ordersScreenMode === "web" ? 150 : 190), 42, "rgba(255,255,255,0.75)", "14px Arial");
+  _osText(c, theme.title, 24, 40, "white", "bold 26px Arial");
+  _osText(c, theme.subtitle, 24, 60, "rgba(255,255,255,0.75)", "12px Arial");
+  for (const t of _ordersTabs()) {
+    _osButton(c, t, m, theme);
+    if (t.id === ordersTab) c.fillRect(t.x + 10, t.y + t.h - 3, t.w - 20, 3);
+  }
 
   // Reputation bar
   const rep = getOrderLevelInfo();
-  const bx = 520;
+  const bx = 540;
   _osText(c, `${rep.name} (level ${rep.level})`, bx, 30, "white", "bold 15px Arial");
   const barW = 300;
   c.fillStyle = "rgba(255,255,255,0.25)";
@@ -536,6 +552,13 @@ function drawOrdersScreen(c) {
   _osText(c, rep.to === null ? `${rep.points} rep (top level!)` : `${rep.points} / ${rep.to} rep`, bx + barW + 10, 49, "white", "12px Arial");
 
   _osButton(c, L.close, m, theme);
+
+  // The breeders' market (StockMarket.js)
+  if (ordersTab === "stock" && typeof drawStockMarketPage === "function") {
+    drawStockMarketPage(c, theme, m);
+    c.restore();
+    return;
+  }
 
   // Wanted (posted) and yours (accepted)
   const headColor = ordersScreenMode === "board" ? "#fbe7b5" : theme.cardText;
@@ -604,6 +627,17 @@ function handleOrdersScreenClick() {
   const L = _ordersLayout();
   if (_osIn(m, L.close)) {
     closeOrdersScreen();
+    return true;
+  }
+  for (const t of _ordersTabs()) {
+    if (_osIn(m, t)) {
+      ordersTab = t.id;
+      return true;
+    }
+  }
+  if (ordersTab === "stock") {
+    if (typeof handleStockMarketClick === "function" && handleStockMarketClick(m)) return true;
+    if (m.x < 0 || m.y < 0 || m.x > OS_W || m.y > OS_H) closeOrdersScreen();
     return true;
   }
   for (const card of L.posted) {

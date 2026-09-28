@@ -61,7 +61,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `FamilyTree.js` | **Family record book** (`fluffyRecords`: every fluffy you've owned, even after it dies or is sold, with its genes and parents) and the **family tree screen** with its genetics panel. See section 9. |
 | `GeneLab.js` | The **Gene Lab** machine (a shop item) and its screen that predicts what two fluffies' foals could be like. See section 9. |
 | `Orders.js` | **Customer orders**: making orders (`ORDER_REQUIREMENTS`), accepting, delivering, deadlines and reputation (`customerOrders`, saved). |
-| `OrderBoard.js` | Where orders are seen: the **bounty board** on Shopping Street, the **Computer** item (FluffList website), the orders screen with its deliver picker, and the "orders due" reminder. |
+| `OrderBoard.js` | Where orders are seen: the **bounty board** on Shopping Street, the **Computer** item (FluffList website), the orders screen (tabs: Orders / Breeding stock) with its deliver picker, and the "orders due" reminder. |
 | `Traits.js` | **Personality traits** (brave/timid, social/loner, greedy/picky eater, playful/lazy, grumpy/gentle): which genes, the labels, and how they change behaviour. See section 9. |
 | `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
 | `Bonds.js` | **Bonds and grudges between fluffies**: each fluffy's opinion of the others (`opinions`, `opinionWhy`), `getLiking`, becoming friends by spending time together, defending buddies, avoiding grudges. See section 9. |
@@ -76,6 +76,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Goals.js` | **Breeder goals**: optional milestones with cash rewards (Goals button next to the speed buttons, or G). See section 9 (Goals). |
 | `NightEvents.js` | **Night in the park**: most nights a herd has something happen to it (a fox, a tummy bug, a bumper crop, newcomers...). See section 9 (Night events). |
 | `AlicornAcceptance.js` | **Getting used to alicorns**: scared fluffies slowly accept alicorns they spend time near. See section 9 (Alicorn acceptance). |
+| `StockMarket.js` | **Breeding stock market**: buy pedigree fluffies from other breeders (the "Breeding stock" tab of the orders screen). See section 9 (Breeding stock market). |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -1144,3 +1145,41 @@ user asked for it slower than the first version).
 - Notes for tests: only stallions can be smarties (the `personalities`
   setter drops "smarty" from mares); tick with `_alicornTick = 0;
   updateAlicornAcceptance(0)` for exactly one second.
+
+### Breeding stock market (`StockMarket.js`)
+Buy pedigree fluffies from other breeders: the **Breeding stock** tab of
+the orders screen (Bounty Board on Shopping Street, or FluffList on the
+Computer; `ordersTab` in OrderBoard.js switches between Orders and Breeding
+stock).
+- **Restocking**: `updateStockMarket` restocks once per report day (each
+  6:00 AM, `reportDayIndex`), with `2 + level` listings (max 6) by your
+  reputation level (`getOrderLevel`). Level 1 earthies only; level 2 adds
+  unicorns and pegasi (and the Starfall / Silverhorn breeders); level 4 has
+  a `STOCK_ALICORN_CHANCE` (12%) each morning of a Celestial Stud alicorn;
+  level 5 raises quality. Bought listings are gone until the next morning.
+- **Breeders and lines** (`STOCK_BREEDERS`): pastel (high colour
+  quality), spots, stripes, white (pale body colour genes), wings, horn,
+  hardy (cheap earthies). Two-tone isn't a line or a listed feature: most
+  fluffies have it.
+- **Pedigree** (`makeStockListing`): four grandparents made for the line
+  (two show it, two carry it: `_lineGrandparent`), two parents bred from
+  them and the fluffy bred from its parents with the real `combineGenes`,
+  so it can carry things it doesn't show. Rerolled if its type isn't
+  allowed at your level or it would likely be a sensitive baby. The card
+  lists the fluffy's coat, its parents' looks and a count of what its
+  grandparents show.
+- **Price** (`stockListingPrice`): `STOCK_MARKUP` (2.2) x what it would
+  sell for (`calculatePrice`, raised by a breeder: happy, trust 0.6, some
+  litter training) + `STOCK_PEDIGREE_FEE` ($150), rounded to $10. So it
+  never pays to buy and sell on. At level 1 they're about $600-900.
+- **Buying** (`buyStockListing`): pays (free in debug mode), puts the
+  fluffy indoors, adopted, named by its breeder (`fluffyNames`, and
+  `stockMarket.named` so the "Give a fluffy a name" goal only counts names
+  you give). Its parents and grandparents go into `fluffyRecords` with
+  status `"breeder"` ("With its breeder") and the fluffy's record gets
+  `motherId`/`fatherId` pointing at them and `boughtFrom` (shown in the
+  family tree instead of a birth time). The fluffy itself has no
+  `motherId`, so it doesn't miss a mum who isn't in the game.
+- **Saved**: `stockMarket` (`day`, `listings`, `nextId`, `bought`,
+  `named`) in `SAVED_GAME_STATE`.
+

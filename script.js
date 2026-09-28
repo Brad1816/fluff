@@ -1426,6 +1426,8 @@ function updateSimulation(dt) {
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
   if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
+  // Breeders' market restocks each morning (StockMarket.js)
+  if (typeof updateStockMarket === "function") updateStockMarket(dt);
   updatePuddles(dt);
   updateDayCare(dt);
 
