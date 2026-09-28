@@ -437,7 +437,7 @@ class Gib {
       }
 
       // Despawn if it travels too far out of screen (instead of bouncing back)
-      if (this.x < -200 || this.x > width + 200) {
+      if (this.x < -200 || this.x > sceneW(this.scene) + 200) {
         this.shouldDespawn = true;
       }
       return; // Skip standard bounds/grinder physics
@@ -506,8 +506,8 @@ class Gib {
       if (this.x < rw) {
         this.x = rw;
         this.vx *= -0.5;
-      } else if (this.x > width - rw) {
-        this.x = width - rw;
+      } else if (this.x > sceneW(this.scene) - rw) {
+        this.x = sceneW(this.scene) - rw;
         this.vx *= -0.5;
       }
     }
@@ -538,7 +538,7 @@ class Gib {
   onDrop() {
     handleDropping(this);
     if (!this.bounds) {
-      this.bounds = { left: 0, right: width, top: 0, bottom: height - 15 };
+      this.bounds = { left: 0, right: sceneW(this.scene), top: 0, bottom: sceneH(this.scene) - 15 };
     }
     this.bounds.bottom = this.y + (this.img.height * this.scale) / 2;
     this.freeGib = true;

@@ -65,7 +65,7 @@ class AccessoryItem {
         this.x = mouse.x + this.dragOffset.x;
         this.y = mouse.y + this.dragOffset.y;
 
-        const topWallHeight = typeof height !== "undefined" ? height * 0.15 : 0;
+        const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
         this.y = Math.max(this.y, topWallHeight + 10);
       }
     }

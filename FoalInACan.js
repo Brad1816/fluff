@@ -22,9 +22,9 @@ class FoalInACan {
       this.y = mouse.y + this.dragOffset.y;
 
       // Boundary clamping (y is the bottom of the can)
-      const topWallHeight = height * 0.15;
-      this.x = clamp(this.x, w / 2, width - w / 2);
-      this.y = clamp(this.y, topWallHeight + h + 10, height - 10);
+      const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
+      this.x = clamp(this.x, w / 2, sceneW(this.scene) - w / 2);
+      this.y = clamp(this.y, topWallHeight + h + 10, sceneH(this.scene) - 10);
     }
 
     // Always sync bounds

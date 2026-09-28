@@ -72,9 +72,9 @@ class Grinder {
       this.y = mouse.y + this.dragOffset.y;
 
       // Simple boundary clamping
-      const topWallHeight = height * 0.15;
-      this.x = clamp(this.x, w / 2, width - w / 2);
-      this.y = clamp(this.y, topWallHeight + h / 2 + 5, height - h / 2);
+      const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
+      this.x = clamp(this.x, w / 2, sceneW(this.scene) - w / 2);
+      this.y = clamp(this.y, topWallHeight + h / 2 + 5, sceneH(this.scene) - h / 2);
     }
 
     // Hit Test Bounds

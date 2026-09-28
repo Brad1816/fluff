@@ -22,7 +22,7 @@ class Knife {
       this.x = mouse.x + this.dragOffset.x;
       this.y = mouse.y + this.dragOffset.y;
 
-      const topWallHeight = height * 0.15;
+      const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
       this.y = Math.max(this.y, topWallHeight + 10);
     }
 

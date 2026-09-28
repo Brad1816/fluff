@@ -58,7 +58,7 @@ class Block {
   }
 
   getClampedY() {
-    const topWallHeight = height * 0.15;
+    const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
     return Math.max(this.y, topWallHeight + 10);
   }
 

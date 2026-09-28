@@ -22,9 +22,9 @@ class IVStand {
 
       const halfW = this.w / 2;
       const halfH = this.h / 2;
-      const topWallHeight = height * 0.15;
-      this.x = clamp(this.x, halfW, width - halfW);
-      this.y = clamp(this.y, topWallHeight + halfH + 5, height - halfH);
+      const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
+      this.x = clamp(this.x, halfW, sceneW(this.scene) - halfW);
+      this.y = clamp(this.y, topWallHeight + halfH + 5, sceneH(this.scene) - halfH);
     }
 
     const halfW = this.w / 2;

@@ -1778,7 +1778,7 @@ function drawUI(ctx) {
     // Check Fluffies
     for (const f of fluffies) {
       if (f.scene !== currentScene) continue;
-      if (f.hitTest(mouse.x, mouse.y)) {
+      if (f.hitTestAsSeen(mouse.x, mouse.y)) {
         const y = f.getBottomY();
         if (y > maxY) {
           maxY = y;
@@ -3047,7 +3047,7 @@ function sellModeClick() {
   // Check Fluffies
   for (const f of fluffies) {
     if (f.scene !== currentScene) continue;
-    if (f.hitTest(mouse.x, mouse.y)) {
+    if (f.hitTestAsSeen(mouse.x, mouse.y)) {
       const y = f.getBottomY();
       if (y > maxY) {
         maxY = y;
@@ -3833,7 +3833,7 @@ canvas.addEventListener("mousedown", (e) => {
     for (let i = fluffies.length - 1; i >= 0; i--) {
       const f = fluffies[i];
       if (f.scene !== currentScene) continue;
-      if (f.hitTest(mouse.x, mouse.y)) {
+      if (f.hitTestAsSeen(mouse.x, mouse.y)) {
         applyDebugAction(f);
         return;
       }
@@ -3849,7 +3849,7 @@ canvas.addEventListener("mousedown", (e) => {
     if (f.currentCage && f.currentCage instanceof FoalInACan) {
       continue;
     }
-    const hitPart = f.hitTest(mouse.x, mouse.y);
+    const hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
     if (!hitPart) {
       continue;
     }

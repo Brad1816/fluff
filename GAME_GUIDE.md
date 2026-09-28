@@ -901,3 +901,17 @@ the River's left arrow, which meant fluffies carried out of the park landed
 in the river). Its exit is the left arrow back to the alley, and you arrive
 on the park's left side.
 
+### Park bug fixes
+- **Items in the park**: dragged items used to be kept inside one screen
+  (`width`/`height`), so tables, cages, grinders, IV stands etc. couldn't be
+  moved far into the park. Item `update()`s now use `sceneTop/sceneW/sceneH`
+  (Park.js) for the area they're in (same as before everywhere else), and so
+  do thrown/bouncing things and gibs.
+- **Clicking moving fluffies**: the game can run several steps between two
+  frames (always on fast forward, and whenever the game is busy), so a
+  running fluffy had already moved on from where you saw it and clicked.
+  The render records where each fluffy is drawn (`_seenX/_seenY`,
+  `renderFrameCount`), and `Horse.hitTestAsSeen(x, y)` tests the click
+  against that. A moving fluffy also gets 10px of leeway. Used for tools
+  (knife, stick, tack...), picking up and the magnifying glass.
+

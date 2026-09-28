@@ -171,7 +171,7 @@ function attemptDrop() {
             f.currentCage instanceof FoalInACan
           )
             continue;
-          let hitPart = f.hitTest(mouse.x, mouse.y);
+          let hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
           if (hitPart) {
             if (
               f.placedOn instanceof OperatingTable &&
@@ -350,7 +350,7 @@ function attemptDrop() {
             f.currentCage instanceof FoalInACan
           )
             continue;
-          let hitPart = f.hitTest(mouse.x, mouse.y);
+          let hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
           if (hitPart) {
             if (
               f.placedOn instanceof OperatingTable &&
@@ -378,7 +378,7 @@ function attemptDrop() {
             f.currentCage instanceof FoalInACan
           )
             continue;
-          let hitPart = f.hitTest(mouse.x, mouse.y);
+          let hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
           if (hitPart) {
             if (
               f.placedOn instanceof OperatingTable &&
@@ -408,7 +408,7 @@ function attemptDrop() {
             f.currentCage instanceof FoalInACan
           )
             continue;
-          if (f.hitTest(mouse.x, mouse.y)) {
+          if (f.hitTestAsSeen(mouse.x, mouse.y)) {
             // BRUSH!
             let key = f.tooYoungToSpeak() ? ["BRUSH", "CHIRPY"] : "BRUSH";
 
@@ -482,7 +482,7 @@ function attemptDrop() {
           )
             continue;
           // Check standard hit test first for general stick-like behavior
-          let hitPart = f.hitTest(mouse.x, mouse.y);
+          let hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
           if (typeof hitPart !== "string") continue;
 
           // Operating Table Override
@@ -817,7 +817,7 @@ function attemptDrop() {
         let hitFluffy = false;
         for (const f of fluffies) {
           if (f.scene !== obj.scene) continue;
-          if (f.hitTest(mouse.x, mouse.y)) {
+          if (f.hitTestAsSeen(mouse.x, mouse.y)) {
             openInspectionModal(f);
             hitFluffy = true;
             break;
@@ -836,7 +836,7 @@ function attemptDrop() {
             f.currentCage instanceof FoalInACan
           )
             continue;
-          if (f.hitTest(mouse.x, mouse.y)) {
+          if (f.hitTestAsSeen(mouse.x, mouse.y)) {
             if (f.bleedingTimer > 0) {
               f.bleedingTimer = 0;
               kit.whackTimer = 0.2;
@@ -1257,6 +1257,7 @@ function updateFerals(dt) {
 }
 
 let lastTime = 0;
+let renderFrameCount = 0; // frames drawn so far (Horse.hitTestAsSeen)
 function animate(timestamp) {
   if (!lastTime) lastTime = timestamp;
 
@@ -1735,6 +1736,14 @@ function render() {
   const onScreen = (o) => !parkCam || o.isDragging || isOnParkScreen(o.x, o.y);
   const visibleObjects = objects.filter((o) => o.scene === currentScene && onScreen(o));
   const visibleFluffies = fluffies.filter((f) => f.scene === currentScene && onScreen(f));
+  // Where each fluffy is drawn this frame, so clicks can be lined up with
+  // what the player saw (Horse.hitTestAsSeen)
+  renderFrameCount++;
+  for (const f of visibleFluffies) {
+    f._seenX = f.x;
+    f._seenY = f.y;
+    f._seenFrame = renderFrameCount;
+  }
   const visibleGibs = gibs.filter(
     (g) => g.scene === currentScene && !g.grinder,
   );

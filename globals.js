@@ -974,8 +974,8 @@ function handleBouncingPhysics(obj, dt) {
   if (obj.x < margin) {
     obj.x = margin;
     obj.vx = -obj.vx * 0.7;
-  } else if (obj.x > width - margin) {
-    obj.x = width - margin;
+  } else if (obj.x > sceneW(obj.scene) - margin) {
+    obj.x = sceneW(obj.scene) - margin;
     obj.vx = -obj.vx * 0.7;
   }
 }

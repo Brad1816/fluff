@@ -28,11 +28,11 @@ class Cage {
       this.y = mouse.y + this.dragOffset.y;
 
       // Simple boundary clamping for the cage itself
-      const topWallHeight = height * 0.15;
+      const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
       const w = images.cage.width * this.scale;
       const h = images.cage.height * this.scale;
-      this.x = clamp(this.x, w / 2, width - w / 2);
-      this.y = clamp(this.y, topWallHeight + h / 2, height - h / 2);
+      this.x = clamp(this.x, w / 2, sceneW(this.scene) - w / 2);
+      this.y = clamp(this.y, topWallHeight + h / 2, sceneH(this.scene) - h / 2);
     }
 
     const dx = this.x - lastX;

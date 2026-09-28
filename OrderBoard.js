@@ -142,7 +142,7 @@ class Computer {
     if (this.isDragging) {
       this.x = mouse.x + this.dragOffset.x;
       this.y = mouse.y + this.dragOffset.y;
-      this.y = Math.max(this.y, height * 0.15 + 10);
+      this.y = Math.max(this.y, sceneTop(this.scene) + 10);
     }
   }
 

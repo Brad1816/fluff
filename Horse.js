@@ -4489,6 +4489,37 @@ class Horse {
     this.anatomy.explode(grinder);
   }
 
+  // Like hitTest, but for clicks: tests against where the fluffy was drawn
+  // on screen last frame. A running fluffy (especially on fast forward, when
+  // the game runs several steps per frame) has already moved on from the
+  // spot the player clicked; this lines the click up with what they saw.
+  hitTestAsSeen(px, py) {
+    if (
+      !this.isDragging &&
+      this._seenFrame !== undefined &&
+      typeof renderFrameCount !== "undefined" &&
+      renderFrameCount - this._seenFrame <= 1
+    ) {
+      const dx = this.x - this._seenX;
+      const dy = this.y - this._seenY;
+      if ((dx || dy) && Math.abs(dx) < 400 && Math.abs(dy) < 400) {
+        const hit = this.hitTest(px + dx, py + dy);
+        if (hit) return hit;
+      }
+    }
+    const direct = this.hitTest(px, py);
+    if (direct) return direct;
+    // A little leeway for a moving fluffy
+    if (this.isMovingOrRunning && this.isMovingOrRunning()) {
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        const hit = this.hitTest(px + Math.cos(a) * 10, py + Math.sin(a) * 10);
+        if (hit) return hit;
+      }
+    }
+    return false;
+  }
+
   hitTest(
     px,
     py,
