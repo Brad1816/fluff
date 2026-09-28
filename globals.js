@@ -907,7 +907,11 @@ function handleDropping(item) {
         const tw = typeof sceneW === "function" ? sceneW(t) : width;
         const th = typeof sceneH === "function" ? sceneH(t) : height;
         const groundYMin = (typeof sceneTop === "function" ? sceneTop(t) : height * 0.15) + 50;
+        const fromScene = item.scene;
         item.scene = t;
+        // Taken away from its herd / family / friends (Separation.js)
+        if (typeof onFluffyTakenAway === "function" && typeof Horse !== "undefined" && item instanceof Horse)
+          onFluffyTakenAway(item, fromScene);
         if (p.type === "door") item.y = Math.max(item.y, groundYMin);
         if (p.type === "arrow_left") item.x = tw - 100;
         if (p.type === "arrow_right") item.x = 100;

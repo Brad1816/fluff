@@ -135,6 +135,39 @@ const DIALOGUE = {
       "Stwangew fwuffy! Stay back!",
     ],
   },
+  // Taken away from herd / family (Separation.js)
+  SEPARATION: {
+    TAKEN: [
+      "NU! Nu take fwuffy 'way fwom <target>!",
+      "<TARGET>! HEWP! Nu wan go!",
+      "Pwease! Fwuffy nee' hewd! Put fwuffy back!",
+    ],
+    TAKEN_FOAL: [
+      "MUMMAH! MUMMAH! SCREEEE!",
+      "Nu! Wan mummah! Wan mummah!!",
+      "*chirp* *CHIRP* MUMMAH!!",
+    ],
+    LEFT_BEHIND: [
+      "Nu! Bwing back <target>!",
+      "Wai take <target>?! Meanie!",
+      "<TARGET>! Come back!",
+    ],
+    MISS: [
+      "Wan go home... miss hewd...",
+      "Whewe am famiwy? Fwuffy aww awone...",
+      "Fwuffy miss fwends so much...",
+    ],
+    MISS_FOAL: [
+      "Mummah? Whewe am mummah?",
+      "Wan mummah... wan miwkies...",
+      "*sniff* mummah...",
+    ],
+    REUNITED: [
+      "<TARGET>! Fwuffy back! Bestest day!",
+      "Huggies! Nebah weave 'gain!",
+      "Famiwy togedda 'gain! Happies!",
+    ],
+  },
   // Day, night and weather (WorldTime.js)
   WEATHER: {
     RAIN: [

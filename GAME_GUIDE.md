@@ -61,10 +61,11 @@ and it runs. About 36,000 lines across ~60 files.
 | `Territory.js` | **Herd territory in the park**: herds claim meadows, chase intruders off, and take meadows from smaller herds. See section 9 (Territory). |
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
 | `WorldTime.js` | **Day and night, seasons, weather**: the clock, darkness, rain/snow/storms and what they do to fluffies and plants. See section 9 (Day, night and weather). |
+| `Separation.js` | **Taken from herd/family**: fluffies carried away from their herd, family or friends grieve, may be traumatised, and are overjoyed when brought back. See section 9 (Separation). |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
-| `Park.js` | **Fluffy Park**: the big area bigger than the screen (River → left arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
+| `Park.js` | **Fluffy Park**: the big area bigger than the screen (Day Care Alley → right arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -671,7 +672,7 @@ memberIds, colorIndex, formedAt }`. `updateHerds` runs every 3 seconds:
   spatial grid for the "who's near whom" checks.
 
 ### Fluffy Park and the camera (`Park.js`)
-The park (`PARK`, from the River's left arrow) is 3 screens wide and 2.4
+The park (`PARK`, from the Day Care Alley's right arrow) is 3 screens wide and 2.4
 screens tall (`PARK_W`, `PARK_H`). You look around by dragging the grass,
 the mouse wheel / trackpad, WASD or the arrow keys (in the park WASD looks
 around instead of travelling), clicking or dragging on the map in the
@@ -851,4 +852,31 @@ times to 5.
   and no new wild groups arrive (ParkLife.js).
 - **Tests** keep the weather clear (`weatherState.until = 1e9` in
   tests/run-tests.js); tests/worldtime.test.js sets its own weather.
+
+### Separation (`Separation.js`)
+- Catching a wild fluffy is just carrying it out of the park, but it has
+  consequences. When you carry any fluffy out of an area
+  (`handleDropping` in globals.js calls `onFluffyTakenAway(f, fromScene)`),
+  it looks at who it leaves behind: mum/foals/special friend (strongest),
+  dad and brothers/sisters, herd-mates and buddies (`attachmentTo`). Foals
+  taken from mum feel it most; grown-ups cope a bit better.
+- Straight away it cries out; family who see it are upset, a bit more
+  afraid of you, and remember "Saw you take its family away".
+- While apart, grief grows toward the bond over `GRIEF_BUILD` (2 game
+  minutes) - a quick trip through a doorway barely matters. Grief lowers
+  happiness and it talks about missing them. Past `TRAUMA_AT` it's
+  traumatised once: more fear, less trust, and the memory "Taken from its
+  herd and family" (or "Taken from its mum").
+- Bring it within `REUNITE_DIST` of one of them and it's overjoyed and the
+  grief goes. Otherwise it starts getting over it after `GRIEF_HOLD` (10
+  min), over `GRIEF_FADE` (30 min), and then leaves the herd it was taken
+  from.
+- The magnifying glass shows "Misses: Daisy, Clover (terribly)" while it
+  grieves. Saved on the fluffy as `separation`.
+
+### Park location
+The park is now reached from the Day Care Alley's right arrow (it used to be
+the River's left arrow, which meant fluffies carried out of the park landed
+in the river). Its exit is the left arrow back to the alley, and you arrive
+on the park's left side.
 

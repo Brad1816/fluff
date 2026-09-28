@@ -29,27 +29,27 @@ const clickSpot = (page, id) =>
 
 module.exports = [
   {
-    name: "park: walk in from the river, look around, walk out",
+    name: "park: walk in from the day care alley, look around, walk out",
     run: async (page) => {
       await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
       await page.evaluate(() => {
         __clearScene();
         tutorialTimer = 0;
-        changeScene("RIVER");
+        changeScene("ALLEY_DAY_CARE");
       });
-      await page.mouse.click(50, 400); // the river's left arrow
+      await page.mouse.click(1230, 400); // the day care alley's right arrow
       let c = await cam(page);
-      checkEqual(c.scene, "PARK", "after the river's left arrow");
+      checkEqual(c.scene, "PARK", "after the day care alley's right arrow");
       const size = await page.evaluate(() => ({ maxX: PARK_W - width, maxY: PARK_H - height }));
-      checkEqual(c.x, size.maxX, "camera starts at the right-hand side");
+      checkEqual(c.x, 0, "camera starts at the left-hand side");
 
-      // Drag the grass right by 200: the view moves left by 200
+      // Drag the grass left by 200: the view moves right by 200
       await page.mouse.move(700, 350);
       await page.mouse.down();
-      await page.mouse.move(900, 350, { steps: 5 });
+      await page.mouse.move(500, 350, { steps: 5 });
       await page.mouse.up();
       const afterDrag = await cam(page);
-      checkEqual(afterDrag.x, c.x - 200, "camera after dragging the grass");
+      checkEqual(afterDrag.x, c.x + 200, "camera after dragging the grass");
 
       // Mouse wheel scrolls
       await page.mouse.wheel(0, 250);
@@ -58,11 +58,11 @@ module.exports = [
       checkEqual(afterWheel.y, Math.min(size.maxY, afterDrag.y + 250), "camera after the mouse wheel");
 
       // Keys scroll (and don't take you out of the park)
-      await page.keyboard.down("KeyA");
+      await page.keyboard.down("KeyD");
       await page.waitForTimeout(400);
-      await page.keyboard.up("KeyA");
+      await page.keyboard.up("KeyD");
       const afterKey = await cam(page);
-      check(afterKey.scene === "PARK" && afterKey.x < afterWheel.x - 100, `after holding A: ${JSON.stringify(afterKey)}`);
+      check(afterKey.scene === "PARK" && afterKey.x > afterWheel.x + 100, `after holding D: ${JSON.stringify(afterKey)}`);
 
       // The map: click its top-left corner to jump there; the view can't go past the edge
       const mm = await page.evaluate(() => getParkMinimapRect());
@@ -71,8 +71,8 @@ module.exports = [
       checkEqual(JSON.stringify([c.x, c.y]), JSON.stringify([0, 0]), "camera after clicking the map's corner");
 
       // Out through the exit arrow
-      await page.mouse.click(1230, 400);
-      checkEqual((await cam(page)).scene, "RIVER", "after the park's exit arrow");
+      await page.mouse.click(50, 400);
+      checkEqual((await cam(page)).scene, "ALLEY_DAY_CARE", "after the park's exit arrow");
     },
   },
   {
@@ -110,7 +110,7 @@ module.exports = [
         __clearScene();
         tutorialTimer = 0;
         changeScene("PARK");
-        camera.x = PARK_W - width;
+        camera.x = 0;
         camera.y = 0;
       });
       const id = await putFluffy(page, 0, 0, "Carried");
@@ -121,15 +121,15 @@ module.exports = [
       }, id);
       const spot = await clickSpot(page, id);
       await page.mouse.click(spot.x, spot.y);
-      await page.mouse.move(1230, 400, { steps: 5 });
-      await page.mouse.click(1230, 400);
+      await page.mouse.move(50, 400, { steps: 5 });
+      await page.mouse.click(50, 400);
       const r = await page.evaluate((id) => {
         const f = fluffies.find((f) => f.id === id);
         return { scene: currentScene, fScene: f.scene, x: f.x, y: f.y };
       }, id);
-      checkEqual(r.scene, "RIVER", "where you are");
-      checkEqual(r.fScene, "RIVER", "where the fluffy is");
-      check(r.x < 1280 && r.y < 800, `fluffy is on the river's screen: ${Math.round(r.x)}, ${Math.round(r.y)}`);
+      checkEqual(r.scene, "ALLEY_DAY_CARE", "where you are");
+      checkEqual(r.fScene, "ALLEY_DAY_CARE", "where the fluffy is");
+      check(r.x < 1280 && r.y < 800, `fluffy is on the alley's screen: ${Math.round(r.x)}, ${Math.round(r.y)}`);
     },
   },
   {

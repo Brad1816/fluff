@@ -47,6 +47,9 @@ const MEMORY_TEXT = {
   training: "Stick potty training",
   brushed: "Brushed by you",
   held_happy: "Cuddled by you",
+  took_family: "Saw you take its family away",
+  taken_away: "Taken from its herd and family",
+  taken_from_mum: "Taken from its mum",
 };
 
 function ensurePlayerMemory(f) {

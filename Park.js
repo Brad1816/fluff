@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Fluffy Park: one big area, much larger than the screen, that you look
-// around with a camera. River --(left arrow)--> Park.
+// around with a camera. Day Care Alley --(right arrow)--> Park.
 //
 // Looking around: drag the grass, use the mouse wheel / trackpad, or hold
 // WASD / the arrow keys. The map in the corner shows the whole park; click
@@ -97,8 +97,8 @@ function centreCameraOn(x, y) {
 // When you arrive in the park (changeScene in globals.js)
 function onEnterScene(newScene, oldScene) {
   if (!isCameraScene(newScene) || isCameraScene(oldScene)) return;
-  // From the river you come in on the right-hand side
-  camera.x = PARK_W - width;
+  // From the day care alley you come in on the left-hand side
+  camera.x = 0;
   camera.y = (PARK_H - height) / 2;
   clampCamera();
 }

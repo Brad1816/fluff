@@ -2191,6 +2191,14 @@ function getFluffyInspectionInfo(f) {
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
   }
+  // Taken away from its herd/family (Separation.js)
+  const misses = typeof describeSeparation === "function" ? describeSeparation(f) : null;
+  if (misses && f.isAlive) {
+    // (makes room by dropping the plain friend count, which Buddies covers)
+    const fi = about.findIndex((row) => row.label === "Friends");
+    if (fi >= 0) about.splice(fi, 1);
+    about.push({ label: "Misses", value: misses, tone: "bad" });
+  }
   // Buddies and grudges with other fluffies (Bonds.js)
   if (f.isAlive && typeof describeBuddies === "function") {
     about.push({ label: "Buddies", value: describeBuddies(f), tone: "" });
@@ -4234,17 +4242,17 @@ function playerQuartersAndNotBackyard(scene) {
 function getScenePortals(scene) {
   const portals = [];
 
-  // Fluffy Park (Park.js): its only exit is back to the river
+  // Fluffy Park (Park.js): its only exit is back to the day care alley
   if (typeof isCameraScene === "function" && isCameraScene(scene)) {
     return [
       {
-        type: "arrow_right",
-        x: width - 80,
+        type: "arrow_left",
+        x: 20,
         y: height / 2 - 40,
         w: 60,
         h: 80,
-        target: "RIVER",
-        label: "Back to the River",
+        target: "ALLEY_DAY_CARE",
+        label: "Back to Day Care Alley",
       },
     ];
   }
@@ -4386,18 +4394,6 @@ function getScenePortals(scene) {
       label: "To Shopping Street",
     });
   } else if (scene === "RIVER") {
-    // Left Arrow -> PARK (Park.js)
-    if (typeof PARK_SCENE !== "undefined") {
-      portals.push({
-        type: "arrow_left",
-        x: 20,
-        y: height / 2 - 40,
-        w: 60,
-        h: 80,
-        target: PARK_SCENE,
-        label: "To Fluffy Park",
-      });
-    }
     // Right Arrow -> OUTDOORS
     portals.push({
       type: "arrow_right",
@@ -4460,6 +4456,18 @@ function getScenePortals(scene) {
       target: "ALLEY",
       label: "Back to Alley",
     });
+    // Right Arrow -> PARK (Park.js)
+    if (typeof PARK_SCENE !== "undefined") {
+      portals.push({
+        type: "arrow_right",
+        x: width - 80,
+        y: height / 2 - 40,
+        w: 60,
+        h: 80,
+        target: PARK_SCENE,
+        label: "To Fluffy Park",
+      });
+    }
   } else if (scene === "DAY_CARE") {
     // Down Arrow -> ALLEY_DAY_CARE
     portals.push({

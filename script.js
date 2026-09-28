@@ -1407,6 +1407,8 @@ function updateSimulation(dt) {
   if (typeof updateTerritories === "function") updateTerritories(dt);
   // Day, night and weather (WorldTime.js)
   if (typeof updateWorldTime === "function") updateWorldTime(dt);
+  // Fluffies missing the ones they were taken from (Separation.js)
+  if (typeof updateSeparations === "function") updateSeparations(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
