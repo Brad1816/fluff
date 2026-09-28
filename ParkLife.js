@@ -18,7 +18,7 @@
 //     different ages), sometimes a few friends, sometimes a loner. Families
 //     like each other, so they make herds by themselves (Herds.js).
 //   - If the park gets crowded (over PARK_WILD_MAX, e.g. lots of foals), a
-//     wild fluffy now and then wanders off - only while you're not looking.
+//     wild grown-up now and then wanders off - never one you can see.
 //   - The usual "taken by dogs" clean-up (script.js updateFerals) leaves
 //     living park fluffies alone.
 //
@@ -26,10 +26,10 @@
 // surprised by new fluffies; the park tests switch it back on.
 // ---------------------------------------------------------------------------
 
-const MEADOW_MAX_TUFTS = 10;
-const MEADOW_SEED_EVERY = 8; // seconds between new tufts in each meadow
+const MEADOW_MAX_TUFTS = 5;
+const MEADOW_SEED_EVERY = 18; // seconds between new tufts in each meadow
 const BERRY_MAX = 5;
-const BERRY_REGROW = 45; // seconds per berry
+const BERRY_REGROW = 90; // seconds per berry
 const PARK_WILD_TARGET = 16;
 const PARK_WILD_MAX = 30;
 
@@ -292,7 +292,15 @@ function spawnParkGroup(kind = null, at = null) {
 // Take one wild fluffy away (it wandered off). Never ones you're carrying,
 // caged or adopted.
 function _parkWanderOff() {
-  const pool = fluffies.filter((f) => isParkWild(f) && !f.isDragging && !f.currentCage && f.growth >= 1);
+  // Never one you can see on screen
+  const pool = fluffies.filter(
+    (f) =>
+      isParkWild(f) &&
+      !f.isDragging &&
+      !f.currentCage &&
+      f.growth >= 1 &&
+      (currentScene !== PARK_SCENE || !isOnParkScreen(f.x, f.y, 150)),
+  );
   if (!pool.length) return null;
   // Loners first, then anyone
   const loners = pool.filter((f) => typeof herdOf !== "function" || !herdOf(f));
@@ -353,8 +361,10 @@ function updateParkLife(dt) {
   // Too crowded: someone wanders off (not while you're watching)
   parkLife.trimTimer -= dt;
   if (parkLife.trimTimer <= 0) {
-    parkLife.trimTimer = 30 + Math.random() * 30;
-    if (currentScene !== PARK_SCENE && countParkWild() > PARK_WILD_MAX) _parkWanderOff();
+    const n = countParkWild();
+    // Way over: wander off faster
+    parkLife.trimTimer = n > PARK_WILD_MAX + 5 ? 10 : 30 + Math.random() * 30;
+    if (n > PARK_WILD_MAX) _parkWanderOff();
   }
 }
 
@@ -385,6 +395,7 @@ function drawParkLifeOnMap(c, r) {
     c.ellipse(r.x + m.x * sx, r.y + m.y * sy, m.rx * sx, m.ry * sy, 0, 0, Math.PI * 2);
     c.fill();
   }
+  if (typeof drawTerritoriesOnMap === "function") drawTerritoriesOnMap(c, r);
   for (const o of objects) {
     if (!(o instanceof BerryBush) || o.scene !== PARK_SCENE) continue;
     c.fillStyle = o.hasFood() ? "#b04fd6" : "#4a3a55";

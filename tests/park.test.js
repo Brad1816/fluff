@@ -211,7 +211,7 @@ module.exports.push(
       });
       checkEqual(r.bushes, 12, "berry bushes");
       checkEqual(r.meadows, 7, "meadows");
-      check(r.grass >= 7 * 5, `grass tufts in the park: ${r.grass}`);
+      check(r.grass >= 7 * 3, `grass tufts in the park: ${r.grass}`);
       checkEqual(r.grassOutside, 0, "grass outside the meadows");
       check(r.wild >= 5, `wild fluffies at the start: ${r.wild}`);
       check(r.inside, "a wild fluffy is outside the park");
@@ -231,18 +231,19 @@ module.exports.push(
         res.eat3 = bush.eat();
         res.empty = !bush.hasFood();
         res.stillThere = !bush.isDestroyed;
-        for (let i = 0; i < 60; i++) bush.update(1);
+        for (let i = 0; i < BERRY_REGROW + 5; i++) bush.update(1);
         res.regrew = bush.berries;
         for (let i = 0; i < 600; i++) bush.update(1);
         res.max = bush.berries;
         // Meadows grow grass back after being grazed bare
-        for (let i = 0; i < 40; i++) updateParkLife(1);
+        for (let i = 0; i < MEADOW_SEED_EVERY * 5 + 5; i++) updateParkLife(1);
         const m = PARK_MEADOWS[0];
         res.tufts = objects.filter(
           (o) => o instanceof Grass && !(o instanceof BerryBush) && o.scene === "PARK" &&
             ((o.x - m.x) / m.rx) ** 2 + ((o.y - m.y) / m.ry) ** 2 <= 1,
         ).length;
         for (let i = 0; i < 400; i++) updateParkLife(1);
+        res.meadowMax = MEADOW_MAX_TUFTS;
         res.tuftsLater = objects.filter(
           (o) => o instanceof Grass && !(o instanceof BerryBush) && o.scene === "PARK" && inParkMeadow(o.x, o.y),
         ).length;
@@ -260,10 +261,10 @@ module.exports.push(
       });
       check(r.eat1 && r.eat2 && !r.eat3, "a bush with 2 berries should feed exactly twice");
       check(r.empty && r.stillThere, "an empty bush should stay, just empty");
-      checkEqual(r.regrew, 1, "berries after a minute");
+      checkEqual(r.regrew, 1, "berries after one regrow time");
       checkEqual(r.max, 5, "berries after a long time");
-      check(r.tufts >= 5, `tufts in a grazed-bare meadow after 40s: ${r.tufts}`);
-      check(r.tuftsLater <= 7 * 10, `meadows don't overfill: ${r.tuftsLater}`);
+      check(r.tufts >= 5, `tufts in a grazed-bare meadow after a while: ${r.tufts}`);
+      check(r.tuftsLater <= 7 * r.meadowMax, `meadows don't overfill: ${r.tuftsLater}`);
       checkEqual(r.back, 3, "berries after loading");
       checkEqual(r.bushesAfter, 1, "bushes after loading (no extra ones added when the park has some)");
     },

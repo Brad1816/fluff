@@ -102,6 +102,9 @@ class HorseBrain {
       }
     }
 
+    // Only desires that want something matter (and sorting fewer is faster)
+    evaluatedDesires = evaluatedDesires.filter((d) => d.score > 0);
+
     // Sort desires by score (descending), then by tiebreaker list (ascending index)
     evaluatedDesires.sort((a, b) => {
       if (b.score !== a.score) {

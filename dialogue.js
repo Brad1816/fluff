@@ -135,6 +135,34 @@ const DIALOGUE = {
       "Stwangew fwuffy! Stay back!",
     ],
   },
+  // Herds and their meadows in Fluffy Park (Territory.js)
+  TERRITORY: {
+    CLAIM: [
+      "Dis am hewd's nummy gwass pwace nao!",
+      "<Speaker> find bestest meadow! Hewd wiww wiv hewe!",
+      "Aww gwassies hewe am fow <speaker>'s hewd!",
+    ],
+    CHASE: [
+      "GO 'WAY! Dis <speaker>'s hewd's gwassies!",
+      "Nu takie ouw nummies, <target>!",
+      "Shoo! Shoo! Nu am yu meadow!",
+    ],
+    LEAVE: [
+      "Sowwy! Sowwy! <Speaker> go!",
+      "Nu hit <speaker>! Weaving!",
+      "Scawy fwuffy! Wun!",
+    ],
+    WON: [
+      "Dis am ouw meadow nao! Hewd am bestest!",
+      "Nummy gwassies aww fow <speaker>'s hewd!",
+      "Dummeh hewd wun 'way! <Speaker> win!",
+    ],
+    LOST: [
+      "Nu! Hewd's gwassies...",
+      "Hewd hab tu find nyu home...",
+      "Big meanie hewd took nummy meadow!",
+    ],
+  },
   // Bonds and grudges between fluffies (Bonds.js)
   BOND: {
     NEW_BUDDY: [

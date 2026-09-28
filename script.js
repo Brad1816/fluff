@@ -1400,6 +1400,8 @@ function updateSimulation(dt) {
   if (typeof updateSocialBonds === "function") updateSocialBonds(dt);
   // Herds forming, joining, leaving, rivalries (Herds.js)
   if (typeof updateHerds === "function") updateHerds(dt);
+  // Herds claiming and fighting over meadows in the park (Territory.js)
+  if (typeof updateTerritories === "function") updateTerritories(dt);
   // Customer orders: new ones, deadlines (Orders.js)
   if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
   updatePuddles(dt);

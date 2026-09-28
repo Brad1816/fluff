@@ -117,6 +117,9 @@ function onFriendshipMade(a, b) {
 
 // Should `other` turn down a friendship offer from `from`?
 function refusesFriendshipFrom(other, from) {
+  // Herds don't make friends with fluffies they're chasing off their land (Territory.js)
+  if (typeof unwelcomeOnLand === "function" && (unwelcomeOnLand(from, other) || unwelcomeOnLand(other, from)))
+    return true;
   return getLiking(other, from) < -0.1;
 }
 
@@ -168,39 +171,26 @@ function updateSocialBonds(dt) {
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   const fade = (OPINION_FADE_PER_MIN / 60) * step;
 
-  // Group by scene so we only compare fluffies that can meet
-  const byScene = {};
-  for (const f of fluffies) {
-    if (!f.isAlive) continue;
-    ensureOpinions(f);
-    (byScene[f.scene] = byScene[f.scene] || []).push(f);
-  }
+  for (const f of fluffies) if (f.isAlive) ensureOpinions(f);
 
-  for (const scene in byScene) {
-    const list = byScene[scene];
-    for (let i = 0; i < list.length; i++) {
-      const a = list[i];
-      for (let j = i + 1; j < list.length; j++) {
-        const b = list[j];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d > BOND_NEAR) continue;
-        if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(a, b)) continue;
-        // Calm time together (sleeping side by side counts too)
-        const calm = a.happiness > HAPPINESS_SAD_THRESHOLD && b.happiness > HAPPINESS_SAD_THRESHOLD;
-        // Members of different herds don't warm to each other (Herds.js)
-        const rivals = typeof herdOf === "function" && herdOf(a) && herdOf(b) && herdOf(a) !== herdOf(b);
-        if (calm && !rivals && !a.isScared && !b.isScared) {
-          // Social fluffies bond faster, loners slower
-          const sa = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(a, "social") : 0);
-          const sb = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(b, "social") : 0);
-          if (getLiking(a, b) > -0.1) changeOpinion(a, b, 0.0012 * step * sa);
-          if (getLiking(b, a) > -0.1) changeOpinion(b, a, 0.0012 * step * sb);
-        }
-        _grudgeNear(a, b, now, step);
-        _grudgeNear(b, a, now, step);
-      }
+  // Only pairs that are close together (SpatialGrid.js finds them quickly)
+  rebuildFluffyGrid();
+  forEachNearbyPair(BOND_NEAR, (a, b) => {
+    if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(a, b)) return;
+    // Calm time together (sleeping side by side counts too)
+    const calm = a.happiness > HAPPINESS_SAD_THRESHOLD && b.happiness > HAPPINESS_SAD_THRESHOLD;
+    // Members of different herds don't warm to each other (Herds.js)
+    const rivals = typeof herdOf === "function" && herdOf(a) && herdOf(b) && herdOf(a) !== herdOf(b);
+    if (calm && !rivals && !a.isScared && !b.isScared) {
+      // Social fluffies bond faster, loners slower
+      const sa = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(a, "social") : 0);
+      const sb = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(b, "social") : 0);
+      if (getLiking(a, b) > -0.1) changeOpinion(a, b, 0.0012 * step * sa);
+      if (getLiking(b, a) > -0.1) changeOpinion(b, a, 0.0012 * step * sb);
     }
-  }
+    _grudgeNear(a, b, now, step);
+    _grudgeNear(b, a, now, step);
+  });
 
   // Everything fades a little toward neutral
   for (const f of fluffies) {

@@ -58,6 +58,8 @@ and it runs. About 36,000 lines across ~60 files.
 | `Memory.js` | **Memory and trust**: how each fluffy feels about you (`playerTrust`, `playerFear`, `playerMemories`), what changes them, and the "back away from / come to your hand" desires. See section 9. |
 | `Bonds.js` | **Bonds and grudges between fluffies**: each fluffy's opinion of the others (`opinions`, `opinionWhy`), `getLiking`, becoming friends by spending time together, defending buddies, avoiding grudges. See section 9. |
 | `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
+| `Territory.js` | **Herd territory in the park**: herds claim meadows, chase intruders off, and take meadows from smaller herds. See section 9 (Territory). |
+| `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
 | `Park.js` | **Fluffy Park**: the big area bigger than the screen (River → left arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
@@ -719,7 +721,7 @@ you *and* it (anywhere else that would throw it through on its own).
   mums, a few friends, or a loner. Families like each other, so they form
   herds by themselves. They breed too; if the park goes over
   `PARK_WILD_MAX` (30), a wild grown-up (loners first) wanders off now and
-  then, only while you're somewhere else. The dog clean-up in
+  then (faster when it's way over), never one you can see on screen. The dog clean-up in
   `updateFerals` leaves living park fluffies alone.
 - **Setup**: `setupParkLife(true)` on a new game (bushes, meadow grass and 3
   groups); `setupParkLife(false)` after loading adds bushes/grass to older
@@ -729,4 +731,44 @@ you *and* it (anywhere else that would throw it through on its own).
   `tests/run-tests.js`) so new fluffies don't surprise other tests; the
   park tests turn it on. In a 10-minute run the park held 16-30 fluffies in
   several herds with no one going hungry.
+
+### Territory (`Territory.js`)
+- **Land**: each meadow plus a strip around it (`territoryZone(idx)`), so
+  nearby bushes belong to it. Meadows have names (`MEADOW_NAMES`) shown on
+  a tag above them in the park, with the owning herd's colour; held meadows
+  are ringed in that colour on the park and the map. The magnifying glass
+  herd line says "home: Clover Patch".
+- **Claiming** (`updateTerritories`, every 2s): a herd with 2+ grown-ups in
+  the park and no land claims the nearest free meadow. If none are free it
+  picks a smaller herd's meadow to challenge (`h.challenge`). A herd with
+  land whose members are hungry (average hunger under `HUNGRY_HERD`) eyes a
+  smaller herd's meadow with more food.
+- **Taking over**: another herd with more grown-ups inside than the owners
+  for `TAKEOVER_TIME` (20s) takes the meadow. The losers dislike the winners
+  ("took its meadow"). News appears if you're in the park.
+- **Defending**: owners near an intruder chase it (`DefendTerritoryDesire`,
+  one chaser for a lone fluffy, two for a challenger). When they catch up
+  they shout it off; it runs out (`LeaveTerritoryDesire`) and keeps away for
+  `KEEP_OUT_TIME`. Sometimes there's a scuffle (`performAttack` with intent
+  "TERRITORY"), much more likely against challengers. Timid fluffies don't
+  chase; brave + grumpy ones don't run; a herd that's contesting a meadow
+  holds its ground. Owners won't make friends with fluffies on their land
+  (`unwelcomeOnLand`, checked by `refusesFriendshipFrom`).
+- **Food**: `territoryFoodBias` makes own-land food feel 150px closer and
+  other herds' food 450px further (150 when starving).
+- **Leaders** walk the herd home, or to the meadow they're after
+  (`HomeTerritoryDesire`, 46.5; members follow the leader as usual).
+- **Big herds split** (`Herds.js _maybeSplit`): over `HERD_MAX_SIZE` (12),
+  the best would-be leader leaves with the members who like it more than
+  the old leader (plus their foals). They can't rejoin for 10 minutes, and
+  they need land of their own - which is where most fights come from.
+- **Food is scarcer** now: meadows hold up to 5 tufts and grow one every
+  18s; berries grow back every 90s.
+- **Saved** on each herd in `herdState`: `territory`, `challenge`,
+  `contest`.
+- **Speed**: `SpatialGrid.js` finds nearby fluffies without checking every
+  pair; bonds, herds and territory use it. Fluffies in other areas think 10
+  times a second instead of every frame (`Horse.js`), and desires that
+  want nothing aren't sorted (`HorseBrain.js`). A full park (~40 fluffies)
+  went from about 4.8ms to 2.5ms of work per step.
 

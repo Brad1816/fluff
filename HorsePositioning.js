@@ -454,7 +454,9 @@ class HorsePositioning {
       const dst = (this.horse.x - b.x) ** 2 + (this.horse.y - b.y) ** 2;
 
       if (farAway) {
-        const score = Math.sqrt(dst) - prio * 150;
+        let score = Math.sqrt(dst) - prio * 150;
+        // Own land first; other herds' land only when starving (Territory.js)
+        if (typeof territoryFoodBias === "function") score += territoryFoodBias(this.horse, b);
         if (score < bestScore) {
           bestScore = score;
           bestBowl = b;

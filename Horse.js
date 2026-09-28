@@ -235,6 +235,12 @@ class Horse {
     if (typeof FollowHerdDesire !== "undefined") {
       this.brain.addDesire(new FollowHerdDesire());
     }
+    // Territory in the park (Territory.js): go home, chase off intruders, leave when chased
+    if (typeof DefendTerritoryDesire !== "undefined") {
+      this.brain.addDesire(new HomeTerritoryDesire());
+      this.brain.addDesire(new DefendTerritoryDesire());
+      this.brain.addDesire(new LeaveTerritoryDesire());
+    }
     this.id = nextFluffyId++;
     this.age = 0;
     this.motherId = motherId;
@@ -1897,7 +1903,7 @@ class Horse {
     if (!target.tooYoungToSpeak()) {
       if (intent === "SMARTY_VIOLENCE") {
         target.speak(getDialogue(["HURT", "SMARTY"], target));
-      } else if (intent === "RETALIATION" || intent === "GRUDGE") {
+      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY") {
         target.speak(getDialogue(["HURT"], this));
       } else {
         target.speak(getDialogue(["HURT", "ALICORN_BABY"], target));
@@ -3437,8 +3443,18 @@ class Horse {
 
       this.isFrantic = this.calculateIsFrantic();
 
-      // Let the brain unconditionally decide on desires
-      this.brain.think(dt);
+      // Let the brain decide on desires. Fluffies in the area you're looking
+      // at think every frame; elsewhere 10 times a second is plenty (keeps
+      // a busy park from slowing the game down)
+      if (this.scene === currentScene) {
+        this.brain.think(dt);
+      } else {
+        this._thinkTimer = (this._thinkTimer ?? Math.random() * 0.1) - dt;
+        if (this._thinkTimer <= 0) {
+          this._thinkTimer += 0.1;
+          this.brain.think(dt);
+        }
+      }
 
       // Update physical state based on hunger
       const wasCrawling = this.isCrawling;

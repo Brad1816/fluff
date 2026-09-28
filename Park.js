@@ -313,6 +313,8 @@ function drawParkScenery(c) {
     else if (it.kind === "rock") _drawParkRock(c, it);
     else _drawParkFlowers(c, it);
   }
+  // Who holds which meadow (Territory.js)
+  if (typeof drawTerritories === "function") drawTerritories(c);
   // Hedge along the edges of the park
   c.fillStyle = "#2e5e2f";
   const hedge = 22;

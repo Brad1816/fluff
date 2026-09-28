@@ -29,14 +29,45 @@ const HERD_FOLLOW_DIST = 220; // members wander at most this far from the leader
 const HERD_UPDATE_EVERY = 3; // seconds
 const HERD_SAME_BONUS = 0.2; // liking bonus for herd-mates
 const HERD_RIVAL_PENALTY = -0.1; // liking penalty for other herds' members
+const HERD_MAX_SIZE = 12; // bigger herds split in two
+const HERD_SPLIT_WAIT = 120; // seconds between splits of one herd
+const HERD_REJOIN_WAIT = 600; // seconds before splitters may rejoin
 
 const HERD_NAMES = [
-  "Clover", "Buttercup", "Thistle", "Pebble", "Maple", "Bramble", "Daisy Hill", "Muddy Creek",
-  "Sunny Meadow", "Oak Stump", "Dandelion", "Willow", "Berry Bush", "Moss Rock", "Pine Cone",
-  "Puddle", "Hay Bale", "Acorn", "Mushroom", "Tall Grass",
+  "Clover",
+  "Buttercup",
+  "Thistle",
+  "Pebble",
+  "Maple",
+  "Bramble",
+  "Daisy Hill",
+  "Muddy Creek",
+  "Sunny Meadow",
+  "Oak Stump",
+  "Dandelion",
+  "Willow",
+  "Hawthorn",
+  "Moss Rock",
+  "Pine Cone",
+  "Puddle",
+  "Hay Bale",
+  "Acorn",
+  "Mushroom",
+  "Tall Grass",
 ];
 
-const HERD_COLORS = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#9b59b6", "#e67e22", "#1abc9c", "#ff6fb5", "#95a5a6", "#8e5a2b"];
+const HERD_COLORS = [
+  "#e74c3c",
+  "#3498db",
+  "#2ecc71",
+  "#f1c40f",
+  "#9b59b6",
+  "#e67e22",
+  "#1abc9c",
+  "#ff6fb5",
+  "#95a5a6",
+  "#8e5a2b",
+];
 
 function freshHerdState() {
   return { list: [], nextId: 1 };
@@ -122,7 +153,8 @@ function describeHerd(f) {
   if (!h) return "None";
   const n = h.memberIds.length;
   const who = h.leaderId === f.id ? "leader" : `led by ${getHerdLeaderName(h)}`;
-  return `${getHerdName(h)} (${who}, ${n} member${n === 1 ? "" : "s"})`;
+  const land = typeof describeTerritory === "function" ? describeTerritory(h) : "";
+  return `${getHerdName(h)} (${who}, ${n} member${n === 1 ? "" : "s"}${land ? `, home: ${land}` : ""})`;
 }
 
 // ---- Deciding things ----
@@ -166,8 +198,7 @@ function _pickLeader(members) {
 }
 
 function _say(f, keys, target) {
-  if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING")
-    f.speak(getDialogue(keys, f, target));
+  if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(keys, f, target));
 }
 
 function _tellPlayer(h, text) {
@@ -256,6 +287,7 @@ function updateHerds(dt) {
         _tellPlayer(h, `The ${getHerdName(h)} has a new leader: ${getHerdLeaderName(h)}.`);
       }
     }
+    _maybeSplit(h);
   }
 
   const unherded = [...alive.values()].filter((f) => !herdOf(f));
@@ -272,6 +304,7 @@ function updateHerds(dt) {
     for (const h of _herdList()) {
       const leader = getHerdLeader(h);
       if (leader && _dislikesLeader(f, leader)) continue; // won't follow that one
+      if (_recentlyLeft(f, h)) continue; // split off not long ago
       const bonds = getHerdMembers(h).filter((m) => m.scene === f.scene && _bonded(f, m)).length;
       if (bonds > bestBonds) {
         bestBonds = bonds;
@@ -310,25 +343,89 @@ function updateHerds(dt) {
 
   // 4. Rival herds that keep meeting grow to dislike each other
   const now = typeof timePlayed === "number" ? timePlayed : 0;
-  const herded = fluffies.filter((f) => f.isAlive && herdOf(f));
-  for (let i = 0; i < herded.length; i++) {
-    const a = herded[i];
-    for (let j = i + 1; j < herded.length; j++) {
-      const b = herded[j];
-      if (a.scene !== b.scene || sameHerd(a, b)) continue;
-      if (Math.hypot(a.x - b.x, a.y - b.y) > 150) continue;
-      if (typeof changeOpinion === "function") {
-        // Slowly: about 8 minutes of close contact to really dislike
-        changeOpinion(a, b, -0.0006 * step, "rival herd");
-        changeOpinion(b, a, -0.0006 * step, "rival herd");
-      }
-      for (const [x, y] of [[a, b], [b, a]]) {
-        if (!x._lastStrangerLine || now - x._lastStrangerLine > 40) {
-          x._lastStrangerLine = now;
-          if (Math.random() < 0.3) _say(x, ["HERD", "STRANGER"], y);
-        }
+  rebuildFluffyGrid();
+  forEachNearbyPair(150, (a, b) => {
+    if (!herdOf(a) || !herdOf(b) || sameHerd(a, b)) return;
+    if (typeof changeOpinion === "function") {
+      // Slowly: about 8 minutes of close contact to really dislike
+      changeOpinion(a, b, -0.0006 * step, "rival herd");
+      changeOpinion(b, a, -0.0006 * step, "rival herd");
+    }
+    for (const [x, y] of [
+      [a, b],
+      [b, a],
+    ]) {
+      if (!x._lastStrangerLine || now - x._lastStrangerLine > 40) {
+        x._lastStrangerLine = now;
+        if (Math.random() < 0.3) _say(x, ["HERD", "STRANGER"], y);
       }
     }
+  });
+}
+
+// ---- Big herds split ----
+
+function _recentlyLeft(f, h) {
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  return !!f._leftHerd && f._leftHerd.id === h.id && f._leftHerd.until > now;
+}
+
+// A herd over HERD_MAX_SIZE splits: its best would-be leader (other than the
+// current one) leaves with the members who like it more than the leader,
+// plus foals whose mums go. They start a herd of their own (and will need
+// land of their own in the park: Territory.js).
+function _maybeSplit(h) {
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  const members = getHerdMembers(h);
+  if (members.length <= HERD_MAX_SIZE) return;
+  if (now - (h.splitAt ?? h.formedAt ?? 0) < HERD_SPLIT_WAIT) return;
+  const leader = getHerdLeader(h);
+  const adults = members.filter((f) => f !== leader && _canLead(f));
+  if (adults.length < 3) return;
+  let rival = null;
+  let bestScore = -Infinity;
+  for (const f of adults) {
+    const s = herdLeadershipScore(f, members);
+    if (s > bestScore) {
+      bestScore = s;
+      rival = f;
+    }
+  }
+  const half = Math.floor(members.length / 2);
+  const group = new Set([rival]);
+  // Grown-ups who'd rather follow the new one
+  const byPreference = adults
+    .filter((f) => f !== rival)
+    .map((f) => [f, getLiking(f, rival) - (leader ? getLiking(f, leader) : 0)])
+    .sort((a, b) => b[1] - a[1]);
+  for (const [f, pref] of byPreference) {
+    if (group.size >= half) break;
+    if (pref > 0 || group.size < 3) group.add(f);
+  }
+  // Foals go with their mums
+  for (const f of members) {
+    if (f.growth < 1 && [...group].some((g) => g.id === f.motherId)) group.add(f);
+  }
+  const leaving = [...group];
+  if (leaving.length < 3 || members.length - leaving.length < 2) return;
+  h.memberIds = h.memberIds.filter((id) => !group.has(members.find((m) => m.id === id)));
+  h.splitAt = now;
+  _herdChanged();
+  for (const f of leaving) f._leftHerd = { id: h.id, until: now + HERD_REJOIN_WAIT };
+  const nh = _formHerd(leaving);
+  if (nh) {
+    nh.leaderId = rival.id;
+    nh.splitAt = now;
+    const text = `${getHerdLeaderName(nh)} led ${leaving.length - 1} others away from the ${getHerdName(h)}: they're the ${getHerdName(nh)} now.`;
+    _tellPlayer(h, text);
+    _tellPlayer(nh, text);
+    if (
+      typeof _parkNews === "function" &&
+      !getHerdMembers(h)
+        .concat(leaving)
+        .some((f) => f.adopted)
+    )
+      _parkNews(text);
   }
 }
 
@@ -367,7 +464,10 @@ class FollowHerdDesire extends Desire {
     const angle = Math.random() * Math.PI * 2;
     const r = 40 + Math.random() * 60;
     horse.initBehavior("MOVING");
-    horse.setTargetPosition(clamp(t.x + Math.cos(angle) * r, 40, sceneW(horse.scene) - 40), t.y + Math.sin(angle) * r * 0.5);
+    horse.setTargetPosition(
+      clamp(t.x + Math.cos(angle) * r, 40, sceneW(horse.scene) - 40),
+      t.y + Math.sin(angle) * r * 0.5,
+    );
     if (Math.random() < 0.15) _say(horse, ["HERD", "FOLLOW"], getHerdLeader(herdOf(horse)));
     return true;
   }
