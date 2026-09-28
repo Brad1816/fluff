@@ -1,0 +1,44 @@
+// The list of saved fluffy fields (HorseSave.js SAVED_HORSE_FIELDS)
+const { check, checkEqual } = require("./helpers");
+
+module.exports = [
+  {
+    name: "save fields: everything on the list comes back after saving; old saves get the fallbacks",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene();
+        const f = new Horse(1, null, "INDOORS", "earthy");
+        fluffies.push(f);
+        const values = {
+          deathTimer: 12, separation: { grief: 0.4 }, traumas: [{ type: "violent" }], hurtByPlayerAt: 99,
+          killedByPlayer: true, fromPark: true, settling: true, settleStart: 0.7, lastDesire: { desire: "Eat" },
+          alicornComfort: 0.3, missingOwner: 0.6, lostPet: true, illness: { type: "flu", t: 50, known: true },
+          fluImmuneUntil: 1234, fluVaccinated: true, vetCheckedAt: 77, vetNote: "fine", vetLife: "young",
+        };
+        Object.assign(f, values);
+        const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));
+        const copy = Horse.deserialize(JSON.parse(JSON.stringify(f.serialize())));
+        const wrong = Object.keys(values).filter((k) => JSON.stringify(copy[k]) !== JSON.stringify(values[k]));
+        // A copy, not the same object
+        const shared = copy.illness === f.illness;
+        // Old save: none of these fields
+        const data = JSON.parse(JSON.stringify(f.serialize()));
+        for (const x of SAVED_HORSE_FIELDS) delete data[x.name];
+        const old = Horse.deserialize(data);
+        const fallbacks = SAVED_HORSE_FIELDS.filter((x) => x.fallback !== undefined)
+          .filter((x) => JSON.stringify(old[x.name]) !== JSON.stringify(x.fallback))
+          .map((x) => x.name);
+        for (const h of [copy, old]) {
+          const i = fluffies.indexOf(h);
+          if (i >= 0) fluffies.splice(i, 1);
+        }
+        return { missing, wrong, shared, fallbacks, vetChecked: old.vetCheckedAt };
+      });
+      checkEqual(r.missing.length, 0, `fields the test doesn't set: ${r.missing}`);
+      checkEqual(r.wrong.length, 0, `fields that didn't come back: ${r.wrong}`);
+      checkEqual(r.shared, false, "loaded objects are copies");
+      checkEqual(r.fallbacks.length, 0, `old save fallbacks wrong for: ${r.fallbacks}`);
+      checkEqual(r.vetChecked, undefined, "never checked stays undefined");
+    },
+  },
+];

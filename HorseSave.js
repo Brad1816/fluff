@@ -1,12 +1,70 @@
 // ---------------------------------------------------------------------------
 // Saving a fluffy (serialize). Loading is Horse.deserialize in Horse.js.
+//
+// To save something new about a fluffy, add it to SAVED_HORSE_FIELDS below:
+// both saving and loading read the list, so it's one line.
+//   { name, fallback, clone }
+//   name      the property on the fluffy
+//   fallback  used when it's missing (old saves); undefined = leave the
+//             fluffy's own default alone
+//   clone     true for objects/arrays: saved and loaded as a copy
+// (The game's original fields are still written out one by one in
+// serialize() and Horse.deserialize.)
 // (Part of the Horse class, split out of Horse.js: addHorseMethods adds
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+const SAVED_HORSE_FIELDS = [
+  { name: "deathTimer", fallback: 0 }, // Corpses.js
+  { name: "separation", fallback: null, clone: true }, // Separation.js
+  { name: "traumas", fallback: [], clone: true },
+  { name: "hurtByPlayerAt", fallback: null }, // Memory.js
+  { name: "killedByPlayer", fallback: false },
+  { name: "fromPark", fallback: false }, // Wellbeing.js settling in
+  { name: "settling", fallback: false },
+  { name: "settleStart", fallback: null },
+  { name: "lastDesire", fallback: null, clone: true },
+  { name: "alicornComfort", fallback: 0 }, // AlicornAcceptance.js
+  { name: "missingOwner", fallback: 0 }, // Abandoned.js
+  { name: "lostPet", fallback: false }, // NightEvents.js
+  { name: "illness", fallback: null, clone: true }, // Illness.js
+  { name: "fluImmuneUntil", fallback: 0 },
+  { name: "fluVaccinated", fallback: false },
+  { name: "vetCheckedAt", fallback: undefined }, // Vet.js
+  { name: "vetNote", fallback: null },
+  { name: "vetLife", fallback: null },
+];
+
+function _savedCopy(v) {
+  return v === null || v === undefined ? v : JSON.parse(JSON.stringify(v));
+}
+
+// { name: value } for everything in SAVED_HORSE_FIELDS
+function savedHorseFields(f) {
+  const out = {};
+  for (const fld of SAVED_HORSE_FIELDS) {
+    let v = f[fld.name];
+    if (v === undefined) v = fld.fallback;
+    if (v === undefined) continue;
+    out[fld.name] = fld.clone ? _savedCopy(v) : v;
+  }
+  return out;
+}
+
+// Horse.deserialize: put them back (fallbacks for old saves)
+function applySavedHorseFields(f, data) {
+  for (const fld of SAVED_HORSE_FIELDS) {
+    const v = data[fld.name];
+    if (v === undefined || v === null) {
+      if (fld.fallback !== undefined) f[fld.name] = fld.clone ? _savedCopy(fld.fallback) : fld.fallback;
+    } else f[fld.name] = fld.clone ? _savedCopy(v) : v;
+  }
+}
+
 addHorseMethods({
   serialize() {
     return {
+      ...savedHorseFields(this), // SAVED_HORSE_FIELDS above
       id: this.id,
       x: this.x,
       y: this.y,
@@ -58,26 +116,9 @@ addHorseMethods({
       isFrantic: this.isFrantic,
       isScared: this.isScared,
       causeOfDeath: this.causeOfDeath,
-      deathTimer: this.deathTimer,
-      separation: this.separation ? JSON.parse(JSON.stringify(this.separation)) : null,
-      traumas: Array.isArray(this.traumas) ? JSON.parse(JSON.stringify(this.traumas)) : [],
-      hurtByPlayerAt: this.hurtByPlayerAt ?? null,
-      killedByPlayer: !!this.killedByPlayer,
-      fromPark: !!this.fromPark,
-      settling: !!this.settling,
-      settleStart: this.settleStart ?? null,
-      lastDesire: this.lastDesire ? JSON.parse(JSON.stringify(this.lastDesire)) : null,
       fatherGenes: this.fatherGenes,
       lactatingTimer: this.lactatingTimer,
       alicornTolerance: this.alicornTolerance,
-      alicornComfort: this.alicornComfort || 0,
-      missingOwner: this.missingOwner || 0,
-      illness: this.illness ? { ...this.illness } : null,
-      fluImmuneUntil: this.fluImmuneUntil || 0,
-      fluVaccinated: !!this.fluVaccinated,
-      vetCheckedAt: this.vetCheckedAt ?? null,
-      vetNote: this.vetNote || null,
-      vetLife: this.vetLife || null,
       coloristDegree: this.coloristDegree,
       herdId: this.herdId,
       isPoisoned: this.isPoisoned,
