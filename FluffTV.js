@@ -331,7 +331,7 @@ class FluffTV {
           Math.random() < 0.5
         ) {
           // 50%: flee (same as heavy metal), but it learns a little (AlicornAcceptance.js)
-          if (typeof addAlicornComfort === "function") addAlicornComfort(f, 0.1);
+          if (typeof addAlicornComfort === "function") addAlicornComfort(f, 0.02);
           f.fleeFromTV(this);
           const lines = getDialogue(["TV_FOCUS", "HEAVY_METAL"], f);
           const chosen = Array.isArray(lines)
@@ -345,9 +345,12 @@ class FluffTV {
             : lines;
           f.speak(chosen);
         } else {
-          // 50%: non-smarty becomes alicorn tolerant
+          // 50%: a non-smarty warms to them a little (it used to accept
+          // them on the spot; acceptance is meant to be rare and slow now -
+          // AlicornAcceptance.js)
           if (!isSmarty) {
-            f.alicornTolerance = true;
+            if (typeof addAlicornComfort === "function") addAlicornComfort(f, 0.05);
+            else f.alicornTolerance = true;
             f.changeHappiness(0.1);
           }
           const key = isSmarty ? "SMARTY" : "DEFAULT";

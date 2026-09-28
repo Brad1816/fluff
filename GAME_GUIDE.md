@@ -1118,25 +1118,29 @@ mum, watched the "munstah" TV channel, or was reformed by the torture
 channel. Now each fluffy has `alicornComfort` (0-1, saved with it) that
 grows while it's awake and can see an alicorn within `ALICORN_SEE_RANGE`
 (450px). At 1 it gets `alicornTolerance` (accepts them for good) and you
-get a message.
-- **Speed** (`alicornAcceptanceRate`): `ALICORN_ACCEPT_TIME` (1,200s, one
-  game day) of plain exposure; about two days in practice, since scared
-  ones run out of sight. x4 tiny foals, x2 older foals, x4 a mum with her
-  own alicorn foal, x0.5-1.5 by bravery, x1.75 / x2.5 with one / two
-  friends, family or herd-mates nearby who accept alicorns, x1.5 if the
-  alicorn is caged, x0.3 smarties, x0.5 when hungry or miserable.
+get a message. **It's meant to be rare and hard** (September 2026: the
+user asked for it slower than the first version).
+- **Speed** (`alicornAcceptanceRate`): `ALICORN_ACCEPT_TIME` (12,000s =
+  10 game days of actually seeing one; far longer in practice, since
+  scared ones run out of sight). x2 tiny foals, x1.5 older foals, x2 a mum
+  with her own alicorn foal, x0.7-1.3 by bravery, x1.25 / x1.5 with one /
+  two friends, family or herd-mates nearby who accept alicorns, x1.2 if
+  the alicorn is caged, x0.1 smarties, x0.5 when hungry or miserable.
+- **Forgetting**: out of sight of any alicorn it loses it all again over
+  `ALICORN_FORGET_TIME` (6,000s = 5 game days).
 - **Introductions**: holding a fluffy within 200px of an alicorn adds
-  1/`ALICORN_INTRO_TIME` (120s) per second if it trusts you
-  (`playerTrust` >= 0.5).
-- **TV**: fluffies that run from the munstah channel still gain 0.1.
+  1/`ALICORN_INTRO_TIME` (1,800s) per second if it trusts you a lot
+  (`playerTrust` >= `ALICORN_INTRO_TRUST`, 0.7).
+- **TV**: the munstah channel no longer cures on the spot: +0.05 for the
+  ones that watch calmly, +0.02 for the ones that run.
 - **Setbacks** (`noteAlicornAttack`, called from `wasAttackedBy`): an
-  alicorn attacking a fluffy costs it 0.3, and 0.1 for those watching.
+  alicorn attacking a fluffy costs it 0.5, and 0.2 for those watching.
 - **Less fear on the way**: `findScaryAlicorn` uses `alicornFearRange`
-  (300px when afraid, down to 120px), so they run less as they calm down.
+  (300px when afraid, down to 180px).
 - **Mums**: when a mare accepts alicorns, her `estranged_child` alicorn
   foals become her `baby_child`/`child` again (so she feeds them).
 - The magnifying glass shows "Alicorns: Afraid / Getting used to them
   (40%) / Accepts them" (only with alicorn intolerance on).
-- Note for tests: only stallions can be smarties (the `personalities`
-  setter drops "smarty" from mares).
-
+- Notes for tests: only stallions can be smarties (the `personalities`
+  setter drops "smarty" from mares); tick with `_alicornTick = 0;
+  updateAlicornAcceptance(0)` for exactly one second.
