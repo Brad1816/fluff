@@ -5063,6 +5063,9 @@ class Horse {
       causeOfDeath: this.causeOfDeath,
       deathTimer: this.deathTimer,
       separation: this.separation ? JSON.parse(JSON.stringify(this.separation)) : null,
+      traumas: Array.isArray(this.traumas) ? JSON.parse(JSON.stringify(this.traumas)) : [],
+      hurtByPlayerAt: this.hurtByPlayerAt ?? null,
+      killedByPlayer: !!this.killedByPlayer,
       lastDesire: this.lastDesire
         ? JSON.parse(JSON.stringify(this.lastDesire))
         : null,
@@ -5217,6 +5220,9 @@ class Horse {
     horse.causeOfDeath = data.causeOfDeath;
     horse.deathTimer = data.deathTimer || 0;
     horse.separation = data.separation || null;
+    horse.traumas = Array.isArray(data.traumas) ? data.traumas : [];
+    horse.hurtByPlayerAt = data.hurtByPlayerAt ?? null;
+    horse.killedByPlayer = !!data.killedByPlayer;
     horse.castrationBandTimer =
       data.castrationBandTimer !== undefined
         ? data.castrationBandTimer

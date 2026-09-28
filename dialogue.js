@@ -162,6 +162,11 @@ const DIALOGUE = {
       "Wan mummah... wan miwkies...",
       "*sniff* mummah...",
     ],
+    NIGHTMARE: [
+      "*whimper* nu... nu take fwuffy...",
+      "MUMMAH! ...*sniff* bad dweamies...",
+      "Nu huwt famiwy! NU! ...*sob*",
+    ],
     REUNITED: [
       "<TARGET>! Fwuffy back! Bestest day!",
       "Huggies! Nebah weave 'gain!",

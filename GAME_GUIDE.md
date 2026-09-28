@@ -873,6 +873,27 @@ times to 5.
   from.
 - The magnifying glass shows "Misses: Daisy, Clover (terribly)" while it
   grieves. Saved on the fluffy as `separation`.
+- **Too young to remember**: foals under `REMEMBER_GROWTH` (0.35 grown)
+  still cry and miss mum, but get over it 5x faster and keep no memory,
+  trauma or fear of you from it (the same goes for tiny foals who see a
+  family member taken).
+- **How it was taken** (`howTaken`, decided at the moment you carry it
+  off) can leave a permanent scar (`f.traumas`, saved; `addTrauma`,
+  `PERMANENT_TRAUMA`):
+  - `family_killed` - you killed its mum/dad/foal/sibling/special friend in
+    the last `RECENT_VIOLENCE` (3 min): severity 0.8, blames you
+  - `violent` - you hurt it or its family in the last 3 minutes: 0.5,
+    blames you (Memory.js now marks `hurtByPlayerAt` / `killedByPlayer`;
+    potty training doesn't count)
+  - `orphaned` - its mum (and dad, if known) had died, not by your hand:
+    0.35, doesn't blame you
+  - `peaceful` - grown-ups only grieve for a while (no scar); a foal old
+    enough to remember, taken from its living mum and grieving deeply, gets
+    `torn_from_mum`: 0.3, blames you
+- **Living with it**: permanent traumas lower happiness a little for good,
+  hold its fear of you at or above half the blame (and trust below a
+  ceiling) forever, and give it nightmares while asleep. The magnifying
+  glass shows them in a "Trauma" row.
 
 ### Park location
 The park is now reached from the Day Care Alley's right arrow (it used to be

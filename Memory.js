@@ -106,6 +106,11 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
   if (isTraining) fear *= 0.5; // it knows what that was for... mostly
   // (other tools pass the same flag, but only cutting something off counts)
   if (isAmputation && (weaponType === "knife" || weaponType === "scalpel")) fear += 0.2;
+  // For Separation.js: was it hurt or killed by you shortly before being taken?
+  if (!isTraining) {
+    victim.hurtByPlayerAt = _memNow();
+    if (isDead || !victim.isAlive) victim.killedByPlayer = true;
+  }
   if (!isDead && victim.isAlive) {
     changePlayerFear(victim, fear);
     rememberPlayerEvent(victim, isTraining ? "training" : weaponType);

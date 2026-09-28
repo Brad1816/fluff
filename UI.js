@@ -2244,6 +2244,9 @@ function getFluffyInspectionInfo(f) {
   if (f.isAlive && typeof describePlayerFeeling === "function") {
     const [feel, feelTone] = describePlayerFeeling(f);
     care.push({ label: "Feels about you", value: feel, tone: feelTone });
+    // Permanent scars from how it was taken (Separation.js)
+    const scars = typeof describeTraumas === "function" ? describeTraumas(f) : null;
+    if (scars) care.push({ label: "Trauma", value: scars, tone: "bad" });
   }
   const missing = f.getMissingBodyPartsText
     ? f.getMissingBodyPartsText()

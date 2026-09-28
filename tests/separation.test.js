@@ -140,4 +140,107 @@ module.exports = [
       checkEqual(JSON.stringify(r.exit), JSON.stringify(["arrow_left:ALLEY_DAY_CARE"]), "park exits");
     },
   },
+  {
+    name: "separation: tiny foals forget; how a fluffy was taken decides if the trauma is for life",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene("PARK");
+        __clearScene("INDOORS");
+        __seedRandom(5);
+        worldSettings.colorism = false;
+        herdState = freshHerdState();
+        _herdChanged();
+        gameState = "PAUSED";
+        let x = 200;
+        const mk = (mom, growth = 1, gender = "female") => {
+          const h = new Horse(growth, mom ? mom.id : null, "PARK", "earthy", null, null, null, gender);
+          h.x = x;
+          h.y = 500;
+          x += 40;
+          h.happiness = 0.8;
+          fluffies.push(h);
+          return h;
+        };
+        const take = (f) => {
+          f.scene = "INDOORS";
+          onFluffyTakenAway(f, "PARK");
+        };
+        const tick = (n) => {
+          for (let i = 0; i < n; i++) {
+            updateSeparations(1);
+            updatePlayerMemory(fluffies[0], 0); // keep the function warm
+            for (const f of fluffies) updatePlayerMemory(f, 1);
+            timePlayed += 1;
+          }
+        };
+        const res = {};
+        // 1. A tiny foal: cries, but no memory, trauma or fear, and gets over it
+        const m1 = mk(null);
+        const tiny = mk(m1, 0.2);
+        const fear0 = tiny.playerFear;
+        take(tiny);
+        res.tinyYoung = tiny.separation && tiny.separation.young;
+        tick(700);
+        res.tinyCleared = tiny.separation === null;
+        res.tinyScars = (tiny.traumas || []).length;
+        res.tinyMemories = tiny.playerMemories.filter((m) => m.type.startsWith("taken")).length;
+        res.tinyFear = tiny.playerFear - fear0;
+        // 2. Hurt, then taken: scarred for life and never loses its fear of you
+        const m2 = mk(null);
+        const hurt = mk(m2);
+        notePlayerViolence(hurt, false, "stick", false, false);
+        take(hurt);
+        res.violent = (hurt.traumas || []).map((t) => t.type);
+        tick(3000); // fear fades normally over time...
+        res.violentFear = hurt.playerFear;
+        // 3. Mum killed by you, then taken
+        const m3 = mk(null);
+        const orphanK = mk(m3);
+        mk(m3); // a sister left behind
+        notePlayerViolence(m3, true, "knife", false, false);
+        m3.die("knife");
+        take(orphanK);
+        res.killed = (orphanK.traumas || []).map((t) => t.type);
+        // 4. Mum starved (not you), then taken: sad for life, but no blame
+        const m4 = mk(null);
+        const orphan = mk(m4);
+        m4.die(null, "Starved to death");
+        const orphanFear0 = orphan.playerFear;
+        take(orphan);
+        res.orphan = (orphan.traumas || []).map((t) => t.type + ":" + t.blames);
+        tick(5);
+        res.orphanFear = orphan.playerFear - orphanFear0;
+        // 5. Peacefully taken grown-up: grieves, but no permanent scar
+        const m5 = mk(null);
+        const calm = mk(m5);
+        mk(m5);
+        take(calm);
+        tick(200);
+        res.calmGrief = calm.separation && calm.separation.traumatised;
+        res.calmScars = (calm.traumas || []).length;
+        // 6. Peacefully taken foal old enough to remember, mum alive: mild scar
+        const m6 = mk(null);
+        const foal = mk(m6, 0.6);
+        take(foal);
+        tick(200);
+        res.foal = (foal.traumas || []).map((t) => t.type);
+        res.foalRow = getFluffyInspectionInfo(foal).care.find((row) => row.label === "Trauma");
+        res.saved = JSON.stringify(foal.serialize().traumas) === JSON.stringify(foal.traumas);
+        gameState = "PLAYING";
+        return res;
+      });
+      check(r.tinyYoung, "tiny foal not marked too young to remember");
+      check(r.tinyCleared && r.tinyScars === 0 && r.tinyMemories === 0, `tiny foal: cleared ${r.tinyCleared}, scars ${r.tinyScars}, memories ${r.tinyMemories}`);
+      check(r.tinyFear <= 0.001, `tiny foal's fear went up by ${r.tinyFear}`);
+      checkEqual(JSON.stringify(r.violent), JSON.stringify(["violent"]), "hurt then taken");
+      check(r.violentFear >= 0.24, `fear of you long after a violent taking: ${r.violentFear}`);
+      checkEqual(JSON.stringify(r.killed), JSON.stringify(["family_killed"]), "mum killed then taken");
+      checkEqual(JSON.stringify(r.orphan), JSON.stringify(["orphaned:false"]), "orphan");
+      check(r.orphanFear <= 0.001, `orphan blames you: fear +${r.orphanFear}`);
+      check(r.calmGrief && r.calmScars === 0, `peaceful grown-up: traumatised ${r.calmGrief}, permanent scars ${r.calmScars}`);
+      checkEqual(JSON.stringify(r.foal), JSON.stringify(["torn_from_mum"]), "peaceful foal old enough to remember");
+      check(r.foalRow && r.foalRow.value.includes("mum"), `Trauma row: ${JSON.stringify(r.foalRow)}`);
+      check(r.saved, "traumas aren't saved");
+    },
+  },
 ];
