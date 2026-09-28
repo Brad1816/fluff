@@ -95,6 +95,7 @@ async function openGame(context, port) {
         if (objects[i].scene === scene) objects.splice(i, 1);
       }
       fluffies.length = 0;
+      if (typeof shoppingBag !== "undefined") shoppingBag.length = 0;
       isGlobalDragging = false;
     };
   });

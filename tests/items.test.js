@@ -69,9 +69,23 @@ module.exports = [
             continue;
           }
           __buy(a);
-          const made = objects.filter((o) => o.scene === currentScene);
           const spent = 1000000 - money;
           if (spent !== a.cost) problems.push(`${a.name}: cost $${spent}, shop says $${a.cost}`);
+          // Small things go in the shopping bag, big ones are delivered
+          // home (ShoppingBag.js); take it out of the bag to check it
+          const kind = shopDeliveryKind(a);
+          if (kind === "bag") {
+            if (shoppingBag.length !== 1 || shoppingBag[0].name !== a.name) {
+              problems.push(`${a.name}: not in the shopping bag`);
+              continue;
+            }
+            changeScene("INDOORS");
+            takeFromShoppingBag(a.name);
+          }
+          const where = kind === "carry" ? currentScene : "INDOORS";
+          const made = objects.filter((o) => o.scene === where);
+          for (const o of made) o.isDragging = false;
+          isGlobalDragging = false;
           if (made.length !== 1) {
             problems.push(`${a.name}: made ${made.length} items`);
             continue;

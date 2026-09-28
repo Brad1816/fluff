@@ -81,6 +81,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Abandoned.js` | **Abandoned pets**: fluffies dumped by an owner at any age, named, sad until they get over it. See section 9 (Abandoned pets). |
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
+| `ShoppingBag.js` | **Getting shopping home**: small things go in the shopping bag (tan buttons in the toolbox), big things are delivered to the living room. See section 9 (Shopping bag and deliveries). |
 | `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen, or the Show Hall on Shopping Street), grooming with the brush, prizes, ribbons, champions, watching it in the ring. See section 9 (Fluffy shows). |
 | `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -587,12 +588,13 @@ Things are bought at a store instead of from a menu.
   expensive, "Owned" for tools you have). `drawStoreOverlay` draws the
   hover highlight and description.
 - **Buying**: `storeShelfClick` (called from the `mousedown` handler) calls
-  `buyShopAction` in `UIToolbox.js`, the same code the debug item menu uses.
-  World items land on the floor in front of the shelves; tools go straight
-  into the toolbox; fence pieces stick to the mouse as usual.
-- **Carrying things home**: pick the item up, then walk with WASD (S out
-  of the store, W back to the garden, W in the front door). Clicking an
-  arrow while holding something *throws it through* to the next area
+  `buyFromStore` (ShoppingBag.js): tools go straight into the toolbox
+  (`buyShopAction` in `UIToolbox.js`, the same code the debug item menu
+  uses), small things into the shopping bag, big things are delivered to
+  the living room. See "Shopping bag and deliveries" in section 9.
+- **Carrying things**: anything can still be picked up and walked with WASD
+  (S out of the store, S back to the garden, W in the front door). Clicking
+  an arrow while holding something *throws it through* to the next area
   instead of walking with it (that's the game's normal behaviour).
 - **The old item menu** in the top left only appears with the debug menu
   on (`isItemMenuAvailable()` in `UIToolbox.js`), where spawning is free.
@@ -1416,3 +1418,37 @@ When the update calls became registered systems, `updateWorldTime` and
 changing and orders stopped expiring or being posted. Both are registered
 again (WorldTime.js, Orders.js), and `tests/systems.test.js` checks the
 whole list.
+
+### Shopping bag and deliveries (`ShoppingBag.js`)
+Buying at Fluff Mart no longer leaves things on the store floor to carry
+home. `buyFromStore(action, sx, sy)` (from `storeShelfClick`) sorts each
+purchase with `shopDeliveryKind(action)`:
+- **"tool"**: into the toolbox, as before.
+- **"bag"**: the item types in `SHOPPING_BAG_TYPES` (food bags, bowls,
+  baby feeders, balls, blocks, litterboxes, accessories). An entry
+  `{ name, data: null }` goes on `shoppingBag` (saved in
+  SAVED_GAME_STATE).
+- **"deliver"**: everything else (cages, troughs, mega feeders, beds,
+  fences and gates, the TV, Computer, Gene Lab, IV stand, sprinkler,
+  grinder, table, rack, LPal, statue). `deliverShopAction` makes it with
+  `currentScene` briefly set to `DELIVERY_SCENE` ("INDOORS", the living
+  room), so it belongs there, and puts it on the clearest spot of floor
+  (`_deliverySpot`, away from other items, above the toolbar). Fences
+  aren't left stuck to the mouse.
+- **"carry"**: anything that isn't an item (a fluffy) is still made on
+  the store floor.
+
+**The bag in the toolbox** (UIToolbox.js): the toolbox grid is now
+`_toolboxGridEntries()` = the tools, then `getShoppingBagEntries()` (one tan
+button per kind with a count, the shop picture from `drawShopActionIcon`),
+paged by `_toolboxPageSlots` (used by drawing and clicking alike).
+Clicking a bag button calls `takeFromShoppingBag(name)`: the item is made
+at the mouse, stuck to it (`isDragging`), and put down with a click like
+anything carried. Number keys don't assign bag buttons to the toolbar.
+
+**Packing things away**: while carrying something that fits in the bag
+(`carriedPackableItem`), the toolbox gets a dashed outline and "Click here
+to put it in your shopping bag". Clicking it (`packIntoShoppingBag`) saves
+the item as it is (`serialize()`, so a part-eaten bag of kibble stays part
+eaten) and removes it from the world; taking it out again uses
+`loadObject`. The last one packed comes out first.

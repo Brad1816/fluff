@@ -211,8 +211,8 @@ module.exports = [
         fluffies.forEach((f) => (f.scene = "OUTDOORS"));
         __clearScene();
       });
-      // Buy a piece at the store (it sticks to the mouse) and carry it home:
-      // S = out of the store, S = back to the garden, W = in the front door
+      // Buy a piece at the store: it's delivered to the living room. Go
+      // home and pick it up.
       const buyAndCarryHome = async (name) => {
         const spot = await page.evaluate((name) => {
           const action = SPAWN_ACTIONS.find((a) => a.name === name);
@@ -223,7 +223,13 @@ module.exports = [
         }, name);
         await page.mouse.move(spot.x, spot.y);
         await page.mouse.click(spot.x, spot.y);
-        for (const key of ["KeyS", "KeyS", "KeyW"]) await page.keyboard.press(key);
+        await page.evaluate(() => {
+          changeScene("INDOORS");
+          const piece = objects.filter((o) => o instanceof Fence && o.scene === "INDOORS").pop();
+          piece.isDragging = true;
+          piece.dragOffset = { x: 0, y: 0 };
+          isGlobalDragging = true;
+        });
       };
       await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
       await buyAndCarryHome("Fence");

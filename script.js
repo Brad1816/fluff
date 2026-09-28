@@ -2156,7 +2156,8 @@ window.addEventListener("keydown", (e) => {
     if (
       typeof hoveredToolboxItem !== "undefined" &&
       hoveredToolboxItem &&
-      !hoveredToolboxItem.isNav
+      !hoveredToolboxItem.isNav &&
+      !hoveredToolboxItem.isBag
     ) {
       const slot = toolbarSlots.find((s) => s.key === e.key);
       if (slot) {

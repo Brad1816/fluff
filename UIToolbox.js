@@ -198,6 +198,64 @@ function drawToolBadge(ctx, tool, x, y, size, countOverride) {
   }
 }
 
+// Everything in the toolbox grid: tools, then the shopping bag
+// (ShoppingBag.js), split into pages with arrow buttons
+function _toolboxGridEntries() {
+  const tools =
+    typeof getGroupedToolboxEntries === "function"
+      ? getGroupedToolboxEntries()
+      : typeof toolbox !== "undefined"
+        ? toolbox
+        : [];
+  const bag = typeof getShoppingBagEntries === "function" ? getShoppingBagEntries() : [];
+  return [...tools, ...bag];
+}
+
+function _toolboxPageSlots(cols, rows) {
+  const pages = [];
+  const itemsToPlace = _toolboxGridEntries();
+  while (itemsToPlace.length > 0) {
+    const isFirstPage = pages.length === 0;
+    let itemsAllowed = cols * rows;
+    if (!isFirstPage) itemsAllowed -= 1; // Prev arrow
+    if (itemsToPlace.length > itemsAllowed) itemsAllowed -= 1; // Next arrow
+    const pageContent = itemsToPlace.splice(0, itemsAllowed);
+    const pageSlots = [];
+    if (!isFirstPage) pageSlots.push({ isNav: true, dir: -1, name: "⬅" });
+    pageSlots.push(...pageContent);
+    if (itemsToPlace.length > 0) pageSlots.push({ isNav: true, dir: 1, name: "➡" });
+    pages.push(pageSlots);
+  }
+  if (pages.length === 0) pages.push([]);
+  if (typeof toolboxPage === "undefined") toolboxPage = 0;
+  if (toolboxPage >= pages.length) toolboxPage = Math.max(0, pages.length - 1);
+  return pages[toolboxPage];
+}
+
+// A shopping bag button: the shop picture, tan background, count
+function _drawBagButton(ctx, item, bx, by, btnSize) {
+  drawGlassButton(bx, by, btnSize, btnSize, "", {
+    borderRadius: 6,
+    normalFill: "rgba(196, 150, 84, 0.35)",
+    hoverFill: "rgba(226, 180, 110, 0.5)",
+    borderColor: "rgba(240, 200, 130, 0.8)",
+  });
+  if (typeof drawShopActionIcon === "function") drawShopActionIcon(ctx, item.action, bx + btnSize / 2, by + btnSize / 2, btnSize - 12);
+  if (item.count > 1) {
+    ctx.save();
+    ctx.font = "bold 9px Arial";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    const t = String(item.count);
+    const tw = ctx.measureText(t).width;
+    ctx.fillStyle = "rgba(0,0,0,0.75)";
+    ctx.fillRect(bx + btnSize - 6 - tw, by + btnSize - 12, tw + 4, 11);
+    ctx.fillStyle = "#ffe7b0";
+    ctx.fillText(t, bx + btnSize - 4, by + btnSize - 2);
+    ctx.restore();
+  }
+}
+
 function drawToolboxAndToolbar(ctx) {
   const layout = _toolboxAndToolbarLayout();
   const {
@@ -220,43 +278,14 @@ function drawToolboxAndToolbar(ctx) {
   } = layout;
 
   hoveredToolboxItem = null;
+  let hoveredBagItem = null;
   let hoveredTool = null;
   let hoveredIsToolbox = false;
   const isToolboxShown = typeof showToolbox === "undefined" || showToolbox;
 
   // 1. Draw Toolbox (8x3 grid)
   if (isToolboxShown) {
-    const pages = [];
-    const groupedEntries =
-      typeof getGroupedToolboxEntries === "function"
-        ? getGroupedToolboxEntries()
-        : typeof toolbox !== "undefined"
-          ? toolbox
-          : [];
-    let itemsToPlace = [...groupedEntries];
-
-    while (itemsToPlace.length > 0) {
-      let isFirstPage = pages.length === 0;
-      let itemsAllowed = cols * rows; // 24
-
-      if (!isFirstPage) itemsAllowed -= 1; // Prev arrow
-      if (itemsToPlace.length > itemsAllowed) itemsAllowed -= 1; // Next arrow
-
-      const pageContent = itemsToPlace.splice(0, itemsAllowed);
-
-      let pageSlots = [];
-      if (!isFirstPage) pageSlots.push({ isNav: true, dir: -1, name: "⬅" });
-      pageSlots.push(...pageContent);
-      if (itemsToPlace.length > 0)
-        pageSlots.push({ isNav: true, dir: 1, name: "➡" });
-
-      pages.push(pageSlots);
-    }
-    if (pages.length === 0) pages.push([]);
-    if (typeof toolboxPage === "undefined") toolboxPage = 0;
-    if (toolboxPage >= pages.length) toolboxPage = Math.max(0, pages.length - 1);
-
-    const currentSlots = pages[toolboxPage];
+    const currentSlots = _toolboxPageSlots(cols, rows);
 
     for (let i = 0; i < cols * rows; i++) {
       const col = i % cols;
@@ -274,6 +303,12 @@ function drawToolboxAndToolbar(ctx) {
           });
           if (isPointInRect(mouse.x, mouse.y, bx, by, btnSize, btnSize)) {
             hoveredToolboxItem = item;
+          }
+        } else if (item.isBag) {
+          _drawBagButton(ctx, item, bx, by, btnSize);
+          if (isPointInRect(mouse.x, mouse.y, bx, by, btnSize, btnSize)) {
+            hoveredToolboxItem = item;
+            hoveredBagItem = item;
           }
         } else {
           const tool = item.tool || item;
@@ -325,6 +360,50 @@ function drawToolboxAndToolbar(ctx) {
         });
       }
     }
+  }
+
+  // Carrying something small: the toolbox takes it
+  const packable = isToolboxShown && typeof carriedPackableItem === "function" ? carriedPackableItem() : null;
+  if (packable) {
+    const { toolboxW, toolboxH } = layout;
+    ctx.save();
+    ctx.strokeStyle = "rgba(240, 200, 130, 0.95)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(toolboxX - 4, toolboxY - 4, toolboxW + 8, toolboxH + 8);
+    ctx.setLineDash([]);
+    ctx.font = "bold 12px Arial";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = "#ffe7b0";
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 3;
+    const label = "Click here to put it in your shopping bag";
+    ctx.strokeText(label, toolboxX, toolboxY - 8);
+    ctx.fillText(label, toolboxX, toolboxY - 8);
+    ctx.restore();
+  }
+
+  // Tooltip for a shopping bag button
+  if (hoveredBagItem && !hoveredTool) {
+    const lines = [
+      hoveredBagItem.action.name,
+      `In your shopping bag${hoveredBagItem.count > 1 ? `: ${hoveredBagItem.count}` : ""}`,
+      "Click to take it out, then click to put it down.",
+    ];
+    ctx.font = "bold 12px Arial";
+    const padding = 10;
+    const tw = Math.max(...lines.map((l) => ctx.measureText(l).width)) + padding * 2;
+    const th = lines.length * 16 + padding * 2;
+    const tx = clamp(mouse.x + 10, 0, width - tw - 10);
+    const ty = clamp(mouse.y - th - 10, 0, height - th - 10);
+    drawGlassButton(tx, ty, tw, th, "", { forceNormal: true, borderRadius: 8, normalFill: "rgba(0, 0, 0, 0.75)" });
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    lines.forEach((line, idx) => {
+      ctx.fillStyle = idx === 0 ? "gold" : idx === 2 ? "#88ccff" : "white";
+      ctx.fillText(line, tx + padding, ty + padding + idx * 16);
+    });
   }
 
   // 2. Draw Hide / Show Toolbox Button
@@ -491,31 +570,15 @@ function toolboxAndToolbarClick() {
 
   // 2. Toolbox buttons (only if toolbox is shown)
   if (isToolboxShown) {
-    const pages = [];
-    const groupedEntries =
-      typeof getGroupedToolboxEntries === "function"
-        ? getGroupedToolboxEntries()
-        : typeof toolbox !== "undefined"
-          ? toolbox
-          : [];
-    let itemsToPlace = [...groupedEntries];
-    while (itemsToPlace.length > 0) {
-      let isFirstPage = pages.length === 0;
-      let itemsAllowed = cols * rows;
-      if (!isFirstPage) itemsAllowed -= 1;
-      if (itemsToPlace.length > itemsAllowed) itemsAllowed -= 1;
-      const pageContent = itemsToPlace.splice(0, itemsAllowed);
-      let pageSlots = [];
-      if (!isFirstPage) pageSlots.push({ isNav: true, dir: -1, name: "⬅" });
-      pageSlots.push(...pageContent);
-      if (itemsToPlace.length > 0)
-        pageSlots.push({ isNav: true, dir: 1, name: "➡" });
-      pages.push(pageSlots);
+    // Carrying something small: clicking the toolbox packs it (ShoppingBag.js)
+    const packable = typeof carriedPackableItem === "function" ? carriedPackableItem() : null;
+    if (packable && isPointInRect(mouse.x, mouse.y, toolboxX - 4, toolboxY - 4, toolboxW + 8, toolboxH + 8)) {
+      const action = shopActionForItem(packable);
+      packIntoShoppingBag(packable);
+      if (typeof addUIMessage === "function") addUIMessage(`${action ? action.name : "It"} put in your shopping bag.`);
+      return true;
     }
-    if (pages.length === 0) pages.push([]);
-    if (typeof toolboxPage === "undefined") toolboxPage = 0;
-    if (toolboxPage >= pages.length) toolboxPage = Math.max(0, pages.length - 1);
-    const currentSlots = pages[toolboxPage];
+    const currentSlots = _toolboxPageSlots(cols, rows);
 
     for (let i = 0; i < currentSlots.length; i++) {
       const col = i % cols;
@@ -527,6 +590,10 @@ function toolboxAndToolbarClick() {
         const item = currentSlots[i];
         if (item.isNav) {
           toolboxPage += item.dir;
+          return true;
+        }
+        if (item.isBag) {
+          if (typeof takeFromShoppingBag === "function") takeFromShoppingBag(item.name);
           return true;
         }
         if (typeof swapOrEquipTool === "function") {

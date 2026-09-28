@@ -5,7 +5,8 @@
 // Every aisle is its own scene ("STORE_FOOD", "STORE_HOME", ...) with
 // arrows between them. Things sit on shelves with price tags; click one to
 // buy it. World items land on the floor in front of the shelf for you to
-// carry home; tools go straight into your toolbox. (buyShopAction in UI.js
+// carry home; tools go straight into your toolbox. (Now: small things go in
+// the shopping bag and big things are delivered - ShoppingBag.js.) (buyShopAction in UI.js
 // does the actual buying, the same code the debug item menu uses.)
 //
 // To put a shop item in an aisle, add its `isItem` (from SPAWN_ACTIONS in
@@ -297,11 +298,17 @@ function storeShelfClick() {
   );
 
   const action = slot.action;
-  const bought = buyShopAction(action, sx, sy, { exactSpot: true });
-  if (!bought) return true;
+  // Tools to the toolbox, small things to the shopping bag, big things
+  // delivered home (ShoppingBag.js)
+  const how = buyFromStore(action, sx, sy);
+  if (!how) return true;
 
-  if (isToolAction(action)) {
+  if (how === "tool") {
     addUIMessage(`${action.name} added to your toolbox.`);
+  } else if (how === "bag") {
+    addUIMessage(`${action.name} put in your shopping bag (in the toolbox).`);
+  } else if (how === "deliver") {
+    addUIMessage(`${action.name} will be delivered: it's waiting in your living room.`);
   } else if (!storeCarryTipShown) {
     addUIMessage("Bought! Pick it up and walk it home with WASD.");
     storeCarryTipShown = true;
@@ -562,6 +569,8 @@ function drawStoreOverlay(c) {
   if (owned) status = "You already have one.";
   else if (!showDebugMenu && money < a.cost) status = "You can't afford this yet.";
   else if (isToolAction(a)) status = "Click to buy. Goes straight to your toolbox.";
+  else if (shopDeliveryKind(a) === "bag") status = "Click to buy. Goes in your shopping bag (toolbox).";
+  else if (shopDeliveryKind(a) === "deliver") status = "Click to buy. Delivered to your living room.";
   else status = "Click to buy, then carry it home.";
   drawShopTooltip(c, a, ["", status]);
 }
