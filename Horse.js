@@ -1372,17 +1372,21 @@ class Horse {
       this.headKnockTimer -= dt;
     }
 
+    // Looks only (blinking, eyes, wings, dreams, tears): skipped for
+    // fluffies in areas you aren't looking at, to save time
+    const seen = this.scene === currentScene;
+
     // Blinking
-    this._updateBlinking(dt);
+    if (seen) this._updateBlinking(dt);
 
     // Pupil movement and twitching
-    this._updatePupils(dt);
+    if (seen) this._updatePupils(dt);
 
     // Wing flapping
-    this._updateWings(dt);
+    if (seen) this._updateWings(dt);
 
     // Dreams while asleep
-    this._updateDreams(dt);
+    if (seen) this._updateDreams(dt);
 
     if (this.badPoopieTimer > 0) {
       this.badPoopieTimer -= dt;
@@ -1395,7 +1399,7 @@ class Horse {
     this.lastPuddleReactionTime += dt;
 
     // Crying tears
-    this._updateTears(dt);
+    if (seen) this._updateTears(dt);
 
     if (this.blockCooldown > 0) {
       this.blockCooldown -= dt;
@@ -1594,7 +1598,9 @@ class Horse {
     // Smoke rising from a smoking fluffy
     this._updateSmoke(dt);
 
-    this.updateLayout();
+    // Body layout for drawing. Unseen fluffies skip it: anything that needs
+    // their size (getExtentsForCage) works it out when it asks.
+    if (seen) this.updateLayout();
   }
 
   nextStateGivenIdle(dt) {

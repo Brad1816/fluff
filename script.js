@@ -1692,6 +1692,9 @@ function updateSimulation(dt) {
   }
 }
 
+let _renderBuffer = null;
+let _renderBufferCtx = null;
+
 function render() {
   ctx.clearRect(0, 0, width, height);
 
@@ -1707,9 +1710,17 @@ function render() {
     return;
   }
 
-  // Create an OffscreenCanvas to buffer drawing
-  const offScreenCanvas = new OffscreenCanvas(width, height);
-  const osCtx = offScreenCanvas.getContext("2d");
+  // The offscreen buffer we draw into, reused every frame (a new one each
+  // frame was slow), remade only when the window size changes
+  if (!_renderBuffer || _renderBuffer.width !== width || _renderBuffer.height !== height) {
+    _renderBuffer = new OffscreenCanvas(width, height);
+    _renderBufferCtx = _renderBuffer.getContext("2d");
+  }
+  const offScreenCanvas = _renderBuffer;
+  const osCtx = _renderBufferCtx;
+  osCtx.setTransform(1, 0, 0, 1, 0, 0);
+  osCtx.globalAlpha = 1;
+  osCtx.clearRect(0, 0, width, height);
 
   // Fluffy Park: draw the world through the camera (Park.js)
   const parkCam =
@@ -1850,7 +1861,8 @@ function render() {
   if (typeof drawSkyAndWeather === "function") drawSkyAndWeather(osCtx);
   // Their eyes shine in the dark (NightEvents.js)
   if (parkCam && typeof drawNightPredatorEyes === "function") drawNightPredatorEyes(osCtx, parkCam);
-  drawUI(osCtx);
+  // (The UI is drawn once, on the screen, after this buffer: drawUI(ctx)
+  // below. It used to be drawn here too, but everything was covered.)
   if (parkCam) {
     osCtx.save();
     osCtx.translate(-Math.round(parkCam.x), -Math.round(parkCam.y));

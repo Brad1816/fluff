@@ -273,17 +273,40 @@ function getScenePortals(scene) {
   return portals;
 }
 
+// The floor texture, drawn once per area (and window size) and reused:
+// making the pattern and filling the screen every frame was slow
+const _backgroundCache = {};
+
+function _backgroundFor(scene, img) {
+  const key = `${scene}:${width}x${height}`;
+  let bg = _backgroundCache[key];
+  if (!bg || bg.img !== img) {
+    const canvas = new OffscreenCanvas(width, height);
+    const bc = canvas.getContext("2d");
+    bc.fillStyle = bc.createPattern(img, "repeat");
+    bc.fillRect(0, 0, width, height);
+    bg = _backgroundCache[key] = { canvas, img };
+  }
+  return bg.canvas;
+}
+
+let _parkPattern = null;
+let _parkPatternImg = null;
+
 function drawBackground(c = ctx) {
   const config = getSceneConfig(currentScene);
   const img = images[config.backgroundTexture];
   if (img && img.width > 0) {
-    const pattern = c.createPattern(img, "repeat");
-    c.fillStyle = pattern;
     // In the park the camera is applied, so fill the part being looked at
     if (typeof isCameraScene === "function" && isCameraScene(currentScene)) {
+      if (_parkPatternImg !== img) {
+        _parkPattern = c.createPattern(img, "repeat");
+        _parkPatternImg = img;
+      }
+      c.fillStyle = _parkPattern;
       c.fillRect(camera.x, camera.y, width, height);
     } else {
-      c.fillRect(0, 0, width, height);
+      c.drawImage(_backgroundFor(currentScene, img), 0, 0);
     }
   }
 }

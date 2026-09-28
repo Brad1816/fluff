@@ -1053,7 +1053,13 @@ addHorseMethods({
       }
       this.changeHappiness(0); // Clamp and trigger rule logic if needed
 
-      this.updateExpression(dt);
+      // The face: every step when you can see it, twice a second otherwise
+      // (talking checks for a shocked face)
+      this._exprTimer = (this._exprTimer || 0) - dt;
+      if (this.scene === currentScene || this._exprTimer <= 0) {
+        this._exprTimer = 0.5;
+        this.updateExpression(dt);
+      }
 
       if (this.expressionOverrideTimer > 0) {
         this.expressionOverrideTimer -= dt;

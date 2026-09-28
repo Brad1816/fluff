@@ -1,3 +1,19 @@
+// Fluffies being chased by a smarty (or one under an aphrodisiac) in the
+// same area, worked out once per game step instead of once per fluffy
+let _chasedStamp = -1;
+let _chasedSet = new Set();
+function _chasedFluffies() {
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  if (now === _chasedStamp) return _chasedSet;
+  _chasedStamp = now;
+  _chasedSet = new Set();
+  for (const f of fluffies) {
+    if (!f.isAlive || !f.chaseTarget || f.chaseTarget.scene !== f.scene) continue;
+    if (f.isSmarty() || f.isUnderAphrodisiac()) _chasedSet.add(f.chaseTarget);
+  }
+  return _chasedSet;
+}
+
 class HorseRenderer {
   constructor(horse) {
     this.horse = horse;
@@ -35,18 +51,7 @@ class HorseRenderer {
   updateExpression(dt) {
     if (!this.horse.isAlive) return;
 
-    let isChaseTarget = false;
-    for (const f of fluffies) {
-      if (
-        f.isAlive &&
-        f.scene === this.horse.scene &&
-        (f.isSmarty() || f.isUnderAphrodisiac()) &&
-        f.chaseTarget === this.horse
-      ) {
-        isChaseTarget = true;
-        break;
-      }
-    }
+    const isChaseTarget = _chasedFluffies().has(this.horse);
 
     if (this.horse.isUnderAphrodisiac()) {
       this.horse.expression = "MISERABLE";
