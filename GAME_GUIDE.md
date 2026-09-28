@@ -47,7 +47,15 @@ and it runs. About 36,000 lines across ~60 files.
 | `index.html` | Loads every script, in order. **New files must be added here.** |
 | `globals.js` | Shared setup and settings: scene definitions (`SCENES`), mouse/keyboard state, the master lists, money, lots of tuning constants (happiness bonuses/penalties, thresholds), **the shop list `SPAWN_ACTIONS`**, accessories (`ACCESSORY_DB`), the tool/toolbox system, `WorldSettings` (the "Headcanon" options), helper functions (`clamp`, `lerp`, `isPointInRect`, `changeScene`, `handleDropping`, `setRelationship`). |
 | `script.js` | The **main loop** (`animate` → `updateSimulation` → `render`), feral spawning (`spawnFeralGroup`, `updateFerals`), sell offers, day care ageing, cars, **what happens when you click while holding something** (`attemptDrop`: using the stick/knife/brush etc. on a fluffy), keyboard shortcuts, startup. |
-| `UI.js` | Everything drawn on top of the world and most clicking: `buyShopAction` (buying anything from `SPAWN_ACTIONS`), the debug-mode item menu, tooltips, toolbox/toolbar, sell (shift-click), inspection window, day care window, chat log, debug menu, **scene portals/map** (`getScenePortals`), background drawing, backyard fence, and the big **`mousedown` handler** (near the end). |
+| `UI.js` | The main screen drawing (`drawUI`), which windows are open (`isAnyScreenOpen`, `openInspectionModal`), the top-left buttons and the big **`mousedown` handler** (near the end). The rest of the on-screen parts are split into the `UI*.js` files below. |
+| `UIMessages.js` | Messages on screen (`addUIMessage`), debug messages, door knocks, TV captions. |
+| `UIToolbox.js` | Toolbox and toolbar, shop item pictures, **buying anything from `SPAWN_ACTIONS`** (`buyShopAction`), the debug item menu (`isItemMenuAvailable`). |
+| `UISelling.js` | Selling: the buyer at the door (sell request card) and shift + click selling (`sellModeClick`). |
+| `UIDebug.js` | Debug mode: debug actions on fluffies, the watcher panel and the debug menu. |
+| `UIInspection.js` | The magnifying glass panel (`getFluffyInspectionInfo`, `drawInspectionModal`) and renaming. |
+| `UIDayCare.js` | The day care window. |
+| `UIChatLog.js` | The chat log panel. |
+| `UIScenes.js` | **Scene portals/map** (`getScenePortals`: arrows and doors between areas) and drawing each area's background, road, fences and doors. |
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** happens in `handleWorldSettingsClick` (it resets everything in `SAVED_GAME_STATE`). |
 | `Store.js` | **Fluff Mart**: the Shopping Street scene (down from the garden), the store's aisle scenes, which items go in which aisle (`STORE_AISLES`), drawing the shelves and price tags, and buying by clicking a shelf. See section 9. |
 | `FamilyTree.js` | **Family record book** (`fluffyRecords`: every fluffy you've owned, even after it dies or is sold, with its genes and parents) and the **family tree screen** with its genetics panel. See section 9. |
@@ -86,7 +94,15 @@ helper, reachable as `horse.brain`, `horse.positioning`, and so on.
 
 | File | Part | What it does |
 |---|---|---|
-| `Horse.js` | `Horse` | Main class: all the fluffy's stats, `update(dt)` (runs every frame, ~1,500 lines), state changes (`initBehavior`), relationships and missing-family logic (`updateRelationships`), mating, pregnancy, excretion, speaking (`speak`), saving (`serialize`/`deserialize`). |
+| `Horse.js` | `Horse` | Main class: all the fluffy's stats, the constructor, `update(dt)` (the order of the per-frame steps), state changes (`initBehavior`), `notifyViolence`, and `addHorseMethods` (at the very end). The rest of its methods live in the files below; they are still ordinary `horse.method()` calls. |
+| `HorseUpdate.js` | (methods) | The **steps of `update(dt)`**, one named method each: `_updateSmoke`, `_updateMovementAndMums`, `_updateFlailing`, `_updatePregnancy`, `_updateToiletNeeds`, `_updateEarFlop`, `_updateCannibalism`, `_updateGrowingUp`, `_updateEating`, `_updateCastrationBand`, `_updateAilments`, `_updateHungerAndHealth`, `_updateDoorTapping`, `_updateAdoptionRoom`, `_updateSmartyChase`, `_updateStacking`, `_updateTears`, `_updateDreams`, `_updateWings`, `_updatePupils`, `_updateBlinking`, `_updateStateEffects`, `_updateColoristMum`, `_updateMovementSound`. `_updateAilments` and `_updateHungerAndHealth` return `true` when the fluffy died, and `update` stops there. |
+| `HorseFamily.js` | (methods) | Family life: feeding from and adopting mums, missing relatives and reunions (`updateRelationships`), milk preferences. |
+| `HorseTalk.js` | (methods) | What fluffies say: babbling, family chatter, first words, speaking (`speak`: speech bubbles and the chat log). |
+| `HorseMating.js` | (methods) | Mating, pregnancy and giving birth. |
+| `HorseToilet.js` | (methods) | Pooping, peeing, bleeding, being sick, litterboxes, eating waste off the floor. |
+| `HorseSocial.js` | (methods) | Fluffies with each other: attacks, friendships and hugs. |
+| `HorseHitTest.js` | (methods) | Clicking on fluffies: hit tests and body-position maths (`hitTestAsSeen` uses where it was last *drawn*, so running fluffies can still be clicked). |
+| `HorseSave.js` | (methods) | Saving a fluffy (`serialize`). Loading is `Horse.deserialize` in `Horse.js`. |
 | `HorseBrain.js` | `horse.brain` | **Decision making.** A list of `Desire`s (Eat, Sleep, Wander, fears...). See section 4. |
 | `HorsePositioning.js` | `horse.positioning` | **Finding things and picking where to walk**: `scoutForHunger` (find food), `scoutForSleep`, `scoutForLitterbox`, `findSpecialFriend`, fear targets, `_pickNewTarget` (random wandering), body size (`getExtentsForCage`). |
 | `HorseActionHandler.js` | `horse.actionHandler` | **Walking** toward the target each frame, and what happens on **arrival** (`checkArrivals`: kick the ball, eat, hug...). Also executes several desires. |
@@ -94,6 +110,22 @@ helper, reachable as `horse.brain`, `horse.positioning`, and so on.
 | `HorseAnatomy.js` | `horse.anatomy` | Amputation, death, gibs, eating corpses, pregnancy start, births. |
 | `HorseGenetics.js` | `horse.genetics` | Genes → colours, mane/tail type, wings/horn; breeding (`combineGenes`); **price** (`calculatePrice`). |
 | `HorseRenderer.js` | `horse.renderer` | Drawing the fluffy from body-part images, tinted to its colours; face expressions; speech bubbles; dreams; portraits. |
+
+#### How the Horse method files work
+Each of the `Horse*.js` method files calls `addHorseMethods({ ... })` with
+plain methods, which adds them to every fluffy (`Horse.prototype`). They are
+loaded in `index.html` right after `Horse.js`. To add a method, put it in
+the file that fits (or a new one, added to `index.html` after `Horse.js`).
+`addHorseMethods` stops with an error if two files define the same method
+name, so a clash shows up straight away instead of one silently replacing
+the other.
+
+**Beware of name clashes between files in general.** Every file shares one
+global scope, so two files each with a top-level `function _say()` means
+the later one wins everywhere (this happened once: Separation.js broke herd
+dialogue). Give file-private helpers a prefix (`_sepSay`). To check:
+`grep -ho "^function [A-Za-z_0-9]*" *.js | sort | uniq -d` should print
+nothing.
 
 ### Items (one class per file)
 Each item class follows the same pattern (see section 6):
@@ -141,7 +173,7 @@ render()                                  (script.js)
  ├─ background, puddles, door
  ├─ every object + fluffy + gib + car in the current scene,
  │  sorted by getBottomY()  → lower on screen = drawn later = in front
- ├─ backyard fence, effects, UI (drawUI in UI.js)
+ ├─ backyard fence, effects, UI (drawUI in UI.js; parts in UI*.js)
  └─ speech bubbles, dreams, names on top of everything
 ```
 
@@ -359,7 +391,7 @@ value), and reset when a new game starts. A test checks every field in
 the list survives saving and loading.
 
 ### Show something new in the magnifying glass panel
-In `UI.js`, `getFluffyInspectionInfo(f)` builds two lists: `about` (left
+In `UIInspection.js`, `getFluffyInspectionInfo(f)` builds two lists: `about` (left
 column) and `care` (right column). Push another row:
 ```js
 care.push({ label: "Fleas", value: f.hasFleas ? "Yes" : "No", tone: f.hasFleas ? "bad" : "good" });
@@ -379,6 +411,14 @@ browser: every shop item (buy, sell for half price, pick up, save/load),
 fences/gates/pens, and a basic "the game runs" check. See `tests/README.md`.
 In a terminal in `tests/`: `npm run setup` once, then `npm test` after any
 change. `zip_project.sh` runs them before packaging, too.
+
+`tests/run-tests.js` switches a few things off so tests are predictable:
+wild fluffies arriving in the park (`parkLife.enabled`), weather (clear
+skies) and naming pop-ups (`namingPopupsEnabled`). A test that needs one of
+them turns it back on itself (e.g. `names.test.js` sets
+`namingPopupsEnabled = true`). `__seedRandom(n)` makes random choices
+repeatable, `__fastForward(seconds)` runs the game quickly, and
+`__clearScene()` empties an area.
 
 ## 8. Gotchas worth knowing
 
@@ -430,7 +470,7 @@ change. `zip_project.sh` runs them before packaging, too.
 - **Pen-aware AI**: every "is it in my cage?" check in `HorsePositioning.js`
   now also asks `fenceCanReachThing`, so fluffies ignore food, beds, toys,
   litterboxes, TV and mates on the other side of a fence. Eating, mating,
-  hugging and attacking also need the two to be reachable (`Horse.js`).
+  hugging and attacking also need the two to be reachable (eating: `_updateEating` in `HorseUpdate.js`).
   Wandering (`WanderDesire` in `HorseBrain.js` and `_pickNewTarget`) only
   picks reachable spots. Walking (`HorseActionHandler.checkArrivals`) steers
   round fences.
@@ -448,7 +488,7 @@ change. `zip_project.sh` runs them before packaging, too.
   `HorseActionHandler.js`, `HorseBrain.js`, `Horse.js`, `dialogue.js`.
 - Originals of every changed file are in `_backup_before_fence/`.
 
-### Magnifying glass panel (`UI.js`)
+### Magnifying glass panel (`UIInspection.js`)
 Dropping the magnifying glass on a fluffy opens a two-column panel.
 **About**: name, gender, type, age (foal % grown or adult), sexuality,
 personality (Smarty in red), parents, special friend, number of friends.
@@ -479,7 +519,7 @@ Things are bought at a store instead of from a menu.
   expensive, "Owned" for tools you have). `drawStoreOverlay` draws the
   hover highlight and description.
 - **Buying**: `storeShelfClick` (called from the `mousedown` handler) calls
-  `buyShopAction` in `UI.js`, the same code the debug item menu uses.
+  `buyShopAction` in `UIToolbox.js`, the same code the debug item menu uses.
   World items land on the floor in front of the shelves; tools go straight
   into the toolbox; fence pieces stick to the mouse as usual.
 - **Carrying things home**: pick the item up, then walk with WASD (S out
@@ -487,7 +527,7 @@ Things are bought at a store instead of from a menu.
   arrow while holding something *throws it through* to the next area
   instead of walking with it (that's the game's normal behaviour).
 - **The old item menu** in the top left only appears with the debug menu
-  on (`isItemMenuAvailable()` in `UI.js`), where spawning is free.
+  on (`isItemMenuAvailable()` in `UIToolbox.js`), where spawning is free.
 - The store scenes aren't "player quarters", so you can't sell things there.
 
 ### Family tree and genetics (`FamilyTree.js`)
@@ -500,7 +540,7 @@ Open it with the **Family tree** button in the magnifying glass panel.
   (if another mare adopted it: the game overwrites `motherId` then), when
   it was born and its status: alive, dead (with cause), sold, at day care,
   taken (by dogs) or gone. `noteFluffyLeft(f, "sold")` is called where
-  fluffies are sold (`UI.js`) and taken by dogs (`script.js`).
+  fluffies are sold (`UISelling.js`, `UI.js`) and taken by dogs (`script.js`).
 - **The tree**: grandparents, parents, the fluffy (gold border), brothers
   and sisters beside it (half-siblings labelled), and foals below. Blue
   border = male, pink = female; dimmed = no longer alive. Click a card to
@@ -842,7 +882,7 @@ times to 5.
   and lightning flashes; indoors only gets a little dimmer at night.
   `drawWeatherGround` whitens the ground under snow.
 - **Fluffies**: they tire faster and rest slower at night
-  (`sleepRateMultipliers`, Horse.js), and the Sleep desire starts at 0.35
+  (`sleepRateMultipliers`, HorseUpdate.js), and the Sleep desire starts at 0.35
   tiredness at night (HorseBrain.js) - so most of a herd is asleep at night
   and few in the day. Rain and snow slowly upset fluffies outside (not
   under a tree); thunder startles them; snow makes outdoor fluffies hungry
