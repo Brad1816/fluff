@@ -662,3 +662,13 @@ function handleOrdersScreenClick() {
   if (m.x < 0 || m.y < 0 || m.x > OS_W || m.y > OS_H) closeOrdersScreen();
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "orders",
+  layer: 12,
+  isOpen: () => isOrdersScreenOpen(),
+  close: () => closeOrdersScreen(),
+  draw: (c) => drawOrdersScreen(c),
+  click: () => handleOrdersScreenClick(),
+});

@@ -331,3 +331,13 @@ function handleHelpClick() {
   });
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "help",
+  layer: 21,
+  isOpen: () => helpOpen,
+  close: () => closeHelp(),
+  draw: (c) => drawHelp(c),
+  click: () => handleHelpClick(),
+});

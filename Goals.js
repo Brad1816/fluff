@@ -317,3 +317,13 @@ function handleGoalsClick() {
   if (!inside || isPointInRect(mouse.x, mouse.y, L.close.x, L.close.y, L.close.w, L.close.h)) closeGoals();
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "goals",
+  layer: 20,
+  isOpen: () => goalsOpen,
+  close: () => closeGoals(),
+  draw: (c) => drawGoals(c),
+  click: () => handleGoalsClick(),
+});

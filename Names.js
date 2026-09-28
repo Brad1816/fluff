@@ -499,3 +499,15 @@ function namedBy(f) {
   if (typeof stockMarket !== "undefined" && stockMarket.named && stockMarket.named[f.id] === n) return "its breeder";
   return "you";
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "naming",
+  layer: 31,
+  isOpen: () => isNamingPopupOpen(),
+  close: () => skipNamingPopup(),
+  draw: (c) => drawNamingPopup(c),
+  click: () => handleNamingClick(),
+  escape: false, // it handles Esc itself (typing in its boxes)
+  reset: () => resetNamingPopups(),
+});

@@ -443,3 +443,13 @@ function handleRecordsClick() {
   }
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "records",
+  layer: 22,
+  isOpen: () => recordsOpen,
+  close: () => closeRecords(),
+  draw: (c) => drawBreedingRecords(c),
+  click: () => handleRecordsClick(),
+});

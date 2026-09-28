@@ -2037,37 +2037,8 @@ window.addEventListener("keydown", (e) => {
     if (typeof transitionPhase !== "undefined" && transitionPhase !== "OFF") {
       return;
     }
-    if (typeof dayCareModalOpen !== "undefined" && dayCareModalOpen) {
-      dayCareModalOpen = false;
-      return;
-    }
-    // Morning report (DayReport.js)
-    if (typeof isDayReportOpen === "function" && isDayReportOpen()) {
-      closeDayReport();
-      return;
-    }
-    // Goals list (Goals.js)
-    if (typeof isGoalsOpen === "function" && isGoalsOpen()) {
-      closeGoals();
-      return;
-    }
-    // Help (Help.js)
-    if (typeof isHelpOpen === "function" && isHelpOpen()) {
-      closeHelp();
-      return;
-    }
-    // Breeding records (BreedingRecords.js)
-    if (typeof isRecordsOpen === "function" && isRecordsOpen()) {
-      closeRecords();
-      return;
-    }
-    // The vet (Vet.js)
-    if (typeof isVetOpen === "function" && isVetOpen()) {
-      closeVet();
-      return;
-    }
-    if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
-      inspectedFluffy = null;
+    // Close the top pop-up screen (Screens.js)
+    if (escapeScreens()) {
       return;
     }
     if (typeof unequipCurrentTool === "function") {

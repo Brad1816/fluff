@@ -804,3 +804,13 @@ function handleGeneLabClick() {
   if (m.x < 0 || m.y < 0 || m.x > GL_W || m.y > GL_H) closeGeneLab();
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "geneLab",
+  layer: 11,
+  isOpen: () => isGeneLabOpen(),
+  close: () => closeGeneLab(),
+  draw: (c) => drawGeneLab(c),
+  click: () => handleGeneLabClick(),
+});

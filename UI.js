@@ -524,39 +524,16 @@ function drawUI(ctx) {
   drawDebugMenu();
   drawUIMessages(ctx);
   drawDebugWatcher();
-  drawInspectionModal(ctx);
-  if (typeof drawFamilyTree === "function") drawFamilyTree(ctx);
-  if (typeof drawGeneLab === "function") drawGeneLab(ctx);
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
-  if (typeof drawOrdersScreen === "function") drawOrdersScreen(ctx);
-  drawDayCareModal(ctx);
-  // Goals list (Goals.js) and help (Help.js)
-  if (typeof drawGoals === "function") drawGoals(ctx);
-  if (typeof drawHelp === "function") drawHelp(ctx);
-  if (typeof drawBreedingRecords === "function") drawBreedingRecords(ctx);
-  if (typeof drawVet === "function") drawVet(ctx);
-  // Morning report on top of everything (DayReport.js)
-  if (typeof drawDayReport === "function") drawDayReport(ctx);
-  // Naming a new fluffy / litter (Names.js)
-  if (typeof drawNamingPopup === "function") drawNamingPopup(ctx);
+  // Every pop-up screen, bottom layer first (Screens.js)
+  drawScreens(ctx);
 }
 
 let inspectedFluffy = null;
 
+// Is any pop-up screen open? (Screens.js has the list)
 function isAnyScreenOpen() {
-  if (typeof dayCareModalOpen !== "undefined" && dayCareModalOpen) return true;
-  if (typeof inspectedFluffy !== "undefined" && inspectedFluffy !== null)
-    return true;
-  if (typeof isFamilyTreeOpen === "function" && isFamilyTreeOpen()) return true;
-  if (typeof isGeneLabOpen === "function" && isGeneLabOpen()) return true;
-  if (typeof isOrdersScreenOpen === "function" && isOrdersScreenOpen()) return true;
-  if (typeof isDayReportOpen === "function" && isDayReportOpen()) return true;
-  if (typeof isNamingPopupOpen === "function" && isNamingPopupOpen()) return true;
-  if (typeof isGoalsOpen === "function" && isGoalsOpen()) return true;
-  if (typeof isHelpOpen === "function" && isHelpOpen()) return true;
-  if (typeof isRecordsOpen === "function" && isRecordsOpen()) return true;
-  if (typeof isVetOpen === "function" && isVetOpen()) return true;
-  return false;
+  return anyScreenOpen();
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
 
@@ -731,48 +708,8 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
-  // Naming pop-up, then the morning report: they're on top (Names.js, DayReport.js)
-  if (typeof handleNamingClick === "function" && handleNamingClick()) {
-    return;
-  }
-  // Morning report (DayReport.js)
-  if (typeof handleDayReportClick === "function" && handleDayReportClick()) {
-    return;
-  }
-  // Goals list (Goals.js)
-  if (typeof handleGoalsClick === "function" && handleGoalsClick()) {
-    return;
-  }
-  // Help (Help.js)
-  if (typeof handleHelpClick === "function" && handleHelpClick()) {
-    return;
-  }
-  // Breeding records (BreedingRecords.js)
-  if (typeof handleRecordsClick === "function" && handleRecordsClick()) {
-    return;
-  }
-  // The vet (Vet.js)
-  if (typeof handleVetClick === "function" && handleVetClick()) {
-    return;
-  }
-
-  if (typeof handleFamilyTreeClick === "function" && handleFamilyTreeClick()) {
-    return;
-  }
-
-  if (typeof handleGeneLabClick === "function" && handleGeneLabClick()) {
-    return;
-  }
-
-  if (typeof handleOrdersScreenClick === "function" && handleOrdersScreenClick()) {
-    return;
-  }
-
-  if (handleInspectionModalClick()) {
-    return;
-  }
-
-  if (handleDayCareModalClick()) {
+  // Pop-up screens, top one first (Screens.js)
+  if (clickScreens()) {
     return;
   }
 

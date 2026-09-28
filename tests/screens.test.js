@@ -1,0 +1,57 @@
+// The pop-up screen list (Screens.js)
+const { check, checkEqual } = require("./helpers");
+
+module.exports = [
+  {
+    name: "screens: every screen is on the list; Esc closes the top one; loading closes them all",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene();
+        const f = new Horse(1, null, "INDOORS", "earthy");
+        f.adopted = true;
+        fluffies.push(f);
+        const out = { names: SCREENS.map((s) => s.name) };
+        out.none = anyScreenOpen();
+        // Family tree (it had no Esc before), with goals on top
+        openFamilyTree(f.id);
+        openGoals();
+        out.bothOpen = [isFamilyTreeOpen(), isGoalsOpen(), isAnyScreenOpen()];
+        out.esc1 = escapeScreens();
+        out.after1 = [isFamilyTreeOpen(), isGoalsOpen()];
+        escapeScreens();
+        out.after2 = [isFamilyTreeOpen(), anyScreenOpen()];
+        // Clicks go to the top screen only
+        openGeneLab();
+        openVet();
+        mouse.x = -5;
+        mouse.y = -5; // outside: the vet closes, the Gene Lab stays
+        clickScreens();
+        out.click = [isVetOpen(), isGeneLabOpen()];
+        // Reset (new game / load) closes everything
+        openHelp();
+        openRecords();
+        inspectedFluffy = f;
+        resetScreens();
+        out.reset = anyScreenOpen();
+        let threw = false;
+        try {
+          registerScreen({ name: "goals", isOpen: () => false, close() {} });
+        } catch (e) {
+          threw = true;
+        }
+        out.duplicate = threw;
+        return out;
+      });
+      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "goals", "help", "records", "vet", "dayReport", "naming"])
+        check(r.names.includes(n), `${n} on the list: ${r.names}`);
+      checkEqual(r.none, false, "none open at the start");
+      checkEqual(JSON.stringify(r.bothOpen), JSON.stringify([true, true, true]), "both open");
+      checkEqual(r.esc1, true, "Esc used");
+      checkEqual(JSON.stringify(r.after1), JSON.stringify([true, false]), "goals (on top) closed first");
+      checkEqual(JSON.stringify(r.after2), JSON.stringify([false, false]), "then the family tree");
+      checkEqual(JSON.stringify(r.click), JSON.stringify([false, true]), "click only reached the top screen");
+      checkEqual(r.reset, false, "reset closes everything");
+      checkEqual(r.duplicate, true, "a name can't be used twice");
+    },
+  },
+];

@@ -410,3 +410,13 @@ function handleInspectionModalClick() {
   inspectedFluffy = null;
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "inspection",
+  layer: 5,
+  isOpen: () => typeof inspectedFluffy !== "undefined" && inspectedFluffy !== null,
+  close: () => (inspectedFluffy = null),
+  draw: (c) => drawInspectionModal(c),
+  click: () => handleInspectionModalClick(),
+});

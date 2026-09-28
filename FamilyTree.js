@@ -880,3 +880,13 @@ function handleFamilyTreeClick() {
   if (m.x < 0 || m.y < 0 || m.x > FT_W || m.y > FT_H) closeFamilyTree();
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "familyTree",
+  layer: 10,
+  isOpen: () => isFamilyTreeOpen(),
+  close: () => closeFamilyTree(),
+  draw: (c) => drawFamilyTree(c),
+  click: () => handleFamilyTreeClick(),
+});

@@ -387,3 +387,13 @@ function handleVetClick() {
   }
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "vet",
+  layer: 23,
+  isOpen: () => vetOpen,
+  close: () => closeVet(),
+  draw: (c) => drawVet(c),
+  click: () => handleVetClick(),
+});

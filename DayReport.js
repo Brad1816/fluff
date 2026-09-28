@@ -317,3 +317,13 @@ function handleDayReportClick() {
   if (isPointInRect(mouse.x, mouse.y, L.btn.x, L.btn.y, L.btn.w, L.btn.h)) closeDayReport();
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "dayReport",
+  layer: 30,
+  isOpen: () => !!dayReportShown,
+  close: () => closeDayReport(),
+  draw: (c) => drawDayReport(c),
+  click: () => handleDayReportClick(),
+});

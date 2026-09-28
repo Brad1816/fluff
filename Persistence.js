@@ -208,20 +208,9 @@ function resetTemporaryGameState() {
   carSpawnTimer = 0;
   showChatLog = false;
   if (typeof gameSpeed !== "undefined") gameSpeed = 1;
-  if (typeof dayReportShown !== "undefined") dayReportShown = null;
-  if (typeof resetNamingPopups === "function") resetNamingPopups();
-  if (typeof goalsOpen !== "undefined") goalsOpen = false;
-  if (typeof helpOpen !== "undefined") helpOpen = false;
-  if (typeof recordsOpen !== "undefined") recordsOpen = false;
-  if (typeof vetOpen !== "undefined") vetOpen = false;
   if (typeof resetNightPredators === "function") resetNightPredators();
-  dayCareModalOpen = false;
-  dayCareBroughtPage = 0;
-  dayCareStoredPage = 0;
-  if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
-  if (typeof closeFamilyTree === "function") closeFamilyTree();
-  if (typeof closeGeneLab === "function") closeGeneLab();
-  if (typeof closeOrdersScreen === "function") closeOrdersScreen();
+  // Every pop-up screen closed (Screens.js)
+  if (typeof resetScreens === "function") resetScreens();
 }
 
 // Everything in SAVED_GAME_STATE back to how a new game starts

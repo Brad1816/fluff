@@ -602,3 +602,18 @@ function handleDayCareModalClick() {
   dayCareModalOpen = false;
   return true;
 }
+
+// Pop-up screen list (Screens.js)
+registerScreen({
+  name: "dayCare",
+  layer: 13,
+  isOpen: () => !!dayCareModalOpen,
+  close: () => (dayCareModalOpen = false),
+  draw: (c) => drawDayCareModal(c),
+  click: () => handleDayCareModalClick(),
+  reset: () => {
+    dayCareModalOpen = false;
+    dayCareBroughtPage = 0;
+    dayCareStoredPage = 0;
+  },
+});
