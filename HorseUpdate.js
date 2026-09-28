@@ -193,6 +193,8 @@ addHorseMethods({
             this.blockOnBack.groundY = this.y;
             this.blockOnBack = null;
           }
+          // How her pregnancy went decides the litter (Pregnancy.js)
+          if (typeof onLabourStarts === "function") onLabourStarts(this);
           if (this.babiesToBirth === 0) {
             this.babiesToBirth = Math.floor(Math.random() * 7) + 1;
           }
@@ -247,9 +249,10 @@ addHorseMethods({
 
           this.spawnBaby(isViable);
 
-          // Reduce health per birth
-          const healthDamage = isViable ? 20 : 40;
-          this.health = Math.max(0, this.health - healthDamage);
+          // Each birth costs her health: less with good care or a midwife
+          // (Pregnancy.js)
+          if (typeof applyBirthHealthCost === "function") applyBirthHealthCost(this, isViable);
+          else this.health = Math.max(0, this.health - (isViable ? 20 : 40));
           if (this.health <= 0) {
             this.die(null, "Died in childbirth");
           }
@@ -258,6 +261,7 @@ addHorseMethods({
           if (this.babiesToBirth > 0) {
             this.birthIntervalTimer = 3.0; // 3 second delay
           } else {
+            if (typeof onLitterFinished === "function") onLitterFinished(this);
             this.isPregnant = false;
             this.pregnancyTimer = 0;
             this.pregnancyTorsoStretch = 0;
@@ -359,7 +363,9 @@ addHorseMethods({
   _updateGrowingUp(dt) {
     if (this.growth < 1.0) {
       const wasTooYoungToSpeak = this.tooYoungToSpeak();
-      this.growth = Math.min(1.0, this.growth + (dt / 1680.0) * debugGrowthMultiplier);
+      // Strong, well-fed foals grow faster (Pregnancy.js)
+      const rate = typeof foalGrowthRate === "function" ? foalGrowthRate(this) : 1;
+      this.growth = Math.min(1.0, this.growth + (dt / 1680.0) * debugGrowthMultiplier * rate);
       if (this.growth >= 1.0) {
         for (const ownerId in relationships) {
           if (relationships[ownerId][this.id] === "baby_child") {

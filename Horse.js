@@ -84,7 +84,9 @@ function notifyViolence(
     const rel = relationships[other.id]?.[victim.id];
     // Witnessing potty training (Sorry Stick)
     if (isTraining && weaponType === "stick") {
-      if (!other.isSmarty()) continue;
+      // Smarties don't learn from watching (this was the wrong way round:
+      // only smarties learned; the brush's witnesses work this way too)
+      if (other.isSmarty()) continue;
 
       other.pottyTraining = Math.min(
         1.0,

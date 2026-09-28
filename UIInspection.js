@@ -146,6 +146,9 @@ function getFluffyInspectionInfo(f) {
     { label: "Age", value: describeInspectionAge(f), tone: typeof describeAgeTone === "function" ? describeAgeTone(f) : "" },
     { label: "Sexuality", value: f.sexuality || "heterosexual" },
   ];
+  // Which litter it came from, and how strong a foal (Pregnancy.js)
+  const born = typeof describeBirth === "function" ? describeBirth(f) : null;
+  if (born && born[0]) about.push({ label: "Born", value: born[0], tone: born[1] });
   // Show ribbons (Shows.js)
   const ribbons = typeof describeRibbons === "function" ? describeRibbons(f) : null;
   if (ribbons) about.push({ label: "Ribbons", value: ribbons, tone: "good" });
@@ -212,7 +215,9 @@ function getFluffyInspectionInfo(f) {
   if (f.gender === "female") {
     care.push({ label: "Spayed", value: f.spayed ? "Yes" : "No" });
     if (f.isAlive) {
-      care.push({ label: "Pregnant", value: f.isPregnant ? "Yes" : "No", tone: f.isPregnant ? "ok" : "" });
+      // Due date, how well she's cared for, the vet's scan (Pregnancy.js)
+      const [pText, pTone] = typeof describePregnancy === "function" ? describePregnancy(f) : [f.isPregnant ? "Yes" : "No", f.isPregnant ? "ok" : ""];
+      care.push({ label: "Pregnant", value: pText, tone: pTone });
     }
   }
   // How it feels about you and what it remembers (Memory.js)

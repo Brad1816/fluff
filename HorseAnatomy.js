@@ -547,8 +547,11 @@ class HorseAnatomy {
     this.horse.babyDaddyId = father.id;
     this.horse.updateGrowthStats();
 
-    // Decide number of foals and viability
-    this.horse.babiesToBirth = Math.floor(Math.random() * 7) + 1;
+    // Decide number of foals and viability (litter size runs in families,
+    // and her care while pregnant counts later - Pregnancy.js)
+    this.horse.babiesToBirth =
+      typeof plannedLitterSize === "function" ? plannedLitterSize(this.horse, father) : Math.floor(Math.random() * 7) + 1;
+    if (typeof startPregnancyCare === "function") startPregnancyCare(this.horse);
     this.horse.foalViability = [];
     for (let i = 0; i < this.horse.babiesToBirth; i++) {
       let viable = true;
@@ -608,11 +611,6 @@ class HorseAnatomy {
       baby.bloodTolerance = 1;
       this.horse.bloodTolerance = 1;
       this.horse.bloodReactionTimer = 15;
-      // Create blood puddle
-      if (typeof puddles !== "undefined") {
-        const pX = baby.x;
-        const pY = baby.y;
-      }
     }
 
     if (isViable && this.horse.fatherId !== undefined) {
@@ -645,6 +643,8 @@ class HorseAnatomy {
     }
 
     fluffies.push(baby);
+    // Litter size, and how strong it is from mum's care (Pregnancy.js)
+    if (typeof onFoalBorn === "function") onFoalBorn(this.horse, baby, isViable);
     if (isViable) {
       baby.speak(getDialogue("BABY_PEEP", baby, this.horse));
     } else {

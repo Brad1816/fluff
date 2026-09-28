@@ -106,6 +106,24 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Pregnancy & foals",
+    lines: [
+      "How you look after a pregnant mare decides how her litter turns out.",
+      "",
+      "- Care: fed, happy, healthy, rested and not scared of you. The",
+      "  magnifying glass shows it (Great / Good / Fair / Poor) and when",
+      "  she's due.",
+      "- Poor care: she loses foals before birth, more are stillborn, and",
+      "  the foals are born weak. Great care: strong foals that grow faster.",
+      "- Litter size runs in families: mares and stallions from big",
+      "  litters have big litters. Seniors have fewer.",
+      "- Every birth costs her health, more with a big litter. A check-up",
+      "  at the vet scans her: how many, and whether it's risky. Book a",
+      "  midwife ($60) for a safe birth.",
+      "- Foals grow faster when they're well fed. Hungry ones slow down.",
+    ],
+  },
+  {
     title: "Herds & territory",
     lines: [
       "- Fluffies that like each other form herds with a leader (press H to",

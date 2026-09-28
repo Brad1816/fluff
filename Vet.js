@@ -16,6 +16,7 @@
 
 const VET_CHECK_PRICE = 20;
 const VET_JAB_PRICE = 40;
+const VET_MIDWIFE_PRICE = 60; // Pregnancy.js
 const VET_ROWS = 8;
 const VET_W = 1000;
 
@@ -148,6 +149,15 @@ function vetCheckUp(f) {
     found.push(fluShowing(f) ? "Fluffy flu" : "Fluffy flu (caught early, no symptoms yet)");
   }
   for (const [name] of vetProblems(f)) if (name !== "Fluffy flu") found.push(name);
+  // A pregnant mare gets a scan: how many, and is it risky? (Pregnancy.js)
+  if (f.isPregnant && f.pregnancyTimer > 0) {
+    const n = f.babiesToBirth || 0;
+    f.pregScan = { count: n, at: f.vetCheckedAt };
+    const [care] = typeof describeCare === "function" ? describeCare(pregnancyCareScore(f)) : ["?"];
+    let scan = `expecting ${n} foal${n === 1 ? "" : "s"} (care so far: ${care.toLowerCase()})`;
+    if (typeof isRiskyLitter === "function" && isRiskyLitter(f) && !f.midwife) scan += " - a risky birth for her, book a midwife";
+    found.push(scan);
+  }
   f.vetLife = vetLifeNote(f);
   f.vetNote = found.length ? found.join(", ") : "nothing wrong";
   const said = [f.vetNote, f.vetLife].filter(Boolean).join("; ");
@@ -172,8 +182,27 @@ function vetTreat(f) {
   return true;
 }
 
+// A midwife for a pregnant mare's birth: each birth costs her half the
+// health, and she won't die of it (Pregnancy.js)
+function canBookMidwife(f) {
+  return !!(f && f.isAlive && f.isPregnant && !f.midwife);
+}
+
+function vetMidwife(f) {
+  if (!canBookMidwife(f) || !_vetPay(VET_MIDWIFE_PRICE)) return false;
+  f.midwife = true;
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: a midwife will be there when ${_vetName(f)} gives birth.`);
+  return true;
+}
+
+// Not already jabbed, and not pregnant
+function vetCanJab(f) {
+  return !!(f && f.isAlive && !f.fluVaccinated && !(f.isPregnant && f.gender === "female"));
+}
+
 function vetJab(f) {
-  if (!f || !f.isAlive || f.fluVaccinated || !_vetPay(VET_JAB_PRICE)) return false;
+  if (!f || !f.isAlive || f.fluVaccinated || (f.isPregnant && f.gender === "female")) return false;
+  if (!_vetPay(VET_JAB_PRICE)) return false;
   f.fluVaccinated = true;
   return true;
 }
@@ -227,6 +256,7 @@ function getVetLayout() {
       jab: { x: bx - 96, y: ry + 9, w: 88, h: 30 },
       treat: { x: bx - 96 - 106, y: ry + 9, w: 100, h: 30 },
       check: { x: bx - 96 - 106 - 106, y: ry + 9, w: 100, h: 30 },
+
     };
   });
   return {
@@ -270,7 +300,7 @@ function drawVet(c) {
   );
   c.fillText("Flu spreads to fluffies nearby: keep new arrivals in a cage or pen for a day or two.", L.x + 24, L.y + 84);
   _vetButton(c, L.checkAll, "Check everyone", L.list.length > 0);
-  const unjabbed = L.list.filter((f) => !f.fluVaccinated).length;
+  const unjabbed = L.list.filter((f) => vetCanJab(f)).length;
   _vetButton(c, L.jabAll, `Jab everyone ($${unjabbed * VET_JAB_PRICE})`, unjabbed > 0);
 
   c.font = "bold 12px Arial";
@@ -308,6 +338,7 @@ function drawVet(c) {
     c.fillRect(r.x + 350, r.y + 19, 80 * (hp / 100), 10);
     const [cond, tone] = vetCondition(f);
     c.fillStyle = tone === "bad" ? "#ff8a80" : tone === "good" ? "#9fe0a8" : "rgba(255,255,255,0.7)";
+    const pregnant = f.isPregnant && f.gender === "female";
     const condW = r.check.x - (r.x + 450) - 10;
     c.fillText(fitText(c, cond, condW), r.x + 450, r.y + 22);
     c.fillStyle = "rgba(255,255,255,0.5)";
@@ -315,12 +346,18 @@ function drawVet(c) {
     // Second line: flu jab, and what the vet said about its age
     const now = typeof timePlayed === "number" ? timePlayed : 0;
     const life = f.vetLife && f.vetCheckedAt !== undefined && now - f.vetCheckedAt < DAY_LENGTH ? ` · ${f.vetLife}` : "";
-    const line2 = `${f.fluVaccinated ? "Flu jab: yes" : "Flu jab: no"}${life}`;
+    let line2 = `${f.fluVaccinated ? "Flu jab: yes" : "Flu jab: no"}${life}`;
+    if (pregnant && typeof describePregnancy === "function") {
+      line2 = `Pregnant: ${describePregnancy(f)[0]}${f.midwife ? " · midwife booked" : ""}`;
+      c.fillStyle = "#f7c6e0";
+    }
     c.fillText(fitText(c, line2, condW), r.x + 450, r.y + 40);
     const price = vetTreatmentPrice(f);
     _vetButton(c, r.check, `Check-up $${VET_CHECK_PRICE}`, true);
     _vetButton(c, r.treat, price ? `Treat $${price}` : "Treat", price > 0);
-    _vetButton(c, r.jab, f.fluVaccinated ? "Jabbed" : `Jab $${VET_JAB_PRICE}`, !f.fluVaccinated);
+    // No jabs while pregnant: that button books a midwife instead
+    if (pregnant) _vetButton(c, r.jab, f.midwife ? "Midwife ✓" : `Midwife $${VET_MIDWIFE_PRICE}`, !f.midwife);
+    else _vetButton(c, r.jab, f.fluVaccinated ? "Jabbed" : `Jab $${VET_JAB_PRICE}`, !f.fluVaccinated);
   }
   if (typeof drawGlassButton === "function") {
     if (L.pages > 1) {
@@ -350,7 +387,7 @@ function handleVetClick() {
     return true;
   }
   if (hit(L.jabAll)) {
-    for (const f of L.list) if (!f.fluVaccinated && !vetJab(f)) break;
+    for (const f of L.list) if (vetCanJab(f) && !vetJab(f)) break;
     return true;
   }
   if (L.pages > 1 && hit(L.prev)) {
@@ -364,7 +401,10 @@ function handleVetClick() {
   for (const r of L.rows) {
     if (hit(r.check)) vetCheckUp(r.f);
     else if (hit(r.treat)) vetTreat(r.f);
-    else if (hit(r.jab)) vetJab(r.f);
+    else if (hit(r.jab)) {
+      if (r.f.isPregnant && r.f.gender === "female") vetMidwife(r.f);
+      else vetJab(r.f);
+    }
     else continue;
     return true;
   }

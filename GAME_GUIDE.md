@@ -82,6 +82,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
 | `ShoppingBag.js` | **Getting shopping home**: small things go in the shopping bag (tan buttons in the toolbox), big things are delivered to the living room. See section 9 (Shopping bag and deliveries). |
+| `Pregnancy.js` | **Pregnancy and foal care**: litter size runs in families, care during pregnancy sets litter size, stillbirths and foal strength, birth health cost, the vet's scan and midwife, foal growth speed. See section 9 (Pregnancy and foal care). |
 | `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen, or the Show Hall on Shopping Street), grooming with the brush, prizes, ribbons, champions, watching it in the ring. See section 9 (Fluffy shows). |
 | `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -141,7 +142,8 @@ Several things are now one line to add, in the file of the feature itself:
   30 herds, 40 territory, 50 weather/clock (`worldTime`), 60 separation,
   70 naming, 80 settling in, 90 goals, 100 morning report, 110 night
   events, 120 alicorn acceptance, 130 ageing, 140 abandoned pets, 150 flu,
-  160 corpses, 170 customer orders, 180 stock market, 190 shows. The
+  125 pregnancy care, 160 corpses, 170 customer orders, 180 stock market,
+  190 shows. The
   "systems" test checks every one of these is registered.
 - **Something saved with each fluffy**: add `{ name, fallback, clone }` to
   `SAVED_HORSE_FIELDS` in HorseSave.js; saving and loading both read it.
@@ -1452,3 +1454,46 @@ to put it in your shopping bag". Clicking it (`packIntoShoppingBag`) saves
 the item as it is (`serialize()`, so a part-eaten bag of kibble stays part
 eaten) and removes it from the world; taking it out again uses
 `loadObject`. The last one packed comes out first.
+
+### Pregnancy and foal care (`Pregnancy.js`)
+Before, litter size was a flat 1-7 roll and nothing the player did during
+a pregnancy mattered. Now:
+- **Litter size runs in families** (`plannedLitterSize`, called from
+  HorseAnatomy `triggerPregnancy`): every foal records the size of the
+  litter it was born in (`f.litterBorn`). The expected litter is half
+  `LITTER_BASE` (4) and half the average of mum's and dad's `litterBorn`
+  (whichever are known), minus 1 for seniors, plus a bell-curve spread
+  (`LITTER_SPREAD` 1.3), kept to 1-7. Seven foals is now rare (about 4%).
+- **Care while pregnant** (`updatePregnancyCare`, system order 125, every
+  2 s): `pregnancyConditionNow` = 30% fed, 25% happy, 25% health, 10%
+  rested, 10% not scared of you; averaged into `f.pregCare {sum, n}`.
+  `pregnancyCareScore` (0.7 if nothing seen yet), `describeCare`: Great
+  (0.8+), Good (0.65+), Fair (0.5+), Poor.
+- **Labour** (`onLabourStarts`, from HorseUpdate `_updatePregnancy` when
+  the timer runs out): under `CARE_OK` (0.65) she loses about
+  (0.65 - care) x 4 foals before birth (always keeps one); under
+  `CARE_RISKY` (0.5) each foal has a (0.5 - care) x 0.6 extra chance of
+  being stillborn. Genetic stillbirths (genes 65-70) still apply.
+  Stores `litterSize`, `litterCareAt`, `litterLost`.
+- **Birth cost** (`birthHealthCost` / `applyBirthHealthCost`, replacing
+  the flat 20/40): 20 x (1.25 - 0.5 x care) per foal (15 with perfect
+  care, 25 with none), x2 for a stillbirth, halved with a midwife; with a
+  midwife her health can't go below 10.
+- **Foals** (`onFoalBorn`, from HorseAnatomy `spawnBaby`): `litterBorn`,
+  and `birthVigor` = 0.7 + 0.5 x care (0.7-1.2). Weak foals (under 0.85)
+  start below full health. `foalGrowthRate` (used in HorseUpdate
+  `_updateGrowingUp`): vigor (0.8-1.15) x food (hunger 0.6+ x1.05,
+  0.3+ x1, 0.1+ x0.75, less x0.5).
+- **When she's done** (`onLitterFinished`): a message with how many,
+  stillbirths and a word on her care; clears `midwife`, `pregScan`,
+  `pregCare`.
+- **The vet** (Vet.js): a check-up on a pregnant mare scans her
+  (`f.pregScan`: how many; "risky" from `isRiskyLitter` when the births
+  would take her health to 10 or less). Pregnant mares can't be jabbed:
+  their Jab button is "Midwife $60" (`VET_MIDWIFE_PRICE`, `vetMidwife`);
+  their second line shows the due time, care and scan.
+- **Magnifying glass**: "Pregnant: Due in N min · care: Good · expecting 5";
+  "Born: one of 5, strong" (or "weak (hard pregnancy)") for foals.
+- Also fixed: when a fluffy is litter-trained with the stick, it was
+  only *smarties* who learned by watching (Horse.js `notifyViolence`); now
+  it's everyone but smarties, like the brush.
