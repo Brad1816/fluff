@@ -117,6 +117,12 @@ const SAVED_GAME_STATE = [
   { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
   { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
   {
+    name: "weatherState", // weather and snow on the ground (WorldTime.js)
+    get: () => weatherState,
+    set: (v) => (weatherState = v), // missing fields are filled in by updateWorldTime
+    fresh: () => freshWeatherState(),
+  },
+  {
     name: "herdState", // herds and their leaders (Herds.js)
     get: () => herdState,
     set: (v) => {

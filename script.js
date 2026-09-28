@@ -1405,6 +1405,8 @@ function updateSimulation(dt) {
   if (typeof updateHerds === "function") updateHerds(dt);
   // Herds claiming and fighting over meadows in the park (Territory.js)
   if (typeof updateTerritories === "function") updateTerritories(dt);
+  // Day, night and weather (WorldTime.js)
+  if (typeof updateWorldTime === "function") updateWorldTime(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
@@ -1713,6 +1715,8 @@ function render() {
   }
 
   drawBackground(osCtx);
+  // Snow lying on the ground (WorldTime.js)
+  if (typeof drawWeatherGround === "function") drawWeatherGround(osCtx);
   if (parkCam && typeof drawParkScenery === "function") drawParkScenery(osCtx);
 
   if (typeof drawRoad !== "undefined") {
@@ -1826,6 +1830,8 @@ function render() {
     osCtx.restore();
     if (typeof mouseToScreen === "function") mouseToScreen();
   }
+  // Night, sunsets, clouds, rain, snow, lightning (WorldTime.js)
+  if (typeof drawSkyAndWeather === "function") drawSkyAndWeather(osCtx);
   drawUI(osCtx);
   if (parkCam) {
     osCtx.save();

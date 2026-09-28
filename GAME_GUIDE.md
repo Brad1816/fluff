@@ -60,6 +60,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
 | `Territory.js` | **Herd territory in the park**: herds claim meadows, chase intruders off, and take meadows from smaller herds. See section 9 (Territory). |
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
+| `WorldTime.js` | **Day and night, seasons, weather**: the clock, darkness, rain/snow/storms and what they do to fluffies and plants. See section 9 (Day, night and weather). |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
@@ -816,4 +817,38 @@ times to 5.
   puff. Fast forward speeds this up like everything else.
 - A corpse you're holding or that's on a table/board isn't removed until
   it's put down.
+
+### Day, night and weather (`WorldTime.js`)
+- **Time** comes from the game clock (`timePlayed`), so it's saved and
+  follows fast forward. A day is `DAY_LENGTH` (1200 game seconds = 20
+  minutes at 1x, 50 seconds an hour); a new game starts at 8:00 AM on day 1.
+  `gameHour()`, `getDayNumber()`, `getSeason()`, `nightAmount()` (0 day ..
+  1 night, fading 18:00-21:00 and 5:00-7:00), `isNightTime()` (21:00-6:00).
+  The clock next to Chat Log shows "Day 3 · 7:40 PM" with the season and
+  weather underneath.
+- **Seasons**: 4 days each - Spring, Summer, Autumn, Winter.
+- **Weather** (`weatherState`, saved): clear, cloudy, rain, storm or snow,
+  rolled from `WEATHER_CHANCES` for the season every 2-6 game hours, fading
+  over `WEATHER_FADE` seconds. Snow settles on the ground (`snowCover`) and
+  melts afterwards. `setWeather(type, hours)` forces it (handy for testing).
+- **Drawing**: `drawSkyAndWeather` (screen, before the UI) darkens outdoor
+  areas at night, adds sunrise/sunset glow, clouds, rain streaks, snowflakes
+  and lightning flashes; indoors only gets a little dimmer at night.
+  `drawWeatherGround` whitens the ground under snow.
+- **Fluffies**: they tire faster and rest slower at night
+  (`sleepRateMultipliers`, Horse.js), and the Sleep desire starts at 0.35
+  tiredness at night (HorseBrain.js) - so most of a herd is asleep at night
+  and few in the day. Rain and snow slowly upset fluffies outside (not
+  under a tree); thunder startles them; snow makes outdoor fluffies hungry
+  faster (`weatherHungerMultiplier`). In the park they run for the nearest
+  tree without a rival herd under it when it rains (`ShelterDesire`) and
+  stay there. They comment on rain, thunder, snow, sunny days and the dark
+  (dialogue `WEATHER`).
+- **Plants** (`growthMultiplier`): grass grows 1.5x in spring, 0.15x in
+  winter, and 1.5x more in the rain; berries 1.8x in autumn and not at all in
+  winter - winter is when herds fight hardest over food.
+- **Park at night**: herd leaders head home to their meadow (Territory.js)
+  and no new wild groups arrive (ParkLife.js).
+- **Tests** keep the weather clear (`weatherState.until = 1e9` in
+  tests/run-tests.js); tests/worldtime.test.js sets its own weather.
 

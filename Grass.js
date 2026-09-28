@@ -65,7 +65,9 @@ class Grass {
 
   update(dt) {
     // grows from 0 to 2, grows by 1 every two minutes (120 seconds)
-    this.growth = Math.min(2, this.growth + dt / 120);
+    // Faster in spring and in the rain, hardly at all in winter (WorldTime.js)
+    const season = typeof growthMultiplier === "function" ? growthMultiplier("grass") : 1;
+    this.growth = Math.min(2, this.growth + (dt / 120) * season);
 
     // In the park, grass only grows back in meadows (ParkLife.js does that)
     if (typeof PARK_SCENE !== "undefined" && this.scene === PARK_SCENE) return;

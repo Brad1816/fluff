@@ -66,7 +66,7 @@ function formatGameClock(seconds) {
 function getGameSpeedLayout(chatLogRight) {
   const x = chatLogRight + 8;
   const y = 50;
-  const clockW = 92;
+  const clockW = 150;
   const btnW = 34;
   const h = 30;
   const buttons = GAME_SPEEDS.map((s, i) => ({ speed: s, x: x + clockW + 4 + i * (btnW + 3), y, w: btnW, h }));
@@ -88,7 +88,17 @@ function drawGameSpeed(chatLogRight) {
   ctx.font = "bold 14px Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(`⏱ ${formatGameClock(timePlayed)}`, L.x + L.clockW / 2, L.y + L.h / 2 + 1);
+  // Day and time of day (WorldTime.js), or the plain game time
+  const clockText = typeof describeWorldTime === "function" ? describeWorldTime() : formatGameClock(timePlayed);
+  ctx.fillText(clockText, L.x + L.clockW / 2, L.y + L.h / 2 + 1);
+  // Season and weather underneath (not while the chat log is open there)
+  if (typeof describeWeather === "function" && !(typeof showChatLog !== "undefined" && showChatLog)) {
+    ctx.font = "bold 12px Arial";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillText(describeWeather(), L.x + L.clockW / 2 + 1, L.y + L.h + 12);
+    ctx.fillStyle = "white";
+    ctx.fillText(describeWeather(), L.x + L.clockW / 2, L.y + L.h + 11);
+  }
   ctx.restore();
 
   for (const b of L.buttons) {

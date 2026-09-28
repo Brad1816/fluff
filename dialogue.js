@@ -135,6 +135,32 @@ const DIALOGUE = {
       "Stwangew fwuffy! Stay back!",
     ],
   },
+  // Day, night and weather (WorldTime.js)
+  WEATHER: {
+    RAIN: [
+      "Wain! Wain am scawy! Nu wike wettsies!",
+      "Wettsies aww obew fwuffy! Nee' hidey pwace!",
+      "Why sky make wawa? Fwuffy nu wike!",
+    ],
+    THUNDER: [
+      "EEEEEK! Woud sky nu huwt fwuffy!",
+      "Sky am angwy! Hewp!",
+      "Big boomies! Fwuffy scawed!",
+    ],
+    SNOW: [
+      "Cowd sky fwuffs! Fwuffy so cowd...",
+      "Nee' wawmies... nee' huggies...",
+      "White stuffs am cowd on hoofsies!",
+    ],
+    SUNNY: [
+      "Sunnies am wawm! Bestest day!",
+      "Fwuffy wub sunnies!",
+    ],
+    NIGHT: [
+      "Dawk am scawy... wan mummah...",
+      "Nite-nite time...",
+    ],
+  },
   // Herds and their meadows in Fluffy Park (Territory.js)
   TERRITORY: {
     CLAIM: [

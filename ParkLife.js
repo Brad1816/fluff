@@ -141,7 +141,9 @@ class BerryBush extends Grass {
   }
 
   update(dt) {
-    this.growth = Math.min(BERRY_MAX, this.growth + dt / BERRY_REGROW);
+    // Lots in autumn, none in winter (WorldTime.js)
+    const season = typeof growthMultiplier === "function" ? growthMultiplier("berries") : 1;
+    this.growth = Math.min(BERRY_MAX, this.growth + (dt / BERRY_REGROW) * season);
   }
 
   drawOffScreen(c) {
@@ -340,7 +342,9 @@ function updateParkLife(dt) {
   // Meadows grow back
   parkLife.seedTimer -= dt;
   if (parkLife.seedTimer <= 0) {
-    parkLife.seedTimer = MEADOW_SEED_EVERY;
+    // New tufts come faster in spring and rain, slowly in winter (WorldTime.js)
+    const season = typeof growthMultiplier === "function" ? growthMultiplier("grass") : 1;
+    parkLife.seedTimer = MEADOW_SEED_EVERY / Math.max(0.1, season);
     for (const m of PARK_MEADOWS) {
       if (_meadowTufts(m).length >= MEADOW_MAX_TUFTS) continue;
       const p = _randomPointInMeadow(m);
@@ -354,7 +358,9 @@ function updateParkLife(dt) {
   parkLife.spawnTimer -= dt;
   if (parkLife.spawnTimer <= 0) {
     const n = countParkWild();
-    if (n < PARK_WILD_TARGET) spawnParkGroup();
+    // New groups arrive in the daytime (WorldTime.js)
+    const night = typeof isNightTime === "function" && isNightTime();
+    if (n < PARK_WILD_TARGET && !night) spawnParkGroup();
     parkLife.spawnTimer = n < PARK_WILD_TARGET / 2 ? 25 + Math.random() * 20 : 60 + Math.random() * 60;
   }
 

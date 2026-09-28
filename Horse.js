@@ -236,6 +236,10 @@ class Horse {
       this.brain.addDesire(new FollowHerdDesire());
     }
     // Territory in the park (Territory.js): go home, chase off intruders, leave when chased
+    // Weather (WorldTime.js): run for cover under the park trees when it rains
+    if (typeof ShelterDesire !== "undefined") {
+      this.brain.addDesire(new ShelterDesire());
+    }
     if (typeof DefendTerritoryDesire !== "undefined") {
       this.brain.addDesire(new HomeTerritoryDesire());
       this.brain.addDesire(new DefendTerritoryDesire());
@@ -2558,7 +2562,9 @@ class Horse {
     // State-based expressions
     if (this.isAlive) {
       if (this.currentStateKey === "SLEEPING") {
-        this.sleepDeprivation = Math.max(0, this.sleepDeprivation - dt / 30); // Takes 2 mins to fully rest
+        // Day and night change how fast they rest / get tired (WorldTime.js)
+        const sleepRates = typeof sleepRateMultipliers === "function" ? sleepRateMultipliers() : [1, 1];
+        this.sleepDeprivation = Math.max(0, this.sleepDeprivation - (dt / 30) * sleepRates[1]); // Takes 2 mins to fully rest
 
         const inBed =
           this.claimedBed &&
@@ -2588,7 +2594,8 @@ class Horse {
           }
         }
       } else {
-        this.sleepDeprivation = Math.min(1.0, this.sleepDeprivation + dt / 120); // Takes 5 mins to get fully tired
+        const tireRate = typeof sleepRateMultipliers === "function" ? sleepRateMultipliers()[0] : 1;
+        this.sleepDeprivation = Math.min(1.0, this.sleepDeprivation + (dt / 120) * tireRate); // Takes 5 mins to get fully tired
       }
 
       // Hunger penalty: < 0.4 hunger -> -0.2 happiness per minute (not below WAN_DIE_THRESHOLD)
@@ -3104,7 +3111,8 @@ class Horse {
       this.hunger -=
         (dt / 450.0 + (dt / 225.0) * (1.0 - this.growth)) *
         debugHungerMultiplier *
-        traitHunger;
+        traitHunger *
+        (typeof weatherHungerMultiplier === "function" ? weatherHungerMultiplier(this) : 1); // snow (WorldTime.js)
 
       // Drug Metabolism & Bloodstream Logic
       this.updateMetabolism(dt);

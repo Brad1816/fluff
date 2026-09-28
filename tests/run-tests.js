@@ -74,6 +74,9 @@ async function openGame(browser, port) {
     // No wild fluffies wandering into the park during other tests
     // (tests/park.test.js switches it back on)
     if (typeof parkLife !== "undefined") parkLife.enabled = false;
+    // Clear weather for the whole test, so rain/snow don't change results
+    // (tests/worldtime.test.js sets its own weather)
+    if (typeof weatherState !== "undefined") weatherState.until = 1e9;
     window.__clearScene = (scene = "INDOORS") => {
       for (let i = objects.length - 1; i >= 0; i--) {
         if (objects[i].scene === scene) objects.splice(i, 1);

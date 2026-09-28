@@ -635,6 +635,15 @@ class SleepDesire extends Desire {
     ) {
       return 80;
     }
+    // Night time: bed time comes sooner (WorldTime.js)
+    if (
+      typeof isNightTime === "function" &&
+      isNightTime() &&
+      horse.hunger > 0.5 &&
+      horse.sleepDeprivation > 0.35
+    ) {
+      return 60;
+    }
     if (
       horse.hunger > 0.5 &&
       horse.happiness > WAN_DIE_THRESHOLD &&

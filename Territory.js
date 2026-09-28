@@ -490,6 +490,8 @@ class HomeTerritoryDesire extends Desire {
     const m = PARK_MEADOWS[idx];
     if (((horse.x - m.x) / m.rx) ** 2 + ((horse.y - m.y) / m.ry) ** 2 <= 0.8) return 0;
     this.idx = idx;
+    // At night herds head home to sleep (WorldTime.js)
+    if (typeof isNightTime === "function" && isNightTime()) return 47.6;
     return 46.5; // above a wander; members' follow (47) still wins for them
   }
   execute(horse) {
