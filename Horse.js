@@ -4822,7 +4822,13 @@ class Horse {
     if (!clip && this.drowningTimer > 0) {
       clip = { top: 1.0 - this.drowningTimer / 5 };
     }
+    // Rotting corpses darken, fade and get flies (Corpses.js)
+    const rotting = !this.isAlive && typeof beginCorpseLook === "function" && beginCorpseLook(ctx, this);
     this.renderer.drawOffScreen(ctx, clip);
+    if (rotting) {
+      ctx.restore();
+      drawCorpseFlies(ctx, this);
+    }
     if (this.placedOn instanceof ImmobilizationBoard) {
       this.placedOn.renderStrap(ctx, this);
     }
@@ -4943,7 +4949,8 @@ class Horse {
       this.tvFocus ||
       this.isNearWasteSpot() ||
       other.isNearWasteSpot() ||
-      other.happiness <= WAN_DIE_THRESHOLD
+      other.happiness <= WAN_DIE_THRESHOLD ||
+      (typeof keepsApart === "function" && keepsApart(this, other)) // rival herds (Herds.js)
     )
       return;
 
@@ -5046,6 +5053,7 @@ class Horse {
       isFrantic: this.isFrantic,
       isScared: this.isScared,
       causeOfDeath: this.causeOfDeath,
+      deathTimer: this.deathTimer,
       lastDesire: this.lastDesire
         ? JSON.parse(JSON.stringify(this.lastDesire))
         : null,
@@ -5198,6 +5206,7 @@ class Horse {
     horse.isFrantic = data.isFrantic;
     horse.isScared = data.isScared;
     horse.causeOfDeath = data.causeOfDeath;
+    horse.deathTimer = data.deathTimer || 0;
     horse.castrationBandTimer =
       data.castrationBandTimer !== undefined
         ? data.castrationBandTimer

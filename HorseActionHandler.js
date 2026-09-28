@@ -519,7 +519,9 @@ class HorseActionHandler {
         f.currentCage === this.horse.currentCage &&
         !f.isDragging &&
         (rels[f.id] === "friend" ||
-          this.horse.fluffyIsRelatedOrSpecialFriend(f))
+          this.horse.fluffyIsRelatedOrSpecialFriend(f)) &&
+        // Not with a rival herd's members (Herds.js)
+        !(typeof keepsApart === "function" && keepsApart(this.horse, f))
       ) {
         const dist = Math.sqrt(
           (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,

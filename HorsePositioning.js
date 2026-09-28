@@ -393,6 +393,19 @@ class HorsePositioning {
       }
     }
 
+    // In the park: first get to the herd / away from rivals (Bonds.js)
+    const moveFirst =
+      typeof sleepSpotAwayFromRivals === "function" &&
+      (!nearestSleeper || minDist < 80) &&
+      sleepSpotAwayFromRivals(this.horse, !!nearestSleeper);
+    if (moveFirst) {
+      if (!this.horse.isMovingOrRunning()) this.horse.initBehavior("MOVING");
+      this.horse.setTargetPosition(moveFirst.x, moveFirst.y);
+      this.horse.sleepTargetSet = true;
+      return true;
+    }
+    this.horse._sleepMoves = 0;
+
     if (nearestSleeper) {
       if (minDist < 80) {
         this.horse.initBehavior("SLEEPING");

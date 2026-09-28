@@ -60,6 +60,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Herds.js` | **Herds**: forming, joining, leaving, leaders, rival herds, following the leader, herd markers (H key). See section 9. |
 | `Territory.js` | **Herd territory in the park**: herds claim meadows, chase intruders off, and take meadows from smaller herds. See section 9 (Territory). |
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
+| `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
 | `Park.js` | **Fluffy Park**: the big area bigger than the screen (River → left arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
@@ -780,7 +781,18 @@ area, so in the big park every herd piled up in one heap. Now
 someone it dislikes or a member of another herd; herd-mates first, then
 family and buddies; indoors any other fluffy is still fine, but in the park
 a stranger's pile only if it's within 250px and neither is in a herd. If
-nobody suits, it lies down where it is.
+nobody suits, it lies down where it is - except in the park, where it
+first walks back to its herd's leader, or away from a rival right next to
+it (`sleepSpotAwayFromRivals`, up to 3 moves).
+
+**Rival herds keep apart** (`keepsApart(a, b)` in Herds.js: different
+herds, or either dislikes the other). Such pairs don't hug
+(`attemptHugging`), chat and hug as friends (`executeBabbleToFriends`),
+go and visit as buddies (`SeekBuddyDesire`), make friends
+(`refusesFriendshipFrom`) or share a sleeping spot. Old friends and family
+who end up in rival herds (after a split) count as rivals too. In a seeded
+20-minute park run, fluffies falling asleep next to a rival went from 350
+times to 5.
 
 ### Fast forward (`GameSpeed.js`)
 - The clock next to "Chat Log" shows game time (`timePlayed`). The 1x / 2x
@@ -795,4 +807,13 @@ nobody suits, it lies down where it is.
   `Date.now()`, so it speeds up too. (Only a couple of wiggle animations in
   HorseRenderer.js use real time.)
 - New game and loading go back to 1x.
+
+### Corpses (`Corpses.js`)
+- A dead fluffy's `deathTimer` (game seconds since death, now saved) drives
+  it: from `ROT_START` (4 min) to `ROT_FULL` (10 min) it darkens and goes
+  brown-green (a canvas filter in `Horse.draw`) and flies gather; then it
+  fades until `ROT_GONE` (13 min), when `updateCorpses` removes it with a
+  puff. Fast forward speeds this up like everything else.
+- A corpse you're holding or that's on a table/board isn't removed until
+  it's put down.
 

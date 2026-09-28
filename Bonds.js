@@ -120,6 +120,8 @@ function refusesFriendshipFrom(other, from) {
   // Herds don't make friends with fluffies they're chasing off their land (Territory.js)
   if (typeof unwelcomeOnLand === "function" && (unwelcomeOnLand(from, other) || unwelcomeOnLand(other, from)))
     return true;
+  // Nor with members of another herd
+  if (typeof herdOf === "function" && herdOf(other) && herdOf(from) && herdOf(other) !== herdOf(from)) return true;
   return getLiking(other, from) < -0.1;
 }
 
@@ -260,6 +262,40 @@ function sleepBuddyScore(horse, sleeper, dist) {
   return dist <= 250 ? dist : null;
 }
 
+// In the park, where should a tired fluffy go before lying down? Near its
+// herd's leader if that's far, or away from a rival / someone it dislikes
+// that's right next to it. null = here is fine. Gives up after a few moves.
+function sleepSpotAwayFromRivals(horse, besidePile = false) {
+  if (!(typeof isCameraScene === "function" && isCameraScene(horse.scene))) return null;
+  if ((horse._sleepMoves || 0) >= 3) return null;
+  let rival = null;
+  let rd = 170;
+  for (const f of fluffies) {
+    if (f === horse || !f.isAlive || f.scene !== horse.scene) continue;
+    const d = Math.hypot(f.x - horse.x, f.y - horse.y);
+    if (d < rd && typeof keepsApart === "function" && keepsApart(horse, f)) {
+      rd = d;
+      rival = f;
+    }
+  }
+  const h = typeof herdOf === "function" ? herdOf(horse) : null;
+  const leader = h ? getHerdLeader(h) : null;
+  let spot = null;
+  if (
+    !besidePile &&
+    leader &&
+    leader !== horse &&
+    leader.scene === horse.scene &&
+    Math.hypot(leader.x - horse.x, leader.y - horse.y) > 160
+  ) {
+    spot = { x: leader.x + (Math.random() - 0.5) * 90, y: leader.y + (Math.random() - 0.5) * 40 };
+  } else if (rival) {
+    spot = horse.positioning.getRunawayTarget(rival.x, rival.y);
+  }
+  if (spot) horse._sleepMoves = (horse._sleepMoves || 0) + 1;
+  return spot;
+}
+
 // ---- For the magnifying glass panel ----
 
 function _fluffyName(id) {
@@ -321,7 +357,11 @@ class SeekBuddyDesire extends Desire {
     if (horse.sleepingOrTargetSet() || horse.tooYoungToWalk() || !horse.canSee()) return 0;
     if (horse.happiness <= WAN_DIE_THRESHOLD || horse.hunger < 0.35) return 0;
     if (gameTimeMs() - this.lastTime < this.wait) return 0;
-    const buddies = _bondCandidates(horse, (f) => getLiking(horse, f) >= OPINION_BUDDY);
+    // Not buddies who are now in a rival herd (Herds.js)
+    const buddies = _bondCandidates(
+      horse,
+      (f) => getLiking(horse, f) >= OPINION_BUDDY && !(typeof keepsApart === "function" && keepsApart(horse, f)),
+    );
     if (!buddies.length) return 0;
     // Only if the closest buddy isn't already right here
     let best = null;

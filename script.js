@@ -1405,6 +1405,8 @@ function updateSimulation(dt) {
   if (typeof updateHerds === "function") updateHerds(dt);
   // Herds claiming and fighting over meadows in the park (Territory.js)
   if (typeof updateTerritories === "function") updateTerritories(dt);
+  // Corpses rot away (Corpses.js)
+  if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
   if (typeof updateCustomerOrders === "function") updateCustomerOrders(dt);
   updatePuddles(dt);

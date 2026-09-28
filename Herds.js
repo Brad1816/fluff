@@ -110,6 +110,16 @@ function sameHerd(a, b) {
   return !!h && h === herdOf(b);
 }
 
+// Fluffies that don't hug, chat, befriend or sleep together: members of
+// different herds, or when one dislikes the other
+function keepsApart(a, b) {
+  if (!a || !b) return false;
+  const ha = herdOf(a);
+  const hb = herdOf(b);
+  if (ha && hb && ha !== hb) return true;
+  return typeof getLiking === "function" && (getLiking(a, b) < 0 || getLiking(b, a) < 0);
+}
+
 // Used by getLiking (Bonds.js)
 function herdLikingBonus(a, b) {
   const ha = herdOf(a);
