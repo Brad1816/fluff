@@ -212,6 +212,7 @@ function resetTemporaryGameState() {
   if (typeof resetNamingPopups === "function") resetNamingPopups();
   if (typeof goalsOpen !== "undefined") goalsOpen = false;
   if (typeof helpOpen !== "undefined") helpOpen = false;
+  if (typeof recordsOpen !== "undefined") recordsOpen = false;
   if (typeof resetNightPredators === "function") resetNightPredators();
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;

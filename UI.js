@@ -533,6 +533,7 @@ function drawUI(ctx) {
   // Goals list (Goals.js) and help (Help.js)
   if (typeof drawGoals === "function") drawGoals(ctx);
   if (typeof drawHelp === "function") drawHelp(ctx);
+  if (typeof drawBreedingRecords === "function") drawBreedingRecords(ctx);
   // Morning report on top of everything (DayReport.js)
   if (typeof drawDayReport === "function") drawDayReport(ctx);
   // Naming a new fluffy / litter (Names.js)
@@ -552,6 +553,7 @@ function isAnyScreenOpen() {
   if (typeof isNamingPopupOpen === "function" && isNamingPopupOpen()) return true;
   if (typeof isGoalsOpen === "function" && isGoalsOpen()) return true;
   if (typeof isHelpOpen === "function" && isHelpOpen()) return true;
+  if (typeof isRecordsOpen === "function" && isRecordsOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -743,6 +745,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof handleHelpClick === "function" && handleHelpClick()) {
     return;
   }
+  // Breeding records (BreedingRecords.js)
+  if (typeof handleRecordsClick === "function" && handleRecordsClick()) {
+    return;
+  }
 
   if (typeof handleFamilyTreeClick === "function" && handleFamilyTreeClick()) {
     return;
@@ -783,7 +789,7 @@ canvas.addEventListener("mousedown", (e) => {
       if (victimIdx > -1) {
         if (!showDebugMenu) money += currentSellRequest.price;
         if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: currentSellRequest.price });
-        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold");
+        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold", currentSellRequest.price);
         fluffies.splice(victimIdx, 1);
       }
       currentSellRequest = null;
@@ -872,7 +878,7 @@ canvas.addEventListener("mousedown", (e) => {
       if (victimIdx > -1) {
         if (!showDebugMenu) money += currentSellRequest.price;
         if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: currentSellRequest.price });
-        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold");
+        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold", currentSellRequest.price);
         fluffies.splice(victimIdx, 1);
         currentSellRequest = null;
         return;

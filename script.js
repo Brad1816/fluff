@@ -2052,6 +2052,11 @@ window.addEventListener("keydown", (e) => {
       closeHelp();
       return;
     }
+    // Breeding records (BreedingRecords.js)
+    if (typeof isRecordsOpen === "function" && isRecordsOpen()) {
+      closeRecords();
+      return;
+    }
     if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
       inspectedFluffy = null;
       return;
@@ -2149,6 +2154,12 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyG" && typeof isGoalsOpen === "function") {
     if (isGoalsOpen()) closeGoals();
     else if (!isAnyScreenOpen()) openGoals();
+    return;
+  }
+  // L: breeding records (BreedingRecords.js)
+  if (e.code === "KeyL" && typeof isRecordsOpen === "function") {
+    if (isRecordsOpen()) closeRecords();
+    else if (!isAnyScreenOpen()) openRecords();
     return;
   }
   // F: fast forward to the next speed (GameSpeed.js)

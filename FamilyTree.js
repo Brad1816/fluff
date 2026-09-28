@@ -24,6 +24,10 @@
 //   bornAt                    (game seconds, null if unknown)
 //   status                    "alive" | "dead" | "sold" | "day care" | "taken" | "gone"
 //   causeOfDeath, leftAt, pottyTraining, personalities
+//   bred                      true if you bred it (born at home to your mare)
+//   age                       its age (game seconds) when last seen
+//   soldFor                   money you got when it was sold
+// (bred / age / soldFor feed the breeding records screen, BreedingRecords.js)
 // }
 let fluffyRecords = {};
 let _familySyncTimer = 0;
@@ -52,8 +56,12 @@ function recordFluffy(f) {
       bornAt: Math.max(0, now - (f.age || 0)),
       genes: Array.isArray(f.genes) ? f.genes.slice() : null,
     };
+    // Bred by you: a newborn of one of your mares
+    const mum = f.motherId !== null && f.motherId !== undefined ? fluffies.find((x) => x.id === f.motherId) : null;
+    rec.bred = !!(f.adopted && f.growth < 0.25 && mum && mum.adopted);
     fluffyRecords[f.id] = rec;
   }
+  rec.age = f.age || 0;
   rec.name = (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || rec.name || null;
   rec.gender = f.gender;
   rec.type = f.type;
@@ -124,6 +132,7 @@ function syncFamilyRecords() {
     (typeof dayCareFluffies !== "undefined" ? dayCareFluffies : []).map((d) => String(d.id)),
   );
   for (const id in fluffyRecords) {
+    _guessBred(fluffyRecords[id]);
     if (present.has(id)) continue;
     const rec = fluffyRecords[id];
     if (atDayCare.has(id)) {
@@ -135,12 +144,22 @@ function syncFamilyRecords() {
   }
 }
 
-// Called where a fluffy leaves the game for a known reason (sold, taken)
-function noteFluffyLeft(f, reason) {
+// Called where a fluffy leaves the game for a known reason (sold, taken).
+// price: what you got for it, if it was sold.
+function noteFluffyLeft(f, reason, price = null) {
   if (!f || !shouldRecordFluffy(f)) return;
   const rec = recordFluffy(f);
   rec.status = reason;
   rec.leftAt = typeof timePlayed === "number" ? timePlayed : 0;
+  if (price !== null && price !== undefined) rec.soldFor = Math.round(price);
+}
+
+// Saves from before records knew who you bred: a best guess (a record
+// with a known mum that you didn't buy and isn't a breeder's)
+function _guessBred(rec) {
+  if (rec.bred !== undefined) return;
+  const mum = rec.motherId !== null && rec.motherId !== undefined ? fluffyRecords[rec.motherId] : null;
+  rec.bred = !!(mum && !rec.boughtFrom && rec.status !== "breeder" && mum.status !== "breeder" && rec.bornAt > 0);
 }
 
 // Runs every simulation step (script.js); syncs about once a second

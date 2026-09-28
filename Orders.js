@@ -364,7 +364,7 @@ function deliverCustomerOrder(orderId, fluffyId) {
   if (typeof noteDayEvent === "function") noteDayEvent("order", { money: order.reward + reaction.money });
 
   // The courier takes the fluffy away (like selling it)
-  if (typeof noteFluffyLeft === "function") noteFluffyLeft(f, "sold");
+  if (typeof noteFluffyLeft === "function") noteFluffyLeft(f, "sold", order.reward + reaction.money);
   if (f.isDragging) {
     f.isDragging = false;
     isGlobalDragging = false;

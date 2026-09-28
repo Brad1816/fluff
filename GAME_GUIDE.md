@@ -79,6 +79,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `StockMarket.js` | **Breeding stock market**: buy pedigree fluffies from other breeders (the "Breeding stock" tab of the orders screen). See section 9 (Breeding stock market). |
 | `Aging.js` | **Growing old**: life stages in game days, greying manes, slower/cheaper elderly fluffies, dying of old age. See section 9 (Growing old). |
 | `Abandoned.js` | **Abandoned pets**: fluffies dumped by an owner at any age, named, sad until they get over it. See section 9 (Abandoned pets). |
+| `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -1239,4 +1240,23 @@ older. They turn up outside (one of the backstories in
   At 0: +0.1 happiness, an `ABANDONED.OVER_IT` line and (if yours) "X has
   got over its old owner." The magnifying glass shows "Old owner: Misses
   its old owner (70%)".
+
+### Breeding records (`BreedingRecords.js`)
+Open with the **Records** button (between Goals and ?) or **L**.
+- **Litters** tab: newest first. A litter is the foals of one mum born
+  within `LITTER_WINDOW` (300s) of each other. Each shows the day, mum x
+  dad, and up to 5 foals with a coat-colour dot, a star for rare ones
+  (unicorn, pegasus, alicorn, spots, stripes) and what became of them
+  (`describeFoalOutcome`: alive and age, sold and price, died and cause...).
+- **Parents** tab: every mare and stallion with foals in the records, best
+  earners first: status/age, litters, foals, sold, money earned, best sale,
+  rare foals, and for living mares the days left before they're elderly
+  (Aging.js `ELDERLY_DAYS`) and can't breed.
+- Clicking a row opens the family tree (mum's, for a litter).
+- **Data** (FamilyTree.js record book): `rec.bred` is set when a record is
+  made for a newborn of one of your mares (for older saves `_guessBred`
+  guesses: known mum, not bought, not a breeder's); `rec.soldFor` comes
+  from `noteFluffyLeft(f, "sold", price)` at every sale (buyer at the door,
+  shift-click/sell cage, customer orders); `rec.age` is updated each sync.
+  `computeBreedingRecords()` works it all out (cached for 0.5s while open).
 

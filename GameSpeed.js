@@ -121,6 +121,14 @@ function drawGameSpeed(chatLogRight) {
     });
   }
   // Help button (Help.js)
+  const rb = getRecordsButtonRect(chatLogRight);
+  if (typeof openRecords === "function" && typeof drawGlassButton === "function") {
+    drawGlassButton(rb.x, rb.y, rb.w, rb.h, "Records", {
+      fontSize: 13,
+      borderRadius: 8,
+      normalFill: isRecordsOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
+    });
+  }
   const hb = getHelpButtonRect(chatLogRight);
   if (typeof openHelp === "function" && typeof drawGlassButton === "function") {
     drawGlassButton(hb.x, hb.y, hb.w, hb.h, "?", {
@@ -149,10 +157,16 @@ function getGoalsButtonRect(chatLogRight) {
   return { x: last.x + last.w + 8, y: L.y, w: 92, h: L.h };
 }
 
-// The "?" help button, after Goals
-function getHelpButtonRect(chatLogRight) {
+// The "Records" button, after Goals (BreedingRecords.js)
+function getRecordsButtonRect(chatLogRight) {
   const gb = getGoalsButtonRect(chatLogRight);
-  return { x: gb.x + gb.w + 6, y: gb.y, w: 30, h: gb.h };
+  return { x: gb.x + gb.w + 6, y: gb.y, w: 76, h: gb.h };
+}
+
+// The "?" help button, after Records
+function getHelpButtonRect(chatLogRight) {
+  const rb = getRecordsButtonRect(chatLogRight);
+  return { x: rb.x + rb.w + 6, y: rb.y, w: 30, h: rb.h };
 }
 
 // Mouse down on the buttons (screen positions). Returns true if handled.
@@ -161,6 +175,12 @@ function gameSpeedClick(chatLogRight) {
   if (typeof openHelp === "function" && isPointInRect(mouse.x, mouse.y, hb.x, hb.y, hb.w, hb.h)) {
     if (isHelpOpen()) closeHelp();
     else openHelp();
+    return true;
+  }
+  const rb = getRecordsButtonRect(chatLogRight);
+  if (typeof openRecords === "function" && isPointInRect(mouse.x, mouse.y, rb.x, rb.y, rb.w, rb.h)) {
+    if (isRecordsOpen()) closeRecords();
+    else openRecords();
     return true;
   }
   const gb = getGoalsButtonRect(chatLogRight);

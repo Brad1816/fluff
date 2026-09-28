@@ -24,7 +24,9 @@ const HELP_TOPICS = [
       "# Looking after them",
       "- Keep bowls full (kibble from Fluff Mart, down from the garden).",
       "- The magnifying glass shows everything about a fluffy.",
-      "- The family tree and Gene Lab help you plan litters.",
+      "- The family tree and Gene Lab help you plan litters. Breeding",
+      "  records (Records button, or L) show every litter you've bred,",
+      "  what each foal sold for, and which parents earn the most.",
     ],
   },
   {
@@ -197,7 +199,7 @@ const HELP_TOPICS = [
     lines: [
       "- WASD: move between areas (in the park, WASD or arrows look around)",
       "- F: fast forward (1x / 2x / 4x / 8x)",
-      "- G: goals        F1: this help",
+      "- G: goals        L: breeding records        F1: this help",
       "- N: name tags    H: herd markers    B: bed labels",
       "- R: turn the fence piece you're holding",
       "- 0-9: toolbar slots",

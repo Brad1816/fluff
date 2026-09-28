@@ -186,7 +186,7 @@ function sellModeClick() {
       if (bestItem.isDragging) isGlobalDragging = false;
       money += Math.floor(bestItem.calculatePrice() / 2);
       if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: Math.floor(bestItem.calculatePrice() / 2) });
-      if (typeof noteFluffyLeft === "function") noteFluffyLeft(bestItem, "sold");
+      if (typeof noteFluffyLeft === "function") noteFluffyLeft(bestItem, "sold", Math.floor(bestItem.calculatePrice() / 2));
       poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
       const idx = fluffies.indexOf(bestItem);
       if (idx > -1) fluffies.splice(idx, 1);
