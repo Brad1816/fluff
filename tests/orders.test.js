@@ -104,6 +104,7 @@ module.exports = [
       const r = await page.evaluate(() => {
         customerOrders = freshCustomerOrders();
         customerOrders.reputation = 10;
+        customerOrders.nextCommissionAt = 1e12; // commissions: tests/commissions.test.js
         timePlayed = 1000;
         updateCustomerOrders(0.016); // first orders go up straight away
         const firstPosted = customerOrders.posted.length;

@@ -43,6 +43,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "pregScan", fallback: null, clone: true },
   { name: "litterCareAt", fallback: null },
   { name: "litterLost", fallback: 0 },
+  { name: "bredHere", fallback: null }, // Commissions.js (null = an old save: worked out from the mother)
 ];
 
 function _savedCopy(v) {

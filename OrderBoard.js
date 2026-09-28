@@ -382,6 +382,13 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   c.fillStyle = theme.card;
   _osRR(c, card.x, card.y, card.w, card.h, 8);
   c.fill();
+  // Commissions (Commissions.js): a gold border
+  if (o.commission) {
+    c.strokeStyle = "#d4a017";
+    c.lineWidth = 3;
+    _osRR(c, card.x + 1.5, card.y + 1.5, card.w - 3, card.h - 3, 7);
+    c.stroke();
+  }
   if (ordersScreenMode === "board") {
     c.fillStyle = "#d9534f";
     c.beginPath();
@@ -390,9 +397,23 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   }
 
   const x = card.x + 14;
-  _osText(c, o.customer, x, card.y + 26, theme.cardText, "bold 16px Arial");
+  c.font = "bold 20px Arial";
+  const priceW = c.measureText(`$${o.reward.toLocaleString()}`).width;
+  c.font = "bold 16px Arial";
+  _osText(c, fitText(c, o.customer, card.w - 40 - priceW), x, card.y + 26, theme.cardText, "bold 16px Arial");
   _osText(c, `$${o.reward.toLocaleString()}`, card.x + card.w - 14, card.y + 27, "#1e8a3a", "bold 20px Arial", "right");
-  _osText(c, `"${o.note}"`, x, card.y + 45, theme.sub, "italic 12px Arial");
+  // A regular customer (Commissions.js), then their note
+  const badge = typeof describeClientBadge === "function" ? describeClientBadge(o.customer) : "";
+  let noteX = x;
+  if (badge) {
+    c.font = "bold 11px Arial";
+    _osText(c, badge, x, card.y + 45, "#b8860b", "bold 11px Arial");
+    noteX += c.measureText(badge).width + 8;
+  }
+  const noteRight = card.x + card.w - 14 - (o.commission ? 80 : 0);
+  if (o.commission) _osText(c, "COMMISSION", card.x + card.w - 14, card.y + 45, "#b8860b", "bold 11px Arial", "right");
+  c.font = "italic 12px Arial";
+  _osText(c, fitText(c, `"${o.note}"`, noteRight - noteX), noteX, card.y + 45, theme.sub, "italic 12px Arial");
 
   let y = card.y + 67;
   const matching = countFluffiesForOrder(o);
@@ -404,20 +425,18 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   }
 
   const footY = card.y + card.h - 28;
+  const fmt = o.commission && typeof formatDaysLeft === "function" ? formatDaysLeft : formatOrderTime;
   if (isActive) {
     const left = o.dueAt - now;
-    _osText(c, `Due in ${formatOrderTime(left)}`, x, footY, left < 180 ? "#c0392b" : theme.cardText, "bold 13px Arial");
+    const late = o.commission ? left < DAY_LENGTH / 2 : left < 180;
+    _osText(c, `Due in ${fmt(left)}`, x, footY, late ? "#c0392b" : theme.cardText, "bold 13px Arial");
   } else {
-    _osText(c, `Leaves the board in ${formatOrderTime(o.leavesAt - now)}`, x, footY, theme.sub, "12px Arial");
+    _osText(c, `Leaves the board in ${fmt(o.leavesAt - now)}`, x, footY, theme.sub, "12px Arial");
   }
-  _osText(
-    c,
-    matching ? `You have ${matching} that fit${matching === 1 ? "s" : ""}` : "None of yours fit yet",
-    x,
-    footY + 17,
-    matching ? "#1e8a3a" : theme.sub,
-    "bold 12px Arial",
-  );
+  let foot2 = matching ? `You have ${matching} that fit${matching === 1 ? "s" : ""}` : "None of yours fit yet";
+  if (o.commission && !isActive) foot2 = `Deposit $${o.deposit} · ${fmt(o.timeAllowed)} to deliver`;
+  else if (o.commission && !matching) foot2 = "Breed one: pair up in the Gene Lab";
+  _osText(c, foot2, x, footY + 17, matching ? "#1e8a3a" : o.commission ? "#b8860b" : theme.sub, "bold 12px Arial");
 
   if (isActive) {
     _osButton(c, card.giveUp, m, theme);

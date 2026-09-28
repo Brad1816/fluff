@@ -86,6 +86,26 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Orders & customers",
+    lines: [
+      "Customers post orders on the Bounty Board (Shopping Street) and",
+      "FluffList (the Computer). Take up to 3 at a time.",
+      "",
+      "- Commissions (gold cards): the customer wants one BRED by you,",
+      "  with a few days to deliver. They pay about 2.5x a normal order,",
+      "  with a deposit when you accept. Plan a pairing in the Gene Lab.",
+      "  Give up or run out of time and the deposit goes back, and your",
+      "  reputation takes a bigger hit.",
+      "- Customers remember you. Fill their orders (better still with a",
+      "  friendly fluffy they adore) and they come back as Returning,",
+      "  Regular and Loyal customers, paying up to 25% more with more",
+      "  time. Let them down twice and they stop ordering for a while.",
+      "- Some write later about how their fluffy is doing - with a tip",
+      "  if they love it, a complaint if it's frightened of everything.",
+      "- Each customer has a favourite type they often ask for.",
+    ],
+  },
+  {
     title: "Fluffy shows",
     lines: [
       "Every 3 days at 2 PM there's a fluffy show. Click the Show Hall on",
@@ -291,7 +311,7 @@ function getHelpLayout() {
   const h = Math.min(580, height - 40);
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
-  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 62 + i * 33, w: 200, h: 28 }));
+  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 62 + i * 31, w: 200, h: 27 }));
   return { x, y, w, h, tabs, close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 } };
 }
 

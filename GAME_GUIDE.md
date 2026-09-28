@@ -82,6 +82,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
 | `ShoppingBag.js` | **Getting shopping home**: small things go in the shopping bag (tan buttons in the toolbox), big things are delivered to the living room. See section 9 (Shopping bag and deliveries). |
+| `Commissions.js` | **Commissions and regular customers**: breed-to-order commissions (gold cards, deposit, days to deliver, "Bred by you"), customer loyalty (Returning / Regular / Loyal pay more), favourite types, letters from past customers. See section 9 (Commissions and regular customers). |
 | `Pregnancy.js` | **Pregnancy and foal care**: litter size runs in families, care during pregnancy sets litter size, stillbirths and foal strength, birth health cost, the vet's scan and midwife, foal growth speed. See section 9 (Pregnancy and foal care). |
 | `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen, or the Show Hall on Shopping Street), grooming with the brush, prizes, ribbons, champions, watching it in the ring. See section 9 (Fluffy shows). |
 | `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
@@ -1497,3 +1498,45 @@ a pregnancy mattered. Now:
 - Also fixed: when a fluffy is litter-trained with the stick, it was
   only *smarties* who learned by watching (Horse.js `notifyViolence`); now
   it's everyone but smarties, like the brush.
+
+### Commissions and regular customers (`Commissions.js`)
+Ordinary orders last 15-35 game minutes, too short to breed for, so they
+can only be filled from fluffies you already have. Commissions close that
+gap, and customers now remember you.
+- **Commissions** (`makeCommission`, posted by `updateCommissions`, which
+  Orders.js `updateCustomerOrders` calls): the first a quarter of a day into
+  a game, then one about every `COMMISSION_EVERY` (1.5) game days, at the
+  front of the board, one at a time, staying a day. Requirements: 1-3
+  things you breed for (the first is always coat, pattern or type; never a
+  plain earthy or an alicorn), plus `bredHere` ("Bred by you"). Reward:
+  the usual formula x `COMMISSION_MULT` (2.5). `timeAllowed`:
+  `COMMISSION_DAYS` (4) game days, 5 if it must be fully grown. They count
+  towards your 3 active orders.
+- **Deposit**: `COMMISSION_DEPOSIT` (20%) paid when you accept
+  (`order.depositPaid`); delivery pays the rest. Giving up or missing one
+  takes the deposit back (`noteOrderFailed`) and costs
+  `COMMISSION_REP_MISSED` (5) reputation. A warning a day before it's due.
+- **"Bred by you"**: `f.bredHere`, false for every new fluffy (Horse
+  constructor), set true in Pregnancy.js `onFoalBorn` when the mother is
+  yours; saved. Old saves (`null`): `isBredByYou` falls back to "has a
+  mother, is yours, not from the park, not a lost pet".
+- **Customers** (`customerOrders.clients[name] = { filled, missed,
+  loyalty, pref }`): delivery gives +1 loyalty (+2 if they tipped for a
+  delightful fluffy); missing or giving up gives -2; a complaint letter -1.
+  `pickOrderCustomer`: `CLIENT_RETURN_CHANCE` (45%) of orders come from a
+  pleased customer (weighted by loyalty); customers at -2 or below don't
+  order. `CLIENT_TIERS`: Returning (1+) +5%; Regular (3+) +15% money and
+  time; Loyal (6+) +25% of both (`applyClientBonus`, in
+  `makeCustomerOrder` and `makeCommission`). `customerPref(name)`: a
+  favourite type from the name; half their orders ask for it
+  (`customerTypeRequirement`).
+- **Letters** (`customerOrders.letters`): after a delivery, a letter half
+  to a whole day later - always if they were delighted (tip 10% of the
+  reward) or upset (loyalty -1), half the time otherwise. Shown as a
+  message and on the morning report.
+- **The board** (OrderBoard.js `_drawOrderCard`): commissions have a gold
+  border and "COMMISSION"; regulars show "★ Regular +15%" before the note;
+  commission times are in game days and hours (`formatDaysLeft`); the
+  footer shows the deposit, or "Breed one: pair up in the Gene Lab".
+- Help: "Orders & customers" topic (help tabs are now 31px apart for 16
+  topics).

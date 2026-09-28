@@ -382,6 +382,7 @@ class Horse {
     this.birthBedSeekTimeout = 0;
     this.babiesToBirth = 0;
     this.foalViability = [];
+    this.bredHere = false; // born to one of your mares (Pregnancy.js onFoalBorn, Commissions.js)
     this.birthIntervalTimer = 0;
     this.interactionTimer = Math.random() * 5;
     this.specialHuggiesCooldown = 0;

@@ -145,6 +145,8 @@ function applyBirthHealthCost(mare, viable) {
 // HorseAnatomy.spawnBaby, for each foal
 function onFoalBorn(mare, baby, viable) {
   baby.litterBorn = mare.litterSize || null;
+  // Born to one of your mares: "Bred by you" for commissions (Commissions.js)
+  baby.bredHere = !!mare.adopted;
   if (!viable) return;
   const c = mare.litterCareAt ?? pregnancyCareScore(mare);
   baby.birthVigor = Math.max(0.7, Math.min(1.2, 0.7 + 0.5 * c + (Math.random() - 0.5) * 0.1));

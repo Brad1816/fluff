@@ -12,6 +12,8 @@
 // missed deadlines or giving up. Higher levels bring more orders, harder
 // requirements (alicorns, patterns, hidden carrier genes) and bigger rewards.
 //
+// Commissions (breed-to-order) and regular customers: Commissions.js.
+//
 // Everything is in `customerOrders` (saved in SAVED_GAME_STATE).
 // To add a new kind of requirement, add an entry to ORDER_REQUIREMENTS.
 // ---------------------------------------------------------------------------
@@ -38,6 +40,9 @@ function freshCustomerOrders() {
     missed: 0,
     nextId: 1,
     postTimer: 0, // first orders appear straight away
+    clients: {}, // regular customers (Commissions.js)
+    letters: [], // letters from past customers still to come
+    nextCommissionAt: null,
   };
 }
 
@@ -245,9 +250,17 @@ function _orderReqCount(level, rnd) {
 // A new order for this reputation level. rnd: random function (tests pass
 // a seeded one; the game uses Math.random).
 function makeCustomerOrder(level = getOrderLevel(), rnd = Math.random) {
+  // Often a customer you've pleased before, who may want their favourite
+  // type (Commissions.js)
+  const customer = typeof pickOrderCustomer === "function" ? pickOrderCustomer(rnd) : ORDER_CUSTOMERS[Math.floor(rnd() * ORDER_CUSTOMERS.length)];
   const want = _orderReqCount(level, rnd);
   const reqs = [];
   const taken = {};
+  const fav = typeof customerTypeRequirement === "function" ? customerTypeRequirement(customer, level, rnd) : null;
+  if (fav) {
+    reqs.push(fav);
+    taken.type = fav;
+  }
   let tries = 0;
   while (reqs.length < want && tries++ < 50) {
     const kinds = Object.keys(ORDER_REQUIREMENTS).filter(
@@ -277,9 +290,9 @@ function makeCustomerOrder(level = getOrderLevel(), rnd = Math.random) {
   const reward =
     Math.round(((100 + valueSum) * (1 + 0.3 * (level - 1)) * (1 + 0.15 * (reqs.length - 1))) / 10) * 10;
   const now = typeof timePlayed === "number" ? timePlayed : 0;
-  return {
+  const order = {
     id: customerOrders.nextId++,
-    customer: ORDER_CUSTOMERS[Math.floor(rnd() * ORDER_CUSTOMERS.length)],
+    customer,
     note: ORDER_NOTES[Math.floor(rnd() * ORDER_NOTES.length)],
     reqs,
     reward,
@@ -289,6 +302,8 @@ function makeCustomerOrder(level = getOrderLevel(), rnd = Math.random) {
     timeAllowed: 600 + 300 * reqs.length, // once accepted: 15-35 game minutes
     dueAt: null,
   };
+  // Regulars pay more and give more time (Commissions.js)
+  return typeof applyClientBonus === "function" ? applyClientBonus(order) : order;
 }
 
 function orderReqLabel(req) {
@@ -330,15 +345,23 @@ function acceptCustomerOrder(orderId) {
   const order = customerOrders.posted.splice(i, 1)[0];
   order.dueAt = (typeof timePlayed === "number" ? timePlayed : 0) + order.timeAllowed;
   customerOrders.active.push(order);
+  // A commission pays a deposit up front (Commissions.js)
+  if (order.commission && order.deposit) {
+    order.depositPaid = order.deposit;
+    if (!showDebugMenu) money += order.deposit;
+    if (typeof addUIMessage === "function") addUIMessage(`${order.customer} paid a $${order.deposit} deposit. The rest when you deliver.`);
+  }
   return true;
 }
 
 function giveUpCustomerOrder(orderId) {
   const i = customerOrders.active.findIndex((o) => o.id === orderId);
   if (i < 0) return false;
-  customerOrders.active.splice(i, 1);
-  customerOrders.reputation = Math.max(0, customerOrders.reputation - ORDER_REP_GIVE_UP);
-  if (typeof addUIMessage === "function") addUIMessage(`Order given up. Reputation -${ORDER_REP_GIVE_UP}.`);
+  const order = customerOrders.active.splice(i, 1)[0];
+  const loss = order.commission ? COMMISSION_REP_MISSED : ORDER_REP_GIVE_UP;
+  customerOrders.reputation = Math.max(0, customerOrders.reputation - loss);
+  if (typeof addUIMessage === "function") addUIMessage(`Order given up. Reputation -${loss}.`);
+  if (typeof noteOrderFailed === "function") noteOrderFailed(order);
   return true;
 }
 
@@ -360,7 +383,10 @@ function deliverCustomerOrder(orderId, fluffyId) {
       ? orderTemperamentReaction(f, order.reward)
       : { money: 0, repFactor: 1, message: null };
   customerOrders.reputation += Math.floor(order.reqs.length * reaction.repFactor);
-  if (!showDebugMenu) money += order.reward + reaction.money;
+  // (a commission's deposit was paid when you accepted it)
+  if (!showDebugMenu) money += order.reward - (order.depositPaid || 0) + reaction.money;
+  // They remember you, and may write later (Commissions.js)
+  if (typeof noteOrderFilled === "function") noteOrderFilled(order, f, reaction);
   if (typeof noteDayEvent === "function") noteDayEvent("order", { money: order.reward + reaction.money });
 
   // The courier takes the fluffy away (like selling it)
@@ -374,7 +400,9 @@ function deliverCustomerOrder(orderId, fluffyId) {
   if (idx > -1) fluffies.splice(idx, 1);
 
   if (typeof addUIMessage === "function") {
-    addUIMessage(`Order filled for ${order.customer}! +$${order.reward}`);
+    if (order.commission)
+      addUIMessage(`Commission delivered to ${order.customer}! +$${order.reward - (order.depositPaid || 0)} (plus the $${order.depositPaid || 0} deposit)`);
+    else addUIMessage(`Order filled for ${order.customer}! +$${order.reward}`);
     if (reaction.message) addUIMessage(reaction.message);
     const after = getOrderLevel();
     if (after > before) addUIMessage(`Reputation up: you're now a ${ORDER_REP_LEVELS[after - 1].name}!`);
@@ -402,9 +430,14 @@ function updateCustomerOrders(dt) {
     if (order.dueAt !== null && now >= order.dueAt) {
       o.active.splice(i, 1);
       o.missed++;
-      o.reputation = Math.max(0, o.reputation - ORDER_REP_MISSED);
+      const loss = order.commission ? COMMISSION_REP_MISSED : ORDER_REP_MISSED;
+      o.reputation = Math.max(0, o.reputation - loss);
       if (typeof addUIMessage === "function")
-        addUIMessage(`Missed ${order.customer}'s order. Reputation -${ORDER_REP_MISSED}.`);
+        addUIMessage(`Missed ${order.customer}'s ${order.commission ? "commission" : "order"}. Reputation -${loss}.`);
+      if (typeof noteOrderFailed === "function") noteOrderFailed(order);
+    } else if (order.commission && order.dueAt !== null && !order.warnedDay && order.dueAt - now < DAY_LENGTH) {
+      order.warnedDay = true;
+      if (typeof addUIMessage === "function") addUIMessage(`${order.customer}'s commission is due in less than a day!`);
     } else if (order.dueAt !== null && !order.warned && order.dueAt - now < 180) {
       order.warned = true;
       if (typeof addUIMessage === "function") addUIMessage(`${order.customer}'s order is due in 3 minutes!`);
@@ -423,6 +456,9 @@ function updateCustomerOrders(dt) {
       o.posted.push(makeCustomerOrder());
     }
   }
+
+  // Commissions and letters from past customers (Commissions.js)
+  if (typeof updateCommissions === "function") updateCommissions(now);
 }
 
 // "in 12 min" / "in 40 s"
