@@ -11,6 +11,8 @@
 //   - park news: herds splitting, meadows changing hands, new wild groups,
 //     wild deaths (Territory.js, Herds.js, ParkLife.js)
 //   - fluffies left scarred for life (Separation.js)
+//   - what happened in the park overnight (NightEvents.js), shown as
+//     "Last night in the park" in green (good) or red (bad)
 //   - the weather it had
 // At 6:00 the finished day becomes dayReportShown (the card opens; fast
 // forward drops back to 1x) and a new day starts. Close it with the button,
@@ -35,6 +37,7 @@ function freshDayStats() {
     wildArrived: 0,
     wildBorn: 0,
     wildDied: 0,
+    nightEvents: [], // { good, text } (NightEvents.js)
     known: [], // ids of your living fluffies
   };
 }
@@ -113,6 +116,7 @@ function _finishDay() {
     wildArrived: s.wildArrived,
     wildBorn: s.wildBorn || 0,
     wildDied: s.wildDied,
+    nightEvents: (s.nightEvents || []).map((e) => ({ ...e })),
     season: typeof getSeason === "function" ? getSeason() : "",
   };
 }
@@ -179,11 +183,14 @@ function isDayReportOpen() {
 
 const DR_W = 620;
 const DR_H = 500;
+const DR_NIGHT_ROWS = 3; // room for last night's park events
 
 function getDayReportLayout() {
   const x = Math.round(width / 2 - DR_W / 2);
-  const y = Math.round(height / 2 - DR_H / 2);
-  return { x, y, w: DR_W, h: DR_H, btn: { x: x + DR_W / 2 - 90, y: y + DR_H - 58, w: 180, h: 40 } };
+  const n = dayReportShown && dayReportShown.nightEvents ? Math.min(DR_NIGHT_ROWS, dayReportShown.nightEvents.length) : 0;
+  const h = DR_H + (n ? 30 + n * 20 : 0);
+  const y = Math.round(Math.max(8, height / 2 - h / 2));
+  return { x, y, w: DR_W, h, btn: { x: x + DR_W / 2 - 90, y: y + h - 58, w: 180, h: 40 } };
 }
 
 function _listText(list, max = 4) {
@@ -256,6 +263,22 @@ function drawDayReport(c) {
     c.fillStyle = color || "white";
     c.fillText(_fit(c, value, L.w - 210), L.x + 180, y);
     y += 26;
+  }
+
+  // Last night in the park (NightEvents.js)
+  const night = (r.nightEvents || []).slice(-DR_NIGHT_ROWS);
+  if (night.length) {
+    y += 6;
+    c.font = "bold 15px Arial";
+    c.fillStyle = "#ffd6f0";
+    c.fillText("Last night in the park", L.x + 30, y);
+    y += 22;
+    c.font = "14px Arial";
+    for (const e of night) {
+      c.fillStyle = e.good ? "#9fe0a8" : "#ff8a80";
+      c.fillText((e.good ? "▲ " : "▼ ") + _fit(c, e.text, L.w - 76), L.x + 34, y);
+      y += 20;
+    }
   }
 
   // Park news

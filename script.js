@@ -1418,6 +1418,8 @@ function updateSimulation(dt) {
   if (typeof updateGoals === "function") updateGoals(dt);
   // What happened today, for the morning report (DayReport.js)
   if (typeof updateDayReport === "function") updateDayReport(dt);
+  // Night-time events in the park: foxes, bumper crops... (NightEvents.js)
+  if (typeof updateNightEvents === "function") updateNightEvents(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)
@@ -1845,12 +1847,16 @@ function render() {
   }
 
   drawVFX(osCtx);
+  // Foxes in the park at night (NightEvents.js)
+  if (parkCam && typeof drawNightPredators === "function") drawNightPredators(osCtx);
   if (parkCam) {
     osCtx.restore();
     if (typeof mouseToScreen === "function") mouseToScreen();
   }
   // Night, sunsets, clouds, rain, snow, lightning (WorldTime.js)
   if (typeof drawSkyAndWeather === "function") drawSkyAndWeather(osCtx);
+  // Their eyes shine in the dark (NightEvents.js)
+  if (parkCam && typeof drawNightPredatorEyes === "function") drawNightPredatorEyes(osCtx, parkCam);
   drawUI(osCtx);
   if (parkCam) {
     osCtx.save();

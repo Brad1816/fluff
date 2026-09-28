@@ -74,6 +74,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Wellbeing.js` | **Temperament**: happiness, trust, fear and trauma change a fluffy's price and how customers react. See section 9 (Temperament). |
 | `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
 | `Goals.js` | **Breeder goals**: optional milestones with cash rewards (Goals button next to the speed buttons, or G). See section 9 (Goals). |
+| `NightEvents.js` | **Night in the park**: most nights a herd has something happen to it (a fox, a tummy bug, a bumper crop, newcomers...). See section 9 (Night events). |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -1065,4 +1066,40 @@ level, and a 3-day home breeding run with 1 stallion and 3 mares):
   "Settling in: 40%" - progress from its starting temperament to
   Ordinary (`SETTLED_AT` 0.95). When it gets there you get "X has settled
   in with you." (`updateSettling`). Saved as `settling` / `settleStart`.
+
+### Night events (`NightEvents.js`)
+Most nights something happens to one of the park's herds, and the morning
+report lists it under "Last night in the park" (green = good, red = bad).
+- **When**: around 21:00 each night `updateNightEvents` plans 0-2 events
+  (`NIGHT_EVENT_CHANCE` 75%, `SECOND_EVENT_CHANCE` 30%) at random times
+  before 4:30. When one is due it picks a herd with 2+ members in the park
+  (or a loose group of wild fluffies) and an event from `NIGHT_EVENTS`,
+  weighted by season and weather, never the same one twice a night. Off
+  when `parkLife.enabled` is off (the tests).
+- **Bad**: `fox` (below), `sickness` (2-4 lose health and get the runs),
+  `cold` (autumn/winter or snow: fluffies not under a tree get hungry and
+  hurt, foals badly - they can freeze to death), `stampede` (they scatter
+  and trample their meadow; more likely in storms), `quarrel` (two adults
+  fall out; sometimes the leader is toppled).
+- **Good**: `bumper` (their meadow and nearby bushes fill up), `newcomers`
+  (a small group joins the herd), `snuggle` (happier, healthier, like each
+  other more), `lost_pet` (rare: a good-quality fluffy that trusts people
+  wanders in - worth catching; `f.lostPet`).
+- **The fox** (`NightPredator`) is a real animal drawn in the park (eyes
+  glow in the dark). It creeps from the hedge to the weakest member (foals
+  first). Fluffies within `FOX_SCARE_RANGE` wake: the brave, the leader and
+  the victim's mum are "heroes" and rush in, half of its herd-mates/family
+  are "helpers", the rest run. When it pounces, the chance it's driven off
+  is 25% per hero + 12% per helper + 2% per fluffy screaming (max 75%);
+  otherwise a grown victim may wriggle free (35%, older foals 25%), or it's
+  killed ("Killed by a fox") and everyone nearby is upset. Click the fox to
+  scare it away (nearby fluffies trust you a bit more). Foxes aren't saved.
+- **Hooks**: `updateNightEvents` in script.js `updateSimulation`; the fox
+  is drawn in `render` (`drawNightPredators`, and `drawNightPredatorEyes`
+  after the night sky); clicking it is checked in the `mousedown` handler
+  (UI.js) before sell mode; `nightEvents` is in `SAVED_GAME_STATE`;
+  dialogue lines are `PREDATOR` and `NIGHT` in dialogue.js; the morning
+  report shows `dayStats.nightEvents`.
+- **Try it**: cheat `night` runs a random event now, `night fox` (or any
+  id above) that one.
 

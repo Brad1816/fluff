@@ -129,6 +129,12 @@ const SAVED_GAME_STATE = [
     fresh: () => freshDayStats(),
   },
   {
+    name: "nightEvents", // tonight's planned park events (NightEvents.js)
+    get: () => nightEvents,
+    set: (v) => (nightEvents = v), // missing fields are filled in by updateNightEvents
+    fresh: () => freshNightEvents(),
+  },
+  {
     name: "weatherState", // weather and snow on the ground (WorldTime.js)
     get: () => weatherState,
     set: (v) => (weatherState = v), // missing fields are filled in by updateWorldTime
@@ -194,6 +200,7 @@ function resetTemporaryGameState() {
   if (typeof resetNamingPopups === "function") resetNamingPopups();
   if (typeof goalsOpen !== "undefined") goalsOpen = false;
   if (typeof helpOpen !== "undefined") helpOpen = false;
+  if (typeof resetNightPredators === "function") resetNightPredators();
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;

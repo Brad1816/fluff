@@ -808,6 +808,11 @@ canvas.addEventListener("mousedown", (e) => {
   // In the park, what's below works with world positions (Park.js)
   if (typeof mouseToWorld === "function") mouseToWorld();
 
+  // Click a fox in the park to scare it off (NightEvents.js)
+  if (typeof handleNightPredatorClick === "function" && handleNightPredatorClick()) {
+    return;
+  }
+
   // 0. Check Sell Mode (Shift Click)
   if (sellModeClick()) {
     return;

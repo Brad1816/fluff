@@ -666,6 +666,10 @@ function handleCheatCode(code) {
     h.limbs.leftEar = false;
     h.limbs.rightEar = false;
     fluffies.push(h);
+  } else if (first === "night") {
+    // "night" = a random park night event now, "night fox" = that one (NightEvents.js)
+    const text = typeof runNightEvent === "function" ? runNightEvent(arr[1] || null) : null;
+    addUIMessage(text === null ? "No night event could happen (no fluffies in the park?)" : text || "A fox is coming...");
   } else if (first === "despawn") {
     feralDespawnTimer = 0;
   } else if (first === "h") {

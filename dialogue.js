@@ -199,6 +199,63 @@ const DIALOGUE = {
       "Nite-nite time...",
     ],
   },
+  // A fox in the park at night (NightEvents.js)
+  PREDATOR: {
+    FLEE: [
+      "EEEEEK!! MUNSTAH!! WUN WAY!!",
+      "SCAWY WED MUNSTAH!! HEWP!!",
+      "NU NUM FWUFFY!! NUUUU!!",
+      "Mummah!! Big munstah in da dawk!!",
+    ],
+    DEFEND: [
+      "GU 'WAY MUNSTAH!! Nu huwt hewd!!",
+      "<Speaker> am bwave! Nu scawed of yu!",
+      "Weave babbehs awone, dummeh munstah!!",
+    ],
+    CAUGHT: [
+      "EEEEEEEEK!!! HEWP!! HEWP <SPEAKER>!!",
+      "MUMMAH!!! MUNSTAH GOT <SPEAKER>!!",
+      "NUUUU!! NU NUM!! PWEASE!!",
+    ],
+    CHASED_OFF: [
+      "An' STAY 'way!! Hewd am safe!",
+      "Munstah wun 'way! <Speaker> am hewo!",
+      "Ow... but munstah gone! Hewd safe nao!",
+    ],
+  },
+  // Other night events in the park (NightEvents.js)
+  NIGHT: {
+    SICK: [
+      "Tummeh huwties... nu feew gud...",
+      "<Speaker> feew aww icky...",
+      "Why tummeh make bad poopies...",
+    ],
+    COLD: [
+      "Su cowd... nee' huggies...",
+      "Nu can feew hoofsies... su cowd...",
+      "Wawmies pwease... anybody...",
+    ],
+    STAMPEDE: [
+      "WUN!! WUN!! SUMFING IN DA DAWK!!",
+      "EEEK!! Evewybody wun!!",
+      "Nu know why wun but WUNNING!!",
+    ],
+    QUARREL: [
+      "<Target> am dummeh!! <Speaker> nu fwiend nao!",
+      "Dat <speaker>'s sweepy pwace, <target>!!",
+      "Gu 'way, meanie <target>!",
+    ],
+    NEWCOMER: [
+      "Hewwo... can <speaker> stay wif nyu fwiends?",
+      "Nyu hewd! <Speaker> nu awone nao!",
+      "Pwease be fwiends? <Speaker> am wost...",
+    ],
+    LOST_PET: [
+      "Whewe am housie? <Speaker> want daddeh...",
+      "Hewwo? Daddeh? <Speaker> wost...",
+      "Big outside am scawy... wan housie...",
+    ],
+  },
   // Herds and their meadows in Fluffy Park (Territory.js)
   TERRITORY: {
     CLAIM: [

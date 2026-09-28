@@ -89,6 +89,26 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Night in the park",
+    lines: [
+      "Most nights something happens to one of the park's herds. The",
+      'morning report lists it under "Last night in the park".',
+      "",
+      "# Bad",
+      "- A fox creeps in and goes for the weakest, usually a foal. Brave",
+      "  fluffies and the herd leader stand up to it and may drive it off.",
+      "  If you're there, click the fox to chase it away.",
+      "- A tummy bug, a freezing night (autumn and winter), a stampede",
+      "  that tramples the meadow, or a fight in the herd.",
+      "",
+      "# Good",
+      "- A bumper crop, newcomers joining, a snuggly night that makes",
+      "  the herd happier and closer.",
+      "- Rarely, a lost pet wanders in: good genes and not afraid of",
+      "  people, so it's worth taking home.",
+    ],
+  },
+  {
     title: "Taking & trauma",
     lines: [
       "Carrying a fluffy away from its family, friends or herd upsets it.",
