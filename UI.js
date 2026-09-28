@@ -2038,6 +2038,8 @@ function drawUI(ctx) {
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   if (typeof drawOrdersScreen === "function") drawOrdersScreen(ctx);
   drawDayCareModal(ctx);
+  // Goals list (Goals.js)
+  if (typeof drawGoals === "function") drawGoals(ctx);
   // Morning report on top of everything (DayReport.js)
   if (typeof drawDayReport === "function") drawDayReport(ctx);
   // Naming a new fluffy / litter (Names.js)
@@ -2055,6 +2057,7 @@ function isAnyScreenOpen() {
   if (typeof isOrdersScreenOpen === "function" && isOrdersScreenOpen()) return true;
   if (typeof isDayReportOpen === "function" && isDayReportOpen()) return true;
   if (typeof isNamingPopupOpen === "function" && isNamingPopupOpen()) return true;
+  if (typeof isGoalsOpen === "function" && isGoalsOpen()) return true;
   return false;
 }
 window.isAnyScreenOpen = isAnyScreenOpen;
@@ -3665,6 +3668,10 @@ canvas.addEventListener("mousedown", (e) => {
   }
   // Morning report (DayReport.js)
   if (typeof handleDayReportClick === "function" && handleDayReportClick()) {
+    return;
+  }
+  // Goals list (Goals.js)
+  if (typeof handleGoalsClick === "function" && handleGoalsClick()) {
     return;
   }
 

@@ -5101,6 +5101,7 @@ class Horse {
       traumas: Array.isArray(this.traumas) ? JSON.parse(JSON.stringify(this.traumas)) : [],
       hurtByPlayerAt: this.hurtByPlayerAt ?? null,
       killedByPlayer: !!this.killedByPlayer,
+      fromPark: !!this.fromPark,
       lastDesire: this.lastDesire
         ? JSON.parse(JSON.stringify(this.lastDesire))
         : null,
@@ -5258,6 +5259,7 @@ class Horse {
     horse.traumas = Array.isArray(data.traumas) ? data.traumas : [];
     horse.hurtByPlayerAt = data.hurtByPlayerAt ?? null;
     horse.killedByPlayer = !!data.killedByPlayer;
+    horse.fromPark = !!data.fromPark;
     horse.castrationBandTimer =
       data.castrationBandTimer !== undefined
         ? data.castrationBandTimer

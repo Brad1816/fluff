@@ -185,6 +185,8 @@ function describeTraumas(f) {
 // globals.js handleDropping: you just carried `f` from `fromScene` somewhere else
 function onFluffyTakenAway(f, fromScene) {
   if (!f || !f.isAlive || !fromScene || f.scene === fromScene) return;
+  // Taken out of the park: a wild-born fluffy (Goals.js, and remembered)
+  if (fromScene === "PARK" && !f.adopted) f.fromPark = true;
   // Already missing someone: keep that separation going
   if (f.separation && f.separation.ids && f.separation.ids.length) return;
   const how = howTaken(f);

@@ -236,6 +236,11 @@ function _makeWild(growth, at, opts = {}) {
   h.y = Math.max(PARK_TOP + 60, Math.min(PARK_H - 60, at.y + (Math.random() - 0.5) * 90));
   h.personalities = [...h.personalities, ...(opts.personalities || [])];
   h.hunger = 0.7 + Math.random() * 0.3;
+  // Wild fluffies don't know people: wary and a little afraid, so fresh
+  // from the park they're "Nervous" and sell for less (Wellbeing.js) until
+  // they settle in with you (Memory.js trust grows with good care)
+  h.playerTrust = 0.2 + Math.random() * 0.1;
+  h.playerFear = 0.1 + Math.random() * 0.1;
   fluffies.push(h);
   return h;
 }

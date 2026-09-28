@@ -65,6 +65,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Names.js` | **Names**: fluffies are "Fluffy" until a human names them. Screens tell unnamed ones apart by looks ("Fluffy (pink unicorn mare)"), and a pop-up offers to name fluffies that become yours (one pop-up per litter). See section 9 (Names). |
 | `Wellbeing.js` | **Temperament**: happiness, trust, fear and trauma change a fluffy's price and how customers react. See section 9 (Temperament). |
 | `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
+| `Goals.js` | **Breeder goals**: optional milestones with cash rewards (Goals button next to the speed buttons, or G). See section 9 (Goals). |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
@@ -968,4 +969,34 @@ on the park's left side.
 - `cleanUpAutoNames` removes the automatic names from one earlier build
   (only when every fluffy in a save is named and nearly all names are
   from that build's lists).
+
+### Goals (`Goals.js`)
+- 18 optional breeder goals (`GOALS`), from "Have a litter born at home"
+  ($100) to "Become a Master breeder" ($5,000). `updateGoals` checks them
+  every 2 seconds; each pays its reward once, announces itself and goes in
+  the morning report news.
+- Whole-game counts (fluffies sold, best sale, litters born at home, wild
+  fluffies brought home) are in `goalsState.stats`, fed by `noteGoalEvent`
+  (DayReport.js `noteDayEvent("sold")`, Names.js for litters and fluffies
+  arriving home - `f.fromPark` is set when a wild fluffy is carried out of
+  the park, Separation.js). Saved as `goalsState`.
+- The list opens with the "Goals x/18" button after the speed buttons, or
+  G; Esc or Close shuts it.
+- To add a goal: an entry in `GOALS` with `id`, `text`, `reward`,
+  `check(stats)` and optionally `progress(stats)` ("3/10").
+
+### Balance notes (September 2026 pass)
+Measured with the test harness (300 sampled fluffies, 200 orders per
+level, and a 3-day home breeding run with 1 stallion and 3 mares):
+- Fluffy full price (buyers at the door pay this; selling yourself pays
+  half): home-bred adults median ~$115 (10% under $25, 10% over $550),
+  newborns ~$30, wild adults ~$75. Potty training adds a flat $1,000, and
+  alicorns x30, which dwarf everything else.
+- Orders: median reward L1 $350, L2 $700, L3 $1,290, L4 $1,980, L5 $2,860.
+- Food: a $25 kibble bag fills a bowl 5 times (25 meals, $1 a meal); the
+  breeding group ate about $35 of kibble a game day.
+- Buyers at the door: about 7 a game day, median offer ~$80.
+- Change made: wild fluffies start wary (trust 0.2-0.3, fear 0.1-0.2), so
+  fresh from the park they're about 0.8x price ("Nervous") until good care
+  settles them in. Without this, the park was free money.
 

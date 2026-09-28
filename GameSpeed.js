@@ -110,6 +110,16 @@ function drawGameSpeed(chatLogRight) {
       borderColor: on ? "rgba(255, 210, 120, 0.95)" : undefined,
     });
   }
+  // Goals button (Goals.js)
+  const gb = getGoalsButtonRect(chatLogRight);
+  if (typeof GOALS !== "undefined" && typeof drawGlassButton === "function") {
+    drawGlassButton(gb.x, gb.y, gb.w, gb.h, `Goals ${goalsDoneCount()}/${GOALS.length}`, {
+      fontSize: 13,
+      borderRadius: 8,
+      normalFill:
+        typeof isGoalsOpen === "function" && isGoalsOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
+    });
+  }
   // Can't keep up? Say how fast it really is
   if (gameSpeed > 1 && actualGameSpeed < gameSpeed - 0.5) {
     const last = L.buttons[L.buttons.length - 1];
@@ -118,13 +128,26 @@ function drawGameSpeed(chatLogRight) {
     ctx.font = "12px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(`(really ${actualGameSpeed.toFixed(1)}x)`, last.x + last.w + 6, L.y + L.h / 2);
+    ctx.fillText(`(really ${actualGameSpeed.toFixed(1)}x)`, gb.x + gb.w + 6, L.y + L.h / 2);
     ctx.restore();
   }
 }
 
+// The Goals button, after the speed buttons
+function getGoalsButtonRect(chatLogRight) {
+  const L = getGameSpeedLayout(chatLogRight);
+  const last = L.buttons[L.buttons.length - 1];
+  return { x: last.x + last.w + 8, y: L.y, w: 92, h: L.h };
+}
+
 // Mouse down on the buttons (screen positions). Returns true if handled.
 function gameSpeedClick(chatLogRight) {
+  const gb = getGoalsButtonRect(chatLogRight);
+  if (typeof openGoals === "function" && isPointInRect(mouse.x, mouse.y, gb.x, gb.y, gb.w, gb.h)) {
+    if (isGoalsOpen()) closeGoals();
+    else openGoals();
+    return true;
+  }
   const L = getGameSpeedLayout(chatLogRight);
   for (const b of L.buttons) {
     if (isPointInRect(mouse.x, mouse.y, b.x, b.y, b.w, b.h)) {

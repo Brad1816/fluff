@@ -209,6 +209,8 @@ function updateNamingPopups(dt) {
   for (const f of _namingCandidates()) {
     if (_namingKnown.has(f.id)) continue;
     _namingKnown.add(f.id);
+    // Brought home from the park (Goals.js)
+    if (f.fromPark && typeof noteGoalEvent === "function") noteGoalEvent("broughtHome");
     if (fluffyNames[f.id]) continue; // already has a name
     const newborn = f.motherId !== null && f.motherId !== undefined && f.growth < 0.1;
     if (newborn) {
@@ -224,6 +226,7 @@ function updateNamingPopups(dt) {
     const ids = _pendingLitters[mumId].filter((id) => fluffies.some((f) => f.id === id && f.isAlive));
     delete _pendingLitters[mumId];
     if (ids.length) namingQueue.push({ ids, kind: ids.length > 1 ? "litter" : "single", mumId: Number(mumId) });
+    if (typeof noteGoalEvent === "function") noteGoalEvent("litter"); // Goals.js
   }
   // Show the next one
   if (!namingPopup && namingQueue.length && transitionPhase === "OFF") {

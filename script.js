@@ -1412,6 +1412,8 @@ function updateSimulation(dt) {
   if (typeof updateSeparations === "function") updateSeparations(dt);
   // Offer to name fluffies that have just become yours (Names.js)
   if (typeof updateNamingPopups === "function") updateNamingPopups(dt);
+  // Breeder goals (Goals.js)
+  if (typeof updateGoals === "function") updateGoals(dt);
   // What happened today, for the morning report (DayReport.js)
   if (typeof updateDayReport === "function") updateDayReport(dt);
   // Corpses rot away (Corpses.js)
@@ -2011,6 +2013,11 @@ window.addEventListener("keydown", (e) => {
       closeDayReport();
       return;
     }
+    // Goals list (Goals.js)
+    if (typeof isGoalsOpen === "function" && isGoalsOpen()) {
+      closeGoals();
+      return;
+    }
     if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
       inspectedFluffy = null;
       return;
@@ -2095,6 +2102,12 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "KeyN") {
     showFluffyNames = !showFluffyNames;
+    return;
+  }
+  // G: the goals list (Goals.js)
+  if (e.code === "KeyG" && typeof isGoalsOpen === "function") {
+    if (isGoalsOpen()) closeGoals();
+    else if (!isAnyScreenOpen()) openGoals();
     return;
   }
   // F: fast forward to the next speed (GameSpeed.js)

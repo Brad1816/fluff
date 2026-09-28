@@ -117,6 +117,12 @@ const SAVED_GAME_STATE = [
   { name: "fluffyNames", get: () => fluffyNames, set: (v) => (fluffyNames = v), fresh: () => ({}) },
   { name: "relationships", get: () => relationships, set: (v) => (relationships = v), fresh: () => ({}) },
   {
+    name: "goalsState", // breeder goals done, and counts they need (Goals.js)
+    get: () => goalsState,
+    set: (v) => (goalsState = v), // missing fields are filled in by updateGoals
+    fresh: () => freshGoalsState(),
+  },
+  {
     name: "dayStats", // what happened today, for the morning report (DayReport.js)
     get: () => dayStats,
     set: (v) => (dayStats = v), // missing fields are filled in by updateDayReport
@@ -186,6 +192,7 @@ function resetTemporaryGameState() {
   if (typeof gameSpeed !== "undefined") gameSpeed = 1;
   if (typeof dayReportShown !== "undefined") dayReportShown = null;
   if (typeof resetNamingPopups === "function") resetNamingPopups();
+  if (typeof goalsOpen !== "undefined") goalsOpen = false;
   dayCareModalOpen = false;
   dayCareBroughtPage = 0;
   dayCareStoredPage = 0;
