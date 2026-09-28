@@ -1398,6 +1398,8 @@ function updateDayCare(dt) {
 
 function updateSimulation(dt) {
   timePlayed += dt;
+  // Every fluffy has a name of its own (Names.js)
+  if (typeof updateFluffyNames === "function") updateFluffyNames();
   // Keep the family record book up to date (FamilyTree.js)
   if (typeof updateFamilyRecords === "function") updateFamilyRecords(dt);
   // Bonds and grudges between fluffies (Bonds.js)

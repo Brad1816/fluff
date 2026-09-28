@@ -62,6 +62,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `SpatialGrid.js` | Quick "who's near here?" lookups (`fluffiesNear`, `forEachNearbyPair`), used by bonds, herds and territory. |
 | `WorldTime.js` | **Day and night, seasons, weather**: the clock, darkness, rain/snow/storms and what they do to fluffies and plants. See section 9 (Day, night and weather). |
 | `Separation.js` | **Taken from herd/family**: fluffies carried away from their herd, family or friends grieve, may be traumatised, and are overjoyed when brought back. See section 9 (Separation). |
+| `Names.js` | **Names**: every fluffy gets its own name (suited to its coat colour, never shared with a living fluffy). |
 | `Wellbeing.js` | **Temperament**: happiness, trust, fear and trauma change a fluffy's price and how customers react. See section 9 (Temperament). |
 | `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
@@ -941,4 +942,15 @@ on the park's left side.
 - At 6:00 `updateDayReport` turns it into `dayReportShown` - a card with
   all of that - and fast forward drops to 1x. "Start the day", Esc or Enter
   closes it. It counts as an open screen.
+
+### Names (`Names.js`)
+Every fluffy gets a name of its own as soon as the game runs
+(`updateFluffyNames`, at the start of `updateSimulation`): born, bought,
+wild, or from an old save. About two in three suit its coat colour
+(`NAMES_BY_COLOUR`, keyed by `getColorName()`: pink -> Rosie, Bubblegum...;
+grey -> Pebble, Smokey...), the rest come from `GENERAL_NAMES`. A name
+already used by a living fluffy is skipped, or gets a number ("Pudding
+II"). Names you give with the magnifying glass are never changed. They're
+stored in `fluffyNames` like before, so every screen, speech line, herd
+and report uses them.
 
