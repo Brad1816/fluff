@@ -199,6 +199,19 @@ const DIALOGUE = {
       "Nite-nite time...",
     ],
   },
+  // Getting used to alicorns (AlicornAcceptance.js)
+  ALICORN_ACCEPT: {
+    DEFAULT: [
+      "Munstah nu am munstah... am jus' fwuffy!",
+      "<Speaker> nu scawed of wingie-hown fwuffy nao!",
+      "Wingie-hown fwen am nice! Can hab huggies?",
+    ],
+    INTRO: [
+      "Hewwo... munstah? Nu num <speaker>?",
+      "Daddeh howd <speaker>... <speaker> bwave...",
+      "Munstah... nu am scawy wen daddeh hewe...",
+    ],
+  },
   // A fox in the park at night (NightEvents.js)
   PREDATOR: {
     FLEE: [

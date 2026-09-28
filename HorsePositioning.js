@@ -1507,7 +1507,9 @@ class HorsePositioning {
         const d = Math.sqrt(
           (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
         );
-        if (d < 300 && d < minDist) {
+        // Less scared as it gets used to them (AlicornAcceptance.js)
+        const range = typeof alicornFearRange === "function" ? alicornFearRange(this.horse) : 300;
+        if (d < range && d < minDist) {
           minDist = d;
           closest = f;
         }

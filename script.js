@@ -1420,6 +1420,8 @@ function updateSimulation(dt) {
   if (typeof updateDayReport === "function") updateDayReport(dt);
   // Night-time events in the park: foxes, bumper crops... (NightEvents.js)
   if (typeof updateNightEvents === "function") updateNightEvents(dt);
+  // Fluffies getting used to alicorns (AlicornAcceptance.js)
+  if (typeof updateAlicornAcceptance === "function") updateAlicornAcceptance(dt);
   // Corpses rot away (Corpses.js)
   if (typeof updateCorpses === "function") updateCorpses(dt);
   // Customer orders: new ones, deadlines (Orders.js)

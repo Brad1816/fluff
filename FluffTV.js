@@ -330,7 +330,8 @@ class FluffTV {
           !f.alicornTolerance &&
           Math.random() < 0.5
         ) {
-          // 50%: flee (same as heavy metal)
+          // 50%: flee (same as heavy metal), but it learns a little (AlicornAcceptance.js)
+          if (typeof addAlicornComfort === "function") addAlicornComfort(f, 0.1);
           f.fleeFromTV(this);
           const lines = getDialogue(["TV_FOCUS", "HEAVY_METAL"], f);
           const chosen = Array.isArray(lines)

@@ -109,6 +109,22 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Alicorns",
+    lines: [
+      "With alicorn intolerance on, most fluffies are scared of alicorns.",
+      "They can get used to them:",
+      "",
+      "- Time spent near an alicorn that doesn't hurt anyone slowly calms",
+      "  them (about two days on its own).",
+      "- Faster for foals, brave fluffies, and when friends or herd-mates",
+      "  who accept alicorns are nearby. An alicorn in a cage is less scary.",
+      "- Hold a fluffy that trusts you near the alicorn to introduce them.",
+      "- A mum who gets used to her alicorn foal takes it back.",
+      "- Smarties take much longer. An alicorn that attacks sets them back.",
+      '- The magnifying glass shows it: "Alicorns: Getting used to them".',
+    ],
+  },
+  {
     title: "Taking & trauma",
     lines: [
       "Carrying a fluffy away from its family, friends or herd upsets it.",

@@ -211,6 +211,9 @@ function getFluffyInspectionInfo(f) {
     // A wild fluffy getting used to you (Wellbeing.js)
     const settle = typeof settlingProgress === "function" ? settlingProgress(f) : null;
     if (settle !== null) care.push({ label: "Settling in", value: `${Math.round(settle * 100)}%`, tone: settle > 0.6 ? "ok" : "bad" });
+    // Getting used to alicorns (AlicornAcceptance.js)
+    const ali = typeof describeAlicornFeeling === "function" ? describeAlicornFeeling(f) : null;
+    if (ali) care.push({ label: "Alicorns", value: ali[0], tone: ali[1] });
     // Permanent scars from how it was taken (Separation.js)
     const scars = typeof describeTraumas === "function" ? describeTraumas(f) : null;
     if (scars) care.push({ label: "Trauma", value: scars, tone: "bad" });

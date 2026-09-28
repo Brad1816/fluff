@@ -8,6 +8,8 @@ addHorseMethods({
   wasAttackedBy(attacker) {
     if (!this.isAlive || !attacker || !attacker.isAlive) return;
 
+    // An alicorn hurting someone scares the ones still getting used to them (AlicornAcceptance.js)
+    if (typeof noteAlicornAttack === "function") noteAlicornAttack(attacker, this);
     this.lastAttackerId = attacker.id;
     this.lastAttackTimer = 5.0; // 5 seconds window for "Killed by"
 

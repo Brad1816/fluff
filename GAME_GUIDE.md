@@ -75,6 +75,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `DayReport.js` | **Morning report**: every 6:00 AM a card sums up the day before. See section 9 (Morning report). |
 | `Goals.js` | **Breeder goals**: optional milestones with cash rewards (Goals button next to the speed buttons, or G). See section 9 (Goals). |
 | `NightEvents.js` | **Night in the park**: most nights a herd has something happen to it (a fox, a tummy bug, a bumper crop, newcomers...). See section 9 (Night events). |
+| `AlicornAcceptance.js` | **Getting used to alicorns**: scared fluffies slowly accept alicorns they spend time near. See section 9 (Alicorn acceptance). |
 | `Help.js` | **How it works**: in-game help pages ("?" button after Goals, or F1). Edit `HELP_TOPICS` to change the text. |
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
@@ -1110,4 +1111,32 @@ single mums outside) showed no foals in her tree unless the foals were
 yours too. Now `shouldRecordFluffy` also takes living foals of anyone in
 the book, and opening a tree calls `recordLivingFamily`, which records the
 fluffy's living parents, foals, brothers and sisters straight away.
+
+### Alicorn acceptance (`AlicornAcceptance.js`)
+Before, a fluffy scared of alicorns stayed scared unless it had an alicorn
+mum, watched the "munstah" TV channel, or was reformed by the torture
+channel. Now each fluffy has `alicornComfort` (0-1, saved with it) that
+grows while it's awake and can see an alicorn within `ALICORN_SEE_RANGE`
+(450px). At 1 it gets `alicornTolerance` (accepts them for good) and you
+get a message.
+- **Speed** (`alicornAcceptanceRate`): `ALICORN_ACCEPT_TIME` (1,200s, one
+  game day) of plain exposure; about two days in practice, since scared
+  ones run out of sight. x4 tiny foals, x2 older foals, x4 a mum with her
+  own alicorn foal, x0.5-1.5 by bravery, x1.75 / x2.5 with one / two
+  friends, family or herd-mates nearby who accept alicorns, x1.5 if the
+  alicorn is caged, x0.3 smarties, x0.5 when hungry or miserable.
+- **Introductions**: holding a fluffy within 200px of an alicorn adds
+  1/`ALICORN_INTRO_TIME` (120s) per second if it trusts you
+  (`playerTrust` >= 0.5).
+- **TV**: fluffies that run from the munstah channel still gain 0.1.
+- **Setbacks** (`noteAlicornAttack`, called from `wasAttackedBy`): an
+  alicorn attacking a fluffy costs it 0.3, and 0.1 for those watching.
+- **Less fear on the way**: `findScaryAlicorn` uses `alicornFearRange`
+  (300px when afraid, down to 120px), so they run less as they calm down.
+- **Mums**: when a mare accepts alicorns, her `estranged_child` alicorn
+  foals become her `baby_child`/`child` again (so she feeds them).
+- The magnifying glass shows "Alicorns: Afraid / Getting used to them
+  (40%) / Accepts them" (only with alicorn intolerance on).
+- Note for tests: only stallions can be smarties (the `personalities`
+  setter drops "smarty" from mares).
 

@@ -464,6 +464,7 @@ class Horse {
     this.tearGapPhase = 0;
     this.bleedingTimer = 0;
     this.alicornTolerance = false;
+    this.alicornComfort = 0; // getting used to alicorns, 0..1 (AlicornAcceptance.js)
     this.lactatingTimer = 0;
     this.milkCharges = 0;
     this.milkRegenTimer = 0;
@@ -1857,6 +1858,7 @@ class Horse {
 
     horse.id = data.id;
     horse.alicornTolerance = data.alicornTolerance;
+    horse.alicornComfort = data.alicornComfort || 0; // AlicornAcceptance.js
     horse.coloristDegree = data.coloristDegree;
     horse.x = data.x;
     horse.y = data.y;
