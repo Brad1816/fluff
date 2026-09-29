@@ -108,6 +108,8 @@ const HELP_TOPICS = [
       "  smell (flies!), are unhappy, score less at shows and sell for less.",
       "- Bath time: rub the sponge on a fluffy. Some love it, some scream -",
       "  but every bath gets them a bit more used to it.",
+      "- The Fluff-Bot (Fluff Mart, $250) cleans up the floor of the room",
+      "  you put it in by itself. Right-click to switch it off.",
 
     ],
   },

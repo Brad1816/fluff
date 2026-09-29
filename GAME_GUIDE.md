@@ -94,6 +94,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Diet.js` | **Food and diet**: kibble brands, tastes and favourite food, diet score, weight. See section 9 (Food and diet). |
 | `Play.js` | **Play and boredom**: boredom, favourite toy, playing ball with you, mischief. See section 9 (Play and boredom). |
 | `Bath.js` | **Dirt and bath time**: fluffies get grubby (mess, accidents, rain, time), look it, sponge baths with likes/dislikes. See section 9 (Dirt and bath time). |
+| `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
 | `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
@@ -1937,4 +1938,20 @@ brushes, plays ball and trains twice a day). What changed:
   adds `BATH_GET_USED` (0.08), so haters come round. `BATH.CLEAN` when it's
   spotless.
 - **Shown**: Cleanliness (Overview > Wellbeing), Bath time (Looks & nature).
+
+### The Fluff-Bot (`Roomba.js`)
+- A world item (class `Roomba`, registry sellType `roomba`, Home & Play
+  aisle, `ROOMBA_PRICE` $250, delivered home). Drawn in code
+  (`drawRoombaShape`), no image. Light: green cleaning, blue docked, red off.
+- `update(dt)` (runs in every room, seen or not): drives at `ROOMBA_SPEED`
+  (70 px/s) to the nearest puddle point of any kind in its scene
+  (`_nearestMess`), cleaning everything within about 30px at `ROOMBA_CLEAN`
+  (0.35 size a second). No mess left: drives back to its dock
+  (`homeX/homeY`, set by `setPosition` and every time you drop it) and waits.
+- Right-click: on/off. Saved: `on`, `homeX`, `homeY`.
+- Bumping into a fluffy in the room you're looking at (once per fluffy per
+  `ROOMBA_BUMP_EVERY` 6 s) pauses it and calls `reactToRoomba`: brave +
+  playful fluffies (and half of foals) think it's fun (`ROOMBA.FUN`), the
+  rest get a fright (`ROOMBA.SCARED`) and scoot out of the way.
+- It only does floors: fluffies still need baths (Bath.js).
 

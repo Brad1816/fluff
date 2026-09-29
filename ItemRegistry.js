@@ -203,6 +203,18 @@ const ITEM_TYPES = [
     },
   },
   {
+    sellType: "roomba", // Roomba.js (the Fluff-Bot)
+    is: (o) => typeof Roomba !== "undefined" && o instanceof Roomba,
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new Roomba(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawRoombaShape(ctx, 0, 8, 0.55, true, "docked"),
+    onRightClick: (o) => {
+      o.on = !o.on;
+      if (typeof addUIMessage === "function") addUIMessage(o.on ? "Fluff-Bot on." : "Fluff-Bot off.");
+    },
+  },
+  {
     sellType: "fluff_tv",
     is: (o) => o instanceof FluffTV,
     icon: "fluff_tv_off",
@@ -670,6 +682,7 @@ const SAVED_CLASSES = {
   Block: (d) => new Block(d.x, d.y, d.scene),
   GoldenStatue: (d) => new GoldenStatue(d.scene),
   Heater: (d) => new Heater(d.scene), // Warmth.js
+  Roomba: (d) => new Roomba(d.scene), // Roomba.js
   Fence: (d) => new Fence(d.scene, d.orientation, d.isGate),
   FoalVendor: (d) => new FoalVendor(d.scene),
   FoalInACan: (d) => new FoalInACan(d.scene),

@@ -395,6 +395,11 @@ const DIALOGUE = {
       "Speshuw pwesent! Wub it!",
     ],
   },
+  // The Fluff-Bot (Roomba.js)
+  ROOMBA: {
+    SCARED: ["Scawy munstah! Wun!", "Nu eat <speaker>, munstah!", "*SCREEE* It hab nu face!", "Wha' dat?! Go 'way!"],
+    FUN: ["Wobot fwen! Hewwo!", "Hehe! It tickwe hoofsies!", "Chase da wobot!", "Wobot go vwoom!"],
+  },
   // Bath time (Bath.js)
   BATH: {
     LOVE: ["Bubbwes! Wub baffie!", "Spwash spwash! Hehe!", "Su nice an' wawm! Mowe baffie!"],
