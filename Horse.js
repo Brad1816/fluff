@@ -224,6 +224,8 @@ class Horse {
       this.brain.addDesire(new FleePlayerDesire());
       this.brain.addDesire(new SeekPlayerDesire());
     }
+    // Doing a trick (Tricks.js)
+    if (typeof TrickDesire !== "undefined") this.brain.addDesire(new TrickDesire());
     // Bonds and grudges (Bonds.js): hang out with buddies, avoid grudges
     if (typeof SeekBuddyDesire !== "undefined") {
       this.brain.addDesire(new SeekBuddyDesire());

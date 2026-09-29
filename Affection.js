@@ -49,6 +49,7 @@ const AFFECTION_ACTS = {
   patched: { amount: 0.06, perDay: 3 },
   vet: { amount: 0.05, perDay: 2 },
   named: { amount: 0.05, perDay: 1 },
+  praised: { amount: 0.01, perDay: 5 }, // "Good fluffy!" after a trick (Tricks.js)
 };
 const AFFECTION_WEAK = 0.2; // after the daily allowance, each counts this much
 
@@ -67,6 +68,7 @@ Object.assign(MEMORY_TEXT, {
   patched: "You fixed its owie",
   vet: "You made it better",
   named: "You gave it a name",
+  praised: "You said it was a good fluffy",
   horrid: "You put something horrid on it",
   hungry: "You let it go hungry",
   cold: "You left it in the cold",

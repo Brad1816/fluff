@@ -169,6 +169,14 @@ const ORDER_REQUIREMENTS = {
     label: () => "Friendly with people (trusts you, not scared)",
     matches: (r, f) => typeof isFriendlyWithPeople === "function" && isFriendlyWithPeople(f),
   },
+  tricks: {
+    // Tricks and training (Tricks.js)
+    minLevel: 2,
+    weight: 1,
+    make: () => ({ n: 2, value: 250 }),
+    label: (r) => `Knows ${r.n} tricks`,
+    matches: (r, f) => typeof knownTricks === "function" && knownTricks(f).length >= r.n,
+  },
   trait: {
     // Personality traits (Traits.js)
     minLevel: 2,

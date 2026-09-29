@@ -1732,3 +1732,37 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
 - **Shown**: hearts under the price in the magnifying glass header; the
   "Affection" row on the Mind tab (was "Feels about you").
 
+### Tricks and training (`Tricks.js`)
+- **Training**: right-click one of your fluffies (`trickRightClick`, called
+  from UI.js after item right-clicks) opens a row of chips over it
+  (`trickUI`, screen "tricks", layer 6). Tricks (`TRICKS`): come, sit, down
+  (lie down), bow, dance, wave. Picking one calls `tryTrick(f, key)`:
+  - refuses (`trickRefusal`): too young to walk, asleep, a Smarty, scared of
+    you (fear 0.45+), or out of tries (`TRICK_TRIES_PER_DAY` = 10, counted in
+    `f.trickTries`). A fluffy that dislikes you refuses 40% of the time.
+  - gets it right with `trickChance`: 0.12 + 0.83 x skill, x affection
+    (0.6 dislikes .. 1.15 adores), x0.7 if hungry or miserable. Then the
+    reward chips show for `TRICK_REWARD_WINDOW` (5 game seconds):
+    "Good fluffy!" (`TRICK_LEARN.praise` 0.07, plus a little affection) or
+    "Treat $2" (0.12, affection "treat"). Missed: 0.01.
+  - gets it wrong: 0.01 learnt, does a different pose, looks confused.
+  - Everything learnt is x `trickLearnRate`: affection (0.6 dislikes ..
+    1.4 adores), energy trait (+/-25%), foals x1.3, elderly x0.6.
+- **Skill**: `f.tricks[key]` 0..1 (saved, with `trickTries`). Known at
+  `TRICK_KNOWN` 0.7 (a message when it gets there). `knownTricks(f)`.
+- **Doing it**: `startTrick` sets `f.trickNow`; `TrickDesire` (score 70)
+  holds the pose: SITTING, LYING, BENDING_2 (bow), FLUFFY_STOMPIE turning
+  round (dance), FLUFFY_JAB repeated (wave). Come: walks to the clicked spot,
+  then sits there for 3 seconds.
+- **Watching**: foals that can walk, in the room and awake, within 500px,
+  learn `TRICK_WATCH` (0.03) of a trick they see done, up to 0.5.
+- **Showing off**: `updateTricks` (system order 136): a fluffy that loves
+  you, idle and happy, does a known trick on its own every 4-10 minutes.
+- **Worth**: `trickPriceMultiplier` +5% a known trick (HorseGenetics);
+  `showScore` +`TRICK_SHOW_BONUS` (2) per known trick, up to 3, in every
+  show but the new **Trick Show** theme (0.7 x `trickShowScore` - its best 3
+  tricks - + manners and happiness); family and kid buyers like 2+ tricks
+  (Buyers.js `_tricksLevel`); order requirement `tricks` ("Knows 2 tricks",
+  level 2+); goal `tricks_3`.
+- **Shown**: "Tricks" row on the Mind tab (`describeTricks`).
+

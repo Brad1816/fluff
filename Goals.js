@@ -60,6 +60,12 @@ const GOALS = [
       _yourFluffies().some((f) => (typeof namedBy === "function" ? namedBy(f) === "you" : !!fluffyNames[f.id])),
   },
   {
+    id: "tricks_3",
+    text: "Teach one fluffy 3 tricks (right-click it)",
+    reward: 200,
+    check: () => typeof knownTricks === "function" && _yourFluffies().some((f) => knownTricks(f).length >= 3),
+  },
+  {
     id: "sell_10",
     text: "Sell 10 fluffies",
     reward: 300,

@@ -395,6 +395,21 @@ const DIALOGUE = {
       "Speshuw pwesent! Wub it!",
     ],
   },
+  // Tricks and training (Tricks.js)
+  TRICK: {
+    COME: ["Coming, daddeh!", "<Speaker> comin'!", "Hewe <speaker> come!"],
+    SIT: ["<Speaker> sit! Wook!", "Sittie!", "Am sittin' su good!"],
+    DOWN: ["Wie down... wike dis?", "<Speaker> make fwoppy!", "Down on tummeh!"],
+    BOW: ["Fanceh bow!", "<Speaker> bow fow daddeh!", "Wike dis? Bowie!"],
+    DANCE: ["Dancie! Dancie!", "Wook! <Speaker> dance!", "Hoofies go stompie-stompie!"],
+    WAVE: ["Hewwo! Hewwo!", "<Speaker> wave hoofie!", "Hi daddeh!"],
+    FAIL: ["Uh... dis one?", "<Speaker> confused...", "Wha' daddeh want?", "Oopsie..."],
+    TIRED: ["<Speaker> tiwed of twicks...", "Nu moaw twicks, pwease...", "Twick-time ober..."],
+    REFUSE: ["Nu wan!", "Nu do twick fow yu!", "Hmph. Nu."],
+    SMARTY: ["Smawty nu do twicks fow dummeh!", "Smawty am too speshuw fow twicks!"],
+    PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "Nummy tweat! Tank yu!"],
+    SHOW_OFF: ["Wook daddeh! Wook what <speaker> can do!", "Watch <speaker>!", "Daddeh wook!"],
+  },
   // Personality traits (Traits.js). Said now and then while babbling.
   TRAIT: {
     BRAVE: [

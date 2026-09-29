@@ -36,6 +36,10 @@ function _tame(f) {
 function _happyLevel(f) {
   return Math.max(0, Math.min(1, f.happiness ?? 0.6));
 }
+// Knows a trick or two (Tricks.js): 0, 0.5, 1
+function _tricksLevel(f) {
+  return typeof knownTricks === "function" ? Math.min(1, knownTricks(f).length / 2) : 0;
+}
 function _hasPattern(f) {
   return f.hasSpots || f.hasStripes ? 1 : 0;
 }
@@ -49,7 +53,7 @@ const BUYER_KINDS = [
     patience: 2,
     generous: 0.25,
     weight: (lvl) => 3,
-    like: (f) => 0.5 * _tame(f) + 0.3 * _happyLevel(f) + 0.2 * (f.growth < 1 ? 1 : 0),
+    like: (f) => 0.4 * _tame(f) + 0.25 * _happyLevel(f) + 0.15 * (f.growth < 1 ? 1 : 0) + 0.2 * _tricksLevel(f),
   },
   {
     id: "kid",
@@ -59,7 +63,7 @@ const BUYER_KINDS = [
     patience: 1,
     generous: 0.1,
     weight: (lvl) => 2,
-    like: (f) => 0.6 * (f.growth < 1 ? 1 : 0) + 0.4 * _happyLevel(f),
+    like: (f) => 0.5 * (f.growth < 1 ? 1 : 0) + 0.3 * _happyLevel(f) + 0.2 * _tricksLevel(f),
   },
   {
     id: "bargain",

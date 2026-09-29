@@ -24,7 +24,7 @@
 //   escapeScreens()      script.js Escape: closes the top open screen
 //   resetScreens()       Persistence.js resetTemporaryGameState
 //
-// Layers so far: 5 magnifying glass, 10 family tree, 11 Gene Lab,
+// Layers so far: 5 magnifying glass, 6 trick menu, 10 family tree, 11 Gene Lab,
 // 12 orders screen, 13 day care, 20 goals, 21 help, 22 breeding records,
 // 23 vet, 30 morning report, 31 naming pop-up.
 // ---------------------------------------------------------------------------

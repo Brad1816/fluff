@@ -189,6 +189,11 @@ function getFluffyInspectionInfo(f) {
   if (f.isAlive && typeof describePlayerMemories === "function") {
     about.push({ label: "Remembers", value: describePlayerMemories(f) });
   }
+  // Tricks it knows or is learning (Tricks.js)
+  if (f.isAlive && f.adopted && typeof describeTricks === "function") {
+    const [tText, tTone] = describeTricks(f);
+    about.push({ label: "Tricks", value: tText, tone: tTone });
+  }
 
   const care = [];
   if (!f.isAlive) {
@@ -322,7 +327,7 @@ const INSPECTION_TABS = [
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Remembers", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Tricks", "Remembers", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },

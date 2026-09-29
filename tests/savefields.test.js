@@ -18,6 +18,7 @@ module.exports = [
           pregCare: { sum: 3, n: 4 }, litterSize: 5, litterBorn: 6, birthVigor: 0.9, midwife: true,
           pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true, warmth: 0.4,
           lastKindnessAt: 555, affectionToday: { day: 3, n: { brushed: 2 }, at: { brushed: 500 } },
+          tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 },
         };
         Object.assign(f, values);
         const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));

@@ -103,6 +103,13 @@ const SHOW_THEMES = [
     score: (p) => 0.6 * p.trained + 0.3 * p.temper + 0.1 * p.coat,
   },
   {
+    id: "tricks",
+    name: "Trick Show",
+    about: "Show off! Its three best tricks count most, then manners.",
+    eligible: (f) => !f.tooYoungToWalk(),
+    score: (p) => 0.7 * p.tricks + 0.2 * p.temper + 0.1 * p.happy,
+  },
+  {
     id: "supreme",
     name: "Supreme Championship",
     about: "Everything counts: coat, type, pattern, manners. The best breeders enter.",
@@ -149,6 +156,7 @@ function showParts(f) {
     happy: _showClamp((f.happiness ?? 0.6) * 100),
     health: _showClamp(f.health ?? 100),
     trained: (f.pottyTraining || 0) * 100,
+    tricks: typeof trickShowScore === "function" ? trickShowScore(f) : 0,
     typeValue: { earthy: 30, unicorn: 70, pegasus: 70, alicorn: 100 }[type] ?? 30,
   };
 }
@@ -191,7 +199,9 @@ function onFluffyGroomed(f) {
 function showScore(f, theme) {
   if (!f || !theme) return 0;
   const groomed = isFreshlyGroomed(f) ? SHOW_GROOM_BONUS : 0;
-  return Math.round(_showClamp(theme.score(showParts(f)) - showConditionPenalty(f) + groomed));
+  // Every show: a few points for each trick it knows (up to 3, Tricks.js)
+  const tricks = typeof knownTricks === "function" && theme.id !== "tricks" ? Math.min(3, knownTricks(f).length) * TRICK_SHOW_BONUS : 0;
+  return Math.round(_showClamp(theme.score(showParts(f)) - showConditionPenalty(f) + groomed + tricks));
 }
 
 function canEnterShow(f, theme) {
@@ -515,7 +525,7 @@ function drawShowsPage(c, theme, m) {
 
   // Your fluffies that can enter
   _osText(c, "Your fluffies that can enter (judges' view out of 100)", 20, 242, headColor, "bold 15px Arial");
-  _osText(c, `Brushed within a day of the show: +${SHOW_GROOM_BONUS}`, 720, 242, headColor, "italic 12px Arial", "right");
+  _osText(c, `Brushed within a day: +${SHOW_GROOM_BONUS} · each trick it knows: +${typeof TRICK_SHOW_BONUS === "number" ? TRICK_SHOW_BONUS : 2}`, 720, 242, headColor, "italic 12px Arial", "right");
   if (!L.rows.length) _osText(c, "None of yours can enter this one.", 20, 280, headColor, "14px Arial");
   for (const r of L.rows) {
     c.fillStyle = theme.card;

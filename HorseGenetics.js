@@ -375,6 +375,8 @@ class HorseGenetics {
     // Old fluffies are worth less: senior x0.8, elderly x0.5 (Aging.js)
     if (typeof agePriceMultiplier === "function") price *= agePriceMultiplier(this.horse);
     if (typeof ribbonPriceMultiplier === "function") price *= ribbonPriceMultiplier(this.horse);
+    // +5% for each trick it knows (Tricks.js)
+    if (typeof trickPriceMultiplier === "function") price *= trickPriceMultiplier(this.horse);
 
     return Math.floor(price);
   }

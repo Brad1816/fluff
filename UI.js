@@ -791,6 +791,11 @@ canvas.addEventListener("mousedown", (e) => {
       mouse.rightDown = false; // only once per click
       return;
     }
+    // Right-clicking one of your fluffies: train a trick (Tricks.js)
+    if (typeof trickRightClick === "function" && trickRightClick()) {
+      mouse.rightDown = false;
+      return;
+    }
   }
 
   if (mouse.rightDown) {
