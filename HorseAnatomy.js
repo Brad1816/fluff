@@ -140,6 +140,7 @@ class HorseAnatomy {
 
   die(weaponType = null, cause = null) {
     if (!this.horse.isAlive) return;
+    if (typeof fluffySound === "function") fluffySound(this.horse, "death"); // FluffySounds.js
     this.horse.currentStateKey = "IDLE";
     this.horse.deathWeapon = weaponType;
     this.horse.bloodTolerance = 1;
@@ -591,6 +592,7 @@ class HorseAnatomy {
     baby.birthRotation = Math.PI / 2;
     baby.currentCage = this.horse.currentCage;
     baby.hunger = 0.4;
+    if (typeof fluffySound === "function") fluffySound(baby, "peep"); // a newborn's first peep (FluffySounds.js)
 
     if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
       let chance = this.horse.isSensitive() ? 0.175 : 0.04;

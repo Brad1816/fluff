@@ -133,6 +133,7 @@ addHorseMethods({
     if (amount === undefined) {
       amount = isPoop ? this.poopStorage : this.peeStorage;
     }
+    if (isPoop && amount > 0.05 && typeof fluffySound === "function") fluffySound(this, "shitting"); // FluffySounds.js
 
     // Check for nearby litterbox
     let nearLitterbox = this.positioning.isCloseToAnyLitterbox();
@@ -223,6 +224,7 @@ addHorseMethods({
   },
 
   excretePoop(dt) {
+    if (typeof fluffySound === "function") fluffySound(this, "shitting"); // (the runs)
     const torsoWidth = this.layout ? this.layout.torso.w : 100;
     const offsetX = (torsoWidth / 2) * (this.facingRight ? -1 : 1) * this.scale;
     const pX = this.x + offsetX;

@@ -93,6 +93,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Tricks.js` | **Tricks and training**: right-click trick menu (screen layer 6), rewards, learning speed, Fetch, showing off. See section 9 (Tricks and training). |
 | `Diet.js` | **Food and diet**: kibble brands, tastes and favourite food, diet score, weight. See section 9 (Food and diet). |
 | `Play.js` | **Play and boredom**: boredom, favourite toy, playing ball with you, mischief. See section 9 (Play and boredom). |
+| `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
 | `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
 | `UIPanels.js` | Shared drawing for pop-up screens: panel, title, rounded boxes, buttons, `fitText`. |
@@ -1891,4 +1892,22 @@ brushes, plays ball and trains twice a day). What changed:
 - In a simulated home nobody cleaned, the mess now levels off (about 1.5 poop
   and pee puddles' worth) instead of piling up; toxoplasmosis still happens
   there, so jabs and cleaning still matter.
+
+### Fluffy sounds (`FluffySounds.js`)
+- `fluffySound(f, kind)` plays a voice clip for a fluffy in the room you're
+  looking at: `FLUFFY_SOUNDS` maps each kind to an adult and a foal clip
+  (foals: under full size and too young to talk, or under half grown).
+  Pitch is randomised a little (deeper for big adults). `SOUND_COOLDOWN`
+  (seconds per fluffy: happy 20, angry 10, sad 15, scree 3, enf 10,
+  shitting 6, peep 6) and `SOUND_ROOM_GAP` (0.5 s between two of the same
+  kind in the room) keep it from getting noisy. Uses game time, so nothing
+  repeats while paused.
+- Hooks: faces (`onFluffyExpression`, called every step from HorseUpdate -
+  a new or re-set `expressionOverride` plays `EXPRESSION_SOUNDS`:
+  GOOD_UPSIES happy, ANGRY_PUFFED angry, MISERABLE/BAD_UPSIES sad,
+  CRYING_SHOCKED scree), dying (HorseAnatomy `die`), mating (HorseMating),
+  pooping (HorseToilet `excrete` and diarrhea `excretePoop`), a newborn
+  (`spawnBaby`: peep). Mute and the volume slider apply as for all sounds.
+- Measured in a room of 6 (4 adults, 2 foals) with a ball: roughly one
+  voice clip every 10-15 seconds, plus the foals' usual chirps.
 

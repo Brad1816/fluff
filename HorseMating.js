@@ -58,6 +58,7 @@ addHorseMethods({
 
     // Set friend's mating state as well
     friend.matingState.isMating = true;
+    if (typeof fluffySound === "function") fluffySound(this, "enf"); // FluffySounds.js
     friend.matingState.matingWith = this;
     friend.matingState.matingTimer = time;
     friend.matingState.femaleForced = femaleForced;

@@ -1077,6 +1077,8 @@ addHorseMethods({
         this.updateExpression(dt);
       }
 
+      // A new face makes a noise (FluffySounds.js)
+      if (typeof onFluffyExpression === "function") onFluffyExpression(this);
       if (this.expressionOverrideTimer > 0) {
         this.expressionOverrideTimer -= dt;
       }
