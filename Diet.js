@@ -61,7 +61,7 @@ const FOODS = {
     name: "Value Kibble",
     short: "Value kibble",
     nutrition: 0.4,
-    fill: 0.7,
+    fill: 0.8,
     taste: -0.2,
     spread: 0.3,
     filter: "grayscale(0.75) brightness(1.05)",
@@ -71,15 +71,15 @@ const FOODS = {
     name: "Scrapz",
     short: "Scrapz",
     nutrition: 0.1,
-    fill: 0.55,
+    fill: 0.7, // (must stay over 0.6, the "hungry" line, or they'd eat nonstop)
     taste: -0.6,
     spread: 0.25,
-    sick: 0.25, // chance a meal upsets its tummy
-    harm: 4, // health lost each meal
+    sick: 0.15, // chance a meal upsets its tummy
+    harm: 2, // health lost each meal
     filter: "sepia(1) hue-rotate(35deg) saturate(0.7) brightness(0.55)",
     tag: "#5d6b2f",
   },
-  sketties: { name: "Sketties", short: "Sketties", nutrition: 0.35, fill: 1.0, taste: 0.95, spread: 0.1, fatten: 0.06 },
+  sketties: { name: "Sketties", short: "Sketties", nutrition: 0.35, fill: 1.0, taste: 0.95, spread: 0.1, fatten: 0.08 },
   formula: { name: "Formula", short: "Formula", nutrition: 0.9, fill: 1.0, taste: 0.4, spread: 0.1 },
   // Park food: the same for every fluffy, so the park works as before
   // (grass priority 2, berries 3 - ParkLife.js)
@@ -97,7 +97,7 @@ const FOOD_DESPERATE = 0.25;
 const WEIGHT_CHUBBY = 0.45;
 const WEIGHT_FAT = 0.75;
 const WEIGHT_TREAT = 0.015;
-const WEIGHT_BURN = 0.025; // per game hour (x2 when moving)
+const WEIGHT_BURN = 0.006; // per game hour (x2 when moving) - about a day of sketties takes 2-3 to burn off
 
 const dietTicker = new Ticker(2);
 

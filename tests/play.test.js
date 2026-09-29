@@ -64,28 +64,30 @@ module.exports = [
         park.boredom = 0.8;
         const sleepy = __mk(1100);
         sleepy.currentStateKey = "SLEEPING";
-        __run(4 * HOUR_LENGTH);
+        __run(8 * HOUR_LENGTH);
         for (const f of fluffies) if (f !== sleepy) f.currentStateKey = "IDLE";
         const four = { plain: plain.boredom, playful: playful.boredom, lazy: lazy.boredom, friend: pal1.boredom, park: park.boredom, asleep: sleepy.boredom };
-        __run(4 * HOUR_LENGTH);
+        __run(8 * HOUR_LENGTH);
         return {
           four,
           eight: plain.boredom,
           level: describeBoredom(plain),
           warn: getInspectionTabs(plain).warnings.some((w) => /Boredom/.test(w)),
           bonus: playDesireBonus(plain),
+          happyCap: plain.happiness,
         };
       }, SETUP);
       await page.evaluate(TEARDOWN);
-      check(r.four.plain > 0.4 && r.four.plain < 0.52, `4 hours alone ${r.four.plain}`);
+      check(r.four.plain > 0.4 && r.four.plain < 0.52, `8 hours alone ${r.four.plain}`);
       check(r.four.playful > r.four.plain && r.four.plain > r.four.lazy, `playful ${r.four.playful} > plain > lazy ${r.four.lazy}`);
       check(r.four.friend < r.four.plain, `a friend helps ${r.four.friend}`);
       check(r.four.park < 0.8, `the park is exciting ${r.four.park}`);
       checkEqual(r.four.asleep, 0, "not while asleep");
-      check(r.eight >= 0.85, `a whole day of nothing ${r.eight}`);
+      check(r.eight >= 0.8, `16 waking hours of nothing ${r.eight}`);
+      check(r.happyCap <= 0.7, `a very bored fluffy can't be very happy ${r.happyCap}`);
       checkEqual(r.level[0], "Very bored - needs to play", "magnifying glass");
       check(r.warn, "warning chip");
-      check(r.bonus >= 34, `wants to play much more ${r.bonus}`);
+      check(r.bonus >= 28, `wants to play much more ${r.bonus}`);
     },
   },
   {
@@ -108,7 +110,7 @@ module.exports = [
         objects.push(ball);
         g.scene = "INDOORSL1"; // out of the way
         g.boredom = 0;
-        for (let i = 0; i < 15 && f.boredom >= 0.8; i++) __fastForward(1);
+        for (let i = 0; i < 15 && f.boredom >= 0.79; i++) __fastForward(1);
         out.kicked = 0.8 - f.boredom;
         // Waving a ball in your hand
         objects.splice(objects.indexOf(ball), 1);
@@ -136,10 +138,10 @@ module.exports = [
         return out;
       }, SETUP);
       await page.evaluate(TEARDOWN);
-      check(Math.abs(r.plainKick - 0.25) < 0.01, `a kick ${r.plainKick}`);
-      check(Math.abs(r.favKick - 0.375) < 0.01, `favourite toy counts more ${r.favKick}`);
+      check(Math.abs(r.plainKick - 0.1) < 0.01, `a kick ${r.plainKick}`);
+      check(Math.abs(r.favKick - 0.15) < 0.01, `favourite toy counts more ${r.favKick}`);
       checkEqual(JSON.stringify(r.favs), JSON.stringify(["block", "ball"]), "favourite toys");
-      check(r.kicked >= 0.2, `went and kicked the ball ${r.kicked}`);
+      check(r.kicked >= 0.08, `went and kicked the ball ${r.kicked}`);
       check(r.played, "chased the ball in your hand");
       check(r.boredAfter < 0.3, `and cheered up ${r.boredAfter}`);
       check(r.trust > 0.02, `and loves you a bit more ${r.trust}`);
@@ -172,7 +174,7 @@ module.exports = [
         bowl.foodType = "kibble";
         victim.x = 2000;
         __said.length = 0;
-        __run(10 * 60);
+        __run(20 * 60);
         out.byItself = __said.length;
         out.unhappier = g.happiness < 0.7;
         return out;

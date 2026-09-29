@@ -121,6 +121,7 @@ module.exports = [
         out.foalSit = trickSkill(foal, "sit");
         // Dance: turns around
         const faces = new Set();
+        __seedRandom(8);
         tryTrick(f, "dance");
         for (let i = 0; i < 30; i++) {
           __fastForward(0.1);
@@ -169,7 +170,11 @@ module.exports = [
       });
       checkEqual(menu.phase, "menu", "right-click opens the trick menu");
       checkEqual(JSON.stringify(menu.chips), JSON.stringify(["come", "sit", "down", "bow", "dance", "wave", "fetch"]), "tricks");
-      await page.evaluate(() => __seedRandom(4));
+      // (it always gets it right here, whatever the random numbers do)
+      await page.evaluate(() => {
+        window.__realChance = window.__realChance || window.trickChance;
+        window.trickChance = () => 1;
+      });
       await page.mouse.click(menu.bow.x + 20, menu.bow.y + 10);
       const reward = await page.evaluate(() => {
         const L = getTrickMenuLayout();
@@ -200,6 +205,9 @@ module.exports = [
       checkEqual(missed.phase, "reward", "reward buttons again");
       checkEqual(missed.open, false, "gone after a few seconds");
       await page.evaluate(TEARDOWN);
+      await page.evaluate(() => {
+        if (window.__realChance) window.trickChance = window.__realChance;
+      });
     },
   },
   {

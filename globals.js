@@ -966,7 +966,8 @@ function handleBouncingPhysics(obj, dt) {
     obj.y = obj.groundY;
     obj.vy = -obj.vy * 0.5; // Bounce
     obj.vx *= 0.95; // Friction
-    if (Math.abs(obj.vy) < 10) obj.vy = 0;
+    // (settles even with bigger time steps, so the ball counts as still)
+    if (Math.abs(obj.vy) < Math.max(10, gravity * dt * 1.5)) obj.vy = 0;
     if (Math.abs(obj.vx) < 10) obj.vx = 0;
   }
 

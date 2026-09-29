@@ -3,7 +3,7 @@
 //
 // Boredom (f.boredom, 0..1, saved) - fluffies you own only (the park is
 // exciting enough). It creeps up while a fluffy is awake with nothing to do:
-//   BOREDOM_PER_HOUR (0.12, so a whole day of nothing gets it very bored),
+//   BOREDOM_PER_HOUR (0.06: bored after most of a day of nothing),
 //   faster for playful fluffies and foals, slower for lazy ones and the
 //   elderly, slower with a friend in the room, and it goes DOWN in the park.
 // Playing takes it away (onFluffyPlayed): kicking a ball, picking up blocks,
@@ -19,8 +19,9 @@
 // What boredom does:
 //   bored (0.4+):      wants to play more (playDesireBonus, the ball and
 //                      block desires), grumbles about it now and then
-//   very bored (0.7+): slowly unhappy, and gets into mischief every few
-//                      minutes (boredMischief): knocks over a bowl of food,
+//   bored (0.4+) also caps happiness at 0.88; very bored at 0.7
+//   very bored (0.7+): slowly unhappy, and gets into mischief about twice a
+//                      game day (boredMischief): knocks over a bowl of food,
 //                      or picks on another fluffy; shows -4 points
 //   content (< 0.3):   shows +2 points
 //
@@ -28,10 +29,10 @@
 // nature). Fetch (a trick in Tricks.js) uses the ball.
 // ---------------------------------------------------------------------------
 
-const BOREDOM_PER_HOUR = 0.12;
+const BOREDOM_PER_HOUR = 0.06;
 const BOREDOM_BORED = 0.4;
 const BOREDOM_VERY = 0.7;
-const PLAY_RELIEF = { ball: 0.25, block: 0.2, tv: 0.015, trick: 0.05, fetch: 0.15, you: 0.35 }; // tv: per second
+const PLAY_RELIEF = { ball: 0.1, block: 0.1, tv: 0.008, trick: 0.05, fetch: 0.15, you: 0.35 }; // tv: per second
 const PLAY_WITH_YOU_COOLDOWN = 60;
 const TOYS = [
   { key: "ball", name: "The ball" },
@@ -95,10 +96,11 @@ function onFluffyPlayed(f, kind, amount = 1) {
   }
 }
 
-// Extra for the ball and block desires (HorseBrain): up to +40
+// Change to the ball and block desires (HorseBrain, normally 30): a content
+// fluffy of yours plays less (15), a very bored one much more (up to 70)
 function playDesireBonus(f) {
   if (!f.adopted) return 0;
-  return Math.round(40 * boredomOf(f));
+  return Math.round(-15 + 55 * boredomOf(f));
 }
 
 // Shows (Shows.js showScore)
@@ -255,12 +257,15 @@ function updatePlay(dt) {
     );
     if (friend) rate *= 0.7;
     f.boredom = Math.min(1, f.boredom + rate * hours);
+    // A bored fluffy can't be perfectly happy (so it shows in its price too)
+    const cap = f.boredom >= BOREDOM_VERY ? 0.7 : f.boredom >= BOREDOM_BORED ? 0.88 : 1;
+    if (f.happiness > cap) f.happiness = cap;
 
     if (f.boredom >= BOREDOM_VERY) {
-      f.changeHappiness(-0.03 * hours);
-      if (typeof f._nextMischief !== "number") f._nextMischief = now + 120 + Math.random() * 180;
+      f.changeHappiness(-0.1 * hours);
+      if (typeof f._nextMischief !== "number") f._nextMischief = now + 300 + Math.random() * 300;
       if (now >= f._nextMischief && !f.trickNow && f.currentStateKey !== "EATING") {
-        f._nextMischief = now + 180 + Math.random() * 240;
+        f._nextMischief = now + 480 + Math.random() * 420; // about twice a game day
         boredMischief(f);
       }
     } else if (f.boredom >= BOREDOM_BORED && f.scene === currentScene) {

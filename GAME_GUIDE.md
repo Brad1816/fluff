@@ -1775,8 +1775,8 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   |---|---|---|---|---|---|
   | `premium_kibble` Fluffy Feast Premium | $80 | 1.0 | 1.0 | 0.6 ±0.25 | |
   | `kibble` Kibble | $25 | 0.7 | 1.0 | 0.05 ±0.7 | some like, some don't |
-  | `value_kibble` Value Kibble | $10 | 0.4 | 0.7 | -0.2 ±0.3 | |
-  | `scrap_kibble` Scrapz | $3 | 0.1 | 0.55 | -0.6 ±0.25 | 25% diarrhea, -4 health a meal |
+  | `value_kibble` Value Kibble | $10 | 0.4 | 0.8 | -0.2 ±0.3 | |
+  | `scrap_kibble` Scrapz | $3 | 0.1 | 0.7 | -0.6 ±0.25 | 15% diarrhea, -2 health a meal |
   Scrapz is made from ground-up fluffies: the grinder turns out Scrapz bags
   (Grinder.js), its bowls use the old brown-mush pictures, and eating it
   uses `EAT.SCRAPZ`. Soylent Brown is gone; old saves' Soylent bags and
@@ -1799,8 +1799,8 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   and pregnancy condition; `updateDiet` (system order 137): 0.8+ heals 1 an
   hour, under 0.25 loses 1.5 an hour. Affection: filling a bowl only counts
   if it likes the food, x1.5 if it loves it.
-- **Weight** `f.weight` (saved): sketties +0.06, training treats +0.015,
-  burns 0.025 an hour (x2 moving). Chubby 0.45 (x0.85 speed, -4 at shows),
+- **Weight** `f.weight` (saved): sketties +0.08, training treats +0.015,
+  burns 0.006 an hour (x2 moving). Chubby 0.45 (x0.85 speed, -4 at shows),
   fat 0.75 (x0.7, -10, x0.9 price, -0.5 health an hour). Rounder, wider belly
   (`weightBelly`, HorseRenderer). `updateSpeed` is called when the level
   changes.
@@ -1809,12 +1809,12 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
 
 ### Play and boredom (`Play.js`)
 - **Boredom** `f.boredom` 0..1 (saved), fluffies you own that can walk.
-  `updatePlay` (system order 138, every 2 s): +`BOREDOM_PER_HOUR` (0.12)
+  `updatePlay` (system order 138, every 2 s): +`BOREDOM_PER_HOUR` (0.06)
   while awake, x(1 + 0.4 x energy trait), foals x1.3, elderly x0.6, x0.7 with
   a friend (`relationships`) in the room; -0.2 an hour in the park; nothing
   while asleep. Levels: bored 0.4, very bored 0.7.
-- **Relief** `onFluffyPlayed(f, kind)`: `PLAY_RELIEF` ball 0.25 (kicking,
-  HorseActionHandler), block 0.2 (picking up / knocking down), tv 0.015 a
+- **Relief** `onFluffyPlayed(f, kind)`: `PLAY_RELIEF` ball 0.1 (kicking,
+  HorseActionHandler), block 0.1 (picking up / knocking down), tv 0.008 a
   second (while `f.tvFocus`), trick 0.05, fetch 0.15, you 0.35. Its
   `favouriteToy` (ball / block / tv, from `f.toyLikes` + energy trait) x1.5.
   Ball games and fetch burn weight (-0.01, playing with you -0.02).
@@ -1822,9 +1822,10 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   holding within 450px draws fluffies that are a bit bored, playful or
   young; reaching it (`playedWithYou`) = relief "you", +0.06 happiness,
   affection "played" (0.03, 3 a day in full). Once a minute each.
-- **Effects**: `playDesireBonus` adds up to +40 to PlayWithBall /
-  PlayWithBlocks. Bored: grumbles (`PLAY.BORED`). Very bored: -0.03
-  happiness an hour and `boredMischief` every 3-7 minutes - empties a food
+- **Effects**: `playDesireBonus` changes PlayWithBall / PlayWithBlocks
+  (normally 30) to 15 + 55 x boredom for your fluffies. Bored caps happiness
+  at 0.88, very bored at 0.7. Bored: grumbles (`PLAY.BORED`). Very bored: -0.1
+  happiness an hour and `boredMischief` about twice a game day (8-15 min) - empties a food
   bowl in reach (60%) or jabs a fluffy nearby (-0.05 happiness), with a
   message. Shows `boredomShowBonus`: +2 if under 0.3, -4 if very bored.
 - **Fetch** (Tricks.js `TRICKS`, `needsBall`): refuses with "noball" if
@@ -1833,4 +1834,30 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   frame; other fluffies leave it alone), brings it back to where it was
   asked, drops it and sits.
 - **Shown**: Boredom (Overview > Wellbeing), Favourite toy (Looks & nature).
+
+### Balance pass (affection, tricks, diet, play)
+Checked by simulating six spayed mares for 4-5 game days in different homes
+(a bot refills the bowls, sponges up mess hourly; one "attentive" home also
+brushes, plays ball and trains twice a day). What changed:
+- **Food `fill` must stay above 0.6** (EatDesire's "hungry" line). Scrapz at
+  0.55 made fluffies that tolerate it eat nonstop and poison themselves.
+  Now Value 0.8, Scrapz 0.7; Scrapz harm 4 -> 2, sick 25% -> 15%.
+- **Weight burned off too fast** (0.025/h): sketties-only fluffies never got
+  chubby. Now burn 0.006/h and sketties +0.08: chubby in about 1.5 days,
+  fat in about 2.5 on sketties alone.
+- **Boredom** rose too fast and mischief was constant (dozens a day). Now
+  0.06/h, mischief about twice a day, and boredom caps happiness (bored 0.88,
+  very bored 0.7) - it barely dented happiness before. Toys: kicking the ball
+  used to wipe boredom out; now 0.1 a kick and content fluffies play less,
+  so one ball keeps a room of fluffies "Fine" but playing with you still
+  counts.
+- **Trust** reached 1.0 in a day from nothing: Memory.js "happy time with you
+  around" was 0.0005/s (0.6 a day), now 0.00005/s. Eating at home only builds
+  trust if it likes the food. Fed well, fluffies now come to love you in
+  2-3 days; attentive care gets there in about 1.
+- `handleBouncingPhysics` lets a ball settle with bigger time steps too
+  (the real game uses 0.016 s steps, so this only mattered for fast sims).
+- Not changed, but worth knowing: **toxoplasmosis** (from eating poop off the
+  floor, HorseToilet.js) was the main killer in every home that didn't keep
+  the floor spotless, as it was before these features.
 

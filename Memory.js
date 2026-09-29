@@ -197,7 +197,10 @@ function updatePlayerMemory(f, dt) {
   if (!f.adopted || f.playerFear >= 0.45) return;
   // Being fed at home
   if (f.currentStateKey === "EATING" && getSceneConfig(f.scene).insidePlayerQuarters) {
-    changePlayerTrust(f, 0.004 * dt);
+    // Only if it likes what it's eating (Diet.js: last meal's taste)
+    const meal = Array.isArray(f.recentMeals) && f.recentMeals[0];
+    const taste = meal && typeof tasteFor === "function" ? tasteFor(f, meal) : 0;
+    if (taste > -0.3) changePlayerTrust(f, 0.004 * dt);
   }
   // Spending happy time with you around
   if (
@@ -205,7 +208,7 @@ function updatePlayerMemory(f, dt) {
     f.happiness > HAPPINESS_HAPPY_THRESHOLD &&
     f.currentStateKey !== "SLEEPING"
   ) {
-    changePlayerTrust(f, 0.0005 * dt);
+    changePlayerTrust(f, 0.00005 * dt); // (about 0.06 a day - Affection.js does the rest)
   }
 }
 

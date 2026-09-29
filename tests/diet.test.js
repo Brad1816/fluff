@@ -142,7 +142,7 @@ module.exports = [
       check(r.refusedScrap, "wouldn't eat Scrapz when only a bit hungry");
       check(r.grumbled, "and said so");
       check(r.ateScrap, "ate it when starving");
-      check(r.scrapHunger <= 0.6, `Scrapz isn't filling ${r.scrapHunger}`);
+      check(r.scrapHunger <= 0.7, `Scrapz isn't filling ${r.scrapHunger}`);
       check(r.scrapHealth < 100, `and it hurts ${r.scrapHealth}`);
     },
   },
@@ -231,8 +231,8 @@ module.exports = [
         out.speedBack = f.speed / speed0;
         return out;
       }, SETUP);
-      check(r.chubbyAt >= 5 && r.chubbyAt <= 9, `chubby after ${r.chubbyAt} sketties meals`);
-      check(r.fatAt >= 11 && r.fatAt <= 14, `fat after ${r.fatAt}`);
+      check(r.chubbyAt >= 4 && r.chubbyAt <= 8, `chubby after ${r.chubbyAt} sketties meals`);
+      check(r.fatAt >= 8 && r.fatAt <= 12, `fat after ${r.fatAt}`);
       check(Math.abs(r.slower - 0.7) < 0.01, `fat fluffies are slower ${r.slower}`);
       check(r.belly > 0.5, `rounder belly ${r.belly}`);
       checkEqual(r.row, "Fat - too many sketties", "weight row");
