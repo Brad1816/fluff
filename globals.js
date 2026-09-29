@@ -1248,7 +1248,10 @@ const HAPPINESS_BONUS_NUMMIES = 0.05;
 // Food Priorities (High to Low: Sketties > Kibble/Rat Poison/Grass/Formula > Soylent Brown)
 const FOOD_PRIORITIES = {
   sketties: 4,
+  premium_kibble: 3.5,
   kibble: 3,
+  value_kibble: 2.5,
+  scrap_kibble: 1.5,
   rat_poison: 3,
   grass: 2,
   formula: 3,
@@ -1499,20 +1502,44 @@ const ACCESSORY_DB = {
 
 const SPAWN_ACTIONS = [
   {
-    name: "Soylent Brown",
-    desc: "Cheapest food, fluffies hate it. Hover over a bowl/trough while holding the bag.",
-    cost: 5,
+    name: "Fluffy Feast Premium",
+    desc: "Top-shelf kibble. Very nutritious and nearly every fluffy loves it: shinier coats, healthier fluffies. Hover over a bowl/trough while holding the bag.",
+    cost: 80,
     isItem: "food_bag",
-    foodType: "soylent_brown",
-    priority: 1,
+    foodType: "premium_kibble",
+    priority: 3,
   },
   {
     name: "Kibble",
-    desc: "Bag of basic food. Hover over a bowl/trough while holding the bag.",
+    desc: "Ordinary kibble. Decent food; some fluffies like it, some don't. Hover over a bowl/trough while holding the bag.",
     cost: 25,
     isItem: "food_bag",
     foodType: "kibble",
     priority: 2,
+  },
+  {
+    name: "Value Kibble",
+    desc: "Cheap kibble. Bland and not very nutritious, and they're hungry again sooner. Hover over a bowl/trough while holding the bag.",
+    cost: 10,
+    isItem: "food_bag",
+    foodType: "value_kibble",
+    priority: 2,
+  },
+  {
+    name: "Scrapz",
+    desc: "Rock-bottom kibble. Barely food: not filling, most fluffies hate it, and it can make them ill. Hover over a bowl/trough while holding the bag.",
+    cost: 3,
+    isItem: "food_bag",
+    foodType: "scrap_kibble",
+    priority: 1,
+  },
+  {
+    name: "Soylent Brown",
+    desc: "Fluffies hate it, but it's surprisingly nutritious. Hover over a bowl/trough while holding the bag.",
+    cost: 5,
+    isItem: "food_bag",
+    foodType: "soylent_brown",
+    priority: 1,
   },
   {
     name: "Rat Poison",

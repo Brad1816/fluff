@@ -156,7 +156,11 @@ class FoodBag {
       ctx.rotate(jiggleAngle);
     }
 
+    // Kibble brands: the same bag, tinted (Diet.js FOODS)
+    const brand = typeof FOODS !== "undefined" ? FOODS[this.type] : null;
+    if (brand && brand.filter) ctx.filter = brand.filter;
     ctx.drawImage(img, -img.width / 2, -img.height);
+    ctx.filter = "none";
 
     // Draw Text
     ctx.fillStyle = "black";
@@ -170,6 +174,9 @@ class FoodBag {
     else if (this.type === "sketties") label = "Sketties";
     else if (this.type === "soylent_brown") label = "Soylent Brown";
     else if (this.type === "rat_poison") label = "Rat Poison";
+    else if (this.type === "premium_kibble") label = "Premium";
+    else if (this.type === "value_kibble") label = "Value";
+    else if (this.type === "scrap_kibble") label = "Scrapz";
 
     ctx.fillText(label, 2, -img.height / 2);
     // Draw Amount

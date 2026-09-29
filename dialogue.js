@@ -640,6 +640,28 @@ const DIALOGUE = {
 
   // Bowl eating
   EAT: {
+    // Diet.js: food it loves, food it doesn't, its favourite, and refusing
+    YUMMY: [
+      "Mmmm! Bestest nummies!",
+      "Su yummy! Tank yu daddeh! *crunch*",
+      "<Speaker> wub dese nummies! *munch munch*",
+    ],
+    YUCKY: [
+      "Nummies taste funny... *crunch*",
+      "Yucky... bu' tummy hungwy...",
+      "Dis nummies nu gud, daddeh...",
+      "*chew*... *chew*... bweh.",
+    ],
+    FAVOURITE: [
+      "Favowite nummies! Wub daddeh!",
+      "Yay! <Speaker> favowite! *happy crunch*",
+      "Daddeh 'membew <speaker> favowite nummies!",
+    ],
+    REFUSE: [
+      "Nu wan dat nummies... yucky...",
+      "<Speaker> nu eat dat! Smeww bad!",
+      "Wan diffewent nummies, pwease...",
+    ],
     NUMMIES: {
       DEFAULT: [
         "Nummies! Wub daddeh! *crunch*",

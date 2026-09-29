@@ -712,6 +712,9 @@ function drawShopActionIcon(c, action, cx, cy, size, disabled = false, sizeH = s
   const shopIcon = getShopIcon(action);
   const imgKey = shopIcon.imageKey;
   c.save();
+  // Kibble brands: tinted bags (Diet.js)
+  const brand = action.foodType && typeof FOODS !== "undefined" ? FOODS[action.foodType] : null;
+  if (brand && brand.filter) c.filter = brand.filter;
   if (disabled) c.globalAlpha = 0.3;
   if (
     imgKey &&

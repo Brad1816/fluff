@@ -1766,3 +1766,41 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   level 2+); goal `tricks_3`.
 - **Shown**: "Tricks" row on the Mind tab (`describeTricks`).
 
+### Food and diet (`Diet.js`)
+- **Foods** (`FOODS`): each has `nutrition` (0..1), `fill` (how full a meal
+  makes it), `taste` (-1..1 for the average fluffy) and `spread` (how much
+  fluffies differ). Kibble brands (all drawn with the kibble pictures, tinted
+  with a canvas `filter`; shop order in `SPAWN_ACTIONS`):
+  | Food | Bag | Nutrition | Fill | Taste | Notes |
+  |---|---|---|---|---|---|
+  | `premium_kibble` Fluffy Feast Premium | $80 | 1.0 | 1.0 | 0.6 ±0.25 | |
+  | `kibble` Kibble | $25 | 0.7 | 1.0 | 0.05 ±0.7 | some like, some don't |
+  | `value_kibble` Value Kibble | $10 | 0.4 | 0.7 | -0.2 ±0.3 | |
+  | `scrap_kibble` Scrapz | $3 | 0.1 | 0.55 | -0.6 ±0.25 | 25% diarrhea, -4 health a meal |
+  Also sketties (0.35 nutrition, fattening), Soylent Brown (0.8, hated),
+  formula, grass (0.5) and berries (0.6) - grass and berries taste the same
+  to everyone so the park works as before.
+- **Tastes**: `tasteFor(f, type)`; each fluffy's own liking is made the first
+  time (`f.tastes`, saved). Appetite trait: picky makes dislikes stronger,
+  greedy likes everything more. `favouriteFood(f)` (everyday foods, not
+  sketties). `foodPriorityFor` (2 + 2 x taste) replaces the fixed bowl
+  priority in `HorsePositioning.scoutForHunger`. `refusesFood`: taste below
+  -0.45 and hunger over 0.25 - skipped, and it grumbles (`EAT.REFUSE`).
+- **Eating** (HorseUpdate): hunger = `foodFill`; happiness `mealHappiness`
+  (0.04 + 0.08 x taste, +0.05 for its favourite); lines `EAT.YUMMY/YUCKY/
+  FAVOURITE`; then `onFluffyAte` updates the diet, weight, harm and sickness
+  and `f.recentMeals`.
+- **Diet** `f.diet` (saved, starts 0.6) moves 12% towards each meal's
+  nutrition. Shows `dietShowBonus` ((diet-0.6) x 20); price
+  `dietPriceMultiplier` (x0.85..1.1); `dietGrowthMultiplier` for foal growth
+  and pregnancy condition; `updateDiet` (system order 137): 0.8+ heals 1 an
+  hour, under 0.25 loses 1.5 an hour. Affection: filling a bowl only counts
+  if it likes the food, x1.5 if it loves it.
+- **Weight** `f.weight` (saved): sketties +0.06, training treats +0.015,
+  burns 0.025 an hour (x2 moving). Chubby 0.45 (x0.85 speed, -4 at shows),
+  fat 0.75 (x0.7, -10, x0.9 price, -0.5 health an hour). Rounder, wider belly
+  (`weightBelly`, HorseRenderer). `updateSpeed` is called when the level
+  changes.
+- **Shown**: Diet and Weight (Overview > Care), Favourite food (Looks &
+  nature > Nature).
+

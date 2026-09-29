@@ -870,6 +870,8 @@ class Horse {
     if (typeof isElderly === "function" && isElderly(this)) {
       this.speed *= 0.75;
     }
+    // Chubby and fat fluffies are slower (Diet.js)
+    if (typeof weightSpeedMultiplier === "function") this.speed *= weightSpeedMultiplier(this);
     if (this.limbs === undefined) {
       return;
     }

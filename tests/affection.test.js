@@ -82,6 +82,7 @@ module.exports = [
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const eater = __mk(300);
+        eater.tastes = { kibble: 0.6, sketties: 0.5 }; // (it likes kibble - Diet.js)
         const sleeper = __mk(600);
         sleeper.currentStateKey = "SLEEPING";
         const elsewhere = __mk(300, "INDOORSL1");

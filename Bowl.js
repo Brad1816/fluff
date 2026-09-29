@@ -151,6 +151,9 @@ class Bowl {
 
   drawOffScreen(ctx) {
     let img = null;
+    // Kibble brands (Diet.js): drawn as kibble, tinted
+    const brand = typeof FOODS !== "undefined" && this.food > 0 ? FOODS[this.foodType] : null;
+    const kib = typeof isKibbleType === "function" ? isKibbleType(this.foodType) : this.foodType === "kibble";
 
     if (this.type === "feeder") {
       if (this.food > 2 && images.formula_baby_feeder) {
@@ -175,10 +178,10 @@ class Bowl {
         img = images.rat_poison_trough;
       } else if (this.foodType === "soylent_brown" && this.food > 0) {
         img = images.soylent_brown_trough;
-      } else if (this.foodType === "kibble" && this.food > 13) {
+      } else if (kib && this.food > 13) {
         img = images.kibble_trough;
       } else if (
-        this.foodType === "kibble" &&
+        kib &&
         this.food < 14 &&
         this.food > 0
       ) {
@@ -196,9 +199,9 @@ class Bowl {
         img = images.rat_poison_bowl;
       } else if (this.foodType === "soylent_brown" && this.food > 0) {
         img = images.soylent_brown_bowl;
-      } else if (this.foodType === "kibble" && this.food > 2) {
+      } else if (kib && this.food > 2) {
         img = images.kibble_bowl;
-      } else if (this.foodType === "kibble" && this.food < 3 && this.food > 0) {
+      } else if (kib && this.food < 3 && this.food > 0) {
         img = images.kibble_half_bowl;
       } else if (this.foodType === "sketties" && this.food > 2) {
         img = images.sketties_bowl;
@@ -212,6 +215,15 @@ class Bowl {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.drawImage(img, -img.width / 2, -img.height);
+    if (brand && brand.filter) {
+      // Tint just the food heaped on top, not the bowl
+      ctx.beginPath();
+      ctx.rect(-img.width / 2, -img.height, img.width, img.height * 0.5);
+      ctx.clip();
+      ctx.filter = brand.filter;
+      ctx.drawImage(img, -img.width / 2, -img.height);
+      ctx.filter = "none";
+    }
     ctx.restore();
   }
 }

@@ -377,6 +377,8 @@ class HorseGenetics {
     if (typeof ribbonPriceMultiplier === "function") price *= ribbonPriceMultiplier(this.horse);
     // +5% for each trick it knows (Tricks.js)
     if (typeof trickPriceMultiplier === "function") price *= trickPriceMultiplier(this.horse);
+    // Well fed and trim: worth a bit more (Diet.js)
+    if (typeof dietPriceMultiplier === "function") price *= dietPriceMultiplier(this.horse);
 
     return Math.floor(price);
   }

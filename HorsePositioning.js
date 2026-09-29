@@ -456,6 +456,7 @@ class HorsePositioning {
     // but not right across the park (each priority step = 150px)
     const farAway = typeof isCameraScene === "function" && isCameraScene(this.horse.scene);
     let bestScore = Infinity;
+    let refused = null;
 
     for (const b of bowls) {
       if (b instanceof Bowl) {
@@ -468,8 +469,16 @@ class HorsePositioning {
       if (this.horse.currentCage !== b.currentCage) continue;
       if (!fenceCanReachThing(this.horse, b)) continue;
 
+      // What THIS fluffy likes (Diet.js); food it won't eat is skipped
+      const ft = typeof foodTypeOf === "function" ? foodTypeOf(b) : b.foodType;
+      if (typeof refusesFood === "function" && refusesFood(this.horse, ft)) {
+        refused = ft;
+        continue;
+      }
       const prio =
-        b.priority !== undefined ? b.priority : getFoodPriority(b.foodType);
+        typeof foodPriorityFor === "function"
+          ? foodPriorityFor(this.horse, ft)
+          : b.priority !== undefined ? b.priority : getFoodPriority(b.foodType);
       const dst = (this.horse.x - b.x) ** 2 + (this.horse.y - b.y) ** 2;
 
       if (farAway) {
@@ -500,6 +509,8 @@ class HorsePositioning {
       this.horse.setTargetPosition(bestBowl.x, bestBowl.y);
       return true;
     }
+    // Only food it won't eat: grumble (Diet.js)
+    if (refused && typeof grumbleAboutFood === "function") grumbleAboutFood(this.horse, refused);
 
     return false;
   }

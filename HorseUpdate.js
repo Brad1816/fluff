@@ -408,8 +408,15 @@ addHorseMethods({
 
             const dist = Math.sqrt((this.x - bowl.x) ** 2 + (this.y - bowl.y) ** 2);
             if (dist < 50) {
+              // Won't touch food it really dislikes unless starving (Diet.js)
+              const foodType = typeof foodTypeOf === "function" ? foodTypeOf(bowl) : bowl.foodType;
+              if (typeof refusesFood === "function" && refusesFood(this, foodType)) {
+                grumbleAboutFood(this, foodType);
+                continue;
+              }
               if (bowl.eat()) {
-                this.hunger = 1.0;
+                // Cheap food doesn't fill them up as much (Diet.js)
+                this.hunger = typeof foodFill === "function" ? foodFill(foodType) : 1.0;
                 this.initBehavior("EATING");
                 let key;
                 if (bowl.foodType === "sketties") {
@@ -418,6 +425,8 @@ addHorseMethods({
                   key = ["EAT", "SOYLENT_BROWN"];
                 } else if (bowl.foodType === "rat_poison") {
                   key = ["EAT", "RAT_POISON"];
+                } else if (typeof mealDialogueKey === "function") {
+                  key = mealDialogueKey(this, foodType);
                 } else {
                   key = ["EAT", "NUMMIES"];
                 }
@@ -453,8 +462,10 @@ addHorseMethods({
                     this.expressionOverrideTimer = 3.0;
                   }
                 } else {
-                  this.changeHappiness(HAPPINESS_BONUS_NUMMIES);
+                  // How much it likes it (Diet.js)
+                  this.changeHappiness(typeof mealHappiness === "function" ? mealHappiness(this, foodType) : HAPPINESS_BONUS_NUMMIES);
                 }
+                if (typeof onFluffyAte === "function") onFluffyAte(this, foodType);
                 this.speak(getDialogue(key, this));
                 break;
               }

@@ -201,7 +201,9 @@ function showScore(f, theme) {
   const groomed = isFreshlyGroomed(f) ? SHOW_GROOM_BONUS : 0;
   // Every show: a few points for each trick it knows (up to 3, Tricks.js)
   const tricks = typeof knownTricks === "function" && theme.id !== "tricks" ? Math.min(3, knownTricks(f).length) * TRICK_SHOW_BONUS : 0;
-  return Math.round(_showClamp(theme.score(showParts(f)) - showConditionPenalty(f) + groomed + tricks));
+  // Diet and weight: a glossy, trim fluffy shows better (Diet.js)
+  const diet = typeof dietShowBonus === "function" ? dietShowBonus(f) : 0;
+  return Math.round(_showClamp(theme.score(showParts(f)) - showConditionPenalty(f) + groomed + tricks + diet));
 }
 
 function canEnterShow(f, theme) {

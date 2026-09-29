@@ -19,6 +19,7 @@ module.exports = [
           pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true, warmth: 0.4,
           lastKindnessAt: 555, affectionToday: { day: 3, n: { brushed: 2 }, at: { brushed: 500 } },
           tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 },
+          diet: 0.83, weight: 0.4, tastes: { kibble: -0.5 }, recentMeals: ["premium_kibble", "kibble"],
         };
         Object.assign(f, values);
         const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));

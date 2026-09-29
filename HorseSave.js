@@ -48,6 +48,10 @@ const SAVED_HORSE_FIELDS = [
   { name: "affectionToday", fallback: null, clone: true },
   { name: "tricks", fallback: null, clone: true }, // Tricks.js
   { name: "trickTries", fallback: null, clone: true },
+  { name: "diet", fallback: null }, // Diet.js
+  { name: "weight", fallback: 0 },
+  { name: "tastes", fallback: null, clone: true },
+  { name: "recentMeals", fallback: null, clone: true },
   { name: "warmth", fallback: 1 }, // Warmth.js // Commissions.js (null = an old save: worked out from the mother)
 ];
 

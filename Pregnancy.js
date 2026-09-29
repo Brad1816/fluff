@@ -68,7 +68,9 @@ function pregnancyConditionNow(f) {
   const health = Math.max(0, Math.min(1, (f.health ?? 100) / 100));
   const rested = 1 - Math.max(0, Math.min(1, f.sleepDeprivation || 0));
   const calm = 1 - Math.max(0, Math.min(1, f.playerFear || 0));
-  return 0.3 * fed + 0.25 * happy + 0.25 * health + 0.1 * rested + 0.1 * calm;
+  // Eating well helps her and the foals (Diet.js)
+  const diet = typeof dietGrowthMultiplier === "function" ? dietGrowthMultiplier(f) : 1;
+  return Math.min(1, (0.3 * fed + 0.25 * happy + 0.25 * health + 0.1 * rested + 0.1 * calm) * diet);
 }
 
 // The average over her pregnancy so far (0.7 if nothing's been seen yet)
@@ -182,7 +184,9 @@ function foalGrowthRate(f) {
   const vigor = Math.max(0.8, Math.min(1.15, f.birthVigor ?? 1));
   const h = f.hunger ?? 1;
   const fed = h >= 0.6 ? 1.05 : h >= 0.3 ? 1 : h >= 0.1 ? 0.75 : 0.5;
-  return vigor * fed;
+  // Good food, faster growing (Diet.js)
+  const diet = typeof dietGrowthMultiplier === "function" ? dietGrowthMultiplier(f) : 1;
+  return vigor * fed * diet;
 }
 
 // ---- What you see ----

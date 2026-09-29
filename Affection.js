@@ -193,7 +193,10 @@ function onBowlFilledByYou(bowl, foodType) {
     if (!f.isAlive || !f.adopted || f.scene !== bowl.scene) continue;
     if (f.currentStateKey === "SLEEPING") continue;
     if (typeof f.canSee === "function" && !f.canSee()) continue;
-    giveAffection(f, kind);
+    // Food it hates isn't a kindness; food it loves counts extra (Diet.js)
+    const taste = typeof tasteFor === "function" ? tasteFor(f, foodType) : 0;
+    if (taste < -0.3) continue;
+    giveAffection(f, kind, kind === "fed" && taste > 0.5 ? 1.5 : 1);
   }
 }
 

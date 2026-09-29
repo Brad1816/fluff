@@ -199,6 +199,8 @@ function rewardTrick(f, kind, key) {
       return 0;
     }
     if (typeof money === "number") money -= TRICK_TREAT_COST;
+    // Treats add up (Diet.js)
+    if (typeof changeWeight === "function") changeWeight(f, WEIGHT_TREAT);
   }
   const got = _trLearn(f, key, (TRICK_LEARN[kind] || 0) * trickLearnRate(f));
   if (typeof giveAffection === "function") giveAffection(f, kind === "treat" ? "treat" : "praised");

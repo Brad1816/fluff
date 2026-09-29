@@ -712,13 +712,17 @@ class HorseRenderer {
       }
     }
 
-    if (this.horse.isPregnant || this.horse.isSensitive()) {
-      let stretch = this.horse.pregnancyTorsoStretch || 0;
+    const belly = typeof weightBelly === "function" ? weightBelly(this.horse) : 0;
+    if (this.horse.isPregnant || this.horse.isSensitive() || belly > 0) {
+      let stretch = this.horse.isPregnant ? this.horse.pregnancyTorsoStretch || 0 : 0;
       if (this.horse.isSensitive()) {
         stretch = 1.0;
       }
+      // A chubby tummy (Diet.js)
+      stretch = Math.max(stretch, belly);
       layout.stretch = stretch * (tH * 0.2);
     }
+    layout.fatW = belly * tW * 0.15; // wider too
 
     // AGENT: head and tail distance relative to torso
     const headPos = rotate(tW * 0.35, -tH * 0.25 + headBobY);
@@ -1343,7 +1347,8 @@ class HorseRenderer {
 
       if (rect === this.layout.torso) {
         drawAccessoryLayer("UNDER_BODY", "torso");
-        ctx.drawImage(img, ox, oy, rect.w, rect.h + this.layout.stretch);
+        const fatW = this.layout.fatW || 0;
+        ctx.drawImage(img, ox - fatW / 2, oy, rect.w + fatW, rect.h + this.layout.stretch);
         drawAccessoryLayer("OVER_BODY", "torso");
         drawAccessoryLayer("UNDER_HEAD", "torso");
       } else if (rect !== this.layout.head) {
