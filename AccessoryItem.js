@@ -136,6 +136,8 @@ class AccessoryItem {
         id: this.accessoryId,
         color: this.color,
       };
+      // A present - or something horrid (Affection.js)
+      if (typeof onAccessoryGiven === "function") onAccessoryGiven(fluffy, this.accessoryId);
 
       const idx = objects.indexOf(this);
       if (idx > -1) objects.splice(idx, 1);

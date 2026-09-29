@@ -372,6 +372,28 @@ const DIALOGUE = {
       "Wub daddeh! Bestest huggies!",
       "Wheee! Upsies!",
     ],
+    // Affection.js
+    UPSIES_GRUMPY: [
+      "Nu wan upsies fwom yu...",
+      "Put <speaker> down! Nu wike!",
+      "Hmph. Wet go.",
+    ],
+    LOVE: [
+      "<Speaker> wub daddeh su much!",
+      "Daddeh am bestest daddeh!",
+      "Wub yu foweba, daddeh!",
+      "<Speaker> am su happeh wif daddeh!",
+    ],
+    GRUMBLE: [
+      "Nu wan bwushies fwom yu...",
+      "Hmph. Stiww nu wike yu.",
+      "Why nu be nice befowe?",
+    ],
+    GIFT: [
+      "Fow <speaker>? Pwetty! Tank yu daddeh!",
+      "<Speaker> am su fanceh nao!",
+      "Speshuw pwesent! Wub it!",
+    ],
   },
   // Personality traits (Traits.js). Said now and then while babbling.
   TRAIT: {

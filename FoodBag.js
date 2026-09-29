@@ -71,7 +71,11 @@ class FoodBag {
           }
         }
 
-        if (filled) return true;
+        if (filled) {
+          // Everyone watching sees who brings the food (Affection.js)
+          if (typeof onBowlFilledByYou === "function") onBowlFilledByYou(bowl, this.type);
+          return true;
+        }
       }
     }
     return false;

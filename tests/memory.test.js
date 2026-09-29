@@ -174,7 +174,7 @@ module.exports = [
           lovingHappier: loving.happiness > h1,
           feelScared: describePlayerFeeling(scared)[0],
           feelLoving: describePlayerFeeling(loving)[0],
-          lines: getFluffyInspectionLines(scared).filter((l) => l.startsWith("Feels about you") || l.startsWith("Remembers")),
+          lines: getFluffyInspectionLines(scared).filter((l) => l.startsWith("Affection") || l.startsWith("Remembers")),
           tameOrder: [
             fluffyFitsOrder({ reqs: [{ kind: "tame", value: 250 }] }, loving),
             fluffyFitsOrder({ reqs: [{ kind: "tame", value: 250 }] }, scared),

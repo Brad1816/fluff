@@ -95,6 +95,7 @@ class Ball {
 
   onDrop() {
     handleDropping(this);
+    if (typeof onToyDropped === "function") onToyDropped(this); // Affection.js
     this.groundY = this.y;
     this.vx = (this.x - this.lastX) / 0.016 || 0;
     this.vy = (this.y - this.lastY) / 0.016 || 0;

@@ -85,4 +85,5 @@ function drawVFX(ctx) {
       poof.draw(ctx);
     }
   }
+  if (typeof drawAffectionPops === "function") drawAffectionPops(ctx); // Affection.js
 }

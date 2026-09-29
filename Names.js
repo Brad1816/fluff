@@ -253,7 +253,13 @@ function saveNamingPopup() {
   if (!namingPopup) return;
   namingPopup.ids.forEach((id, i) => {
     const n = (namingPopup.names[i] || "").trim();
-    if (n) fluffyNames[id] = n;
+    if (n) {
+      const first = !fluffyNames[id];
+      fluffyNames[id] = n;
+      // A name from you (Affection.js)
+      const f = first && typeof giveAffection === "function" ? fluffies.find((x) => x.id === id) : null;
+      if (f) giveAffection(f, "named");
+    }
   });
   namingPopup = null;
 }

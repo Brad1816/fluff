@@ -149,6 +149,7 @@ class Block {
 
   onDrop() {
     handleDropping(this);
+    if (typeof onToyDropped === "function") onToyDropped(this); // Affection.js
     this.groundY = this.y;
 
     const blocks = objects.filter((o) => o instanceof Block);

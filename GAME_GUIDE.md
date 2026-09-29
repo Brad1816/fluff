@@ -1698,3 +1698,37 @@ newest `UI_MESSAGE_MAX` (5) show at once. They still fade out after 5 s.
   costs `HEATER_COST_PER_DAY`, $30 a day, taken as it runs) while its place
   is cold. Right-click switches it off/on (`on`, saved). Yesterday's bill
   goes on the morning news (`heatingState`, SAVED_GAME_STATE).
+
+### Affection (`Affection.js`)
+Hearts for how much each fluffy you own loves you. Affection **is** the old
+trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
+"friendly with people" orders all follow it.
+- **Hearts**: `affectionHearts(f)` 0-5 in halves; `affectionHeartText(f)`
+  draws them. Levels (`affectionLevel`): adores 0.95+, loves 0.75+, likes
+  0.55+, unsure 0.3+, dislikes below.
+- **Nice things** go through `giveAffection(f, type)`, amounts in
+  `AFFECTION_ACTS`: brushed 0.05, fed 0.02 (anyone awake in the room when
+  you fill a bowl, `FoodBag.attemptFill`), treat 0.04 (sketties), gift 0.06
+  (an accessory, `AccessoryItem`), toy 0.02 (a ball/block dropped within
+  220px), patched 0.06 (suture kit on a bleed), vet 0.05 (`vetTreat`),
+  named 0.05 (first name only), held_happy 0.01. Each type counts in full
+  `perDay` times a day, then at `AFFECTION_WEAK` (1/5); some have a
+  `cooldown` in seconds. Scared fluffies (fear 0.45+) get half.
+- **Bad things**: hurting it (Memory.js fear also costs trust); horrid
+  accessories (`AFFECTION_HORRID`: blindfold, mouthgag, castration band)
+  -0.05. Neglect (`updateAffection`, system order 135, every 2 s), per game
+  hour: starving (hunger < 0.15) -0.02, freezing (warmth < 0.3) -0.02, in
+  a cage for over 6 hours -0.005, no kindness for 2 days -0.03 a day
+  (never below 0.6). Each is remembered once a day ("You let it go hungry").
+- **Effects**: loves you → brushing gives 1.5x happiness, fear fades 1.5x
+  faster, a little happier with you in the room, says `TRUST.LOVE` lines
+  now and then. Dislikes you → brushing gives half and it may grumble
+  (`TRUST.GRUMBLE`), squirms when picked up (`TRUST.UPSIES_GRUMPY`).
+- **Feedback**: `onAffectionChanged(f, before)` (called from Memory.js
+  whenever trust changes) pops a pink heart (or a cracked grey one) over the
+  fluffy for changes of 0.015+, drawn in `drawVFX`, and posts a message
+  when an owned fluffy starts or stops loving you.
+- **Saved**: `lastKindnessAt`, `affectionToday` (today's counts).
+- **Shown**: hearts under the price in the magnifying glass header; the
+  "Affection" row on the Mind tab (was "Feels about you").
+

@@ -448,9 +448,14 @@ function attemptDrop() {
               }
             }
             if (!f.isSmarty()) {
+              if (typeof brushDialogueKey === "function") key = brushDialogueKey(f, key);
               f.speak(getDialogue(key, f));
             }
-            f.changeHappiness(HAPPINESS_BONUS_BRUSH);
+            // Loves you: 1.5x as happy; doesn't like you: half (Affection.js)
+            f.changeHappiness(
+              HAPPINESS_BONUS_BRUSH *
+                (typeof brushHappinessMultiplier === "function" ? brushHappinessMultiplier(f) : 1),
+            );
             // Builds trust in you (Memory.js)
             if (typeof onFluffyBrushed === "function") onFluffyBrushed(f);
             // Groomed for a show (Shows.js)
@@ -835,6 +840,8 @@ function attemptDrop() {
           if (f.hitTestAsSeen(mouse.x, mouse.y)) {
             if (f.bleedingTimer > 0) {
               f.bleedingTimer = 0;
+              // You fixed its owie (Affection.js)
+              if (typeof giveAffection === "function") giveAffection(f, "patched");
               kit.whackTimer = 0.2;
               kit.charges--;
               hitFluffy = true;

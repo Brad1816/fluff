@@ -84,7 +84,9 @@ function changePlayerTrust(f, amount) {
   ensurePlayerMemory(f);
   // Social fluffies warm up to you faster
   if (amount > 0) amount *= 1 + 0.3 * _traitVal(f, "social");
+  const before = f.playerTrust;
   f.playerTrust = clamp(f.playerTrust + amount, 0, 1);
+  if (typeof onAffectionChanged === "function") onAffectionChanged(f, before);
 }
 
 function changePlayerFear(f, amount) {
@@ -93,8 +95,10 @@ function changePlayerFear(f, amount) {
     // Brave fluffies scare less easily, timid ones more
     amount *= 1 - 0.4 * _traitVal(f, "bravery");
     f.lastHurtByPlayerAt = _memNow();
-    // Being hurt also costs trust
+    // Being hurt also costs trust (affection, Affection.js)
+    const before = f.playerTrust;
     f.playerTrust = clamp(f.playerTrust - amount * 0.6, 0, 1);
+    if (typeof onAffectionChanged === "function") onAffectionChanged(f, before);
   }
   f.playerFear = clamp(f.playerFear + amount, 0, 1);
 }
@@ -134,10 +138,14 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
 }
 
 // Brush code (script.js): brushing builds trust and calms
+// (Affection.js: only the first few brushes a day count in full)
 function onFluffyBrushed(f) {
-  changePlayerTrust(f, 0.05);
+  if (typeof giveAffection === "function") giveAffection(f, "brushed");
+  else {
+    changePlayerTrust(f, 0.05);
+    rememberPlayerEvent(f, "brushed");
+  }
   f.playerFear = Math.max(0, (f.playerFear || 0) - 0.03);
-  rememberPlayerEvent(f, "brushed");
 }
 
 // Picking a fluffy up (UI.js mousedown)
@@ -158,9 +166,18 @@ function onFluffyPickedUp(f) {
     f.expressionOverride = "GOOD_UPSIES";
     f.expressionOverrideTimer = 2.0;
     f.changeHappiness(0.02);
-    changePlayerTrust(f, 0.01);
-    rememberPlayerEvent(f, "held_happy");
+    if (typeof giveAffection === "function") giveAffection(f, "held_happy");
+    else {
+      changePlayerTrust(f, 0.01);
+      rememberPlayerEvent(f, "held_happy");
+    }
     if (canTalk) f.speak(getDialogue(["TRUST", "UPSIES_HAPPY"], f), true);
+  } else if (f.playerTrust < 0.3 && f.adopted) {
+    // Doesn't like you: squirms (Affection.js)
+    f.expressionOverride = "BAD_UPSIES";
+    f.expressionOverrideTimer = 2.0;
+    f.changeHappiness(-0.01);
+    if (canTalk) f.speak(getDialogue(["TRUST", "UPSIES_GRUMPY"], f), true);
   }
 }
 
@@ -172,7 +189,8 @@ function updatePlayerMemory(f, dt) {
 
   // Fear fades once it's been a while; gentle fluffies forgive faster
   if (f.playerFear > 0 && now - (f.lastHurtByPlayerAt || -1e9) > FEAR_FADE_DELAY) {
-    const forgive = 1 - 0.5 * _traitVal(f, "temper"); // gentle 1.5x, grumpy 0.5x
+    let forgive = 1 - 0.5 * _traitVal(f, "temper"); // gentle 1.5x, grumpy 0.5x
+    if (f.playerTrust >= 0.75) forgive *= 1.5; // it loves you (Affection.js)
     f.playerFear = Math.max(0, f.playerFear - (FEAR_FADE_PER_MIN / 60) * forgive * dt);
   }
 

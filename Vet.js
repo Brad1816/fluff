@@ -178,6 +178,7 @@ function vetTreat(f) {
   f.health = 100;
   f.vetCheckedAt = typeof timePlayed === "number" ? timePlayed : 0;
   f.vetNote = "treated - all better";
+  if (typeof giveAffection === "function") giveAffection(f, "vet");
   if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} is all better ($${price}).`);
   return true;
 }

@@ -9,7 +9,9 @@ function openNameModal(fluffy) {
     let name = newName.trim().replace(/[^a-zA-Z0-9-]/g, "");
     if (name.length > 0) {
       name = name.charAt(0).toUpperCase() + name.slice(1);
+      const first = !fluffyNames[fluffy.id];
       fluffyNames[fluffy.id] = name;
+      if (first && typeof giveAffection === "function") giveAffection(fluffy, "named");
       const key = fluffy.tooYoungToSpeak() ? ["NAME", "CHIRPY"] : ["NAME"];
       fluffy.speak(getDialogue(key, fluffy));
     }
@@ -229,7 +231,9 @@ function getFluffyInspectionInfo(f) {
   // How it feels about you and what it remembers (Memory.js)
   if (f.isAlive && typeof describePlayerFeeling === "function") {
     const [feel, feelTone] = describePlayerFeeling(f);
-    care.push({ label: "Feels about you", value: feel, tone: feelTone });
+    // Hearts (Affection.js)
+    const hearts = typeof affectionHeartText === "function" && f.adopted ? affectionHeartText(f) + "  " : "";
+    care.push({ label: "Affection", value: hearts + feel, tone: feelTone });
     // A wild fluffy getting used to you (Wellbeing.js)
     const settle = typeof settlingProgress === "function" ? settlingProgress(f) : null;
     if (settle !== null) care.push({ label: "Settling in", value: `${Math.round(settle * 100)}%`, tone: settle > 0.6 ? "ok" : "bad" });
@@ -318,7 +322,7 @@ const INSPECTION_TABS = [
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Feels about you", "Remembers", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Remembers", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },
@@ -346,13 +350,14 @@ function getInspectionTabs(f) {
   for (const t of tabs) t.bad = t.cols.some((c) => c.rows.some((r) => r.tone === "bad"));
   // Warnings for the header: the worst things, from any tab
   const warn = [];
-  const short = { Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
+  const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
   const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;
-    warn.push(label ? `${label}: ${r.value}` : String(r.value));
+    const value = String(r.value).replace(/[♥❥♡]/g, "").trim(); // no hearts in a chip
+    warn.push(label ? `${label}: ${value}` : value);
   }
   return { tabs, warnings: warn, rows: byLabel };
 }
@@ -485,6 +490,13 @@ function drawInspectionModal(ctx) {
     ctx.fillStyle = "#9fe0a8";
     const priceText = String(sells.value).split(" (")[0];
     ctx.fillText(priceText, L.listX + L.listW - 24, py + 38);
+  }
+  // Affection hearts under the price (Affection.js)
+  if (f.isAlive && f.adopted && typeof affectionHeartText === "function") {
+    ctx.textAlign = "right";
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "#ff6f9a";
+    ctx.fillText(affectionHeartText(f), L.listX + L.listW - 24, py + 64);
     ctx.textAlign = "left";
   }
   // Warning chips (or "Doing fine")
