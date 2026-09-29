@@ -96,6 +96,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Bath.js` | **Dirt and bath time**: fluffies get grubby (mess, accidents, rain, time), look it, sponge baths with likes/dislikes. See section 9 (Dirt and bath time). |
 | `Lessons.js` | **Lessons**: talking a fluffy out of colour prejudice, alicorn fear, messy habits or being a Smarty; a second row in the right-click trick menu. See section 9 (Lessons). |
 | `Upbringing.js` | **Upbringing**: foals drift towards the colour views and alicorn feelings of the grown-ups raising them (mum most). See section 9 (Upbringing). |
+| `Fears.js` | **Fears**: thunder, the dark and the Fluff-Bot; frights, comforting, the Night Light item. See section 9 (Fears). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -2041,3 +2042,34 @@ ticker, foals only (`growth < 1`):
   warning.
 - No new saved fields (the views it changes were already saved).
 - Tests: `tests/upbringing.test.js`.
+
+### Fears (`Fears.js`)
+Some fluffies are scared of things; you comfort them. System "fears" (order 141).
+- `f.fears = { thunder, dark, bot }` (0..1, saved), made by `fearsOf` the first
+  time: each fear has a 4-65% chance (`0.25 - 0.3 x bravery`), timid fluffies
+  much more. Under `FEAR_MIN` (0.15) it doesn't count (`realFears`).
+- **Frights** (`startFright(f, key)`, `f.fright = { key, until }`, not saved):
+  | Trigger | Where |
+  |---|---|
+  | Thunder clap | `onThunder` from WorldTime.js; indoors needs fear >= `FEAR_INDOOR_THUNDER` (0.35); wakes it |
+  | The dark | `updateFears`: night > 0.7, no Night Light on in the room; `DARK_FRIGHT_CHANCE` x fear a second (x0.3 asleep); asleep ones also sleep restlessly |
+  | Fluff-Bot | bumped (`onRoombaBump` from `reactToRoomba`, returns "frightened"), or it drives within `BOT_NEAR` |
+  Length `FRIGHT_TIME[key] x (0.5 + fear)`. After a fright, the same thing can't
+  start another for `FRIGHT_REST` seconds (dark 200, Fluff-Bot 300; thunder
+  just extends the fright). A long simulation had ~4 bot frights a day for each
+  fluffy scared of it in a busy house before this.
+- **While frightened**: `FrightDesire` (score 75) runs to mum (foals) or a
+  friend/family member in the room (`frightComforter`), otherwise cowers
+  (LYING). It trembles (`beginFrightShake`, Horse.draw) and cries.
+- **Ending it**: picking it up or brushing it (`onComfortedByYou`, called from
+  Memory.js `onFluffyPickedUp`/`onFluffyBrushed`): fright over, happiness +0.03,
+  fear -`FEAR_COMFORT` (0.06). A comforter within 90px halves the time left.
+  Ending alone with nobody near: fear +`FEAR_WORSEN` (0.02), yours only.
+- **Night Light** (`NightLight`, $30, Home & Play, goes in the shopping bag):
+  glows at night; `hasNightLight(scene)`; right-click to switch off.
+- Lessons: "Brave" (Lessons.js) takes `LESSON_BRAVE` (0.06) off every fear.
+  Upbringing.js copies fears from the grown-ups raising a foal.
+- Magnifying glass: "Fears" (Looks & nature, `describeFears`) and "Frightened"
+  (Wellbeing and the header, `describeFright`).
+- Tests: `tests/fears.test.js`. The Fluff-Bot reaction test clears fears so it
+  still checks the old timid/brave reactions.

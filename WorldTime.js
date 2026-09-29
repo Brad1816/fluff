@@ -229,6 +229,7 @@ function updateWorldTime(dt) {
     if (_thunderTimer <= 0) {
       _thunderTimer = 12 + Math.random() * 25;
       _lightning = 1;
+      if (typeof onThunder === "function") onThunder(); // fluffies scared of thunder (Fears.js)
       for (const f of fluffies) {
         if (!f.isAlive || !isOutdoorScene(f.scene) || f.currentStateKey === "SLEEPING" || Math.random() > 0.35)
           continue;

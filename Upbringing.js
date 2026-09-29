@@ -21,6 +21,7 @@
 //   - how it feels about alicorns (alicornComfort, AlicornAcceptance.js),
 //     when World Alicorn Intolerance is on. A foal of a mare that fully
 //     accepts alicorns ends up accepting them too.
+//   - its fears of thunder, the dark and the Fluff-Bot (Fears.js)
 // Lessons on the foal still work, but a prejudiced mum keeps pulling it back
 // - it's best to teach mum first.
 //
@@ -91,6 +92,17 @@ function applyUpbringing(f, seconds) {
       else f.alicornComfort = next;
       changed = true;
     }
+  }
+  // Fears (Fears.js): scared grown-ups raise scared foals
+  if (typeof FEARS !== "undefined" && typeof fearsOf === "function") {
+    const mine = fearsOf(f);
+    for (const fe of FEARS) {
+      const a = _upAverage(list, (o) => fearOf(o, fe.key));
+      if (!a) continue;
+      const k = Math.min(1, UPBRINGING_RATE * seconds * Math.min(1, a.weight));
+      mine[fe.key] = Math.max(0, Math.min(1, mine[fe.key] + (a.target - mine[fe.key]) * k));
+    }
+    changed = true;
   }
   return changed;
 }

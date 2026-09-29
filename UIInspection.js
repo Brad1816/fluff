@@ -227,6 +227,13 @@ function getFluffyInspectionInfo(f) {
     const [cText, cTone] = describeInspectionColorism(f);
     care.push({ label: "Colour views", value: cText, tone: cTone });
   }
+  // Fears (Fears.js)
+  if (f.isAlive && typeof describeFears === "function") {
+    const [fText, fTone] = describeFears(f);
+    care.push({ label: "Fears", value: fText, tone: fTone });
+    const fr = describeFright(f);
+    if (fr) care.push({ label: "Frightened", value: fr[0], tone: fr[1] });
+  }
   // Foals copy the grown-ups raising them (Upbringing.js)
   if (typeof describeUpbringing === "function") {
     const up = describeUpbringing(f);
@@ -333,7 +340,7 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Spayed"] },
+      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Spayed"] },
       { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Settling in", "Sells for"] },
     ],
   },
@@ -350,7 +357,7 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Growing up"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Growing up"] },
     ],
   },
   {
@@ -387,7 +394,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;

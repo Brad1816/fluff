@@ -261,6 +261,8 @@ function reactToRoomba(f, bot) {
   const brave = typeof traitValue === "function" ? traitValue(f, "bravery") : 0;
   const playful = typeof traitValue === "function" ? traitValue(f, "energy") : 0;
   const talk = !f.tooYoungToSpeak();
+  // Scared of the Fluff-Bot (Fears.js): always a fright
+  if (typeof onRoombaBump === "function" && onRoombaBump(f)) return "frightened";
   if (brave + playful > 0.3 || (f.growth < 1 && Math.random() < 0.5)) {
     f.expressionOverride = "GOOD_UPSIES";
     f.expressionOverrideTimer = 1.5;

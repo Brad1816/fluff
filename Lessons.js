@@ -10,6 +10,8 @@
 //   - "Alicorns"  (World Alicorn Intolerance on, and it's still scared of
 //                  "munstahs"): comfort + LESSON_ALICORNS (AlicornAcceptance)
 //   - "Litter"    (not fully litter trained): + LESSON_LITTER
+//   - "Brave"     (scared of thunder, the dark or the Fluff-Bot, Fears.js):
+//                  every fear - LESSON_BRAVE
 //   - "Be good"   (Smarties only): very hard. Each lesson only sinks in
 //                  about a fifth as often (LESSON_SMARTY_CHANCE) and moves
 //                  it LESSON_SMARTY_STEP towards reformed (f.smartyReform,
@@ -35,6 +37,7 @@ const LESSON_TRIES_PER_DAY = 3;
 const LESSON_COLOURS = 0.08;
 const LESSON_ALICORNS = 0.07;
 const LESSON_LITTER = 0.07;
+const LESSON_BRAVE = 0.06; // off every fear (Fears.js)
 const LESSON_SMARTY_CHANCE = 0.2; // x the normal chance
 const LESSON_SMARTY_STEP = 0.1;
 const LESSON_SMARTY_SLIP = 0.02; // lost when a Smarty lesson fails (1 time in 4)
@@ -77,6 +80,21 @@ const LESSONS = [
       return f.pottyTraining >= 0.999;
     },
     doneMsg: (n) => `${n} is litter trained! ✓`,
+  },
+  {
+    key: "brave",
+    name: "Brave",
+    applies: (f) => typeof realFears === "function" && realFears(f).length > 0,
+    // how far from its worst fear to not scared at all
+    progress: (f) => {
+      const worst = Math.max(0, ...FEARS.map((fe) => fearOf(f, fe.key)));
+      return Math.max(0, Math.min(1, 1 - worst));
+    },
+    teach: (f) => {
+      for (const fe of FEARS) if (fearOf(f, fe.key) > 0) changeFear(f, fe.key, -LESSON_BRAVE);
+      return realFears(f).length === 0;
+    },
+    doneMsg: (n) => `${n} isn't scared of anything any more! ✓`,
   },
   {
     key: "smarty",

@@ -183,6 +183,8 @@ class Horse {
     }
     // Doing a trick (Tricks.js)
     if (typeof TrickDesire !== "undefined") this.brain.addDesire(new TrickDesire());
+    // Frightened by thunder, the dark or the Fluff-Bot (Fears.js)
+    if (typeof FrightDesire !== "undefined") this.brain.addDesire(new FrightDesire());
     // Chasing the ball in your hand (Play.js)
     if (typeof ChaseHeldBallDesire !== "undefined") this.brain.addDesire(new ChaseHeldBallDesire());
     // Bonds and grudges (Bonds.js): hang out with buddies, avoid grudges
@@ -1745,6 +1747,8 @@ class Horse {
     // Rotting corpses darken, fade and get flies (Corpses.js)
     const rotting = !this.isAlive && typeof beginCorpseLook === "function" && beginCorpseLook(ctx, this);
     // Dirty fluffies look it (Bath.js)
+    // Frightened fluffies tremble (Fears.js)
+    const shaking = typeof beginFrightShake === "function" && beginFrightShake(ctx, this);
     const grubby = !rotting && typeof beginDirtLook === "function" && beginDirtLook(ctx, this);
     this.renderer.drawOffScreen(ctx, clip);
     if (rotting) {
@@ -1755,6 +1759,7 @@ class Horse {
       ctx.restore();
       drawDirtEffects(ctx, this);
     }
+    if (shaking) ctx.restore();
     if (this.placedOn instanceof ImmobilizationBoard) {
       this.placedOn.renderStrap(ctx, this);
     }

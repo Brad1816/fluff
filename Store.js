@@ -35,6 +35,7 @@ const STORE_AISLES = [
       "sprinkler",
       "heater",
       "roomba",
+      "night_light",
       "ball",
       "block",
       "fluff_tv",

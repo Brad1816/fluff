@@ -85,6 +85,7 @@ module.exports = [
         bot.setPosition(500, 500);
         const timid = mk(0);
         const brave = mk(TRAIT_GENES_EACH);
+        timid.fears = brave.fears = { thunder: 0, dark: 0, bot: 0 }; // (no phobia: Fears.js is tested on its own)
         return [reactToRoomba(timid, bot), reactToRoomba(brave, bot), timid.expressionOverride, brave.expressionOverride];
       });
       checkEqual(JSON.stringify(r), JSON.stringify(["scared", "fun", "CRYING_SHOCKED", "GOOD_UPSIES"]), "reactions");

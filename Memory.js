@@ -140,6 +140,7 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
 // Brush code (script.js): brushing builds trust and calms
 // (Affection.js: only the first few brushes a day count in full)
 function onFluffyBrushed(f) {
+  if (typeof onComfortedByYou === "function") onComfortedByYou(f, "brushed"); // (Fears.js)
   if (typeof giveAffection === "function") giveAffection(f, "brushed");
   else {
     changePlayerTrust(f, 0.05);
@@ -151,6 +152,7 @@ function onFluffyBrushed(f) {
 // Picking a fluffy up (UI.js mousedown)
 function onFluffyPickedUp(f) {
   if (!f.isAlive) return;
+  if (typeof onComfortedByYou === "function") onComfortedByYou(f, "held"); // a cuddle when frightened (Fears.js)
   ensurePlayerMemory(f);
   const now = _memNow();
   if (f._lastPickupReaction && now - f._lastPickupReaction < 20) return;

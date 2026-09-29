@@ -425,11 +425,22 @@ const DIALOGUE = {
     PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "Nummy tweat! Tank yu!"],
     SHOW_OFF: ["Wook daddeh! Wook what <speaker> can do!", "Watch <speaker>!", "Daddeh wook!"],
   },
+  // Frights (Fears.js)
+  FRIGHT: {
+    THUNDER: ["*SCREEEE* Woud sky-noise!", "Sky am angwy! Hewp!", "Nu wike boomies! Huu huu!", "Make it stop! Pwease!"],
+    DARK: ["It am su dawk... scawy...", "Nu can see! Munstahs in dawk?", "Pwease tuwn on wight...", "*sniff* ...anyone dewe?"],
+    BOT: ["Munstah-wobot! Nu eat <speaker>!", "*SCREEE* It comin' back!", "Go 'way scawy wobot!"],
+    COMFORTED: ["Safe nao... tank yu...", "Huggies make scawies go 'way...", "<Speaker> nu scawed wif yu."],
+    CALMED: ["Bettew nao...", "Nu scawed anymowe.", "Tank yu fow snuggwes, fwen."],
+    MUM: ["Mummah! Mummah! Scawy!", "Mummah, hewp!", "Wan mummah!"],
+    FRIEND: ["Fwen! Wait fow <speaker>!", "Hide wif fwen!", "Fwen, hab scawies!"],
+  },
   // Lessons (Lessons.js)
   LESSON: {
     COLOURS: ["Aww cowows am fwens?", "Poopie-cowow fwuffies... am fwuffies too?", "<Speaker> twy be nice to evewy cowow!", "Otha cowow nu bad... okie."],
     COLOURS_NO: ["Nu! Poopie cowows am bad!", "Bu' dey am poopie cowow...", "Nu wan be fwens wif poopie fwuffy!"],
     ALICORNS: ["Wingie-hownie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
+    BRAVE: ["<Speaker> am bwave fwuffy!", "Nu be scawed... okie...", "Scawy fing nu huwt <speaker>."],
     LITTER: ["Poopies go in speshuw pwace!", "<Speaker> make poopies in boxie!", "Nu poopies on fwoow. Okie!"],
     NOT_LISTENING: ["Wha'? <Speaker> nu undewstand...", "*yawn* ...huh?", "Wan pway, nu wan wissen..."],
     SMARTY_LISTENS: ["...Mebbe. Mebbe smawty wissen. Dis once.", "Hmph. Smawty... fink about it.", "Wha' if... smawty nu awways wight?"],

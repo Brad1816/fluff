@@ -51,6 +51,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "lessonTries", fallback: null, clone: true }, // Lessons.js
   { name: "smartyReform", fallback: 0 },
   { name: "smartyReformed", fallback: false },
+  { name: "fears", fallback: null, clone: true }, // Fears.js
   { name: "diet", fallback: null }, // Diet.js
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },

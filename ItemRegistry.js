@@ -216,6 +216,18 @@ const ITEM_TYPES = [
     },
   },
   {
+    sellType: "night_light", // Fears.js
+    is: (o) => typeof NightLight !== "undefined" && o instanceof NightLight,
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new NightLight(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawNightLightShape(ctx, 0, 16, 0.8, 0.6),
+    onRightClick: (o) => {
+      o.on = !o.on;
+      if (typeof addUIMessage === "function") addUIMessage(o.on ? "Night light on." : "Night light off.");
+    },
+  },
+  {
     sellType: "fluff_tv",
     is: (o) => o instanceof FluffTV,
     icon: "fluff_tv_off",
@@ -684,6 +696,7 @@ const SAVED_CLASSES = {
   GoldenStatue: (d) => new GoldenStatue(d.scene),
   Heater: (d) => new Heater(d.scene), // Warmth.js
   Roomba: (d) => new Roomba(d.scene), // Roomba.js
+  NightLight: (d) => new NightLight(d.scene), // Fears.js
   Fence: (d) => new Fence(d.scene, d.orientation, d.isGate),
   FoalVendor: (d) => new FoalVendor(d.scene),
   FoalInACan: (d) => new FoalInACan(d.scene),
