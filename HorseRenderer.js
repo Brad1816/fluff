@@ -201,6 +201,14 @@ class HorseRenderer {
       null,
       gradientConfig,
     );
+    // A fancy mane: streaks, tips or rainbow, the tail to match
+    // (ManePatterns.js), greyed with age like the rest of the mane
+    if (this.horse.manePattern && typeof paintManePattern === "function") {
+      const p = this.horse.manePattern;
+      const second = typeof agedColor === "function" && typeof greyAmount === "function" ? agedColor(p.color, 0.8 * greyAmount(this.horse)) : p.color;
+      paintManePattern(this.tinted.mane, maneImg, p, second);
+      paintManePattern(this.tinted.tail, tailImg, p, second);
+    }
 
     if (images.pupil)
       this.tinted.pupil = tintImage(images.pupil, this.horse.colors.pupil);

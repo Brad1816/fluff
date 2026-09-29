@@ -127,12 +127,17 @@ class HorseGenetics {
     }
     // Personality trait genes (Traits.js)
     if (typeof ensureTraitGenes === "function") ensureTraitGenes(genes);
+    // Fancy mane genes (ManePatterns.js)
+    if (typeof randomManeGenes === "function") randomManeGenes(genes);
     return genes;
   }
 
   processGenes() {
     // Older fluffies don't have personality trait genes yet (Traits.js)
     if (typeof ensureTraitGenes === "function") ensureTraitGenes(this.horse.genes);
+    // ...or fancy mane genes (ManePatterns.js): a plain mane
+    if (typeof ensureManeGenes === "function") ensureManeGenes(this.horse.genes);
+    this.horse.manePattern = typeof manePatternOfGenes === "function" ? manePatternOfGenes(this.horse.genes) : null;
     // Decode Colors
     const getComponent = (startIdx) => {
       let sum = 0;
@@ -443,6 +448,8 @@ class HorseGenetics {
     if (this.horse.hasGradient) {
       secondaryMult *= getPatternMult(parseRGB(this.horse.colors.gradient));
     }
+    // A fancy mane (ManePatterns.js)
+    if (typeof manePatternPriceMultiplier === "function") secondaryMult *= manePatternPriceMultiplier(this.horse);
 
     return anchorMult * greyscaleMult * harmonyMult * secondaryMult;
   }
@@ -506,6 +513,8 @@ class HorseGenetics {
         }
       }
     }
+    // Fancy mane genes (ManePatterns.js)
+    if (typeof inheritManeGenes === "function") inheritManeGenes(babyGenes, this.horse.genes, otherGenes);
     return babyGenes;
   }
 }

@@ -225,7 +225,7 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
   const n = GENE_LAB_SAMPLES;
   const count = {
     earthy: 0, unicorn: 0, pegasus: 0, alicorn: 0,
-    spots: 0, stripes: 0, gradient: 0,
+    spots: 0, stripes: 0, gradient: 0, fancyMane: 0, rainbowMane: 0,
     wingCarrier: 0, hornCarrier: 0,
     nice: 0, drab: 0, poopie: 0,
     big: 0, average: 0, small: 0,
@@ -247,6 +247,8 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
       if (d.spots === 4) count.spots++;
       if (d.stripes === 4) count.stripes++;
       if (d.gradient >= 2) count.gradient++;
+      if (d.manePattern) count.fancyMane++; // ManePatterns.js
+      if (d.manePattern && d.manePattern.kind === "rainbow") count.rainbowMane++;
       if (d.wings === 3) count.wingCarrier++;
       if (d.horn === 3) count.hornCarrier++;
       const coat = describeRecordCoat({ genes });
@@ -649,7 +651,8 @@ function _drawGeneLabPrediction(c) {
   ly += 20;
   _glBar(c, "Spots", result.pct.spots, x, ly, "#e8a0a0"); ly += 19;
   _glBar(c, "Stripes", result.pct.stripes, x, ly, "#a0a0e8"); ly += 19;
-  _glBar(c, "Gradient", result.pct.gradient, x, ly, "#a0e8c8"); ly += 27;
+  _glBar(c, "Gradient", result.pct.gradient, x, ly, "#a0e8c8"); ly += 19;
+  _glBar(c, "Fancy mane", result.pct.fancyMane || 0, x, ly, "#f0a0e0"); ly += 27;
   _glText(c, "HIDDEN CARRIERS (can pass it on)", x, ly, "#f7d774", "bold 13px Arial");
   ly += 20;
   _glBar(c, "Wings", result.pct.wingCarrier, x, ly, "#6f8fae"); ly += 19;

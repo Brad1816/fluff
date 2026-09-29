@@ -18,7 +18,8 @@ module.exports = [
         old.processGenes();
         const tooOld = h.genes.slice(0, 95); // before gradients: left alone
         ensureTraitGenes(tooOld);
-        return { len: h.genes.length, oldLen: old.genes.length, tooOld: tooOld.length, total: TRAIT_GENE_TOTAL };
+        // (fancy mane genes come after the trait genes: ManePatterns.js)
+        return { len: h.genes.length, oldLen: old.genes.length, tooOld: tooOld.length, total: MANE_GENE_TOTAL };
       });
       checkEqual(r.len, r.total, "new fluffy's genes");
       checkEqual(r.oldLen, r.total, "older fluffy's genes after processGenes");
@@ -43,21 +44,21 @@ module.exports = [
         let sums = new Set();
         for (let k = 0; k < 200; k++) {
           const g = mum.genetics.combineGenes(dad.genes);
-          if (g.length !== TRAIT_GENE_TOTAL) bad++;
+          if (g.length !== MANE_GENE_TOTAL) bad++; // traits, then fancy mane genes
           for (let i = TRAIT_GENE_START; i < TRAIT_GENE_TOTAL; i++) if (g[i] !== mum.genes[i] && g[i] !== dad.genes[i]) bad++;
           sums.add(traitGeneSum(g, "bravery"));
         }
         // A father from before traits (103 genes): foals still get full genes
         const oldDad = dad.genes.slice(0, 103);
         const withOld = mum.genetics.combineGenes(oldDad);
-        return { labels, bad, sums: [...sums].sort(), withOldLen: withOld.length, withOldOk: withOld.slice(103).every((x) => x === 0 || x === 1) };
+        return { labels, bad, sums: [...sums].sort(), withOldLen: withOld.length, withOldOk: withOld.slice(103, TRAIT_GENE_TOTAL).every((x) => x === 0 || x === 1) };
       }, SET_TRAIT);
       check(r.labels.mumBrave, "a fluffy with 5 bravery genes isn't Brave");
       check(r.labels.dadTimid, "a fluffy with 0 bravery genes isn't Timid");
       check(!r.labels.mumSocialLabel, "an average fluffy got a social label");
       checkEqual(r.bad, 0, "foal genes that came from neither parent");
       checkEqual(JSON.stringify(r.sums), JSON.stringify([0, 1, 2, 3, 4, 5]), "bravery sums seen in foals of a 5 x 0 pair");
-      checkEqual(r.withOldLen, 128, "foal of a pre-traits father");
+      checkEqual(r.withOldLen, 139, "foal of a pre-traits father (traits and fancy mane genes filled in)");
       check(r.withOldOk, "foal of a pre-traits father has bad trait genes");
     },
   },

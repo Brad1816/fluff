@@ -43,6 +43,7 @@ const STOCK_BREEDERS = [
   { name: "Starfall Kennels", line: "wings", about: "pegasi", minLevel: 2 },
   { name: "Silverhorn Farm", line: "horn", about: "unicorns", minLevel: 2 },
   { name: "Old Barn Breeders", line: "hardy", about: "hardy, cheap earthies" },
+  { name: "Prism Stables", line: "mane", about: "fancy manes: streaked, tipped, even rainbow", minLevel: 3 }, // ManePatterns.js
 ];
 const STOCK_ALICORN_BREEDER = { name: "Celestial Stud", line: "alicorn", about: "alicorns (very rare)" };
 
@@ -90,6 +91,7 @@ function stockVisibleFeatures(genes) {
   const out = [];
   if (d.spots >= 4) out.push("spotted");
   if (d.stripes >= 4) out.push("striped");
+  if (d.manePattern) out.push(d.manePattern.kind === "rainbow" ? "rainbow mane" : `${d.manePattern.kind} mane`);
   return out;
 }
 
@@ -99,6 +101,14 @@ function _lineGrandparent(line, strong, quality) {
   const g = _stockRandomGenes(line === "pastel" ? Math.max(quality, 0.9) : line === "hardy" ? quality * 0.6 : quality);
   const carry = strong ? 4 : 2 + Math.floor(Math.random() * 2);
   if (line === "spots") _setBits(g, 79, 4, carry);
+  // Fancy manes (ManePatterns.js): a style, sometimes rainbow
+  if (line === "mane" && typeof MANE_GENE_START === "number") {
+    _setBits(g, MANE_GENE_START, 4, strong ? 4 : 3); // a specialist: carriers carry a lot
+    g[MANE_GENE_START + 4] = Math.floor(Math.random() * 3);
+    const rainbow = Math.random() < 0.35;
+    g[MANE_GENE_START + 5] = rainbow ? 1 : g[MANE_GENE_START + 5];
+    g[MANE_GENE_START + 6] = rainbow ? 1 : g[MANE_GENE_START + 6];
+  }
   if (line === "stripes") _setBits(g, 87, 4, carry);
   if (line === "white") {
     // Body colour genes nearly all on (white is all 24 on)

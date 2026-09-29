@@ -208,6 +208,9 @@ function getFluffyInspectionInfo(f) {
   care.push({ label: "Litter trained", value: describeInspectionPottyTraining(f)[0], tone: describeInspectionPottyTraining(f)[1] });
   const [coatText, coatTone] = describeInspectionCoat(f);
   care.push({ label: "Coat", value: coatText, tone: coatTone });
+  // A fancy mane (ManePatterns.js)
+  const fancyMane = typeof describeManePattern === "function" ? describeManePattern(f) : null;
+  if (fancyMane) care.push({ label: "Mane", value: fancyMane, tone: "good" });
   if (typeof worldSettings === "undefined" || worldSettings.colorism) {
     const [cText, cTone] = describeInspectionColorism(f);
     care.push({ label: "Colour views", value: cText, tone: cTone });

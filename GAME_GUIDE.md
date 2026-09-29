@@ -82,6 +82,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
 | `ShoppingBag.js` | **Getting shopping home**: small things go in the shopping bag (tan buttons in the toolbox), big things are delivered to the living room. See section 9 (Shopping bag and deliveries). |
+| `ManePatterns.js` | **Fancy manes**: streaked, tipped and rainbow manes (tail to match), their genes, inheritance, drawing (`paintManePattern`) and value. See section 9 (Fancy manes). |
 | `Buyers.js` | **Buyers at the door**: buyer types with tastes and budgets, which fluffy they ask about, offers that count condition, asking for more (agree / final offer / walk off). See section 9 (Buyers at the door). |
 | `Commissions.js` | **Commissions and regular customers**: breed-to-order commissions (gold cards, deposit, days to deliver, "Bred by you"), customer loyalty (Returning / Regular / Loyal pay more), favourite types, letters from past customers. See section 9 (Commissions and regular customers). |
 | `Pregnancy.js` | **Pregnancy and foal care**: litter size runs in families, care during pregnancy sets litter size, stillbirths and foal strength, birth health cost, the vet's scan and midwife, foal growth speed. See section 9 (Pregnancy and foal care). |
@@ -1579,3 +1580,35 @@ Before, a random fluffy got a fixed take-it-or-leave-it offer of its
   No thanks. `SELL_CARD_W` x `SELL_CARD_H` (330 x 190). The two old copies
   of the Accept/Reject click code in UI.js (one checking the wrong place)
   are now one `sellRequestClick()` call.
+
+### Fancy manes (`ManePatterns.js`)
+Most fluffies keep a plain one-colour mane; a few now have a fancy one,
+with the tail to match.
+- **Genes** (after the trait genes, `MANE_GENE_START` = 128, 11 genes, so
+  a full gene list is now 139 long, `MANE_GENE_TOTAL`): +0..+3 fancy (all 4
+  needed, like spots: about 1 in 16 random fluffies), +4 style (0
+  streaked, 1 tipped, 2 rainbow - but rainbow also needs +5 and +6, else
+  it's streaked: about 1 in 230), +7..+9 the second colour, +10 the
+  streak seed. `randomManeGenes` (HorseGenetics `generateRandomGenes`),
+  `inheritManeGenes` (end of `combineGenes`: each gene from mum or dad),
+  `ensureManeGenes` (HorseGenetics `processGenes`: older 128-gene fluffies
+  get a plain mane, the rest filled in). `processGenes` sets
+  `f.manePattern` = null or `{ kind, color, seed }` (`manePatternOfGenes`).
+- **Drawing** (`paintManePattern(tinted, img, pattern, secondColor)`, called
+  from HorseRenderer `ensureTintedImages` for the mane and the tail): the
+  picture is tinted in the second colour (multiply, so the outline and
+  shading stay) and drawn over the mane through a mask: slanted locks
+  (streaked), the bottom of the hair fading in (tipped, using the
+  picture's real hair box `_maneBox`), or a rainbow gradient over it all.
+  The second colour greys with age like the mane (`agedColor`).
+- **Value**: `manePatternPriceMultiplier` in `calculateColorMultiplier`:
+  streaked or tipped x1.3, rainbow x2 - so it's in the price, the judges'
+  coat score and what collectors like.
+- **Shown**: magnifying glass "Mane: Streaked (pink streaks)" /
+  "Tipped (bwue tips)" / "Rainbow (very rare)"; family tree "Fancy mane"
+  gene row (4 dots) and the kind on the Mane line (`describeGenes`
+  `maneFancy`, `manePattern`, `maneColor2`); Gene Lab "Fancy mane" bar;
+  stock cards ("rainbow mane", "streaked mane").
+- **Prism Stables**: a stock-market breeder (line "mane", from level 3)
+  whose grandparents show or strongly carry fancy manes, rainbow 35% of the
+  time.

@@ -250,6 +250,13 @@ function describeGenes(genes) {
     gradientColor: rgbAt(100, 101, 102, "rgb(255, 255, 255)"),
     size, // -3 (tiny) .. +3 (big)
     maneStyle: genes[63] || 0,
+    // Fancy mane (ManePatterns.js): shows at 4 of 4
+    maneFancy: typeof maneFancyGeneCount === "function" ? maneFancyGeneCount(genes) : 0,
+    manePattern: typeof manePatternOfGenes === "function" ? manePatternOfGenes(genes) : null,
+    maneColor2:
+      typeof MANE_GENE_START === "number" && genes[MANE_GENE_START + 7] !== undefined
+        ? `rgb(${genes[MANE_GENE_START + 7]}, ${genes[MANE_GENE_START + 8]}, ${genes[MANE_GENE_START + 9]})`
+        : "rgb(255, 255, 255)",
     tailStyle: genes[64] || 0,
     sbPairs,
   };
@@ -718,7 +725,8 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
   y += 22;
   _ftSwatch(c, g.mane, x, y);
   _ftText(c, "Mane", x + 24, y, "#cfcfcf", "13px Arial");
-  _ftText(c, `style ${g.maneStyle + 1}, tail style ${g.tailStyle + 1}`, x + 80, y, "white", "13px Arial");
+  const fancy = g.manePattern ? `, ${g.manePattern.kind}` : "";
+  _ftText(c, `style ${g.maneStyle + 1}${fancy}, tail style ${g.tailStyle + 1}`, x + 80, y, "white", "13px Arial");
   y += 22;
   const t = 1 - g.eyeDark / 4;
   const eb = g.eyeBase.match(/\d+/g).map(Number).map((v) => Math.floor(v * t));
@@ -728,6 +736,7 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
   _ftText(c, `Size: ${sizeText}`, x + 80, y, "white", "13px Arial");
   y += 30;
 
+  y -= 6; // (room for the fancy mane row)
   _ftText(c, "GENES (what foals can inherit)", x, y, "#f7d774", "bold 13px Arial");
   y += 22;
   const geneRows = [
@@ -736,13 +745,14 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
     ["Spots", g.spots, 4, 4, g.spotColor],
     ["Stripes", g.stripes, 4, 4, g.stripeColor],
     ["Gradient", g.gradient, 4, 2, g.gradientColor],
+    ["Fancy mane", g.maneFancy, 4, 4, g.maneColor2],
   ];
   for (const [label, have, total, needed, color] of geneRows) {
     _ftText(c, label, x, y, "#cfcfcf", "13px Arial");
-    _ftGeneDots(c, have, total, needed, x + 72, y, color);
+    _ftGeneDots(c, have, total, needed, x + 82, y, color);
     const [verdict, vColor] = _geneVerdict(have, needed);
-    _ftText(c, verdict, x + 72 + total * 15 + 10, y, vColor, "bold 13px Arial");
-    y += 21;
+    _ftText(c, verdict, x + 82 + total * 15 + 10, y, vColor, "bold 13px Arial");
+    y += 20;
   }
   if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
     const risk = ["Low", "Raised", "High", "Very high"][g.sbPairs];
@@ -752,7 +762,7 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
   }
   // Personality traits (Traits.js): low label, 5 gene dots, high label
   if (typeof TRAITS !== "undefined" && typeof traitGeneSum === "function") {
-    y += 8;
+    y += 4;
     _ftText(c, "PERSONALITY TRAITS", x, y, "#f7d774", "bold 13px Arial");
     y += 19;
     for (const t of TRAITS) {
