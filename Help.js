@@ -300,7 +300,10 @@ const HELP_TOPICS = [
   {
     title: "Keys",
     lines: [
-      "- WASD: move between areas (in the park, WASD or arrows look around)",
+      "- WASD or arrow keys: move between areas, carrying what you hold.",
+      "  In the house: A/D next room, S backyard, W out the front door",
+      "  (hints on the wall; press twice towards a room to buy it).",
+      "  In the park they look around instead.",
       "- F: fast forward (1x / 2x / 4x / 8x)",
       "- G: goals        L: breeding records        F1: this help",
       "- N: name tags    H: herd markers    B: bed labels",

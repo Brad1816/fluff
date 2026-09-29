@@ -52,7 +52,7 @@ function getScenePortals(scene) {
         target: "OUTDOORS",
         label: "Click to leave",
       });
-      // Down Arrow to Backyard
+      // Down to the Backyard (S / down arrow key, or the wall hint)
       portals.push({
         type: "arrow_down",
         x: width / 2 - 40,
@@ -60,7 +60,8 @@ function getScenePortals(scene) {
         w: 80,
         h: 60,
         target: "BACKYARD",
-        label: "To Backyard",
+        label: "Backyard",
+        keyOnly: true,
       });
     }
 
@@ -90,6 +91,7 @@ function getScenePortals(scene) {
         locked: !leftUnlocked,
         cost: cost,
         dir: "L",
+        keyOnly: true, // no arrow on the floor: A / left arrow key (houseNav)
       });
     }
 
@@ -118,6 +120,7 @@ function getScenePortals(scene) {
         locked: !rightUnlocked,
         cost: cost,
         dir: "R",
+        keyOnly: true, // D / right arrow key (houseNav)
       });
     }
   } else if (scene === "OUTDOORS") {
@@ -465,6 +468,7 @@ function drawDoorBackground(ctx) {
 function drawPortals() {
   const portals = getScenePortals(currentScene);
   for (const p of portals) {
+    if (p.keyOnly) continue; // the house: keys and the wall hints instead
     if (p.type === "door" || p.type.startsWith("arrow")) {
       ctx.fillStyle = p.locked
         ? "rgba(100, 100, 100, 0.5)"
@@ -518,4 +522,121 @@ function cancelPendingConnections() {
       obj.isConnecting = false;
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Getting around the house without arrows on the floor.
+//
+// In the house rooms (the living room and the bought rooms either side) the
+// left/right/down arrows are keyOnly portals: not drawn, not clicked, not a
+// drop target, so the whole floor is usable. You move with WASD or the arrow
+// keys (script.js keydown), and a strip of small hints on the wall shows
+// where each key goes; the hints can be clicked too.
+// A room you haven't bought: the first key press says the price, a second
+// press within a few seconds buys it (clicking its hint buys it at once).
+// ---------------------------------------------------------------------------
+
+const HOUSE_KEYS = { arrow_left: "A", arrow_down: "S", arrow_right: "D" };
+let _pendingRoomBuy = null; // { dir, until } (real time)
+
+function houseRoomName(scene) {
+  if (scene === "INDOORS") return "Living room";
+  if (typeof scene !== "string") return "";
+  const m = scene.match(/^INDOORS([LR])(\d+)$/);
+  return m ? `Room ${m[1]}${m[2]}` : "";
+}
+
+function _houseNavLabel(p) {
+  const key = HOUSE_KEYS[p.type];
+  if (p.type === "arrow_down") return `S ▼ ${p.label}`;
+  const where = p.locked ? `Buy a room $${p.cost.toLocaleString()}` : houseRoomName(p.target);
+  return p.type === "arrow_left" ? `◀ ${key}  ${where}` : `${where}  ${key} ▶`;
+}
+
+// The hint chips on the wall: [{ x, y, w, h, label, portal }]
+function houseNavChips(scene = currentScene) {
+  if (!playerQuartersAndNotBackyard(scene)) return [];
+  const order = ["arrow_left", "arrow_down", "arrow_right"];
+  const portals = getScenePortals(scene)
+    .filter((p) => p.keyOnly)
+    .sort((a, b) => order.indexOf(a.type) - order.indexOf(b.type));
+  if (!portals.length) return [];
+  const wallBottom = typeof sceneTop === "function" ? sceneTop(scene) : height * 0.15;
+  const h = 24;
+  const y = Math.max(4, wallBottom - h - 8);
+  const c = ctx;
+  c.save();
+  c.font = "bold 12px Arial";
+  const widths = portals.map((p) => c.measureText(_houseNavLabel(p)).width + 18);
+  c.restore();
+  let x = width - 12 - widths.reduce((s, w) => s + w + 6, -6);
+  return portals.map((p, i) => {
+    const chip = { x, y, w: widths[i], h, label: _houseNavLabel(p), portal: p };
+    x += widths[i] + 6;
+    return chip;
+  });
+}
+
+function drawHouseNav(c) {
+  const chips = houseNavChips();
+  if (!chips.length) return;
+  c.save();
+  c.globalAlpha = 1;
+  // Which room this is
+  const first = chips[0];
+  c.font = "bold 12px Arial";
+  c.textAlign = "right";
+  c.textBaseline = "middle";
+  c.fillStyle = "rgba(255,255,255,0.75)";
+  c.fillText(houseRoomName(currentScene), first.x - 10, first.y + first.h / 2);
+  for (const chip of chips) {
+    const hover = isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h);
+    const p = chip.portal;
+    const pending = _pendingRoomBuy && _pendingRoomBuy.dir === p.dir && p.locked && performance.now() < _pendingRoomBuy.until;
+    c.fillStyle = pending ? "rgba(247, 215, 116, 0.85)" : hover ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.45)";
+    if (typeof fillRoundRect === "function") fillRoundRect(c, chip.x, chip.y, chip.w, chip.h, 12);
+    else c.fillRect(chip.x, chip.y, chip.w, chip.h);
+    c.fillStyle = pending ? "#3a2a1a" : p.locked ? (money >= p.cost || showDebugMenu ? "#f7d774" : "#ff9a8a") : "white";
+    c.textAlign = "center";
+    c.fillText(chip.label, chip.x + chip.w / 2, chip.y + chip.h / 2 + 1);
+  }
+  c.restore();
+}
+
+// Buy the room behind a locked portal. Returns true if bought.
+function buyRoomPortal(p) {
+  if (!p || !p.locked) return false;
+  if (!showDebugMenu && money < p.cost) {
+    addUIMessage("Not enough money!");
+    return false;
+  }
+  if (!showDebugMenu) money -= p.cost;
+  roomsPurchased++;
+  if (p.dir === "L") unlockedRoomsL++;
+  else unlockedRoomsR++;
+  _pendingRoomBuy = null;
+  addUIMessage("New quarters purchased!");
+  poofs.push(new Poof(p.dir === "L" ? 60 : width - 60, height / 2, currentScene));
+  return true;
+}
+
+// A key towards a room you don't own: first press asks, second buys
+function houseKeyTowardsLocked(p) {
+  const now = performance.now();
+  if (_pendingRoomBuy && _pendingRoomBuy.dir === p.dir && now < _pendingRoomBuy.until) return buyRoomPortal(p);
+  _pendingRoomBuy = { dir: p.dir, until: now + 4000 };
+  const key = HOUSE_KEYS[p.type];
+  addUIMessage(`Press ${key} again to buy new quarters for $${p.cost.toLocaleString()}.`);
+  return false;
+}
+
+// Mouse down (UI.js): the wall hints
+function houseNavClick() {
+  for (const chip of houseNavChips()) {
+    if (!isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h)) continue;
+    if (chip.portal.locked) buyRoomPortal(chip.portal);
+    else changeScene(chip.portal.target);
+    return true;
+  }
+  return false;
 }

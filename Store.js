@@ -310,7 +310,7 @@ function storeShelfClick() {
   } else if (how === "deliver") {
     addUIMessage(`${action.name} will be delivered: it's waiting in your living room.`);
   } else if (!storeCarryTipShown) {
-    addUIMessage("Bought! Pick it up and walk it home with WASD.");
+    addUIMessage("Bought! Pick it up and walk it home with WASD or the arrow keys.");
     storeCarryTipShown = true;
   } else {
     addUIMessage(`Bought ${action.name}.`);

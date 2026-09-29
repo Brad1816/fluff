@@ -900,7 +900,7 @@ function handleDropping(item) {
     // Portals are on the screen, so compare with the screen mouse (Park.js)
     const sm = typeof screenMouse === "function" ? screenMouse() : mouse;
     for (const p of portals) {
-      if (p.locked) continue;
+      if (p.locked || p.keyOnly) continue; // (house rooms: no arrows on the floor)
       if (isPointInRect(sm.x, sm.y, p.x, p.y, p.w, p.h)) {
         const leavingPark = typeof isCameraScene === "function" && isCameraScene(item.scene);
         const t = p.target;

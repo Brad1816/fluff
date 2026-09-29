@@ -1620,3 +1620,23 @@ with the tail to match.
   fluffies had one. Now about 6% do, and roughly three in four fluffies are
   plain (no spots, stripes, gradient or fancy mane). Existing fluffies with
   2-3 gradient genes lose it but carry it.
+
+### Getting around the house with keys (`UIScenes.js` houseNav)
+The side arrows (other rooms) and the bottom arrow (backyard) in the house
+took floor space, so in the house rooms (`playerQuartersAndNotBackyard`:
+the living room and the bought rooms INDOORSL1..., INDOORSR1...) those
+portals are now `keyOnly`: not drawn (`drawPortals`), not clickable (UI.js
+portal click), not a drop target (globals.js item drop-through). The front
+door stays (it's on the wall). Other areas keep their arrows.
+- **Keys** (script.js keydown): WASD and now the arrow keys too (not in the
+  park, where they look around). Anything you're carrying comes along, as
+  before.
+- **Wall hints** (`houseNavChips`, `drawHouseNav`, called after
+  `drawPortals`): the room's name and a chip per way out, right-aligned on
+  the wall above the floor: "◀ A  Room L1", "S ▼ Backyard", "Buy a room
+  $50,000  D ▶" (gold if you can afford it, red if not). Clicking a chip
+  goes there (`houseNavClick`, UI.js mousedown).
+- **Buying rooms**: a key towards a room you haven't bought
+  (`houseKeyTowardsLocked`) first says the price ("Press D again to buy
+  new quarters for $50,000"); pressing again within 4 s buys it
+  (`buyRoomPortal`, also used by clicking the chip, which buys at once).

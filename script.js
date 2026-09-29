@@ -1964,6 +1964,8 @@ function render() {
   ctx.drawImage(offScreenCanvas, 0, 0);
 
   drawPortals();
+  // House rooms: where WASD / the arrow keys go (UIScenes.js)
+  if (typeof drawHouseNav === "function") drawHouseNav(ctx);
   // Park title and map (Park.js)
   if (typeof drawParkHud === "function") drawParkHud(ctx);
   // Store shelf hover highlight (Store.js)
@@ -2062,10 +2064,11 @@ window.addEventListener("keydown", (e) => {
   const inPark = typeof isCameraScene === "function" && isCameraScene(currentScene);
   if (inPark) {
     // nothing: handled by the park's own key listener
-  } else if (e.code === "KeyW") requestedDir = "UP";
-  else if (e.code === "KeyA") requestedDir = "LEFT";
-  else if (e.code === "KeyS") requestedDir = "DOWN";
-  else if (e.code === "KeyD") requestedDir = "RIGHT";
+  } else if (e.code === "KeyW" || e.code === "ArrowUp") requestedDir = "UP";
+  else if (e.code === "KeyA" || e.code === "ArrowLeft") requestedDir = "LEFT";
+  else if (e.code === "KeyS" || e.code === "ArrowDown") requestedDir = "DOWN";
+  else if (e.code === "KeyD" || e.code === "ArrowRight") requestedDir = "RIGHT";
+  if (requestedDir && e.code.startsWith("Arrow")) e.preventDefault(); // (no page scrolling)
 
   if (requestedDir) {
     if (typeof isAnyScreenOpen === "function" && isAnyScreenOpen()) {
@@ -2086,6 +2089,11 @@ window.addEventListener("keydown", (e) => {
 
       if (match && !match.locked) {
         changeScene(match.target);
+        return;
+      }
+      // Towards a room you haven't bought: ask, then buy (UIScenes.js)
+      if (match && match.locked && typeof houseKeyTowardsLocked === "function") {
+        houseKeyTowardsLocked(match);
         return;
       }
     }

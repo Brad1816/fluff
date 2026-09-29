@@ -197,7 +197,7 @@ function drawUI(ctx) {
     const lines = [
       "• Press ESC to pause/save the game.",
       "• Click a fluffy or item to drag it. Click again to release it.",
-      "• While dragging a fluffy, click on the door/arrow or press WASD to move it to the other side.",
+      "• WASD or the arrow keys move between rooms, taking what you're holding.",
       "• Shift click a placed item or a Fluffy to sell it.",
       "• Buy supplies at Fluff Mart: out the front door, then down to Shopping Street.",
       "• Press N to toggle Fluffy names, B for bed owners, H to show herds.",
@@ -1211,21 +1211,16 @@ canvas.addEventListener("mousedown", (e) => {
   // Arrows and doors are on the screen (Park.js)
   if (typeof mouseToScreen === "function") mouseToScreen();
 
+  // The house's wall hints: other rooms, the backyard (UIScenes.js)
+  if (typeof houseNavClick === "function" && houseNavClick()) return;
+
   // Check Portal Click
   const portals = getScenePortals(currentScene);
   for (const p of portals) {
+    if (p.keyOnly) continue; // house rooms: keys and wall hints instead
     if (isPointInRect(mouse.x, mouse.y, p.x, p.y, p.w, p.h)) {
       if (p.locked) {
-        if (money >= p.cost) {
-          money -= p.cost;
-          roomsPurchased++;
-          if (p.dir === "L") unlockedRoomsL++;
-          else unlockedRoomsR++;
-          addUIMessage("New quarters purchased!");
-          poofs.push(new Poof(p.x + p.w / 2, p.y + p.h / 2, currentScene));
-        } else {
-          addUIMessage("Not enough money!");
-        }
+        buyRoomPortal(p);
       } else {
         changeScene(p.target);
       }
