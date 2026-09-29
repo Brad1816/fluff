@@ -382,8 +382,8 @@ class FluffTV {
           f.speak(
             "NUUUUUUU! Wiww be gud fwuffy nao! Nu mowe bad poopies! Nu mowe sowwy-hoofsies! Am nyu fwuffy nao!",
           );
-          f.pottyTraining += 0.5;
-          f.coloristDegree -= 0.5;
+          f.pottyTraining = Math.min(1, (f.pottyTraining || 0) + 0.5);
+          f.coloristDegree = Math.max(0, (f.coloristDegree || 0) - 0.5);
           f.alicornTolerance = true;
           const reformPersonality = [
             "true_feral",
@@ -391,11 +391,12 @@ class FluffTV {
             "runaway",
             "mill_escapee",
           ];
-          f.personalities =
+          reformSmarty(f);
+          f.personalities = f.personalities.concat([
             reformPersonality[
               Math.floor(Math.random() * reformPersonality.length)
-            ];
-          delete f.isSmarty;
+            ],
+          ]);
           return;
         }
         if (Math.random() > f.happiness && !f.isSmarty()) {

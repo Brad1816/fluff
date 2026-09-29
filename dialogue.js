@@ -425,6 +425,17 @@ const DIALOGUE = {
     PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "Nummy tweat! Tank yu!"],
     SHOW_OFF: ["Wook daddeh! Wook what <speaker> can do!", "Watch <speaker>!", "Daddeh wook!"],
   },
+  // Lessons (Lessons.js)
+  LESSON: {
+    COLOURS: ["Aww cowows am fwens?", "Poopie-cowow fwuffies... am fwuffies too?", "<Speaker> twy be nice to evewy cowow!", "Otha cowow nu bad... okie."],
+    COLOURS_NO: ["Nu! Poopie cowows am bad!", "Bu' dey am poopie cowow...", "Nu wan be fwens wif poopie fwuffy!"],
+    ALICORNS: ["Wingie-hownie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
+    LITTER: ["Poopies go in speshuw pwace!", "<Speaker> make poopies in boxie!", "Nu poopies on fwoow. Okie!"],
+    NOT_LISTENING: ["Wha'? <Speaker> nu undewstand...", "*yawn* ...huh?", "Wan pway, nu wan wissen..."],
+    SMARTY_LISTENS: ["...Mebbe. Mebbe smawty wissen. Dis once.", "Hmph. Smawty... fink about it.", "Wha' if... smawty nu awways wight?"],
+    SMARTY_REFUSES: ["Smawty nu wissen to dummeh!", "Smawty knyo evewyfing! Yu wwong!", "Nu! Smawty am da best! Shuddup!", "Hmph! Smawty am speshuw!"],
+    TIRED: ["<Speaker> head fuww...", "Nu moaw weawnin', pwease...", "Too many wowds..."],
+  },
   // Personality traits (Traits.js). Said now and then while babbling.
   TRAIT: {
     BRAVE: [

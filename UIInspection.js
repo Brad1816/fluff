@@ -194,6 +194,11 @@ function getFluffyInspectionInfo(f) {
     const [tText, tTone] = describeTricks(f);
     about.push({ label: "Tricks", value: tText, tone: tTone });
   }
+  // Smarty lessons (Lessons.js)
+  if (f.isAlive && f.adopted && typeof describeLessons === "function") {
+    const ls = describeLessons(f);
+    if (ls) about.push({ label: "Lessons", value: ls[0], tone: ls[1] });
+  }
 
   const care = [];
   if (!f.isAlive) {
@@ -347,7 +352,7 @@ const INSPECTION_TABS = [
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Tricks", "Remembers", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Tricks", "Lessons", "Remembers", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },

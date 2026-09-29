@@ -428,12 +428,25 @@ function getTrickMenuLayout() {
     const gap = 6;
     const total = TRICKS.length * w + (TRICKS.length - 1) * gap;
     let x = Math.max(8, Math.min(width - total - 8, cx - total / 2));
-    const y = Math.max(40, Math.min(height - 80, top - 40));
+    const lessons = typeof lessonsFor === "function" ? lessonsFor(f) : [];
+    const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0), top - 40));
     for (const t of TRICKS) {
       chips.push({ x, y, w, h: 38, key: t.key, trick: t });
       x += w + gap;
     }
-    return { f, chips, titleX: Math.max(8 + total / 2, Math.min(width - 8 - total / 2, cx)), titleY: y - 10 };
+    const titleX = Math.max(8 + total / 2, Math.min(width - 8 - total / 2, cx));
+    // Lessons (Lessons.js): a second row, just the ones it needs
+    let lessonY = null;
+    if (lessons.length) {
+      lessonY = y + 38 + 30;
+      const lw = lessons.length * w + (lessons.length - 1) * gap;
+      let lx = Math.max(8, Math.min(width - lw - 8, titleX - lw / 2));
+      for (const l of lessons) {
+        chips.push({ x: lx, y: lessonY, w, h: 38, key: "lesson:" + l.key, lesson: l });
+        lx += w + gap;
+      }
+    }
+    return { f, chips, titleX, titleY: y - 10, lessonY };
   }
   if (trickUI.phase === "reward") {
     const w = 140;
@@ -459,6 +472,13 @@ function handleTrickClick() {
   if (trickUI.phase === "menu") {
     if (!hit) {
       closeTrickUI();
+      return true;
+    }
+    if (hit.lesson) {
+      closeTrickUI();
+      const res = giveLesson(f, hit.lesson.key);
+      const msg = lessonResultMessage(f, res, hit.lesson.key);
+      if (msg && typeof addUIMessage === "function") addUIMessage(msg);
       return true;
     }
     if (hit.key === "come") {
@@ -521,9 +541,14 @@ function drawTrickUI(c) {
   };
   if (trickUI.phase === "menu") {
     label(`Train ${_trName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
+    if (L.lessonY !== null) label(`Lessons · ${lessonTriesLeft(f)} left today`, L.titleX, L.lessonY - 14);
     for (const ch of L.chips) {
       const s = trickSkill(f, ch.key);
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
+      if (ch.lesson) {
+        drawLessonChip(c, f, ch, hover);
+        continue;
+      }
       fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, hover ? "rgba(120, 80, 170, 0.95)" : "rgba(40, 30, 60, 0.9)");
       c.fillStyle = "white";
       c.font = "bold 14px Arial";

@@ -94,6 +94,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Diet.js` | **Food and diet**: kibble brands, tastes and favourite food, diet score, weight. See section 9 (Food and diet). |
 | `Play.js` | **Play and boredom**: boredom, favourite toy, playing ball with you, mischief. See section 9 (Play and boredom). |
 | `Bath.js` | **Dirt and bath time**: fluffies get grubby (mess, accidents, rain, time), look it, sponge baths with likes/dislikes. See section 9 (Dirt and bath time). |
+| `Lessons.js` | **Lessons**: talking a fluffy out of colour prejudice, alicorn fear, messy habits or being a Smarty; a second row in the right-click trick menu. See section 9 (Lessons). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -1989,3 +1990,32 @@ from inbreeding (Gene Lab shows the odds) and colour-prejudiced mares
 attacking "poopie" foals (world setting: colorism). A Smarty stallion forcing
 pregnant mares causes miscarriages. The park is a hard place for foals.
 
+
+### Lessons (`Lessons.js`)
+Colour prejudice and being a Smarty can be trained out. Right-click one of
+your fluffies: under the tricks (Tricks.js `getTrickMenuLayout`) there's a
+second row of lesson chips, only the ones that apply (`lessonsFor`):
+| Lesson | Shows when | Each lesson that sinks in |
+|---|---|---|
+| Colours | World Colorism on and `coloristDegree` > 0.01 | `coloristDegree` -0.08 (`LESSON_COLOURS`) |
+| Alicorns | World Alicorn Intolerance on, comfort < 1, not an alicorn | `addAlicornComfort` +0.07 |
+| Litter | `pottyTraining` < 1 | +0.07 |
+| Be good | `isSmarty()` | `smartyReform` +0.1; at 1 `reformSmarty` |
+- `giveLesson(f, key)` returns "learnt", "done" (cured), "didn't", or why it
+  didn't happen ("asleep", "scared", "tired"). `LESSON_TRIES_PER_DAY` (3) a day
+  for all lessons together (`f.lessonTries`, saved).
+- `lessonChance`: by affection (adores 0.85 .. dislikes 0.25), foals x1.2,
+  elderly x0.75, hungry or miserable x0.7. Be good is x0.2
+  (`LESSON_SMARTY_CHANCE`), and a failed one loses 0.02 progress 1 time in 4
+  (`LESSON_SMARTY_SLIP`). So a Smarty that loves you takes about a month of
+  daily lessons and one that doesn't like you hardly gets anywhere.
+- `reformSmarty(f)` takes "smarty" out of its personalities and sets
+  `smartyReformed` (saved, with `smartyReform`); it then learns tricks. The
+  Fluff TV torture channel's reform uses it too. That code used to set
+  `personalities` to a string, which wiped every personality; it now keeps
+  the list, and clamps litter training and colour views to 0..1.
+- Magnifying glass: Mind tab "Lessons" row (`describeLessons`) shows Be good
+  progress, or "Was a Smarty - reformed".
+- The passive route: Fluff TV's Play Time channel lines marked
+  `reducesColorism` lower `coloristDegree` 0.05 for each watcher.
+- Tests: `tests/lessons.test.js`.
