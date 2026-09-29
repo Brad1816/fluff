@@ -186,7 +186,7 @@ module.exports = [
         showActionButtons = true;
         itemMenuFilter = "";
         itemMenuPage = 0;
-        // First button in the menu (Soylent Brown)
+        // First button in the menu (a bag of food)
         mouse.x = 30;
         mouse.y = 140;
         const before = objects.length;

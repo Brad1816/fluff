@@ -1777,8 +1777,11 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   | `kibble` Kibble | $25 | 0.7 | 1.0 | 0.05 ±0.7 | some like, some don't |
   | `value_kibble` Value Kibble | $10 | 0.4 | 0.7 | -0.2 ±0.3 | |
   | `scrap_kibble` Scrapz | $3 | 0.1 | 0.55 | -0.6 ±0.25 | 25% diarrhea, -4 health a meal |
-  Also sketties (0.35 nutrition, fattening), Soylent Brown (0.8, hated),
-  formula, grass (0.5) and berries (0.6) - grass and berries taste the same
+  Scrapz is made from ground-up fluffies: the grinder turns out Scrapz bags
+  (Grinder.js), its bowls use the old brown-mush pictures, and eating it
+  uses `EAT.SCRAPZ`. Soylent Brown is gone; old saves' Soylent bags and
+  bowls load as Scrapz. Also sketties ($120 a bag, 0.35 nutrition,
+  fattening), formula, grass (0.5) and berries (0.6) - grass and berries taste the same
   to everyone so the park works as before.
 - **Tastes**: `tasteFor(f, type)`; each fluffy's own liking is made the first
   time (`f.tastes`, saved). Appetite trait: picky makes dislikes stronger,

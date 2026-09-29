@@ -20,7 +20,8 @@ class Grinder {
     while (this.totalGrowth >= 1.0) {
       this.totalGrowth -= 1.0;
       if (typeof objects !== "undefined" && typeof FoodBag !== "undefined") {
-        const bag = new FoodBag("soylent_brown", this.scene);
+        // Ground-up fluffies make Scrapz (Diet.js)
+        const bag = new FoodBag("scrap_kibble", this.scene);
         bag.setPosition(
           this.x + (Math.random() - 0.5) * 50,
           this.y + 50 + (Math.random() - 0.5) * 50,

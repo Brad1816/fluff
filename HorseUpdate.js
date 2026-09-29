@@ -421,8 +421,8 @@ addHorseMethods({
                 let key;
                 if (bowl.foodType === "sketties") {
                   key = ["EAT", "SKETTIES"];
-                } else if (bowl.foodType === "soylent_brown") {
-                  key = ["EAT", "SOYLENT_BROWN"];
+                } else if (bowl.foodType === "scrap_kibble") {
+                  key = ["EAT", "SCRAPZ"];
                 } else if (bowl.foodType === "rat_poison") {
                   key = ["EAT", "RAT_POISON"];
                 } else if (typeof mealDialogueKey === "function") {
@@ -434,8 +434,8 @@ addHorseMethods({
                 if (this.isSmarty()) {
                   if (bowl.foodType === "sketties") {
                     key = ["EAT", "SKETTIES", "SMARTY"];
-                  } else if (bowl.foodType === "soylent_brown") {
-                    key = ["EAT", "SOYLENT_BROWN"];
+                  } else if (bowl.foodType === "scrap_kibble") {
+                    key = ["EAT", "SCRAPZ"];
                   } else if (bowl.foodType === "rat_poison") {
                     key = ["EAT", "RAT_POISON"];
                   } else {
@@ -446,7 +446,7 @@ addHorseMethods({
                 }
                 if (bowl.foodType === "sketties") {
                   this.changeHappiness(HAPPINESS_BONUS_SKETTIES);
-                } else if (bowl.foodType === "soylent_brown") {
+                } else if (bowl.foodType === "scrap_kibble") {
                   this.changeHappiness(-0.03);
                   if (!this.isSmarty()) {
                     this.expressionOverride = "MISERABLE";

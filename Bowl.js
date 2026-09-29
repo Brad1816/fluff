@@ -22,7 +22,7 @@ class Bowl {
       kibble: 2,
       rat_poison: 2,
       formula: 2,
-      soylent_brown: 1,
+      scrap_kibble: 1,
     };
     return this.foodType && priorities[this.foodType] !== undefined
       ? priorities[this.foodType]
@@ -142,7 +142,7 @@ class Bowl {
     this.maxFood =
       data.maxFood ||
       (data.type === "trough" || data.type === "mega_feeder" ? 25 : 5);
-    this.foodType = data.foodType || null;
+    this.foodType = data.foodType === "soylent_brown" ? "scrap_kibble" : data.foodType || null; // old saves
   }
 
   draw(ctx) {
@@ -152,7 +152,7 @@ class Bowl {
   drawOffScreen(ctx) {
     let img = null;
     // Kibble brands (Diet.js): drawn as kibble, tinted
-    const brand = typeof FOODS !== "undefined" && this.food > 0 ? FOODS[this.foodType] : null;
+    const brand = typeof FOODS !== "undefined" && this.food > 0 && this.foodType !== "scrap_kibble" ? FOODS[this.foodType] : null;
     const kib = typeof isKibbleType === "function" ? isKibbleType(this.foodType) : this.foodType === "kibble";
 
     if (this.type === "feeder") {
@@ -176,7 +176,7 @@ class Bowl {
         img = images.trough;
       } else if (this.foodType === "rat_poison" && this.food > 0) {
         img = images.rat_poison_trough;
-      } else if (this.foodType === "soylent_brown" && this.food > 0) {
+      } else if (this.foodType === "scrap_kibble" && this.food > 0) {
         img = images.soylent_brown_trough;
       } else if (kib && this.food > 13) {
         img = images.kibble_trough;
@@ -197,7 +197,7 @@ class Bowl {
         img = images.bowl;
       } else if (this.foodType === "rat_poison" && this.food > 0) {
         img = images.rat_poison_bowl;
-      } else if (this.foodType === "soylent_brown" && this.food > 0) {
+      } else if (this.foodType === "scrap_kibble" && this.food > 0) {
         img = images.soylent_brown_bowl;
       } else if (kib && this.food > 2) {
         img = images.kibble_bowl;

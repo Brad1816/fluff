@@ -5,9 +5,12 @@
 //   Fluffy Feast Premium  $80  very nutritious, nearly every fluffy loves it
 //   Kibble                $25  decent; some fluffies like it, some don't
 //   Value Kibble          $10  not very nutritious, not filling, a bit bland
-//   Scrapz                 $3  barely food: not filling, most hate it, and it
-//                              can upset their tummy (diarrhea) and hurts them
-//   Sketties, Soylent Brown, formula, grass and berries have values too.
+//   Scrapz                 $3  made from ground-up fluffies (the grinder makes
+//                              it too - Grinder.js). Barely food: not filling,
+//                              most hate it, and it can upset their tummy
+//                              (diarrhea) and hurts them
+//   Sketties ($120, a treat), formula, grass and berries have values too.
+//   (Soylent Brown is gone: old saves' bags and bowls become Scrapz.)
 //   nutrition   0..1, how good it is for them
 //   fill        how full a meal makes them (1 = full; cheap food = hungry
 //               again sooner, so it goes further than it looks... or not)
@@ -77,7 +80,6 @@ const FOODS = {
     tag: "#5d6b2f",
   },
   sketties: { name: "Sketties", short: "Sketties", nutrition: 0.35, fill: 1.0, taste: 0.95, spread: 0.1, fatten: 0.06 },
-  soylent_brown: { name: "Soylent Brown", short: "Soylent Brown", nutrition: 0.8, fill: 1.0, taste: -0.85, spread: 0.15 },
   formula: { name: "Formula", short: "Formula", nutrition: 0.9, fill: 1.0, taste: 0.4, spread: 0.1 },
   // Park food: the same for every fluffy, so the park works as before
   // (grass priority 2, berries 3 - ParkLife.js)
@@ -86,7 +88,7 @@ const FOODS = {
   rat_poison: { name: "Rat Poison", short: "Rat poison", nutrition: 0, fill: 1.0, taste: 0.5, spread: 0 },
 };
 // Everyday foods a fluffy can have as its favourite
-const FAVOURITE_FOODS = ["premium_kibble", "kibble", "value_kibble", "scrap_kibble", "soylent_brown", "grass"];
+const FAVOURITE_FOODS = ["premium_kibble", "kibble", "value_kibble", "scrap_kibble", "grass"];
 
 const DIET_START = 0.6;
 const DIET_LEARN = 0.12; // each meal moves the diet this much of the way
@@ -100,6 +102,7 @@ const WEIGHT_BURN = 0.025; // per game hour (x2 when moving)
 const dietTicker = new Ticker(2);
 
 function foodInfo(type) {
+  if (type === "soylent_brown") type = "scrap_kibble"; // old saves
   return FOODS[type || "grass"] || FOODS.grass;
 }
 function foodTypeOf(thing) {
@@ -168,7 +171,7 @@ function foodFill(type) {
   return foodInfo(type).fill;
 }
 
-// Happiness from a meal (HorseUpdate eating), not sketties/soylent/poison
+// Happiness from a meal (HorseUpdate eating), not sketties/Scrapz/poison
 function mealHappiness(f, type) {
   let h = 0.04 + 0.08 * tasteFor(f, type);
   if (favouriteFood(f) === type) h += 0.05;

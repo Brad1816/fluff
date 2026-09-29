@@ -243,4 +243,38 @@ module.exports = [
       check(r.speedBack > 0.8, `and speeds back up ${r.speedBack}`);
     },
   },
+  {
+    name: "diet: Scrapz replaces Soylent Brown - the grinder makes it, old saves convert; sketties cost $120",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const g = new Grinder("INDOORS");
+        objects.push(g);
+        const before = objects.filter((o) => o instanceof FoodBag).length;
+        g.addGrowth(1);
+        const bags = objects.filter((o) => o instanceof FoodBag);
+        const made = bags.length > before ? bags[bags.length - 1].type : null;
+        // An old save's Soylent Brown
+        const oldBag = new FoodBag("soylent_brown", "INDOORS");
+        const oldBowl = new Bowl("bowl", "INDOORS");
+        oldBowl.deserialize({ food: 3, foodType: "soylent_brown" });
+        return {
+          made,
+          oldBag: oldBag.type,
+          oldBowl: oldBowl.foodType,
+          shop: SPAWN_ACTIONS.filter((a) => a.isItem === "food_bag").map((a) => [a.name, a.cost]),
+          scrapzDesc: /ground-up fluffies/.test(SPAWN_ACTIONS.find((a) => a.name === "Scrapz").desc),
+        };
+      }, SETUP);
+      checkEqual(r.made, "scrap_kibble", "the grinder makes Scrapz");
+      checkEqual(r.oldBag, "scrap_kibble", "old Soylent bag");
+      checkEqual(r.oldBowl, "scrap_kibble", "old Soylent bowl");
+      checkEqual(
+        JSON.stringify(r.shop),
+        JSON.stringify([["Fluffy Feast Premium", 80], ["Kibble", 25], ["Value Kibble", 10], ["Scrapz", 3], ["Rat Poison", 50], ["Sketty", 120], ["Formula", 100]]),
+        "food on the shelf",
+      );
+      check(r.scrapzDesc, "Scrapz says what it's made of");
+    },
+  },
 ];

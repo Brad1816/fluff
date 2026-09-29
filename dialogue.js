@@ -702,12 +702,16 @@ const DIALOGUE = {
         "*Sniff* DADDEH GIB BETTAH SKETTIS NEX' NUMMIE TIME!",
       ],
     },
-    SOYLENT_BROWN: {
+    // Scrapz (Diet.js): made from ground-up fluffies
+    SCRAPZ: {
       DEFAULT: [
         "WEAWWY nu wike dis yackie nummies... huu huu huu...",
         "Huu huu... taste wike poopies...",
         "*KAFF* *horrific choking noises*",
         "Wha' am dese cwunchies in poopie nummies? Nu wike!",
+        "Why nummies hab fwuff in dem...?",
+        "Nummies smeww wike... fwen...? Huu huu...",
+        "*chew*... *chew*... *spit* ...hoofie?",
       ],
     },
     RAT_POISON: {

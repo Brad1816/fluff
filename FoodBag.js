@@ -1,6 +1,7 @@
 class FoodBag {
   constructor(type, scene = "INDOORS") {
     this.id = nextObjectId++;
+    if (type === "soylent_brown") type = "scrap_kibble"; // old saves (Diet.js)
     this.type = type; // 'formula', 'kibble', 'sketties'
     this.scene = scene;
     this.x = 0;
@@ -172,7 +173,6 @@ class FoodBag {
     if (this.type === "formula") label = "Formula";
     else if (this.type === "kibble") label = "Kibble";
     else if (this.type === "sketties") label = "Sketties";
-    else if (this.type === "soylent_brown") label = "Soylent Brown";
     else if (this.type === "rat_poison") label = "Rat Poison";
     else if (this.type === "premium_kibble") label = "Premium";
     else if (this.type === "value_kibble") label = "Value";

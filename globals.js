@@ -1255,7 +1255,6 @@ const FOOD_PRIORITIES = {
   rat_poison: 3,
   grass: 2,
   formula: 3,
-  soylent_brown: 1,
 };
 
 function getFoodPriority(foodType) {
@@ -1527,18 +1526,10 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Scrapz",
-    desc: "Rock-bottom kibble. Barely food: not filling, most fluffies hate it, and it can make them ill. Hover over a bowl/trough while holding the bag.",
+    desc: "Rock-bottom kibble, made from ground-up fluffies. Barely food: not filling, most fluffies hate it, and it can make them ill. Hover over a bowl/trough while holding the bag.",
     cost: 3,
     isItem: "food_bag",
     foodType: "scrap_kibble",
-    priority: 1,
-  },
-  {
-    name: "Soylent Brown",
-    desc: "Fluffies hate it, but it's surprisingly nutritious. Hover over a bowl/trough while holding the bag.",
-    cost: 5,
-    isItem: "food_bag",
-    foodType: "soylent_brown",
     priority: 1,
   },
   {
@@ -1551,8 +1542,8 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Sketty",
-    desc: "Fluffies love this junk. Hover over a bowl/trough while holding the bag.",
-    cost: 300,
+    desc: "Fluffies' favourite junk food. Makes them very happy, but it isn't very nutritious and too much makes them fat. Hover over a bowl/trough while holding the bag.",
+    cost: 120,
     isItem: "food_bag",
     foodType: "sketties",
     priority: 3,
