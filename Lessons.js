@@ -61,7 +61,7 @@ const LESSONS = [
       typeof _alicornIntoleranceOn === "function" &&
       _alicornIntoleranceOn() &&
       typeof getAlicornComfort === "function" &&
-      getAlicornComfort(f) < 1 &&
+      getAlicornComfort(f) < 0.99 &&
       !(f.typeVisibleToOthers && f.typeVisibleToOthers() === "alicorn"),
     progress: (f) => (typeof getAlicornComfort === "function" ? getAlicornComfort(f) : 1),
     teach: (f) => {

@@ -97,6 +97,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Lessons.js` | **Lessons**: talking a fluffy out of colour prejudice, alicorn fear, messy habits or being a Smarty; a second row in the right-click trick menu. See section 9 (Lessons). |
 | `Upbringing.js` | **Upbringing**: foals drift towards the colour views and alicorn feelings of the grown-ups raising them (mum most). See section 9 (Upbringing). |
 | `Fears.js` | **Fears**: thunder, the dark and the Fluff-Bot; frights, comforting, the Night Light item. See section 9 (Fears). |
+| `Household.js` | **Household** overview screen (button at the top right, or O): every fluffy you own and what it needs. See section 9 (Household). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -2073,3 +2074,25 @@ Some fluffies are scared of things; you comfort them. System "fears" (order 141)
   (Wellbeing and the header, `describeFright`).
 - Tests: `tests/fears.test.js`. The Fluff-Bot reaction test clears fears so it
   still checks the old timid/brave reactions.
+
+### Household (`Household.js`)
+One screen listing every living fluffy you own. Opened by the "Household" button
+at the top right (GameSpeed.js `getHouseholdButtonRect` - kept clear of the
+front door in the middle of the top bar)
+or the O key (script.js). Screen "household", layer 22.
+- `computeHousehold()` (cached `HH_CACHE_MS` of real time): a row per fluffy
+  with portrait, name, life stage, type, pregnant, room (`householdRoomName`),
+  affection hearts, "needs" chips and lessons it could do (`lessonsFor`).
+- Needs (`householdNeeds`) are the magnifying glass header warnings
+  (`getInspectionTabs(f).warnings`) turned into a word or two
+  (`HH_NEED_WORDS`: Hungry, Unhappy, Hurt, Tired, Bored, Dirty, Cold,
+  Frightened, ...), leaving out `HH_NOT_NEEDS` (Coat, Alicorns - how it is,
+  not something to see to). So anything new that the magnifying glass warns
+  about shows up here too.
+- Sorted neediest first, then by name. Tabs: Everyone / Needs something.
+  Hovering a row shows its full warnings at the bottom.
+- Clicking a row (`goToFluffy`): goes to its room if it's in your house or
+  backyard (`changeScene`), and opens its magnifying glass.
+- Also: the Alicorns lesson now only shows below 0.99 comfort (the slow
+  forgetting in AlicornAcceptance.js could leave 0.9999).
+- Tests: `tests/household.test.js`.

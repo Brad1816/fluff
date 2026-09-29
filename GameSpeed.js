@@ -129,6 +129,15 @@ function drawGameSpeed(chatLogRight) {
       normalFill: isRecordsOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
     });
   }
+  // Household button (Household.js)
+  const ob = getHouseholdButtonRect(chatLogRight);
+  if (typeof openHousehold === "function" && typeof drawGlassButton === "function") {
+    drawGlassButton(ob.x, ob.y, ob.w, ob.h, "Household", {
+      fontSize: 13,
+      borderRadius: 8,
+      normalFill: isHouseholdOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
+    });
+  }
   const hb = getHelpButtonRect(chatLogRight);
   if (typeof openHelp === "function" && typeof drawGlassButton === "function") {
     drawGlassButton(hb.x, hb.y, hb.w, hb.h, "?", {
@@ -163,6 +172,12 @@ function getRecordsButtonRect(chatLogRight) {
   return { x: gb.x + gb.w + 6, y: gb.y, w: 76, h: gb.h };
 }
 
+// The "Household" button (Household.js): top right, clear of the front door
+function getHouseholdButtonRect(chatLogRight) {
+  const rb = getRecordsButtonRect(chatLogRight);
+  return { x: width - 100 - 12, y: rb.y, w: 100, h: rb.h };
+}
+
 // The "?" help button, after Records
 function getHelpButtonRect(chatLogRight) {
   const rb = getRecordsButtonRect(chatLogRight);
@@ -175,6 +190,12 @@ function gameSpeedClick(chatLogRight) {
   if (typeof openHelp === "function" && isPointInRect(mouse.x, mouse.y, hb.x, hb.y, hb.w, hb.h)) {
     if (isHelpOpen()) closeHelp();
     else openHelp();
+    return true;
+  }
+  const ob = getHouseholdButtonRect(chatLogRight);
+  if (typeof openHousehold === "function" && isPointInRect(mouse.x, mouse.y, ob.x, ob.y, ob.w, ob.h)) {
+    if (isHouseholdOpen()) closeHousehold();
+    else openHousehold();
     return true;
   }
   const rb = getRecordsButtonRect(chatLogRight);

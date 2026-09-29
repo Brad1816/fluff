@@ -2135,6 +2135,12 @@ window.addEventListener("keydown", (e) => {
     else if (!isAnyScreenOpen()) openRecords();
     return;
   }
+  // O: the household overview (Household.js)
+  if (e.code === "KeyO" && typeof isHouseholdOpen === "function") {
+    if (isHouseholdOpen()) closeHousehold();
+    else if (!isAnyScreenOpen()) openHousehold();
+    return;
+  }
   // F: fast forward to the next speed (GameSpeed.js)
   if (e.code === "KeyF" && typeof nextGameSpeed === "function") {
     nextGameSpeed();
