@@ -91,4 +91,32 @@ module.exports = [
       checkEqual(r.loyalty, -1, "on thin ice");
     },
   },
+  {
+    name: "fixes: a fluffy walking somewhere it can never reach gives up instead of walking forever",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene();
+        const h = new Horse(1, null, "INDOORS", "earthy", null, 0.5, 0.5, "female");
+        h.adopted = true;
+        h.x = 400;
+        h.y = 500;
+        h.hunger = 1;
+        fluffies.push(h);
+        h.brain.think = () => {}; // just the walking
+        h.initBehavior("MOVING");
+        h.setTargetPosition(900, 520);
+        // Something in the way: it walks but gets nowhere
+        h.updateSpeed = () => {};
+        h.speed = 0;
+        let state = [];
+        for (let i = 0; i < 40; i++) {
+          __fastForward(1);
+          state.push(h.currentStateKey);
+        }
+        return { gaveUp: state.indexOf("IDLE"), last: state[state.length - 1] };
+      });
+      check(r.gaveUp > 15 && r.gaveUp <= 30, `gave up after ${r.gaveUp}s`);
+    },
+  },
 ];
+

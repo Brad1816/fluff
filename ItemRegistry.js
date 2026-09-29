@@ -205,6 +205,7 @@ const ITEM_TYPES = [
   {
     sellType: "roomba", // Roomba.js (the Fluff-Bot)
     is: (o) => typeof Roomba !== "undefined" && o instanceof Roomba,
+    inCage: "never",
     hitTest: (o, x, y) => o.hitTest(x, y),
     sellable: true,
     create: (a, sx, sy) => atSpot(new Roomba(currentScene), sx, sy),

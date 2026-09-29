@@ -44,6 +44,11 @@ const EXPRESSION_SOUNDS = {
 
 const _roomLastSound = {};
 
+// New game / load: the game clock jumps, so forget when things last played
+function resetFluffySounds() {
+  for (const k of Object.keys(_roomLastSound)) delete _roomLastSound[k];
+}
+
 function _sndNow() {
   return typeof gameTimeMs === "function" ? gameTimeMs() / 1000 : Date.now() / 1000;
 }
@@ -60,8 +65,11 @@ function fluffySound(f, kind) {
   const now = _sndNow();
   if (!f._soundAt) f._soundAt = {};
   const cd = SOUND_COOLDOWN[kind] || 0;
-  if (cd && f._soundAt[kind] !== undefined && now - f._soundAt[kind] < cd) return false;
-  if (_roomLastSound[kind] !== undefined && now - _roomLastSound[kind] < SOUND_ROOM_GAP && kind !== "death") return false;
+  // (a time in the future means the clock jumped back: ignore it)
+  const last = f._soundAt[kind];
+  if (cd && last !== undefined && now >= last && now - last < cd) return false;
+  const roomLast = _roomLastSound[kind];
+  if (roomLast !== undefined && now >= roomLast && now - roomLast < SOUND_ROOM_GAP && kind !== "death") return false;
   f._soundAt[kind] = now;
   _roomLastSound[kind] = now;
   // Big grown-ups a bit deeper, little ones a bit higher, plus some variety

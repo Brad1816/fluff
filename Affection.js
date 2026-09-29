@@ -306,7 +306,7 @@ function _popClock() {
 function drawAffectionPops(ctx) {
   if (!affectionPops.length) return;
   const now = _popClock();
-  affectionPops = affectionPops.filter((p) => now - p.born < 1400);
+  affectionPops = affectionPops.filter((p) => now - p.born < 1400 && now >= p.born);
   ctx.save();
   ctx.textAlign = "center";
   for (const p of affectionPops) {

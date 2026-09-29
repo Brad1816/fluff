@@ -1955,3 +1955,37 @@ brushes, plays ball and trains twice a day). What changed:
   rest get a fright (`ROOMBA.SCARED`) and scoot out of the way.
 - It only does floors: fluffies still need baths (Bath.js).
 
+### Bug and balance pass 2 (long simulations)
+Simulated a breeding household (5 adults, a caring bot: food, litterbox,
+baths when dirty, brushing, play, vet, jabs, selling when over 14) for 14
+game days, and the park for 10 days through winter, checking every game hour
+that no fluffy stat went NaN or out of range. Also compared the park on the
+version from before affection/tricks/diet/play/baths: the new version has
+fewer deaths (starving, stillbirths, fights, toxoplasmosis), a few more cold
+deaths. Fixed:
+- **Fluffy sounds / heart pops went silent after a new game or load** (their
+  timers are on the game clock, which jumps back): reset in
+  `resetTemporaryGameState`, and a "last played" time in the future is ignored.
+- **The sponge** only baths your own fluffies that are dirty and not on a
+  table or box, so the floor or litterbox under a clean fluffy still gets
+  cleaned; clean fluffies can't be "bathed" over and over for affection.
+- **Fetch**: a ball dropped mid-fetch (fluffy picked up) falls to the floor it
+  was picked up from instead of hanging in the air. Come and Fetch now open
+  the reward buttons when the fluffy gets back (`trickUI` phase "waiting",
+  which doesn't block the game), not as it sets off. Showing off never picks
+  Fetch.
+- **Fluff-Bot**: skips mess it can't reach (edges, corners) and sprinkler
+  water, and gives up on a spot for a minute if it's parked on it without
+  cleaning, so it always docks in the end; never kept by a cage; scared
+  fluffies only scoot to a spot they can reach, and not if caged, too young or
+  can't walk.
+- **Walking forever**: any fluffy that gets no closer to where it's walking
+  for `MOVE_GIVE_UP` (20) seconds stops and thinks again
+  (`HorseUpdate._giveUpIfStuck`).
+- Tests: the trick menu test clicks its chips directly (it was flaky on a busy
+  machine).
+Seen and left as designed: in a breeding home most losses are stillbirths
+from inbreeding (Gene Lab shows the odds) and colour-prejudiced mares
+attacking "poopie" foals (world setting: colorism). A Smarty stallion forcing
+pregnant mares causes miscarriages. The park is a hard place for foals.
+

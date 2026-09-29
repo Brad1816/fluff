@@ -112,8 +112,18 @@ function describeBathLike(f) {
 
 // Sponge.attemptClean: the sponge is over a fluffy. True if it scrubbed one.
 function spongeFluffy(sponge) {
+  // Only a fluffy of yours that needs it (so the floor and litterbox under a
+  // clean one still get the sponge), and not one strapped to a table or box
   const f = fluffies.find(
-    (x) => x.isAlive && x.scene === sponge.scene && !x.isDragging && x.hitTestAsSeen && x.hitTestAsSeen(sponge.x, sponge.y),
+    (x) =>
+      x.isAlive &&
+      x.adopted &&
+      !x.placedOn &&
+      dirtOf(x) > 0.02 &&
+      x.scene === sponge.scene &&
+      !x.isDragging &&
+      x.hitTestAsSeen &&
+      x.hitTestAsSeen(sponge.x, sponge.y),
   );
   if (!f) return false;
   scrubFluffy(f);

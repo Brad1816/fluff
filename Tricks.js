@@ -339,6 +339,7 @@ function _doFetch(h, t) {
     }
     // Got it: bring it back
     t.carrying = true;
+    t.ballGround = ball.groundY;
     ball.carriedBy = h.id;
     h.initBehavior("MOVING");
     h.setTargetPosition(t.x, t.y);
@@ -367,11 +368,18 @@ function _doFetch(h, t) {
 
 function _dropFetchBall(h) {
   if (typeof objects === "undefined") return;
+  // Picked up or put on something mid-fetch: the ball falls to the floor
+  // where it was picked up from, not wherever the fluffy is now
+  const t = h.trickNow;
+  const onFloor = !h.isDragging && !h.placedOn;
   for (const o of objects) {
     if (o instanceof Ball && o.carriedBy === h.id) {
       o.carriedBy = null;
-      o.y = h.y + 10;
-      o.groundY = o.y;
+      const floorY = onFloor ? h.y + 10 : t && typeof t.ballGround === "number" ? t.ballGround : o.groundY;
+      o.groundY = Math.max(sceneTop(o.scene) + 10, floorY);
+      if (o.y > o.groundY) o.y = o.groundY;
+      o.vx = 0;
+      o.vy = 0;
     }
   }
 }
@@ -476,7 +484,9 @@ function handleTrickClick() {
 
 function _trAsk(f, key, target = null) {
   const res = tryTrick(f, key, target);
-  if (res === "done") trickUI = { phase: "reward", id: f.id, trick: key, until: _trNow() + TRICK_REWARD_WINDOW };
+  // Come and Fetch take a while: wait until it gets back, then reward it
+  if (res === "done" && (key === "come" || key === "fetch")) trickUI = { phase: "waiting", id: f.id, trick: key, until: _trNow() + getTrick(key).time + 2 };
+  else if (res === "done") trickUI = { phase: "reward", id: f.id, trick: key, until: _trNow() + TRICK_REWARD_WINDOW };
   else {
     closeTrickUI();
     const msg = {
@@ -527,6 +537,8 @@ function drawTrickUI(c) {
       c.fillStyle = s >= TRICK_KNOWN ? "#8fe39f" : "#c9a6ff";
       c.fillRect(ch.x + 8, ch.y + ch.h - 4, (ch.w - 16) * s, 2);
     }
+  } else if (trickUI.phase === "waiting") {
+    label(trickUI.trick === "fetch" ? `Fetch, ${_trName(f)}!` : `Come here, ${_trName(f)}!`, L.titleX, L.titleY - 8);
   } else if (trickUI.phase === "spot") {
     label(`Click where ${_trName(f)} should come to`, sm.x, sm.y - 30);
   } else if (trickUI.phase === "reward") {
@@ -547,7 +559,8 @@ function drawTrickUI(c) {
 registerScreen({
   name: "tricks",
   layer: 6,
-  isOpen: () => !!trickUI,
+  // (while waiting for Come/Fetch you can still play - only the label shows)
+  isOpen: () => !!trickUI && trickUI.phase !== "waiting",
   close: () => closeTrickUI(),
   draw: (c) => drawTrickUI(c),
   click: () => handleTrickClick(),
@@ -558,6 +571,13 @@ registerScreen({
 const tricksTicker = new Ticker(1);
 
 function updateTricks(dt) {
+  // Come / Fetch: once it's back, it's time for the reward
+  if (trickUI && trickUI.phase === "waiting") {
+    const f = trickUIFluffy();
+    const t = f && f.trickNow;
+    if (t && t.arrived) trickUI = { phase: "reward", id: f.id, trick: trickUI.trick, until: _trNow() + TRICK_REWARD_WINDOW };
+    else if (!t || _trNow() > trickUI.until) closeTrickUI();
+  }
   // Missed the moment to reward it
   if (trickUI && trickUI.phase === "reward" && _trNow() > trickUI.until) {
     const f = trickUIFluffy();
@@ -572,7 +592,7 @@ function updateTricks(dt) {
     if (!f.isAlive || !f.adopted || f.scene !== currentScene || f.trickNow) continue;
     if (f.currentStateKey !== "IDLE" || f.happiness < 0.7) continue;
     if (typeof lovesYou === "function" && !lovesYou(f)) continue;
-    const known = knownTricks(f).filter((k) => k !== "come");
+    const known = knownTricks(f).filter((k) => k !== "come" && !getTrick(k).needsBall);
     if (!known.length) continue;
     if (typeof f._nextShowOff !== "number") f._nextShowOff = now + 120 + Math.random() * 240;
     if (now < f._nextShowOff) continue;

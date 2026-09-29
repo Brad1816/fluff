@@ -51,6 +51,7 @@ class Roomba {
 
   onDrop() {
     const r = handleDropping(this);
+    this.currentCage = null; // it roams; cages don't hold it
     // Wherever you put it is its dock now
     this.homeX = this.x;
     this.homeY = this.y;
@@ -66,14 +67,29 @@ class Roomba {
     return px >= this.x - 34 && px <= this.x + 34 && py >= this.y - 26 && py <= this.y + 4;
   }
 
-  // The nearest bit of mess in its room
+  // Where it can drive to (it can clean a little beyond, ROOMBA_REACH)
+  _bounds() {
+    return {
+      left: 35,
+      right: (typeof sceneW === "function" ? sceneW(this.scene) : width) - 35,
+      top: (typeof sceneTop === "function" ? sceneTop(this.scene) : 120) + 25,
+      bottom: (typeof sceneH === "function" ? sceneH(this.scene) : height) - 10,
+    };
+  }
+
+  // The nearest bit of mess in its room that it can reach (not sprinkler
+  // water, and not spots it has already given up on)
   _nearestMess() {
     if (typeof puddles === "undefined") return null;
+    const B = this._bounds();
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
     let best = null;
     let bestD = Infinity;
     for (const p of puddles) {
-      if (p.scene !== this.scene) continue;
+      if (p.scene !== this.scene || p.color === "rgba(100, 150, 255, 0.3)") continue;
       for (const pt of p.points) {
+        if (pt.x < B.left - 28 || pt.x > B.right + 28 || pt.y < B.top - 18 || pt.y > B.bottom + 18) continue;
+        if (pt._botSkipUntil && pt._botSkipUntil > now) continue;
         const d = (pt.x - this.x) ** 2 + (pt.y - this.y) ** 2;
         if (d < bestD) {
           bestD = d;
@@ -85,11 +101,9 @@ class Roomba {
   }
 
   _driveTo(tx, ty, dt) {
-    const top = typeof sceneTop === "function" ? sceneTop(this.scene) + 25 : 150;
-    const bottom = (typeof sceneH === "function" ? sceneH(this.scene) : height) - 10;
-    const right = (typeof sceneW === "function" ? sceneW(this.scene) : width) - 35;
-    tx = Math.max(35, Math.min(right, tx));
-    ty = Math.max(top, Math.min(bottom, ty));
+    const B = this._bounds();
+    tx = Math.max(B.left, Math.min(B.right, tx));
+    ty = Math.max(B.top, Math.min(B.bottom, ty));
     const dx = tx - this.x;
     const dy = ty - this.y;
     const d = Math.hypot(dx, dy);
@@ -150,8 +164,14 @@ class Roomba {
     const mess = this._nearestMess();
     if (mess) {
       this.state = "cleaning";
-      this._driveTo(mess.x, mess.y, dt);
-      this._cleanAround(dt);
+      const there = this._driveTo(mess.x, mess.y, dt);
+      const cleaned = this._cleanAround(dt);
+      // Parked on it but can't get at it (under something, in a corner): skip it for a minute
+      this._stuckFor = there && !cleaned ? (this._stuckFor || 0) + dt : 0;
+      if (this._stuckFor > 2) {
+        mess._botSkipUntil = (typeof timePlayed === "number" ? timePlayed : 0) + 60;
+        this._stuckFor = 0;
+      }
       if (this.scene === currentScene) this._bumpFluffies();
     } else if (this.state !== "docked") {
       this.state = "homing";
@@ -253,9 +273,18 @@ function reactToRoomba(f, bot) {
   f.changeHappiness(-0.01);
   if (talk) f.speak(getDialogue(["ROOMBA", "SCARED"], f));
   // Scoot out of the way
-  if (!f.isDragging && !f.placedOn && f.canSee && f.canSee()) {
+  if (!f.isDragging && !f.placedOn && !f.currentCage && !f.tooYoungToWalk() && (typeof canRun !== "function" || canRun(f)) && f.canSee && f.canSee()) {
+    // A spot a little away that it can actually get to (inside the room, not past a fence)
+    let tx = Math.max(60, Math.min(sceneW(f.scene) - 60, f.x + (f.x >= bot.x ? 120 : -120)));
+    let ty = Math.max(sceneTop(f.scene) + 50, Math.min(sceneH(f.scene) - 30, f.y + (Math.random() - 0.5) * 60));
+    if (typeof canFluffyReach === "function" && !canFluffyReach(f, tx, ty)) {
+      const p = typeof nearestReachablePoint === "function" ? nearestReachablePoint(f, tx, ty) : null;
+      if (!p) return "scared";
+      tx = p.x;
+      ty = p.y;
+    }
     f.initBehavior("MOVING");
-    f.setTargetPosition(f.x + (f.x >= bot.x ? 120 : -120), f.y + (Math.random() - 0.5) * 60);
+    f.setTargetPosition(tx, ty);
   }
   return "scared";
 }

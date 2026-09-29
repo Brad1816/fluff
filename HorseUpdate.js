@@ -8,6 +8,8 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+const MOVE_GIVE_UP = 20; // seconds with no progress towards where it's walking
+
 addHorseMethods({
   // Smoke rising from a smoking fluffy
   _updateSmoke(dt) {
@@ -136,6 +138,7 @@ addHorseMethods({
           if (!this.actionHandler.checkArrivals(dt)) {
             // Still moving, handled internally by checkArrivals
           }
+          this._giveUpIfStuck(dt);
         } else {
           this.stateTimer -= dt;
           this.nextStateGivenIdle(dt);
@@ -146,6 +149,29 @@ addHorseMethods({
         this.setAnimLerps(dt);
         this.consumePuddlesIfNeeded(dt);
       }
+    }
+  },
+
+  // Walking somewhere it can't get to (a fence, a wall, a spot off the
+  // floor): no closer for MOVE_GIVE_UP seconds, it stops and thinks again
+  _giveUpIfStuck(dt) {
+    if (!this.isMovingOrRunning()) return;
+    const key = `${Math.round(this.targetX)},${Math.round(this.targetY)}`;
+    const d = Math.hypot((this.targetX || 0) - this.x, (this.targetY || 0) - this.y);
+    if (this._moveKey !== key || d < (this._moveBest ?? Infinity) - 5) {
+      this._moveKey = key;
+      this._moveBest = d;
+      this._moveStuck = 0;
+      return;
+    }
+    this._moveStuck = (this._moveStuck || 0) + dt;
+    if (this._moveStuck > MOVE_GIVE_UP) {
+      this._moveStuck = 0;
+      this._moveKey = null;
+      this._moveBest = undefined;
+      this.ballTarget = false;
+      this.blockTarget = false;
+      this.initBehavior("IDLE");
     }
   },
 

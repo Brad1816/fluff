@@ -110,6 +110,9 @@ module.exports = [
         eval(setup)();
         const f = __mk(400, 0.9);
         f.tricks = { sit: 1, dance: 1, come: 1 };
+        // (always gets it right here, whatever the random numbers do)
+        const realChance = window.trickChance;
+        window.trickChance = () => 1;
         const foal = __mk(700, 0.6, 0.6);
         const out = {};
         __seedRandom(3);
@@ -134,6 +137,7 @@ module.exports = [
         out.path = [];
         for (let i = 0; i < 12; i++) { __fastForward(1); out.path.push([Math.round(f.x), Math.round(f.y), f.currentStateKey, !!f.trickNow, f.targetX && Math.round(f.targetX)]); }
         out.came = Math.min(...out.path.map((p) => Math.round(Math.hypot(p[0] - 1000, p[1] - 600))));
+        window.trickChance = realChance;
         out.waited = out.path.filter((p) => p[2] === "SITTING" && Math.hypot(p[0] - 1000, p[1] - 600) < 80).length;
         return out;
       }, SETUP);
@@ -158,6 +162,10 @@ module.exports = [
         f.y = 560;
         f.tricks = { bow: 1 };
         window.__f = f;
+        // Keep it still while we aim at it (the game keeps running)
+        f.brain.think = () => {};
+        f.initBehavior("IDLE");
+        f.stateTimer = 1e6;
         for (let dy = -120; dy <= 0; dy += 6) for (let dx = -40; dx <= 40; dx += 6) if (f.hitTestAsSeen(f.x + dx, f.y + dy)) return { x: f.x + dx, y: f.y + dy };
         return null;
       }, SETUP);
@@ -175,7 +183,20 @@ module.exports = [
         window.__realChance = window.__realChance || window.trickChance;
         window.trickChance = () => 1;
       });
-      await page.mouse.click(menu.bow.x + 20, menu.bow.y + 10);
+      // (clicks on the chips go straight to the trick menu, so a busy test
+      // machine can't make them miss)
+      const chipClick = (x, y) =>
+        page.evaluate(
+          ([x, y]) => {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.sx = x;
+            mouse.sy = y;
+            return handleTrickClick();
+          },
+          [x, y],
+        );
+      await chipClick(menu.bow.x + 20, menu.bow.y + 10);
       const reward = await page.evaluate(() => {
         const L = getTrickMenuLayout();
         return { phase: trickUI && trickUI.phase, praise: L && L.chips.find((c) => c.key === "praise") };
@@ -185,7 +206,7 @@ module.exports = [
         __f.tricks.bow = 0.5;
         window.__trust = __f.playerTrust;
       });
-      await page.mouse.click(reward.praise.x + 20, reward.praise.y + 10);
+      await chipClick(reward.praise.x + 20, reward.praise.y + 10);
       const after = await page.evaluate(() => ({ open: !!trickUI, bow: trickSkill(__f, "bow"), trust: __f.playerTrust - __trust }));
       checkEqual(after.open, false, "closed");
       check(after.bow > 0.55, `praise taught it ${after.bow}`);

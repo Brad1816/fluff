@@ -229,6 +229,9 @@ function resetTemporaryGameState() {
   if (typeof resetNightPredators === "function") resetNightPredators();
   // Every pop-up screen closed (Screens.js)
   if (typeof resetScreens === "function") resetScreens();
+  // Things timed on the game clock, which just jumped (FluffySounds.js, Affection.js)
+  if (typeof resetFluffySounds === "function") resetFluffySounds();
+  if (typeof affectionPops !== "undefined") affectionPops = [];
 }
 
 // Everything in SAVED_GAME_STATE back to how a new game starts
