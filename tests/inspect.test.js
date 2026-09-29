@@ -46,4 +46,44 @@ module.exports = [
       await page.evaluate(() => { inspectedFluffy = null; });
     },
   },
+  {
+    name: "inspection report: tabs sort every row, warnings only for urgent things, clicking a tab switches",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene();
+        __seedRandom(9);
+        const f = new Horse(1, null, "INDOORS", "earthy", null, 0.5, 0.5, "female");
+        f.x = 500; f.y = 450; f.adopted = true;
+        fluffies.push(f);
+        f.pottyTraining = 0;
+        f.hunger = 0.05;
+        const data = getInspectionTabs(f);
+        const info = getFluffyInspectionInfo(f);
+        const inTabs = new Set();
+        for (const t of data.tabs) for (const c of t.cols) for (const row of c.rows) inTabs.add(row.label);
+        const missing = [...info.about, ...info.care].map((x) => x.label).filter((l) => l !== "Name" && !inTabs.has(l));
+        inspectionTab = "overview";
+        inspectedFluffy = f;
+        const L = getInspectionModalLayout();
+        const tab = L.tabs ? L.tabs[3] : null;
+        return {
+          missing,
+          ids: data.tabs.map((t) => t.id),
+          hungerWarn: data.warnings.some((w) => /Hunger/i.test(w)),
+          litterWarn: data.warnings.some((w) => /Litter/i.test(w)),
+          tab: tab && { x: tab.x + tab.w / 2, y: tab.y + tab.h / 2 },
+        };
+      });
+      check(r.missing.length === 0, `every row is on a tab ${JSON.stringify(r.missing)}`);
+      check(r.ids.length === 4, `four tabs ${JSON.stringify(r.ids)}`);
+      check(r.hungerWarn, "a starving fluffy gets a header warning");
+      check(!r.litterWarn, "litter training is not a header warning");
+      if (r.tab) {
+        await page.mouse.click(r.tab.x, r.tab.y);
+        const now = await page.evaluate(() => inspectionTab);
+        check(now === r.ids[3], `clicking the 4th tab opens it (${now})`);
+      }
+      await page.evaluate(() => { inspectedFluffy = null; inspectionTab = "overview"; });
+    },
+  },
 ];

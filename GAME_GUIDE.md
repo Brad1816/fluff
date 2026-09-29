@@ -461,7 +461,9 @@ column) and `care` (right column). Push another row:
 care.push({ label: "Fleas", value: f.hasFleas ? "Yes" : "No", tone: f.hasFleas ? "bad" : "good" });
 ```
 `tone` colours the value: `"good"` green, `"ok"` yellow, `"bad"` red,
-anything else white. The drawing and wrapping are automatic.
+anything else white. The drawing and wrapping are automatic. To put it on a
+particular tab, add its label to a column's `rows` in `INSPECTION_TABS`
+(otherwise it shows on Overview).
 
 Things that belong to one game but shouldn't be saved (open windows, the
 current sell offer...) go in `resetTemporaryGameState()` in the same file.
@@ -564,7 +566,20 @@ tick.
 - Originals of every changed file are in `_backup_before_fence/`.
 
 ### Magnifying glass panel (`UIInspection.js`)
-Dropping the magnifying glass on a fluffy opens a two-column panel.
+Dropping the magnifying glass on a fluffy opens a tabbed report.
+- **Header** (every tab): portrait, name, type and age, sale price, and red
+  chips for anything that needs attention now (hunger, health, cold,
+  conditions...). Nature-type rows (litter training, colour views, grudges)
+  stay red inside their tab but don't make a chip. "✓ Doing fine" if none.
+- **Tabs** (`INSPECTION_TABS`): Overview (Wellbeing / Care), Family &
+  friends, Looks & nature, Mind (You and it / Worries). A red dot on a tab
+  means something in it is bad. The chosen tab (`inspectionTab`) stays
+  selected when you inspect the next fluffy.
+- `getInspectionTabs(f)` sorts the rows from `getFluffyInspectionInfo` into
+  tabs by label; a new row whose label isn't in `INSPECTION_TABS` lands on
+  Overview until you add it to a tab.
+
+The rows themselves:
 **About**: name, gender, type, age (foal % grown or adult), sexuality,
 personality (Smarty in red), parents, special friend, number of friends.
 **Health & care** (values colour-coded): happiness, hunger, health, sleep,

@@ -281,13 +281,91 @@ function getFluffyInspectionLines(f) {
   return [...info.about, ...info.care].map((r) => `${r.label}: ${r.value}`);
 }
 
+// ---- The panel: a header, then tabs ----
+//
+// getFluffyInspectionInfo above builds every row (about / care, as before -
+// other code and tests read those). The panel regroups them by label into
+// INSPECTION_TABS, each with two columns; the header (portrait, name, type
+// and age, sale price, warning chips for anything wrong) shows on every tab.
+// The last tab you looked at stays open for the next fluffy.
+
+const INSPECTION_TABS = [
+  {
+    id: "overview",
+    name: "Overview",
+    cols: [
+      { title: "Wellbeing", rows: ["Happiness", "Hunger", "Health", "Sleep", "Warmth", "Pregnant", "Spayed"] },
+      { title: "Care", rows: ["Cause of death", "Last desire", "Litter trained", "Conditions", "Missing parts", "Settling in", "Sells for"] },
+    ],
+  },
+  {
+    id: "family",
+    name: "Family & friends",
+    cols: [
+      { title: "Family", rows: ["Mother", "Father", "Born", "Named by", "Herd"] },
+      { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Misses"] },
+    ],
+  },
+  {
+    id: "looks",
+    name: "Looks & nature",
+    cols: [
+      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Sexuality", "Colour views"] },
+    ],
+  },
+  {
+    id: "mind",
+    name: "Mind",
+    cols: [
+      { title: "You and it", rows: ["Feels about you", "Remembers", "Old owner"] },
+      { title: "Worries", rows: ["Trauma", "Alicorns"] },
+    ],
+  },
+];
+let inspectionTab = "overview";
+
+// { tabs: [{ id, name, cols: [{ title, rows }], bad }], warnings, rows }
+function getInspectionTabs(f) {
+  const info = getFluffyInspectionInfo(f);
+  const all = [...info.about, ...info.care];
+  const byLabel = {};
+  for (const r of all) byLabel[r.label] = r;
+  const used = new Set(["Name"]);
+  const tabs = INSPECTION_TABS.map((t) => ({
+    id: t.id,
+    name: t.name,
+    cols: t.cols.map((c) => ({
+      title: c.title,
+      rows: c.rows.filter((l) => byLabel[l]).map((l) => (used.add(l), byLabel[l])),
+    })),
+  }));
+  // Anything new that isn't sorted into a tab yet: Overview
+  const extra = all.filter((r) => !used.has(r.label));
+  if (extra.length) tabs[0].cols[1].rows.push(...extra);
+  for (const t of tabs) t.bad = t.cols.some((c) => c.rows.some((r) => r.tone === "bad"));
+  // Warnings for the header: the worst things, from any tab
+  const warn = [];
+  const short = { Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
+  // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views"]);
+  for (const r of all) {
+    if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
+    const label = r.label in short ? short[r.label] : r.label;
+    warn.push(label ? `${label}: ${r.value}` : String(r.value));
+  }
+  return { tabs, warnings: warn, rows: byLabel };
+}
+
 function getInspectionModalLayout() {
-  const listW = Math.min(820, width - 40);
-  const listH = 560;
+  const listW = Math.min(860, width - 40);
+  const listH = Math.min(600, height - 30);
   const listX = width / 2 - listW / 2;
   const listY = height / 2 - listH / 2;
   const btnW = 170;
   const btnH = 40;
+  const tabY = listY + 138;
+  const tabW = (listW - 40 - 3 * 8) / 4;
   return {
     listX,
     listY,
@@ -299,104 +377,184 @@ function getInspectionModalLayout() {
     treeBtnX: listX + listW / 2 - btnW / 2,
     closeBtnX: listX + listW - btnW - 20,
     btnY: listY + listH - 60,
+    tabs: INSPECTION_TABS.map((t, i) => ({ id: t.id, x: listX + 20 + i * (tabW + 8), y: tabY, w: tabW, h: 34 })),
+    contentY: tabY + 70,
   };
 }
 
-function drawInspectionColumn(ctx, title, rows, x, y, colW) {
+function drawInspectionColumn(ctx, title, rows, x, y, colW, maxY = Infinity) {
   ctx.textAlign = "left";
-  ctx.lineWidth = 2;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
-
-  ctx.font = "bold 20px Arial";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = "bold 17px Arial";
   ctx.fillStyle = "#ffd6f0";
-  ctx.strokeText(title, x, y);
   ctx.fillText(title, x, y);
-  y += 30;
-
-  const labelW = 130;
-  const lineSpacing = 21;
+  y += 28;
+  if (!rows.length) {
+    ctx.font = "italic 14px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillText("Nothing to show", x, y);
+    return;
+  }
+  const labelW = 132;
+  const lineSpacing = 20;
   for (const row of rows) {
-    ctx.font = "bold 15px Arial";
-    ctx.fillStyle = "#cfcfcf";
-    ctx.strokeText(row.label, x, y);
+    if (y > maxY) break;
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#b8b8c8";
     ctx.fillText(row.label, x, y);
-
-    ctx.font = "bold 15px Arial";
+    ctx.font = "bold 14px Arial";
     ctx.fillStyle = INSPECTION_TONE_COLORS[row.tone] || "white";
-    const wrapped =
-      typeof wrapText === "function"
-        ? wrapText(ctx, String(row.value), colW - labelW)
-        : [String(row.value)];
+    const wrapped = typeof wrapText === "function" ? wrapText(ctx, String(row.value), colW - labelW) : [String(row.value)];
     for (const sub of wrapped) {
-      ctx.strokeText(sub, x + labelW, y);
       ctx.fillText(sub, x + labelW, y);
       y += lineSpacing;
     }
-    y += 3;
+    y += 5;
   }
+}
+
+function _inspectionChip(ctx, x, y, text, colour, maxW) {
+  ctx.font = "bold 12px Arial";
+  const t = typeof fitText === "function" ? fitText(ctx, text, maxW - 16) : text;
+  const w = ctx.measureText(t).width + 16;
+  ctx.fillStyle = colour;
+  if (typeof fillRoundRect === "function") fillRoundRect(ctx, x, y, w, 22, 11);
+  else ctx.fillRect(x, y, w, 22);
+  ctx.fillStyle = "white";
+  ctx.textBaseline = "middle";
+  ctx.fillText(t, x + 8, y + 12);
+  ctx.textBaseline = "alphabetic";
+  return w;
 }
 
 function drawInspectionModal(ctx) {
   if (!inspectedFluffy) return;
-  // drawUI runs twice a frame: into the world buffer (speech bubbles are
-  // drawn on top of that afterwards) and then on the screen. Only draw on
-  // the screen pass, or bubbles show through the window.
+  // Screen pass only (speech bubbles would show through otherwise)
   if (ctx.canvas !== canvas) return;
+  const f = inspectedFluffy;
+  const L = getInspectionModalLayout();
+  const data = getInspectionTabs(f);
+  if (!data.tabs.some((t) => t.id === inspectionTab)) inspectionTab = "overview";
 
-  // Draw semi-transparent background over everything
+  ctx.save();
   ctx.fillStyle = "rgba(0,0,0,0.6)";
   ctx.fillRect(0, 0, width, height);
-
-  const L = getInspectionModalLayout();
-
-  // Glass styling via UI's standard
-  if (typeof drawGlassButton !== "undefined") {
-    drawGlassButton(L.listX, L.listY, L.listW, L.listH, "", {
-      forceNormal: true,
-      borderRadius: 12,
-      normalFill: "rgb(20, 10, 25)",
-      hoverFill: "rgba(255, 255, 255, 0.75)",
-    });
+  if (typeof drawScreenPanel === "function") {
+    drawScreenPanel(ctx, { x: L.listX, y: L.listY, w: L.listW, h: L.listH }, { fill: "rgb(22, 14, 30)", dim: 0 });
   } else {
-    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillStyle = "rgb(20, 10, 25)";
     ctx.fillRect(L.listX, L.listY, L.listW, L.listH);
   }
 
-  const titleText = "Fluffy Inspection";
+  // Header: portrait, name, type and age, price, warnings
+  const px = L.listX + 20;
+  const py = L.listY + 18;
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  if (typeof fillRoundRect === "function") fillRoundRect(ctx, px, py, 104, 104, 12);
+  if (typeof f.drawPortrait === "function") {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(px, py, 104, 104);
+    ctx.clip();
+    try {
+      f.drawPortrait(ctx, px + 46, py + 62, 81);
+    } catch (e) {
+      // (portrait not ready)
+    }
+    ctx.restore();
+  }
+  const hx = px + 124;
+  const name = data.rows.Name ? String(data.rows.Name.value) : "Fluffy";
+  ctx.textAlign = "left";
+  ctx.font = "bold 24px Arial";
   ctx.fillStyle = "white";
-  ctx.font = "bold 28px Arial";
-  ctx.textAlign = "center";
-  ctx.lineWidth = 2;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "black";
-  ctx.strokeText(titleText, width / 2, L.listY + 38);
-  ctx.fillText(titleText, width / 2, L.listY + 38);
+  ctx.fillText(typeof fitText === "function" ? fitText(ctx, name, L.listW - 330) : name, hx, py + 30);
+  const sym = f.gender === "male" ? "♂" : "♀";
+  const age = data.rows.Age ? data.rows.Age.value : "";
+  ctx.font = "15px Arial";
+  ctx.fillStyle = "#cfc6e0";
+  ctx.fillText(`${sym} ${f.type}${f.isAlive ? "" : " · dead"} · ${age}`, hx, py + 54);
+  // Price, top right
+  const sells = data.rows["Sells for"];
+  if (sells) {
+    ctx.textAlign = "right";
+    ctx.font = "13px Arial";
+    ctx.fillStyle = "#b8b8c8";
+    ctx.fillText("Sells for", L.listX + L.listW - 24, py + 14);
+    ctx.font = "bold 20px Arial";
+    ctx.fillStyle = "#9fe0a8";
+    const priceText = String(sells.value).split(" (")[0];
+    ctx.fillText(priceText, L.listX + L.listW - 24, py + 38);
+    ctx.textAlign = "left";
+  }
+  // Warning chips (or "Doing fine")
+  let cx = hx;
+  const chipY = py + 72;
+  const maxX = L.listX + L.listW - 24;
+  if (!data.warnings.length) {
+    _inspectionChip(ctx, cx, chipY, f.isAlive ? "✓ Doing fine" : "Remains", f.isAlive ? "rgba(60, 150, 90, 0.8)" : "rgba(90,90,90,0.8)", 200);
+  } else {
+    for (const w of data.warnings.slice(0, 4)) {
+      if (cx > maxX - 60) break;
+      cx += _inspectionChip(ctx, cx, chipY, "⚠ " + w, "rgba(190, 60, 60, 0.85)", Math.min(260, maxX - cx)) + 6;
+    }
+  }
 
-  const info = getFluffyInspectionInfo(inspectedFluffy);
+  // Tabs
+  for (const t of L.tabs) {
+    const tab = data.tabs.find((x) => x.id === t.id);
+    const on = t.id === inspectionTab;
+    const hover = isPointInRect(mouse.x, mouse.y, t.x, t.y, t.w, t.h);
+    ctx.fillStyle = on ? "rgba(255, 170, 220, 0.35)" : hover ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.06)";
+    if (typeof fillRoundRect === "function") fillRoundRect(ctx, t.x, t.y, t.w, t.h, 8);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = on ? "bold 15px Arial" : "15px Arial";
+    ctx.fillStyle = on ? "white" : "#d8d0e8";
+    ctx.fillText(tab.name, t.x + t.w / 2, t.y + t.h / 2 + 1);
+    if (tab.bad) {
+      ctx.fillStyle = "#ff6b6b";
+      ctx.beginPath();
+      ctx.arc(t.x + t.w - 12, t.y + 10, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.textBaseline = "alphabetic";
+  }
+  ctx.strokeStyle = "rgba(255, 214, 240, 0.25)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(L.listX + 20, L.tabs[0].y + 44);
+  ctx.lineTo(L.listX + L.listW - 20, L.tabs[0].y + 44);
+  ctx.stroke();
+
+  // The tab's two columns
+  const tab = data.tabs.find((x) => x.id === inspectionTab) || data.tabs[0];
   const colW = (L.listW - 60) / 2;
-  const colY = L.listY + 80;
-  drawInspectionColumn(ctx, "About", info.about, L.listX + 25, colY, colW - 10);
-  drawInspectionColumn(
-    ctx,
-    inspectedFluffy.isAlive ? "Health & care" : "Remains",
-    info.care,
-    L.listX + 35 + colW,
-    colY,
-    colW - 10,
-  );
+  const maxY = L.btnY - 14;
+  tab.cols.forEach((col, i) => {
+    drawInspectionColumn(ctx, col.title, col.rows, L.listX + 25 + i * (colW + 20), L.contentY, colW - 10, maxY);
+  });
 
   if (typeof drawGlassButton !== "undefined") {
     drawGlassButton(L.nameBtnX, L.btnY, L.btnW, L.btnH, "Change name");
     drawGlassButton(L.treeBtnX, L.btnY, L.btnW, L.btnH, "Family tree");
     drawGlassButton(L.closeBtnX, L.btnY, L.btnW, L.btnH, "Close");
   }
+  ctx.restore();
 }
 
 function handleInspectionModalClick() {
   if (!inspectedFluffy) return false;
 
   const L = getInspectionModalLayout();
+
+  // Tabs
+  for (const t of L.tabs) {
+    if (isPointInRect(mouse.x, mouse.y, t.x, t.y, t.w, t.h)) {
+      inspectionTab = t.id;
+      return true;
+    }
+  }
 
   if (isPointInRect(mouse.x, mouse.y, L.nameBtnX, L.btnY, L.btnW, L.btnH)) {
     const f = inspectedFluffy;
