@@ -1737,8 +1737,8 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Tvx",
-    desc: "A vaccine against the toxoplasma gondii parasite, which is found in animal feces.",
-    cost: 5000,
+    desc: "A vaccine against the toxoplasma gondii parasite, which is found in animal feces. (Or have the vet do it: $60 a fluffy.)",
+    cost: 250,
     isItem: "iv_bag",
     bagType: "toxo_vaccine",
   },

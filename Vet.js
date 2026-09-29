@@ -8,7 +8,10 @@
 //        (Aging.js: most live to about 35 days)
 //   Treat (vetTreatmentPrice)   cures Fluffy flu, poisoning, toxoplasmosis,
 //        the runs and incontinence, stops bleeding and heals to full health
-//   Flu jab (VET_JAB_PRICE)     it can't catch Fluffy flu any more
+//   Jabs                        flu jab (VET_JAB_PRICE): can't catch Fluffy
+//        flu; toxo jab (VET_TOXO_JAB_PRICE): toxoplasmosis can't take hold
+//        (the parasite dies off - HorseUpdate). One button gives whichever
+//        it hasn't had (vetJabPrice). Not while pregnant.
 // plus "Check everyone" and "Jab everyone" buttons. Free in debug mode.
 // Remembered with the fluffy: vetCheckedAt (game time), vetNote (what was
 // wrong), vetLife (how long it has, for older ones).
@@ -16,6 +19,7 @@
 
 const VET_CHECK_PRICE = 20;
 const VET_JAB_PRICE = 40;
+const VET_TOXO_JAB_PRICE = 60;
 const VET_MIDWIFE_PRICE = 60; // Pregnancy.js
 const VET_ROWS = 8;
 const VET_W = 1000;
@@ -196,15 +200,31 @@ function vetMidwife(f) {
   return true;
 }
 
-// Not already jabbed, and not pregnant
+function _toxoOn() {
+  return typeof worldSettings === "undefined" || worldSettings.toxoplasmosis !== false;
+}
+
+// What the jab button would cost: flu and/or toxo, whichever it hasn't had
+function vetJabPrice(f) {
+  if (!f) return 0;
+  return (f.fluVaccinated ? 0 : VET_JAB_PRICE) + (f.isToxoVaccinated || !_toxoOn() ? 0 : VET_TOXO_JAB_PRICE);
+}
+
+// Missing a jab, and not pregnant
 function vetCanJab(f) {
-  return !!(f && f.isAlive && !f.fluVaccinated && !(f.isPregnant && f.gender === "female"));
+  return !!(f && f.isAlive && vetJabPrice(f) > 0 && !(f.isPregnant && f.gender === "female"));
 }
 
 function vetJab(f) {
-  if (!f || !f.isAlive || f.fluVaccinated || (f.isPregnant && f.gender === "female")) return false;
-  if (!_vetPay(VET_JAB_PRICE)) return false;
+  if (!vetCanJab(f)) return false;
+  const price = vetJabPrice(f);
+  if (!_vetPay(price)) return false;
+  const got = [];
+  if (!f.fluVaccinated) got.push("flu");
+  if (!f.isToxoVaccinated && _toxoOn()) got.push("toxoplasmosis");
   f.fluVaccinated = true;
+  if (_toxoOn()) f.isToxoVaccinated = true;
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} had its ${got.join(" and ")} jab${got.length > 1 ? "s" : ""} ($${price}).`);
   return true;
 }
 
@@ -295,14 +315,14 @@ function drawVet(c) {
   c.font = "13px Arial";
   c.fillStyle = "rgba(255,255,255,0.7)";
   c.fillText(
-    `House calls. Check-up $${VET_CHECK_PRICE} · flu jab $${VET_JAB_PRICE} · treatment priced by what's wrong.`,
+    `House calls. Check-up $${VET_CHECK_PRICE} · flu jab $${VET_JAB_PRICE} · toxo jab $${VET_TOXO_JAB_PRICE} · treatment priced by what's wrong.`,
     L.x + 24,
     L.y + 64,
   );
-  c.fillText("Flu spreads to fluffies nearby: keep new arrivals in a cage or pen for a day or two.", L.x + 24, L.y + 84);
+  c.fillText("Flu spreads to fluffies nearby: pen new arrivals for a day or two. Toxoplasmosis comes from eating poop: keep floors clean.", L.x + 24, L.y + 84);
   _vetButton(c, L.checkAll, "Check everyone", L.list.length > 0);
-  const unjabbed = L.list.filter((f) => vetCanJab(f)).length;
-  _vetButton(c, L.jabAll, `Jab everyone ($${unjabbed * VET_JAB_PRICE})`, unjabbed > 0);
+  const jabCost = L.list.filter((f) => vetCanJab(f)).reduce((s, f) => s + vetJabPrice(f), 0);
+  _vetButton(c, L.jabAll, `Jab everyone ($${jabCost})`, jabCost > 0);
 
   c.font = "bold 12px Arial";
   c.fillStyle = "rgba(255,255,255,0.55)";
@@ -347,7 +367,8 @@ function drawVet(c) {
     // Second line: flu jab, and what the vet said about its age
     const now = typeof timePlayed === "number" ? timePlayed : 0;
     const life = f.vetLife && f.vetCheckedAt !== undefined && now - f.vetCheckedAt < DAY_LENGTH ? ` · ${f.vetLife}` : "";
-    let line2 = `${f.fluVaccinated ? "Flu jab: yes" : "Flu jab: no"}${life}`;
+    const toxo = _toxoOn() ? ` · toxo ${f.isToxoVaccinated ? "✓" : "✗"}` : "";
+    let line2 = `Jabs: flu ${f.fluVaccinated ? "✓" : "✗"}${toxo}${life}`;
     if (pregnant && typeof describePregnancy === "function") {
       line2 = `Pregnant: ${describePregnancy(f)[0]}${f.midwife ? " · midwife booked" : ""}`;
       c.fillStyle = "#f7c6e0";
@@ -358,7 +379,7 @@ function drawVet(c) {
     _vetButton(c, r.treat, price ? `Treat $${price}` : "Treat", price > 0);
     // No jabs while pregnant: that button books a midwife instead
     if (pregnant) _vetButton(c, r.jab, f.midwife ? "Midwife ✓" : `Midwife $${VET_MIDWIFE_PRICE}`, !f.midwife);
-    else _vetButton(c, r.jab, f.fluVaccinated ? "Jabbed" : `Jab $${VET_JAB_PRICE}`, !f.fluVaccinated);
+    else _vetButton(c, r.jab, vetJabPrice(f) ? `Jab $${vetJabPrice(f)}` : "Jabbed", vetJabPrice(f) > 0);
   }
   if (typeof drawGlassButton === "function") {
     if (L.pages > 1) {

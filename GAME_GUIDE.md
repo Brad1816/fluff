@@ -1861,3 +1861,15 @@ brushes, plays ball and trains twice a day). What changed:
   floor, HorseToilet.js) was the main killer in every home that didn't keep
   the floor spotless, as it was before these features.
 
+### Toxoplasmosis jab (`Vet.js`)
+- The vet already cured toxoplasmosis (Treat, $100 of the price). Now the
+  row's Jab button gives whichever jabs a fluffy hasn't had: flu
+  (`VET_JAB_PRICE` $40) and toxo (`VET_TOXO_JAB_PRICE` $60) - `vetJabPrice`,
+  `vetCanJab`, `vetJab` (sets `isToxoVaccinated`, which HorseUpdate already
+  used: a jabbed fluffy's infection clears at once). "Jab everyone" adds up
+  the real cost. No toxo jab when toxoplasmosis is off in world settings.
+  Not while pregnant (that button books the midwife).
+- The Tvx IV bag (DIY vaccine) went from $5000 to $250.
+- Simulated 3 x 4 days of 6 fluffies on kibble with a tidy bot: 4 toxo
+  deaths without jabs, none with.
+

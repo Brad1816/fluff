@@ -115,7 +115,7 @@ module.exports = [
         out.treated = [hasFlu(a), a.isPoisoned, a.health, canCatchFlu(a)];
         out.moneyAfterTreat = money;
         vetJab(old);
-        out.jab = [old.fluVaccinated, money];
+        out.jab = [old.fluVaccinated, old.isToxoVaccinated, money];
         money = 5;
         const poor = vetCheckUp(old);
         out.poor = [poor, money];
@@ -164,13 +164,65 @@ module.exports = [
       checkEqual(r.priceMore, 190, "flu + poison + hurt");
       checkEqual(JSON.stringify(r.treated), JSON.stringify([false, false, 100, false]), "cured, healed, immune");
       checkEqual(r.moneyAfterTreat, 770, "paid for treatment");
-      checkEqual(JSON.stringify(r.jab), JSON.stringify([true, 730]), "jab");
+      checkEqual(JSON.stringify(r.jab), JSON.stringify([true, true, 670]), "flu and toxo jabs");
       checkEqual(JSON.stringify(r.poor), JSON.stringify([false, 5]), "can't pay");
       check(r.allJabbed, "jab everyone");
       check(r.closed, "closes");
       checkEqual(r.drew, true, "draws");
       check(r.clinic, "clicking the clinic opens it");
       checkEqual(JSON.stringify(r.saved), JSON.stringify([123, true]), "saved");
+    },
+  },
+  {
+    name: "vet: toxoplasmosis - the vet cures it, and the toxo jab stops it taking hold",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene();
+        __seedRandom(5);
+        const mk = (x) => {
+          const h = new Horse(1, null, "INDOORS", "earthy", null, 0.5, 0.5, "female");
+          h.adopted = true;
+          h.x = x;
+          h.y = 500;
+          fluffies.push(h);
+          return h;
+        };
+        money = 1000;
+        const sick = mk(300);
+        sick.isToxoplasmosis = true;
+        const out = { problem: vetCondition(sick)[0], price: vetTreatmentPrice(sick) };
+        vetTreat(sick);
+        out.cured = !sick.isToxoplasmosis;
+        // Jabbed: catching it again doesn't stick
+        const j = mk(700);
+        out.jabPrice = vetJabPrice(j);
+        vetJab(j);
+        out.jabbed = [j.fluVaccinated, j.isToxoVaccinated, vetJabPrice(j), vetCanJab(j)];
+        j.isToxoplasmosis = true;
+        const h0 = j.health;
+        __fastForward(2);
+        out.jabbedClears = !j.isToxoplasmosis && j.health >= h0 - 1;
+        // Not jabbed: it hurts
+        const u = mk(1000);
+        u.isToxoplasmosis = true;
+        u.health = 100;
+        __fastForward(5);
+        out.unjabbedHurt = u.isToxoplasmosis && u.health < 100;
+        // Only the flu jab when toxoplasmosis is switched off
+        const was = worldSettings.toxoplasmosis;
+        worldSettings.toxoplasmosis = false;
+        out.offPrice = vetJabPrice(mk(1200));
+        worldSettings.toxoplasmosis = was;
+        return out;
+      });
+      check(/toxoplasmosis/.test(r.problem), `the vet sees it ${r.problem}`);
+      check(r.price >= 100, `treatment price ${r.price}`);
+      check(r.cured, "treatment cures it");
+      checkEqual(r.jabPrice, 100, "flu $40 + toxo $60");
+      checkEqual(JSON.stringify(r.jabbed), JSON.stringify([true, true, 0, false]), "both jabs, nothing left to give");
+      check(r.jabbedClears, "a jabbed fluffy shakes it off");
+      check(r.unjabbedHurt, "an unjabbed one is hurt by it");
+      checkEqual(r.offPrice, 40, "toxo off in world settings: flu jab only");
     },
   },
 ];

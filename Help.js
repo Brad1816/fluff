@@ -100,6 +100,7 @@ const HELP_TOPICS = [
       "- Very bored fluffies get unhappy and cause trouble: knocking over",
       "  food bowls and picking on others.",
       "- Fetch (a trick): needs a ball in the room; it brings it back to you.",
+
     ],
   },
   {
@@ -311,7 +312,11 @@ const HELP_TOPICS = [
       "- Check-up $20: finds flu before it shows, and says how long an",
       "  old fluffy has left.",
       "- Treatment: cures flu, poison, toxoplasmosis and the runs, stops",
-      "  bleeding and heals. Flu jab $40: can't catch flu.",
+      "  bleeding and heals.",
+      "- Jabs: flu $40 (can't catch flu) and toxoplasmosis $60 (it can't",
+      "  take hold). One button gives whichever it hasn't had.",
+      "- Toxoplasmosis comes from eating poop off the floor and slowly",
+      "  kills: keep floors clean, litter train, and jab them.",
     ],
   },
   {
