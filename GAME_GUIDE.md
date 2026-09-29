@@ -1775,7 +1775,7 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
   |---|---|---|---|---|---|
   | `premium_kibble` Fluffy Feast Premium | $80 | 1.0 | 1.0 | 0.6 ±0.25 | |
   | `kibble` Kibble | $25 | 0.7 | 1.0 | 0.05 ±0.7 | some like, some don't |
-  | `value_kibble` Value Kibble | $10 | 0.4 | 0.8 | -0.2 ±0.3 | |
+  | `value_kibble` Value Kibble | $10 | 0.4 | 0.9 | -0.2 ±0.3 | |
   | `scrap_kibble` Scrapz | $3 | 0.1 | 0.7 | -0.6 ±0.25 | 15% diarrhea, -2 health a meal |
   Scrapz is made from ground-up fluffies: the grinder turns out Scrapz bags
   (Grinder.js), its bowls use the old brown-mush pictures, and eating it
@@ -1841,7 +1841,7 @@ Checked by simulating six spayed mares for 4-5 game days in different homes
 brushes, plays ball and trains twice a day). What changed:
 - **Food `fill` must stay above 0.6** (EatDesire's "hungry" line). Scrapz at
   0.55 made fluffies that tolerate it eat nonstop and poison themselves.
-  Now Value 0.8, Scrapz 0.7; Scrapz harm 4 -> 2, sick 25% -> 15%.
+  Now Value 0.9 (at 0.8 they ate so often it cost more than plain kibble), Scrapz 0.7; Scrapz harm 4 -> 2, sick 25% -> 15%.
 - **Weight burned off too fast** (0.025/h): sketties-only fluffies never got
   chubby. Now burn 0.006/h and sketties +0.08: chubby in about 1.5 days,
   fat in about 2.5 on sketties alone.

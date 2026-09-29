@@ -61,7 +61,7 @@ const FOODS = {
     name: "Value Kibble",
     short: "Value kibble",
     nutrition: 0.4,
-    fill: 0.8,
+    fill: 0.9, // (0.8 made them eat twice as often: dearer than plain kibble)
     taste: -0.2,
     spread: 0.3,
     filter: "grayscale(0.75) brightness(1.05)",
