@@ -558,12 +558,6 @@ function isFenceMoveBlocked(horse, ax, ay, bx, by) {
   return false;
 }
 
-// Is there a fence between this fluffy and a spot it wants to walk to?
-function isFencePathBlocked(horse, targetX, targetY) {
-  if (!sceneHasFences(horse.scene)) return false;
-  return isFenceMoveBlocked(horse, horse.x, horse.y, targetX, targetY);
-}
-
 // Called for every fluffy once per frame, after it has moved. Compares where
 // it is now with where it was after last frame's check (so it also catches
 // movement that happened outside the fluffy's own update). If the move went

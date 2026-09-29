@@ -369,7 +369,6 @@ const DEFAULT_SEXUALITY = Object.freeze({
   bisexual: 5,
   homosexual: 5,
 });
-const DEFAULT_SEXUALITY_REGULAR = DEFAULT_SEXUALITY;
 
 function rollSexuality(
   settings = typeof worldSettings !== "undefined" ? worldSettings : null,
@@ -673,7 +672,6 @@ let wsPromptSmarties = true;
 let wsPromptSBS = true;
 let wsPromptToxoplasmosis = true;
 let wsPromptSexuality = { ...DEFAULT_SEXUALITY };
-let wsPromptSexualityRegular = wsPromptSexuality;
 let saveList = [];
 
 const puddles = [
@@ -1190,36 +1188,6 @@ function tintImage(
   return buffer;
 }
 
-function getRandomColor() {
-  const letters = "0123456789ABCDEF";
-  let color = "#";
-  for (let i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
-
-// Pastel/Vibrant color generator for nicer horses
-function getRandomFluffyColor() {
-  const hue = Math.floor(Math.random() * 360);
-  return `hsl(${hue}, 70%, 70%)`;
-}
-
-function getRandomPupilColor() {
-  const colors = [
-    "black",
-    "#3e2723", // Dark Brown
-    "#d7ccc8", // Light Brown
-    "darkgreen",
-    "lightgreen",
-    "darkred",
-    "#ff8a80", // Light Red
-    "darkblue",
-    "lightblue",
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
-
 const LACTATING_CHARGE_INCREASE_TIMER = 10;
 
 const CAN_FORMULA_MAX = 2;
@@ -1246,7 +1214,8 @@ const HAPPINESS_BONUS_PROPOSAL_ACCEPT = 0.4;
 const HAPPINESS_BONUS_SKETTIES = 0.1;
 const HAPPINESS_BONUS_NUMMIES = 0.05;
 
-// Food Priorities (High to Low: Sketties > Kibble/Rat Poison/Grass/Formula > Soylent Brown)
+// Fallback food priorities: Diet.js foodPriorityFor (each fluffy's own taste)
+// is what HorsePositioning uses; these only apply if Diet.js is missing.
 const FOOD_PRIORITIES = {
   sketties: 4,
   premium_kibble: 3.5,
@@ -1284,12 +1253,10 @@ const CATTLE_PROD_BASE_DAMAGE = 3.0;
 const CATTLE_PROD_GROWTH_FACTOR_BASE = 3.0;
 
 const THUMBTACK_COOLDOWN = 1.5;
-const THUMBTACK_STEP_COOLDOWN = 1.5;
 const HAPPINESS_PENALTY_BABBEH_GRABBED = -0.0125;
 const HAPPINESS_PENALTY_BAD_UPSIES = -0.025;
 const HAPPINESS_PENALTY_WITNESS_VIOLENCE = -0.00625;
 const HAPPINESS_PENALTY_LOST_RELATIVE = -0.025;
-const HAPPINESS_PENALTY_TRAUMA_MISCARRIAGE = -0.05;
 const HAPPINESS_PENALTY_DIRTY_PUDDLE = -0.02;
 const HAPPINESS_PENALTY_MATE_FORCED_MARE = -0.1;
 const HAPPINESS_PENALTY_MATE_BAD_ENFIES = -0.1;
@@ -1298,16 +1265,6 @@ const HAPPINESS_PENALTY_BLOOD_FEAR = -0.025;
 const HAPPINESS_PENALTY_CORPSE_FEAR_GENERAL = -0.025;
 const HAPPINESS_PENALTY_CORPSE_FEAR_RELATION = -0.05;
 const HAPPINESS_PENALTY_ATE_BODILY_WASTE = -0.002;
-
-// notifyViolence penalties
-const HAPPINESS_PENALTY_CHILD_ATTACKED_DEAD = -0.1;
-const HAPPINESS_PENALTY_CHILD_ATTACKED_HURT = -0.00625;
-const HAPPINESS_PENALTY_PARENT_ATTACKED_DEAD = -0.125;
-const HAPPINESS_PENALTY_PARENT_ATTACKED_HURT = -0.00625;
-const HAPPINESS_PENALTY_SPESHOW_FWEN_ATTACKED_DEAD = -0.1;
-const HAPPINESS_PENALTY_SPESHOW_FWEN_ATTACKED_HURT = -0.00625;
-const HAPPINESS_PENALTY_SIBLING_ATTACKED_DEAD = -0.1;
-const HAPPINESS_PENALTY_SIBLING_ATTACKED_HURT = -0.00625;
 
 const FULL_SPEECH_THRESHOLD = 0.35;
 const WALKY_THRESHOLD = 0.3;
@@ -1896,13 +1853,6 @@ function isPunishmentTool(o) {
   if (!o) return false;
   const entry = getToolEntry(o) || (o.classType ? getToolEntryForData(o) : null);
   return !!(entry && entry.tool.punishment);
-}
-
-// Stick and spray bottle share the "discipline" toolbar slot
-function isPunishmentToolForToolbarPurposes(o) {
-  if (!o) return false;
-  const entry = getToolEntry(o) || (o.classType ? getToolEntryForData(o) : null);
-  return !!(entry && entry.tool.punishmentToolbar);
 }
 
 // Tools that can be put down in the world (thumbtack, IV bag)

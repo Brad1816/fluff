@@ -35,7 +35,7 @@
 //   - Foals grow faster or slower (Pregnancy.js foalGrowthRate) and
 //     pregnant mares do better or worse (pregnancyConditionNow)
 //
-// Weight (f.weight, 0..1, saved): sketties (+0.06 a meal) and training
+// Weight (f.weight, 0..1, saved): sketties (+0.08 a meal) and training
 // treats (+0.015) fatten; it burns off slowly, faster when moving.
 //   chubby (WEIGHT_CHUBBY 0.45): slower (x0.85), -4 at shows, rounder belly
 //   fat    (WEIGHT_FAT 0.75):    slower (x0.7), -10 at shows, x0.9 price,

@@ -515,140 +515,6 @@ class HorsePositioning {
     return false;
   }
 
-  scoutForMilk() {
-    if (typeof objects === "undefined") return false;
-
-    const isFeared = (id) => this.horse.fearedFluffies.some((f) => f.id === id);
-
-    // 1. Biological Mom (if not feared and lactating)
-    const mom = fluffies.find(
-      (f) =>
-        f.id === this.horse.motherId &&
-        f.isAlive &&
-        f.scene === this.horse.scene &&
-        f.currentCage === this.horse.currentCage &&
-        fenceCanReachThing(this.horse, f) &&
-        !f.placedOn &&
-        f.lactatingTimer > 0,
-    );
-
-    if (mom && !isFeared(mom.id)) {
-      if (!this.horse.isMovingOrRunning()) {
-        this.horse.initBehavior("MOVING");
-      }
-      this.horse.setTargetPosition(mom.x, mom.y);
-      return true;
-    }
-
-    // Mom is feared, missing, or not lactating. Look for alternatives.
-    // A. Preferred Milk Sources (unfeared)
-    let bestTarget = null;
-    let minDist = Infinity;
-
-    for (const source of this.horse.preferredMilkSources) {
-      if (isFeared(source.id)) continue;
-
-      if (source.type === "HORSE") {
-        const mare = fluffies.find(
-          (f) =>
-            f.id === source.id &&
-            f.isAlive &&
-            f.scene === this.horse.scene &&
-            f.currentCage === this.horse.currentCage &&
-        fenceCanReachThing(this.horse, f) &&
-            f.lactatingTimer > 0,
-        );
-        if (mare) {
-          const d = (this.horse.x - mare.x) ** 2 + (this.horse.y - mare.y) ** 2;
-          if (d < minDist) {
-            minDist = d;
-            bestTarget = { x: mare.x, y: mare.y };
-          }
-        }
-      } else if (source.type === "FEEDER") {
-        const feeder = objects.find(
-          (b) =>
-            b instanceof Bowl &&
-            b.id === source.id &&
-            (b.type === "feeder" || b.type === "mega_feeder") &&
-            b.hasFood() &&
-            b.scene === this.horse.scene &&
-            b.currentCage === this.horse.currentCage &&
-        fenceCanReachThing(this.horse, b),
-        );
-        if (feeder) {
-          const d =
-            (this.horse.x - feeder.x) ** 2 + (this.horse.y - feeder.y) ** 2;
-          if (d < minDist) {
-            minDist = d;
-            bestTarget = { x: feeder.x, y: feeder.y };
-          }
-        }
-      }
-    }
-
-    if (bestTarget) {
-      if (!this.horse.isMovingOrRunning()) {
-        this.horse.initBehavior("MOVING");
-      }
-      this.horse.setTargetPosition(bestTarget.x, bestTarget.y);
-      return true;
-    }
-
-    // B. Search all unfeared mares/feeders in scene/cage
-    const bowls = objects.filter((o) => o instanceof Bowl);
-    const feeders = bowls.filter(
-      (b) =>
-        b.type === "feeder" &&
-        b.hasFood() &&
-        b.scene === this.horse.scene &&
-        b.currentCage === this.horse.currentCage &&
-        fenceCanReachThing(this.horse, b) &&
-        !isFeared(b.id),
-    );
-
-    const mares = fluffies.filter(
-      (f) =>
-        f.gender === "female" &&
-        f.growth >= 1.0 &&
-        f.isAlive &&
-        f.scene === this.horse.scene &&
-        f.currentCage === this.horse.currentCage &&
-        fenceCanReachThing(this.horse, f) &&
-        !f.placedOn &&
-        !isFeared(f.id) &&
-        f.lactatingTimer > 0,
-    );
-
-    for (const f of feeders) {
-      const d = (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2;
-      if (d < minDist) {
-        minDist = d;
-        bestTarget = { x: f.x, y: f.y };
-      }
-    }
-
-    for (const m of mares) {
-      const d = (this.horse.x - m.x) ** 2 + (this.horse.y - m.y) ** 2;
-      if (d < minDist) {
-        minDist = d;
-        bestTarget = { x: m.x, y: m.y };
-      }
-    }
-
-    if (bestTarget) {
-      this.horse.setTargetPosition(bestTarget.x, bestTarget.y);
-
-      if (this.horse.tooYoungToSpeak() && this.horse.speech.timer <= 0) {
-        this.horse.speak(getDialogue("SNIFF_SNIFF", this.horse));
-        this.horse.speech.nextTime = Math.random() * 2 + 2;
-      }
-      return true;
-    }
-
-    return false;
-  }
-
   scoutForFallbackHunger() {
     if (this.horse.hunger >= 0.3 || this.horse.tooYoungToWalk()) return false;
 
@@ -660,6 +526,8 @@ class HorsePositioning {
       for (const puddle of puddles) {
         if (puddle.scene !== this.horse.scene || puddle.points.length === 0)
           continue;
+        // Starving fluffies eat waste, not water or tears (Puddle.js)
+        if (typeof isBodilyWaste === "function" && !isBodilyWaste(puddle.color)) continue;
 
         for (const pt of puddle.points) {
           const px = pt.x;
@@ -897,7 +765,7 @@ class HorsePositioning {
       (b) =>
         b.scene === this.horse.scene &&
         !b.currentCage &&
-        !b.carriedBy &&
+        !(typeof isBallCarried === "function" ? isBallCarried(b) : b.carriedBy) &&
         b.isStill() &&
         !fluffies.some((f) => f.ballTarget && f.targetX === b.x),
     );

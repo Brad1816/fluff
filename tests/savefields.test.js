@@ -21,6 +21,8 @@ module.exports = [
           tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 },
           diet: 0.83, weight: 0.4, tastes: { kibble: -0.5 }, recentMeals: ["premium_kibble", "kibble"],
           boredom: 0.45, toyLikes: { ball: 0.9 },
+          castrationBandTimer: 42, castrationBandPainTimer: 3, isDiarrhea: true, isIncontinent: true,
+          affectionNeglect: { day: 2, seen: { hungry: true } },
         };
         Object.assign(f, values);
         const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));

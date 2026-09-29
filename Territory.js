@@ -92,13 +92,6 @@ function territoryAt(scene, x, y) {
   return null;
 }
 
-// Is `f` somewhere it doesn't belong? Returns the territory or null
-function trespassing(f) {
-  const t = territoryAt(f.scene, f.x, f.y);
-  if (!t || herdOf(f) === t.herd) return null;
-  return t;
-}
-
 // Is `f` unwelcome on `host`'s herd's land right now? (trespassing there, or
 // recently chased off it). Hosts won't make friends with it (Bonds.js).
 function unwelcomeOnLand(f, host) {

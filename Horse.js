@@ -1,51 +1,8 @@
-const trauma_timer = 300;
 const pregnancyDuration = 300;
 
 function areSpecialFriends(id1, id2) {
   if (!relationships[id1] || !relationships[id2]) return false;
   return relationships[id1][id2] === "special_friend";
-}
-
-function triggerShock(hitFluffy) {
-  const rels = relationships[hitFluffy.id];
-  if (!rels) return;
-  for (const [otherId, rel] of Object.entries(rels)) {
-    if (rel === "mother") {
-      const mom = fluffies.find((f) => f.id == otherId);
-      if (
-        mom &&
-        mom.scene === hitFluffy.scene &&
-        (mom.canSee() || mom.canHear())
-      ) {
-        // Check if mom considers hitFluffy a baby_child
-        if (
-          relationships[mom.id] &&
-          relationships[mom.id][hitFluffy.id] === "baby_child"
-        ) {
-          mom.initBehavior("IDLE");
-          mom.setShock(3.0);
-          mom.speak(
-            getDialogue(
-              mom.adopted
-                ? ["WITNESS_VIOLENCE", "BABY"]
-                : ["WITNESS_VIOLENCE", "BABY", "FERAL"],
-              mom,
-              hitFluffy,
-            ),
-          );
-
-          // Run to baby
-          mom.initBehavior("MOVING");
-          let targetX = hitFluffy.x + (Math.random() - 0.5) * 100;
-          let targetY = hitFluffy.y + (Math.random() - 0.5) * 50;
-          mom.setTargetPosition(targetX, targetY);
-          if (!mom.isCrawling) {
-            mom.currentStateKey = "RUNNING";
-          }
-        }
-      }
-    }
-  }
 }
 
 function notifyViolence(
@@ -950,18 +907,9 @@ class Horse {
     this.updateCrawling();
   }
 
-  applyDrug(drug, amount) {
-    return this.administerDrug(drug, amount);
-  }
-
   getDrugAmount(drug) {
     if (!this.bloodstream || !drug) return 0;
     return this.bloodstream[drug] || 0;
-  }
-
-  hasDrugOverdose(threshold = 50) {
-    if (!this.bloodstream) return false;
-    return Object.values(this.bloodstream).some((amt) => amt > threshold);
   }
 
   updateCrawling() {
@@ -983,10 +931,6 @@ class Horse {
       this.getLimbsMissing() >= 2 ||
       drugOverdoseCrawling ||
       (this.isBeingTased && this.isBeingTased());
-  }
-
-  isTooWeakToFightBack() {
-    return isTooWeakToFightBack(this);
   }
 
   canFightBack() {
@@ -1934,7 +1878,7 @@ class Horse {
       leftWing: true,
       rightWing: true,
       horn: true,
-      specialLumps: true,
+      lumps: horse.gender === "male", // (was "specialLumps", which nothing reads)
       udders: true,
     };
     horse.accessories = data.accessories || {};

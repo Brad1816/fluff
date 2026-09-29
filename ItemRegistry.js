@@ -73,8 +73,6 @@
 //   toolbarKey   Which number key (toolbar slot) it goes in by default
 //   multi        true = you can own several (thumbtacks, IV bags...)
 //   punishment   true = used to discipline fluffies (stick, spray, tack)
-//   punishmentToolbar
-//                true = shares the "discipline" toolbar slot
 //   placeableInWorld
 //                true = can be put down in the world (tack, IV bag)
 //   onlyIf(obj), dataOnlyIf(data), matchData(data), matchesAction(tool, action)
@@ -388,7 +386,6 @@ const ITEM_TYPES = [
       desc: "Click fluffies with it to whack them.",
       image: () => images.sorry_stick,
       punishment: true,
-      punishmentToolbar: true,
     },
   },
   {
@@ -406,7 +403,6 @@ const ITEM_TYPES = [
       desc: "Spray fluffies to discipline them.",
       image: () => images.spray_bottle,
       punishment: true,
-      punishmentToolbar: true,
     },
   },
   {

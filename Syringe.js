@@ -68,9 +68,6 @@ class Syringe {
       }
     }
 
-    if (typeof playSound === "function" && this.scene === currentScene) {
-      playSound("sponge_squish");
-    }
     if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
       poofs.push(new Poof(this.x, this.y, this.scene, this.getFluidColor()));
     }
@@ -105,10 +102,6 @@ class Syringe {
 
     // 2. Needle prick effect
     return this.applyPrick(targetFluffy, hitPart);
-  }
-
-  poke(targetFluffy = null, hitPart = null) {
-    return this.manualUse(targetFluffy, hitPart);
   }
 
   blind(targetFluffy, eyePart = null) {

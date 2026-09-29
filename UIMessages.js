@@ -7,15 +7,6 @@ function addUIMessage(text) {
   uiMessages.push({ text: text, timer: 5.0, opacity: 1.0 });
 }
 
-function updateUIMessages(dt) {
-  for (let i = uiMessages.length - 1; i >= 0; i--) {
-    const msg = uiMessages[i];
-    msg.timer -= dt;
-    msg.opacity = Math.max(0, msg.timer / 1.0);
-    if (msg.timer <= 0) uiMessages.splice(i, 1);
-  }
-}
-
 // Where messages go: top middle, just below the top bar and the wall, so
 // they're clear of the money, clock and buttons in the top left
 const UI_MESSAGE_MAX = 5; // newest ones shown at once

@@ -23,7 +23,8 @@
 // longer the more loyal they are (CLIENT_TIERS: Returning +5%, Regular +15%
 // and +15% time, Loyal +25% and +25% time). Each customer has a favourite
 // type (pref, from their name) that often shows up in their orders.
-// Customers you've let down twice won't order again for a while.
+// Customers you've let down twice won't order again for a few days
+// (customerIsUpset, CUSTOMER_SULK_DAYS).
 //
 // LETTERS: a while after a delivery the customer writes about how the
 // fluffy is doing - a tip if they adore it, a complaint (and less loyalty)
@@ -98,9 +99,20 @@ function clientTier(name) {
   return CLIENT_TIERS.find((t) => c.loyalty >= t.loyalty) || null;
 }
 
+// Let down twice (loyalty -2 or less): won't order for CUSTOMER_SULK_DAYS
+// game days, then gives you another chance (loyalty back to -1)
+const CUSTOMER_SULK_DAYS = 3;
 function customerIsUpset(name) {
   const c = _clients()[name];
-  return !!c && c.loyalty <= -2;
+  if (!c || c.loyalty > -2) return false;
+  const today = typeof getDayNumber === "function" ? getDayNumber() : 0;
+  if (typeof c.upsetDay !== "number") c.upsetDay = today;
+  if (today - c.upsetDay >= CUSTOMER_SULK_DAYS) {
+    c.loyalty = -1;
+    c.upsetDay = null;
+    return false;
+  }
+  return true;
 }
 
 // Who's ordering: often someone you've pleased before (Orders.js)
@@ -168,7 +180,7 @@ function noteOrderFilled(order, f, reaction) {
 function noteOrderFailed(order) {
   const c = getClient(order.customer);
   c.missed++;
-  c.loyalty -= 2;
+  c.loyalty -= 1; // twice and they sulk for a while (customerIsUpset)
   // A commission's deposit goes back
   if (order.commission && order.depositPaid) {
     money = Math.max(0, money - order.depositPaid);

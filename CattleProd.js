@@ -196,10 +196,6 @@ class CattleProd {
     return this.applyPrick(targetFluffy, hitPart);
   }
 
-  poke(targetFluffy = null, hitPart = null) {
-    return this.manualUse(targetFluffy, hitPart);
-  }
-
   blind(targetFluffy, eyePart = null) {
     if (!targetFluffy || !targetFluffy.isAlive) return false;
     if (!eyePart) {

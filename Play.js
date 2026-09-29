@@ -3,7 +3,7 @@
 //
 // Boredom (f.boredom, 0..1, saved) - fluffies you own only (the park is
 // exciting enough). It creeps up while a fluffy is awake with nothing to do:
-//   BOREDOM_PER_HOUR (0.06: bored after most of a day of nothing),
+//   BOREDOM_PER_HOUR (0.06: bored after about 7 game hours of nothing),
 //   faster for playful fluffies and foals, slower for lazy ones and the
 //   elderly, slower with a friend in the room, and it goes DOWN in the park.
 // Playing takes it away (onFluffyPlayed): kicking a ball, picking up blocks,
@@ -54,9 +54,6 @@ function _plName(f) {
 
 function boredomOf(f) {
   return typeof f.boredom === "number" ? f.boredom : 0;
-}
-function isBored(f) {
-  return boredomOf(f) >= BOREDOM_BORED;
 }
 
 // How much it likes each toy (made the first time, saved)

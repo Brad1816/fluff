@@ -12,6 +12,8 @@ addHorseMethods({
       if (typeof puddles !== "undefined") {
         for (const puddle of puddles) {
           if (puddle.scene !== this.scene || puddle.points.length === 0) continue;
+          // Only bodily waste (poop, pee, sick, blood) - not water or tears
+          if (typeof isBodilyWaste === "function" && !isBodilyWaste(puddle.color)) continue;
 
           for (let j = puddle.points.length - 1; j >= 0; j--) {
             const p = puddle.points[j];
@@ -24,13 +26,13 @@ addHorseMethods({
               if (p.scale < 0.05) {
                 puddle.points.splice(j, 1);
               }
-              if (puddle.color == "#5c4033" || "#8a0303") {
-                this.hunger = Math.min(1.0, this.hunger + 0.015 * dt);
-                this.poopStorage = Math.min(1.0, this.poopStorage + 0.01 * dt);
-                if (this.happiness > 0.1) {
-                  //prevents wetrooms turning into a wan die-fest
-                  this.changeHappiness(HAPPINESS_PENALTY_ATE_BODILY_WASTE * dt);
-                }
+              // (This used to read `color == "#5c4033" || "#8a0303"`, which is
+              // always true; the filter above now keeps it to waste.)
+              this.hunger = Math.min(1.0, this.hunger + 0.015 * dt);
+              this.poopStorage = Math.min(1.0, this.poopStorage + 0.01 * dt);
+              if (this.happiness > 0.1) {
+                //prevents wetrooms turning into a wan die-fest
+                this.changeHappiness(HAPPINESS_PENALTY_ATE_BODILY_WASTE * dt);
               }
 
               this.health = Math.max(0, this.health - 1 * dt);
@@ -68,10 +70,6 @@ addHorseMethods({
         }
       }
     }
-  },
-
-  needsLitterbox() {
-    return this.pottyTraining > 0 && Math.max(this.poopStorage, this.peeStorage) > 0.6 - this.pottyTraining * 0.2;
   },
 
   attemptUseTargetLitterbox() {

@@ -4,10 +4,10 @@
 // Garden --(down arrow)--> Shopping Street --(door)--> the store's aisles.
 // Every aisle is its own scene ("STORE_FOOD", "STORE_HOME", ...) with
 // arrows between them. Things sit on shelves with price tags; click one to
-// buy it. World items land on the floor in front of the shelf for you to
-// carry home; tools go straight into your toolbox. (Now: small things go in
-// the shopping bag and big things are delivered - ShoppingBag.js.) (buyShopAction in UI.js
-// does the actual buying, the same code the debug item menu uses.)
+// buy it. Tools go straight into your toolbox, small things into the
+// shopping bag and big things are delivered home (ShoppingBag.js
+// buyFromStore). (buyShopAction in UIToolbox.js does the actual buying, the
+// same code the debug item menu uses.)
 //
 // To put a shop item in an aisle, add its `isItem` (from SPAWN_ACTIONS in
 // globals.js) to that aisle's `items` list below. Anything not listed shows

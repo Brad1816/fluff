@@ -241,10 +241,6 @@ class Thumbtack {
     return false;
   }
 
-  poke(targetFluffy = null, isTraining = false, hitPart = null) {
-    return this.manualUse(targetFluffy, isTraining, hitPart);
-  }
-
   steppedOn(targetFluffy) {
     if (!targetFluffy || !targetFluffy.isAlive) return false;
     // Never lesson learning / sorry stick training or eye blinding when stepped on

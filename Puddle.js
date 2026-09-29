@@ -141,6 +141,11 @@ const MESS_COLORS = { "#5c4033": "poop", "#f1c40f": "pee", "#4b5320": "vomit", "
 const MESS_FADE = { poop: 0.6, pee: 1.5, vomit: 0.9, blood: 0 }; // size per game day
 const RAIN_WASH = 0.02; // size per second in full rain
 
+// Poop, pee, sick or blood (what a starving fluffy will eat - HorseToilet.js)
+function isBodilyWaste(color) {
+  return !!MESS_COLORS[color];
+}
+
 function _messOutdoor(scene) {
   const cfg = typeof getSceneConfig === "function" ? getSceneConfig(scene) : null;
   return !!(cfg && cfg.isOutdoor);

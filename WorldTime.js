@@ -17,7 +17,7 @@
 //     under clouds; rain, snow and lightning are drawn over them. Indoors is
 //     only a little dimmer at night (the lights are on).
 //   - Sleep: at night fluffies get tired faster and sleep longer; in the day
-//     the opposite (sleepRateMultipliers, used in Horse.js). The Sleep desire
+//     the opposite (sleepRateMultipliers, used in HorseUpdate.js). The Sleep desire
 //     also kicks in sooner at night (HorseBrain.js).
 //   - Rain/storms upset fluffies that are out in them; in the park they run
 //     for cover under the trees (ShelterDesire). Thunder startles them.

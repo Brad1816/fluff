@@ -22,7 +22,7 @@ class HorseActionHandler {
         const ball = balls.find(
           (b) =>
             b.scene === this.horse.scene &&
-            !b.carriedBy &&
+            !(typeof isBallCarried === "function" ? isBallCarried(b) : b.carriedBy) &&
             Math.sqrt((b.x - this.horse.x) ** 2 + (b.y - this.horse.y) ** 2) <
               50,
         );

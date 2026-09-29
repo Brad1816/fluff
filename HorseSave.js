@@ -54,7 +54,13 @@ const SAVED_HORSE_FIELDS = [
   { name: "recentMeals", fallback: null, clone: true },
   { name: "boredom", fallback: 0 }, // Play.js
   { name: "toyLikes", fallback: null, clone: true },
-  { name: "warmth", fallback: 1 }, // Warmth.js // Commissions.js (null = an old save: worked out from the mother)
+  // Weren't saved before (a reload reset or cured them)
+  { name: "castrationBandTimer", fallback: undefined },
+  { name: "castrationBandPainTimer", fallback: undefined },
+  { name: "isDiarrhea", fallback: false },
+  { name: "isIncontinent", fallback: false },
+  { name: "affectionNeglect", fallback: null, clone: true }, // Affection.js
+  { name: "warmth", fallback: 1 }, // Warmth.js
 ];
 
 function _savedCopy(v) {

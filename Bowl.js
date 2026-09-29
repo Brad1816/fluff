@@ -13,22 +13,6 @@ class Bowl {
     this.currentCage = null;
   }
 
-  get priority() {
-    if (typeof getFoodPriority !== "undefined") {
-      return getFoodPriority(this.foodType);
-    }
-    const priorities = {
-      sketties: 3,
-      kibble: 2,
-      rat_poison: 2,
-      formula: 2,
-      scrap_kibble: 1,
-    };
-    return this.foodType && priorities[this.foodType] !== undefined
-      ? priorities[this.foodType]
-      : 2;
-  }
-
   update(dt) {
     if (this.isDragging) {
       this.x = mouse.x + this.dragOffset.x;

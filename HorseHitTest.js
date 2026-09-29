@@ -253,10 +253,6 @@ addHorseMethods({
     return { x: tdx, y: tdy };
   },
 
-  getLocalOffsetFromTorsoCenter(px, py) {
-    return this.getTorsoOffsetFromPoint(px, py);
-  },
-
   getWorldPositionFromTorsoOffset(ox, oy) {
     if (!this.layout) this.updateLayout();
     const torso = (this.layout && this.layout.torso) || { x: 0, y: 0, angle: 0 };

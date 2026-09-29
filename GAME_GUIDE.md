@@ -5,7 +5,7 @@ easier. It covers what each file does, how one frame of the game runs, how
 fluffies "think", and step-by-step recipes for common changes.
 
 Plain JavaScript, no framework, no build step. Open `index.html` in a browser
-and it runs. About 36,000 lines across ~60 files.
+and it runs. About 55,000 lines across ~120 files.
 
 ---
 
@@ -88,7 +88,11 @@ and it runs. About 36,000 lines across ~60 files.
 | `Commissions.js` | **Commissions and regular customers**: breed-to-order commissions (gold cards, deposit, days to deliver, "Bred by you"), customer loyalty (Returning / Regular / Loyal pay more), favourite types, letters from past customers. See section 9 (Commissions and regular customers). |
 | `Pregnancy.js` | **Pregnancy and foal care**: litter size runs in families, care during pregnancy sets litter size, stillbirths and foal strength, birth health cost, the vet's scan and midwife, foal growth speed. See section 9 (Pregnancy and foal care). |
 | `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen, or the Show Hall on Shopping Street), grooming with the brush, prizes, ribbons, champions, watching it in the ring. See section 9 (Fluffy shows). |
-| `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment and flu jabs. See section 9 (Fluffy flu and the vet). |
+| `Vet.js` | **FluffVet Clinic** on Shopping Street: check-ups, treatment, flu and toxoplasmosis jabs, midwife. See section 9 (Fluffy flu and the vet). |
+| `Affection.js` | **Affection**: hearts (trust as affection), kind acts and their daily limits, neglect, heart pop-ups. See section 9 (Affection). |
+| `Tricks.js` | **Tricks and training**: right-click trick menu (screen layer 6), rewards, learning speed, Fetch, showing off. See section 9 (Tricks and training). |
+| `Diet.js` | **Food and diet**: kibble brands, tastes and favourite food, diet score, weight. See section 9 (Food and diet). |
+| `Play.js` | **Play and boredom**: boredom, favourite toy, playing ball with you, mischief. See section 9 (Play and boredom). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
 | `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
 | `UIPanels.js` | Shared drawing for pop-up screens: panel, title, rounded boxes, buttons, `fitText`. |
@@ -134,7 +138,7 @@ Several things are now one line to add, in the file of the feature itself:
 - **A pop-up screen**: `registerScreen({ name, layer, isOpen, close, draw,
   click })` at the end of its file (`Screens.js`). Drawing, "is a screen
   open?", clicks (top screen first), Esc and closing on new game/load all
-  come from the list. Layers: 5 magnifying glass, 10 family tree, 11 Gene
+  come from the list. Layers: 5 magnifying glass, 6 trick menu, 10 family tree, 11 Gene
   Lab, 12 orders, 13 day care, 20 goals, 21 help, 22 records, 23 vet, 29
   show results, 30 morning report, 31 naming pop-up.
 - **Something that updates every step**: `registerSystem(name, update,
@@ -145,10 +149,11 @@ Several things are now one line to add, in the file of the feature itself:
   seconds since last time). Orders so far: 10 family records, 20 bonds,
   30 herds, 40 territory, 50 weather/clock (`worldTime`), 60 separation,
   70 naming, 80 settling in, 90 goals, 100 morning report, 110 night
-  events, 120 alicorn acceptance, 130 ageing, 140 abandoned pets, 150 flu,
-  125 pregnancy care, 145 warmth, 160 corpses, 170 customer orders, 180 stock market,
-  190 shows. The
-  "systems" test checks every one of these is registered.
+  events, 120 alicorn acceptance, 125 pregnancy care, 130 ageing, 135
+  affection, 136 tricks, 137 diet, 138 play, 140 abandoned pets, 145
+  warmth, 150 flu, 160 corpses, 170 customer orders, 180 stock market,
+  190 shows. The "systems" test (tests/screens.test.js) checks every one of
+  these is registered, in order.
 - **Something saved with each fluffy**: add `{ name, fallback, clone }` to
   `SAVED_HORSE_FIELDS` in HorseSave.js; saving and loading both read it.
   (The game's original fields are still listed by hand in `serialize` and
@@ -163,7 +168,8 @@ Several things are now one line to add, in the file of the feature itself:
 #### Speed notes
 - Fluffies in areas you aren't looking at skip looks-only work each step
   (blinking, eyes, wings, dreams, tears, body layout) and update their face
-  twice a second (Horse.update, HorseUpdate `_updateExpression` part).
+  twice a second (Horse.update; `updateExpression`, called from
+  HorseUpdate `_updateStateEffects`).
   Anything that needs an unseen fluffy's size calls `getExtentsForCage`,
   which works out its layout then.
 - Who's being chased by a smarty is worked out once per step
@@ -455,8 +461,8 @@ value), and reset when a new game starts. A test checks every field in
 the list survives saving and loading.
 
 ### Show something new in the magnifying glass panel
-In `UIInspection.js`, `getFluffyInspectionInfo(f)` builds two lists: `about` (left
-column) and `care` (right column). Push another row:
+In `UIInspection.js`, `getFluffyInspectionInfo(f)` builds two lists, `about` and `care`; the
+panel then sorts rows into its tabs by label (`INSPECTION_TABS`). Push another row:
 ```js
 care.push({ label: "Fleas", value: f.hasFleas ? "Yes" : "No", tone: f.hasFleas ? "bad" : "good" });
 ```
@@ -563,7 +569,6 @@ tick.
   (buying, selling, picking up, right-click, icons, loading), `script.js` (collision + feelings hooks,
   R key), `Persistence.js` (loading), `HorsePositioning.js`,
   `HorseActionHandler.js`, `HorseBrain.js`, `Horse.js`, `dialogue.js`.
-- Originals of every changed file are in `_backup_before_fence/`.
 
 ### Magnifying glass panel (`UIInspection.js`)
 Dropping the magnifying glass on a fluffy opens a tabbed report.
@@ -748,7 +753,7 @@ with the fluffy: `playerTrust` (0-1, starts 0.5 at home, 0.35 for ferals),
   then (at most every 45s). `onFluffyPickedUp` (from the mousedown code):
   scared ones cry and may wet themselves, loving ones say "Upsies!".
   Lines are in `DIALOGUE.TRUST`.
-- **Shown in** the magnifying glass panel ("Feels about you", "Remembers")
+- **Shown in** the magnifying glass panel ("Affection", "Remembers")
   and used by the "Friendly with people" customer order requirement.
 
 ### Bonds and grudges between fluffies (`Bonds.js`)
@@ -813,7 +818,7 @@ screens tall (`PARK_W`, `PARK_H`). You look around by dragging the grass,
 the mouse wheel / trackpad, WASD or the arrow keys (in the park WASD looks
 around instead of travelling), clicking or dragging on the map in the
 corner, or carrying something to the screen edge. The exit arrow on the
-right goes back to the River; clicking it while carrying something takes
+left goes back to Day Care Alley; clicking it while carrying something takes
 you *and* it (anywhere else that would throw it through on its own).
 - **The camera** (`camera.x/y`) only matters in the park. Everything there
   has world positions; `render()` in `script.js` draws the world through
@@ -850,8 +855,8 @@ you *and* it (anywhere else that would throw it through on its own).
   so fluffies find and eat berries with the same code. Up to `BERRY_MAX`
   berries, one grows back every `BERRY_REGROW` seconds, and the bush never
   goes away. Fluffies like berries more than grass.
-- **Choosing food in the park**: `scoutForHunger` normally picks the best
-  food anywhere, then the nearest. In the park that would send everyone
+- **Choosing food in the park**: `scoutForHunger` normally picks the food
+  that fluffy likes best (Diet.js `foodPriorityFor`), then the nearest. In the park that would send everyone
   across the whole map, so there it scores `distance - priority x 150px`:
   berries are worth a short extra walk, not a trek.
 - **Wild fluffies**: the park keeps about `PARK_WILD_TARGET` (16) wild ones.
@@ -1103,7 +1108,7 @@ on the park's left side.
   from that build's lists).
 
 ### Goals (`Goals.js`)
-- 18 optional breeder goals (`GOALS`), from "Have a litter born at home"
+- 21 optional breeder goals (`GOALS`), from "Have a litter born at home"
   ($100) to "Become a Master breeder" ($5,000). `updateGoals` checks them
   every 2 seconds; each pays its reward once, announces itself and goes in
   the morning report news.
@@ -1112,7 +1117,7 @@ on the park's left side.
   (DayReport.js `noteDayEvent("sold")`, Names.js for litters and fluffies
   arriving home - `f.fromPark` is set when a wild fluffy is carried out of
   the park, Separation.js). Saved as `goalsState`.
-- The list opens with the "Goals x/18" button after the speed buttons, or
+- The list opens with the "Goals x/21" button after the speed buttons, or
   G; Esc or Close shuts it.
 - To add a goal: an entry in `GOALS` with `id`, `text`, `reward`,
   `check(stats)` and optionally `progress(stats)` ("3/10").
@@ -1145,9 +1150,8 @@ level, and a 3-day home breeding run with 1 stallion and 3 mares):
 
 ### Help and settling in
 - **Help** (`Help.js`): the "?" button after the Goals button, or F1,
-  opens "How it works" with topics on the left (Getting started,
-  Temperament & price, Fluffy Park, Herds & territory, Day night &
-  weather, Taking & trauma, Names, Keys). Text lives in `HELP_TOPICS`:
+  opens "How it works" with its topics on the left (16 of them, from
+  Getting started to Keys). Text lives in `HELP_TOPICS`:
   "" is a gap, "# " a small heading, "- " a bullet. Keep it up to date
   when adding features.
 - **Settling in** (Wellbeing.js): a wild fluffy that becomes yours
@@ -1167,8 +1171,8 @@ report lists it under "Last night in the park" (green = good, red = bad).
   weighted by season and weather, never the same one twice a night. Off
   when `parkLife.enabled` is off (the tests).
 - **Bad**: `fox` (below), `sickness` (2-4 lose health and get the runs),
-  `cold` (autumn/winter or snow: fluffies not under a tree get hungry and
-  hurt, foals badly - they can freeze to death), `stampede` (they scatter
+  `cold` (switched off: cold is now simulated all the time by Warmth.js),
+  `stampede` (they scatter
   and trample their meadow; more likely in storms), `quarrel` (two adults
   fall out; sometimes the leader is toppled).
 - **Good**: `bumper` (their meadow and nearby bushes fill up), `newcomers`
@@ -1437,8 +1441,8 @@ globals.js with the other arrows), by the garden's Shopping Street arrow.
 When the update calls became registered systems, `updateWorldTime` and
 `updateCustomerOrders` were left off the list, so the weather stopped
 changing and orders stopped expiring or being posted. Both are registered
-again (WorldTime.js, Orders.js), and `tests/systems.test.js` checks the
-whole list.
+again (WorldTime.js, Orders.js), and the "systems" test (tests/screens.test.js) checks
+the whole list.
 
 ### Shopping bag and deliveries (`ShoppingBag.js`)
 Buying at Fluff Mart no longer leaves things on the store floor to carry
@@ -1502,7 +1506,8 @@ a pregnancy mattered. Now:
   and `birthVigor` = 0.7 + 0.5 x care (0.7-1.2). Weak foals (under 0.85)
   start below full health. `foalGrowthRate` (used in HorseUpdate
   `_updateGrowingUp`): vigor (0.8-1.15) x food (hunger 0.6+ x1.05,
-  0.3+ x1, 0.1+ x0.75, less x0.5).
+  0.3+ x1, 0.1+ x0.75, less x0.5) x diet (Diet.js `dietGrowthMultiplier`).
+  `pregnancyConditionNow` is also x diet.
 - **When she's done** (`onLitterFinished`): a message with how many,
   stillbirths and a word on her care; clears `midwife`, `pregScan`,
   `pregCare`.
@@ -1736,7 +1741,7 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
 - **Training**: right-click one of your fluffies (`trickRightClick`, called
   from UI.js after item right-clicks) opens a row of chips over it
   (`trickUI`, screen "tricks", layer 6). Tricks (`TRICKS`): come, sit, down
-  (lie down), bow, dance, wave. Picking one calls `tryTrick(f, key)`:
+  (lie down), bow, dance, wave, fetch (Play.js section). Picking one calls `tryTrick(f, key)`:
   - refuses (`trickRefusal`): too young to walk, asleep, a Smarty, scared of
     you (fear 0.45+), or out of tries (`TRICK_TRIES_PER_DAY` = 10, counted in
     `f.trickTries`). A fluffy that dislikes you refuses 40% of the time.

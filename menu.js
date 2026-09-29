@@ -312,7 +312,6 @@ const fluffySexualitySliderSet = new MutuallyExclusiveSliderSet({
     wsPromptSexuality = { ...vals };
   },
 });
-const regularSexualitySliderSet = fluffySexualitySliderSet;
 
 function drawWorldSettingsPrompt() {
   ctx.fillStyle = "rgba(0,0,0,0.8)";

@@ -986,7 +986,7 @@ function handleCheatCode(code) {
       "female",
     );
     mom.x = boardX;
-    mom.y = boardY - (typeof tableOffset !== "undefined" ? tableOffset : 30);
+    mom.y = boardY - (30);
     mom.placedOn = board;
     mom.facingRight = false;
     mom.initBehavior("LYING");
@@ -1020,7 +1020,7 @@ function handleCheatCode(code) {
       "female",
     );
     mom.x = boardX;
-    mom.y = boardY - (typeof tableOffset !== "undefined" ? tableOffset : 30);
+    mom.y = boardY - (30);
     mom.placedOn = board;
     mom.facingRight = false;
     mom.initBehavior("LYING");

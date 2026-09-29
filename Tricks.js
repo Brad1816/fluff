@@ -2,7 +2,7 @@
 // Tricks and training.
 //
 // How to train: RIGHT-CLICK one of your fluffies. A row of tricks pops up
-// over it (TRICKS: come, sit, lie down, bow, dance, wave), each with how well
+// over it (TRICKS: come, sit, lie down, bow, dance, wave, fetch), each with how well
 // it knows it. Pick one and it tries:
 //   - it gets it right (trickChance): it does the trick, and for a few
 //     seconds two buttons show - "Good fluffy!" (praise, free) and "Treat"
@@ -184,13 +184,23 @@ function startTrick(f, key, target = null, time = null) {
   f.trickNow = { key, start: now, until: now + (time ?? trick.time), x: target ? target.x : f.x, y: target ? target.y : f.y, started: false };
 }
 
+// Is a fluffy carrying this ball for Fetch right now? (Clears a stale mark
+// if the carrier died, was sold or stopped fetching.)
+function isBallCarried(b) {
+  if (!b || !b.carriedBy) return false;
+  const f = fluffies.find((x) => x.id === b.carriedBy);
+  if (f && f.isAlive && f.trickNow && f.trickNow.key === "fetch") return true;
+  b.carriedBy = null;
+  return false;
+}
+
 // The nearest ball lying still in its room (for Fetch)
 function fetchableBall(f) {
   if (typeof objects === "undefined") return null;
   let best = null;
   let bestD = Infinity;
   for (const o of objects) {
-    if (!(o instanceof Ball) || o.scene !== f.scene || o.isDragging || o.carriedBy || o.currentCage !== f.currentCage) continue;
+    if (!(o instanceof Ball) || o.scene !== f.scene || o.isDragging || isBallCarried(o) || o.currentCage !== f.currentCage) continue;
     const d = Math.hypot(o.x - f.x, o.y - f.y);
     if (d < bestD) {
       bestD = d;
@@ -373,7 +383,8 @@ function _trCam() {
 }
 
 function trickUIFluffy() {
-  return trickUI ? fluffies.find((f) => f.id === trickUI.id && f.isAlive) || null : null;
+  // (it has to be in the room you're looking at)
+  return trickUI ? fluffies.find((f) => f.id === trickUI.id && f.isAlive && f.scene === currentScene) || null : null;
 }
 
 // UI.js mousedown, right button, world positions. True if it opened the menu.

@@ -583,8 +583,7 @@ addHorseMethods({
       if (typeof worldSettings !== "undefined" && !worldSettings.toxoplasmosis) {
         this.isToxoplasmosis = false;
       } else if (this.isToxoVaccinated) {
-        this.isToxoplasmosis = false;
-        return true;
+        this.isToxoplasmosis = false; // jabbed: it can't take hold (Vet.js)
       } else {
         this.health = Math.max(0, this.health - 0.2 * dt);
 

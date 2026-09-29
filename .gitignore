@@ -10,3 +10,6 @@ exf.sh
 .antigravitycli
 AGENTS.md
 _backup_before_fence/
+node_modules/
+tests/package-lock.json
+test-results/
