@@ -713,35 +713,9 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
-  // Sell Request Accept/Reject (checked first so it is never blocked by other UI)
-  if (currentSellRequest && getSceneConfig(currentScene).insidePlayerQuarters) {
-    const _srW = 300,
-      _srH = 160,
-      _srMargin = 10;
-    const _srX = _srMargin;
-    const _srY = getSellRequestY();
-    const _btnW = 80,
-      _btnH = 30;
-    const _btnY = _srY + _srH - 40;
-    const _acceptX = _srX + _srW / 2 - 85;
-    const _rejectX = _srX + _srW / 2 + 5;
-    if (isPointInRect(mouse.x, mouse.y, _acceptX, _btnY, _btnW, _btnH)) {
-      const victimIdx = fluffies.findIndex(
-        (f) => f.id === currentSellRequest.fluffyId,
-      );
-      if (victimIdx > -1) {
-        if (!showDebugMenu) money += currentSellRequest.price;
-        if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: currentSellRequest.price });
-        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold", currentSellRequest.price);
-        fluffies.splice(victimIdx, 1);
-      }
-      currentSellRequest = null;
-      return;
-    }
-    if (isPointInRect(mouse.x, mouse.y, _rejectX, _btnY, _btnW, _btnH)) {
-      currentSellRequest = null;
-      return;
-    }
+  // The buyer at the door: Sell / Ask more / No thanks (Buyers.js)
+  if (typeof sellRequestClick === "function" && sellRequestClick()) {
+    return;
   }
 
   // Toolbox and Toolbar Click
@@ -805,41 +779,6 @@ canvas.addEventListener("mousedown", (e) => {
   // The show hall on Shopping Street (Shows.js)
   if (typeof showHallClick === "function" && showHallClick()) {
     return;
-  }
-
-  // 3. Check Sell Request Click
-  if (currentSellRequest && getSceneConfig(currentScene).insidePlayerQuarters) {
-    const w = 300;
-    const h = 160;
-    const margin = 10;
-    const x = margin;
-    const y = height - margin - h;
-
-    const btnW = 80;
-    const btnH = 30;
-    const btnY = y + h - 40;
-    const acceptX = x + w / 2 - 85;
-    const rejectX = x + w / 2 + 5;
-
-    // Check Accept
-    if (isPointInRect(mouse.x, mouse.y, acceptX, btnY, btnW, btnH)) {
-      const victimIdx = fluffies.findIndex(
-        (f) => f.id === currentSellRequest.fluffyId,
-      );
-      if (victimIdx > -1) {
-        if (!showDebugMenu) money += currentSellRequest.price;
-        if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: currentSellRequest.price });
-        if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[victimIdx], "sold", currentSellRequest.price);
-        fluffies.splice(victimIdx, 1);
-        currentSellRequest = null;
-        return;
-      }
-    }
-    // Check Reject
-    if (isPointInRect(mouse.x, mouse.y, rejectX, btnY, btnW, btnH)) {
-      currentSellRequest = null;
-      return;
-    }
   }
 
   // Things in the world: world positions (Park.js)

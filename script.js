@@ -57,14 +57,8 @@ function updateMoneyAndRequests(dt) {
         const candidates =
           sellCageFluffies.length > 0 ? sellCageFluffies : indoorFluffies;
 
-        const target =
-          candidates[Math.floor(Math.random() * candidates.length)];
-        currentSellRequest = {
-          fluffyId: target.id,
-          price: target.calculatePrice(),
-          timer: 30,
-          fluffy: target, // Keep ref for drawing
-        };
+        // A buyer with tastes picks one they like (Buyers.js)
+        currentSellRequest = makeSellRequest(candidates);
       }
       sellRequestTimer =
         sellRequestAverage / 2 + Math.random() * sellRequestAverage;

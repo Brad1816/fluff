@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 function getSellRequestY() {
-  const h = 160;
+  const h = typeof SELL_CARD_H === "number" ? SELL_CARD_H : 160;
   const margin = 10;
   const isToolboxShown = typeof showToolbox === "undefined" || showToolbox;
   const layout =
@@ -26,83 +26,76 @@ function getSellRequestY() {
   return y;
 }
 
+// The buyer at the door (Buyers.js): who they are, what they're after,
+// the fluffy they want and their offer, with Accept / Ask more / No
 function drawSellRequest(ctx) {
-  if (!currentSellRequest || !getSceneConfig(currentScene).insidePlayerQuarters)
-    return;
-  const w = 300;
-  const h = 160;
-
-  // Use OffscreenCanvas specifically for this section
-  const osCanvas = new OffscreenCanvas(w, h);
-  const osCtx = osCanvas.getContext("2d");
-
-  osCtx.fillStyle = "rgba(0, 0, 0, 0.8)";
-  osCtx.fillRect(0, 0, w, h);
-  osCtx.strokeStyle = "gold";
-  osCtx.lineWidth = 3;
-  osCtx.fillRect(0, 0, w, h);
-
-  const xOffset = 225;
-
-  osCtx.fillStyle = "white";
-  osCtx.font = "bold 16px Arial";
-  osCtx.textAlign = "center";
-  let offset = 25;
-  osCtx.fillText("Sale offer!", xOffset, offset);
-
-  // Draw portrait
-  if (
-    currentSellRequest.fluffy &&
-    typeof currentSellRequest.fluffy.drawPortrait === "function"
-  ) {
-    currentSellRequest.fluffy.drawPortrait(osCtx, 85, 80, 100);
+  const req = currentSellRequest;
+  if (!req || !getSceneConfig(currentScene).insidePlayerQuarters) return;
+  const L = sellRequestLayout();
+  const kind = getBuyerKind(req.buyer);
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.82)";
+  fillRoundRect(ctx, L.x, L.y, L.w, L.h, 10);
+  ctx.strokeStyle = "gold";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Portrait
+  if (req.fluffy && typeof req.fluffy.drawPortrait === "function") {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(L.x + 6, L.y + 30, 100, 100);
+    ctx.clip();
+    req.fluffy.drawPortrait(ctx, L.x + 6 + 50, L.y + 30 + 58, 80);
+    ctx.restore();
   }
-
-  osCtx.font = "14px Arial";
-  offset += 25;
-  osCtx.fillText(
-    `Name: ${fluffyNames[currentSellRequest.fluffy.id] ?? "Fluffy"}`,
-    xOffset,
-    offset,
-  );
-  offset += 25;
-  osCtx.fillText(`Price: $${currentSellRequest.price}`, xOffset, offset);
-  offset += 25;
-  osCtx.fillText(
-    `Time: ${Math.ceil(currentSellRequest.timer)}s`,
-    xOffset,
-    offset,
-  );
-
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "gold";
+  ctx.font = "bold 15px Arial";
+  ctx.fillText(fitText(ctx, `${kind.label} is at the door`, L.w - 20), L.x + 10, L.y + 21);
+  const tx = L.x + 112;
+  const tw = L.w - 122;
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.font = "italic 12px Arial";
+  ctx.fillText(fitText(ctx, `Wants ${kind.wants}`, tw), tx, L.y + 42);
+  ctx.fillStyle = "white";
+  ctx.font = "bold 14px Arial";
+  const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(req.fluffy) : fluffyNames[req.fluffyId] || "Fluffy";
+  ctx.fillText(fitText(ctx, name, tw), tx, L.y + 62);
+  ctx.fillStyle = req.like >= 0.75 ? "#9fe0a8" : "rgba(255,255,255,0.75)";
+  ctx.font = "12px Arial";
+  ctx.fillText(describeBuyerInterest(req), tx, L.y + 79);
+  ctx.fillStyle = "#9fe0a8";
+  ctx.font = "bold 22px Arial";
+  ctx.fillText(`$${req.price.toLocaleString()}`, tx, L.y + 106);
+  ctx.fillStyle = "rgba(255,255,255,0.6)";
+  ctx.font = "12px Arial";
+  ctx.textAlign = "right";
+  ctx.fillText(`${Math.ceil(req.timer)}s`, L.x + L.w - 10, L.y + 21);
+  if (req.said) {
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ffe7b0";
+    ctx.font = "italic 12px Arial";
+    ctx.fillText(fitText(ctx, req.said, L.w - 20), L.x + 10, L.y + L.h - 50);
+  }
   // Buttons
-  const btnW = 80;
-  const btnH = 30;
-  const btnY = h - 40;
-  const acceptX = w / 2 - 85;
-  const rejectX = w / 2 + 5;
-
-  // Accept Button
-  osCtx.fillStyle = "#4CAF50";
-  osCtx.fillRect(acceptX, btnY, btnW, btnH);
-  osCtx.fillStyle = "white";
-  osCtx.font = "bold 14px Arial";
-  osCtx.textAlign = "center";
-  osCtx.textBaseline = "middle";
-  osCtx.fillText("Accept", acceptX + btnW / 2, btnY + btnH / 2);
-
-  // Reject Button
-  osCtx.fillStyle = "#f44336";
-  osCtx.fillRect(rejectX, btnY, btnW, btnH);
-  osCtx.fillStyle = "white";
-  osCtx.textAlign = "center";
-  osCtx.textBaseline = "middle";
-  osCtx.fillText("Reject", rejectX + btnW / 2, btnY + btnH / 2);
-
-  // Blit back to main context
-  const margin = 10;
-  const x = margin;
-  const y = getSellRequestY();
-  ctx.drawImage(osCanvas, x, y);
+  const button = (b, label, colour, enabled = true) => {
+    ctx.globalAlpha = enabled ? 1 : 0.4;
+    ctx.fillStyle = colour;
+    fillRoundRect(ctx, b.x, b.y, b.w, b.h, 6);
+    ctx.fillStyle = "white";
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, b.x + b.w / 2, b.y + b.h / 2 + 1);
+    ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = 1;
+  };
+  button(L.accept, "Sell", "#4CAF50");
+  button(L.ask, req.final ? "Final offer" : `Ask $${askMorePrice(req).toLocaleString()}`, "#e08a1e", !req.final);
+  button(L.reject, "No thanks", "#c0392b");
+  ctx.restore();
 }
 
 function sellModeClick() {

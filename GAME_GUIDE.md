@@ -82,6 +82,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `BreedingRecords.js` | **Breeding records** screen (Records button or L): every litter you've bred and what each parent earned. See section 9 (Breeding records). |
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
 | `ShoppingBag.js` | **Getting shopping home**: small things go in the shopping bag (tan buttons in the toolbox), big things are delivered to the living room. See section 9 (Shopping bag and deliveries). |
+| `Buyers.js` | **Buyers at the door**: buyer types with tastes and budgets, which fluffy they ask about, offers that count condition, asking for more (agree / final offer / walk off). See section 9 (Buyers at the door). |
 | `Commissions.js` | **Commissions and regular customers**: breed-to-order commissions (gold cards, deposit, days to deliver, "Bred by you"), customer loyalty (Returning / Regular / Loyal pay more), favourite types, letters from past customers. See section 9 (Commissions and regular customers). |
 | `Pregnancy.js` | **Pregnancy and foal care**: litter size runs in families, care during pregnancy sets litter size, stillbirths and foal strength, birth health cost, the vet's scan and midwife, foal growth speed. See section 9 (Pregnancy and foal care). |
 | `Shows.js` | **Fluffy shows**: a themed show every 3 days (the "Shows" tab of the orders screen, or the Show Hall on Shopping Street), grooming with the brush, prizes, ribbons, champions, watching it in the ring. See section 9 (Fluffy shows). |
@@ -1550,3 +1551,31 @@ gap, and customers now remember you.
   footer shows the deposit, or "Breed one: pair up in the Gene Lab".
 - Help: "Orders & customers" topic (help tabs are now 31px apart for 16
   topics).
+
+### Buyers at the door (`Buyers.js`)
+Before, a random fluffy got a fixed take-it-or-leave-it offer of its
+`calculatePrice()`. Now:
+- **Who knocks** (`pickBuyerKind`, weighted by reputation level):
+  `BUYER_KINDS` - family (friendly, happy, foals; budget 1.0), kid (foals;
+  0.6), bargain hunter (anything; 0.8, patient), farmer (grown earthies,
+  healthy; 0.9), collector (coat via `showCoatScore`, patterns, not earthy;
+  1.35, impatient, weight grows with level), show breeder (ribbons and
+  coat; 1.3; from level 3). Each has `like(f)` 0..1, `patience` and
+  `generous` (how far above their offer they'd go).
+- **Which fluffy** (`makeSellRequest`, called from script.js
+  `updateMoneyAndRequests` with the same candidates as before - the sell
+  cage first): weighted by 0.15 + like^2.
+- **The offer** (`buyerOffer`): price x `buyerConditionFactor` (health
+  under 70, missing parts -25% each, flu showing x0.5, the runs x0.85) x
+  budget x (1 + 6% per reputation level above 1) x (0.85 + 0.3 x like).
+  `maxPay` = offer x (1 + generous x (0.4 + 0.6 x like) + up to 10%).
+- **Ask more** (`askBuyerForMore`): asks `ASK_MORE_STEP` (20%) more. Within
+  `maxPay` they agree (and give you at least 12 s more); past it they lose
+  a point of patience and either walk off (out of patience, or a 25% chance
+  anyway) or offer `maxPay` as a final offer (the button greys out).
+- **The card** (UISelling.js `drawSellRequest`, `sellRequestLayout`,
+  `sellRequestClick`): who's at the door and what they want, the fluffy,
+  how keen they are, the price, the buyer's last reply, and Sell / Ask $X /
+  No thanks. `SELL_CARD_W` x `SELL_CARD_H` (330 x 190). The two old copies
+  of the Accept/Reject click code in UI.js (one checking the wrong place)
+  are now one `sellRequestClick()` call.
