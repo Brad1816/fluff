@@ -22,10 +22,12 @@ class HorseActionHandler {
         const ball = balls.find(
           (b) =>
             b.scene === this.horse.scene &&
+            !b.carriedBy &&
             Math.sqrt((b.x - this.horse.x) ** 2 + (b.y - this.horse.y) ** 2) <
               50,
         );
         if (ball) {
+          if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "ball"); // Play.js
           poofs.push(new Poof(ball.x, ball.y, this.horse.scene));
           ball.vx = (Math.random() - 0.5) * 800;
           ball.vy = -300 - Math.random() * 300;
@@ -59,6 +61,7 @@ class HorseActionHandler {
             this.horse.expressionOverride = "GOOD_UPSIES";
             this.horse.expressionOverrideTimer = 2.0;
             this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
+            if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "block"); // Play.js
           } else {
             // Start Stacking
             this.horse.isStacking = true;
@@ -99,6 +102,7 @@ class HorseActionHandler {
           this.horse.expressionOverrideTimer = 2.0;
           this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
           this.horse.initBehavior("FLUFFY_JAB");
+          if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "block"); // Play.js
           this.horse.speak(getDialogue(["PLAY", "BLOCK_KNOCK_DOWN"]));
           this.horse.failStackBlocks(block);
         }

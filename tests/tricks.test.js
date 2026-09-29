@@ -168,7 +168,7 @@ module.exports = [
         return { phase: trickUI && trickUI.phase, chips: L && L.chips.map((c) => c.key), bow: L && L.chips.find((c) => c.key === "bow") };
       });
       checkEqual(menu.phase, "menu", "right-click opens the trick menu");
-      checkEqual(JSON.stringify(menu.chips), JSON.stringify(["come", "sit", "down", "bow", "dance", "wave"]), "tricks");
+      checkEqual(JSON.stringify(menu.chips), JSON.stringify(["come", "sit", "down", "bow", "dance", "wave", "fetch"]), "tricks");
       await page.evaluate(() => __seedRandom(4));
       await page.mouse.click(menu.bow.x + 20, menu.bow.y + 10);
       const reward = await page.evaluate(() => {

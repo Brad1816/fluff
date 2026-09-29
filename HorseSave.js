@@ -52,6 +52,8 @@ const SAVED_HORSE_FIELDS = [
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },
   { name: "recentMeals", fallback: null, clone: true },
+  { name: "boredom", fallback: 0 }, // Play.js
+  { name: "toyLikes", fallback: null, clone: true },
   { name: "warmth", fallback: 1 }, // Warmth.js // Commissions.js (null = an old save: worked out from the mother)
 ];
 

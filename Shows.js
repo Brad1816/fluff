@@ -202,7 +202,7 @@ function showScore(f, theme) {
   // Every show: a few points for each trick it knows (up to 3, Tricks.js)
   const tricks = typeof knownTricks === "function" && theme.id !== "tricks" ? Math.min(3, knownTricks(f).length) * TRICK_SHOW_BONUS : 0;
   // Diet and weight: a glossy, trim fluffy shows better (Diet.js)
-  const diet = typeof dietShowBonus === "function" ? dietShowBonus(f) : 0;
+  const diet = (typeof dietShowBonus === "function" ? dietShowBonus(f) : 0) + (typeof boredomShowBonus === "function" ? boredomShowBonus(f) : 0); // + Play.js
   return Math.round(_showClamp(theme.score(showParts(f)) - showConditionPenalty(f) + groomed + tricks + diet));
 }
 

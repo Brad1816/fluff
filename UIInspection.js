@@ -230,6 +230,12 @@ function getFluffyInspectionInfo(f) {
       care.push({ label: "Pregnant", value: pText, tone: pTone });
     }
   }
+  // Boredom and favourite toy (Play.js)
+  if (f.isAlive && f.adopted && typeof describeBoredom === "function" && !f.tooYoungToWalk()) {
+    const [bText, bTone] = describeBoredom(f);
+    care.push({ label: "Boredom", value: bText, tone: bTone });
+    care.push({ label: "Favourite toy", value: describeFavouriteToy(f), tone: "" });
+  }
   // Diet, weight and favourite food (Diet.js)
   if (f.isAlive && typeof describeDiet === "function" && !f.tooYoungToWalk()) {
     const [dText, dTone] = describeDiet(f);
@@ -311,7 +317,7 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Hunger", "Health", "Sleep", "Warmth", "Pregnant", "Spayed"] },
+      { title: "Wellbeing", rows: ["Happiness", "Hunger", "Health", "Sleep", "Boredom", "Warmth", "Pregnant", "Spayed"] },
       { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Settling in", "Sells for"] },
     ],
   },
@@ -328,7 +334,7 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Sexuality", "Colour views"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Sexuality", "Colour views"] },
     ],
   },
   {

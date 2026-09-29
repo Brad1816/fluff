@@ -1807,3 +1807,30 @@ trust score (`f.playerTrust`, Memory.js), so shows, buyers, prices and
 - **Shown**: Diet and Weight (Overview > Care), Favourite food (Looks &
   nature > Nature).
 
+### Play and boredom (`Play.js`)
+- **Boredom** `f.boredom` 0..1 (saved), fluffies you own that can walk.
+  `updatePlay` (system order 138, every 2 s): +`BOREDOM_PER_HOUR` (0.12)
+  while awake, x(1 + 0.4 x energy trait), foals x1.3, elderly x0.6, x0.7 with
+  a friend (`relationships`) in the room; -0.2 an hour in the park; nothing
+  while asleep. Levels: bored 0.4, very bored 0.7.
+- **Relief** `onFluffyPlayed(f, kind)`: `PLAY_RELIEF` ball 0.25 (kicking,
+  HorseActionHandler), block 0.2 (picking up / knocking down), tv 0.015 a
+  second (while `f.tvFocus`), trick 0.05, fetch 0.15, you 0.35. Its
+  `favouriteToy` (ball / block / tv, from `f.toyLikes` + energy trait) x1.5.
+  Ball games and fetch burn weight (-0.01, playing with you -0.02).
+- **Playing with you**: `ChaseHeldBallDesire` (score 55-75): a ball you're
+  holding within 450px draws fluffies that are a bit bored, playful or
+  young; reaching it (`playedWithYou`) = relief "you", +0.06 happiness,
+  affection "played" (0.03, 3 a day in full). Once a minute each.
+- **Effects**: `playDesireBonus` adds up to +40 to PlayWithBall /
+  PlayWithBlocks. Bored: grumbles (`PLAY.BORED`). Very bored: -0.03
+  happiness an hour and `boredMischief` every 3-7 minutes - empties a food
+  bowl in reach (60%) or jabs a fluffy nearby (-0.05 happiness), with a
+  message. Shows `boredomShowBonus`: +2 if under 0.3, -4 if very bored.
+- **Fetch** (Tricks.js `TRICKS`, `needsBall`): refuses with "noball" if
+  there's no free ball in the room (`fetchableBall`). `_doFetch`: runs to
+  the ball, carries it (`ball.carriedBy`, positioned by the fluffy each
+  frame; other fluffies leave it alone), brings it back to where it was
+  asked, drops it and sits.
+- **Shown**: Boredom (Overview > Wellbeing), Favourite toy (Looks & nature).
+

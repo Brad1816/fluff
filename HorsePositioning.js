@@ -897,6 +897,7 @@ class HorsePositioning {
       (b) =>
         b.scene === this.horse.scene &&
         !b.currentCage &&
+        !b.carriedBy &&
         b.isStill() &&
         !fluffies.some((f) => f.ballTarget && f.targetX === b.x),
     );

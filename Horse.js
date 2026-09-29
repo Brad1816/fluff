@@ -226,6 +226,8 @@ class Horse {
     }
     // Doing a trick (Tricks.js)
     if (typeof TrickDesire !== "undefined") this.brain.addDesire(new TrickDesire());
+    // Chasing the ball in your hand (Play.js)
+    if (typeof ChaseHeldBallDesire !== "undefined") this.brain.addDesire(new ChaseHeldBallDesire());
     // Bonds and grudges (Bonds.js): hang out with buddies, avoid grudges
     if (typeof SeekBuddyDesire !== "undefined") {
       this.brain.addDesire(new SeekBuddyDesire());

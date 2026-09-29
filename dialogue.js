@@ -403,6 +403,8 @@ const DIALOGUE = {
     BOW: ["Fanceh bow!", "<Speaker> bow fow daddeh!", "Wike dis? Bowie!"],
     DANCE: ["Dancie! Dancie!", "Wook! <Speaker> dance!", "Hoofies go stompie-stompie!"],
     WAVE: ["Hewwo! Hewwo!", "<Speaker> wave hoofie!", "Hi daddeh!"],
+    FETCH: ["Baww! <Speaker> get baww!", "Gon' get it!", "Fetchie!"],
+    FETCHED: ["Hewe baww, daddeh!", "<Speaker> bwing baww!", "Got it! Again?"],
     FAIL: ["Uh... dis one?", "<Speaker> confused...", "Wha' daddeh want?", "Oopsie..."],
     TIRED: ["<Speaker> tiwed of twicks...", "Nu moaw twicks, pwease...", "Twick-time ober..."],
     REFUSE: ["Nu wan!", "Nu do twick fow yu!", "Hmph. Nu."],
@@ -1391,6 +1393,22 @@ const DIALOGUE = {
 
   // Play
   PLAY: {
+    // Play.js
+    WITH_YOU: [
+      "Pway wif daddeh! Bestest!",
+      "Gib baww! Gib baww! Hehe!",
+      "<Speaker> catch baww! Yay!",
+      "Mowe pway? Pwease?",
+    ],
+    BORED: [
+      "Nuffin' to do... *sigh*",
+      "Wan pway... bowed...",
+      "Daddeh, pway wif <speaker>?",
+      "Su bowed... huu...",
+    ],
+    MISCHIEF_BOWL: ["Oopsie! Hehe!", "*kick* Nummies go eberywhewe!", "Bowl faww down! Hehe!"],
+    MISCHIEF_PICK: ["Hehe! Poke!", "<Speaker> bowed, gon' bug yu!", "Nyah nyah!"],
+    PICKED_ON: ["Hey! Nu do dat!", "Weave <speaker> awone!", "Owie! Meanie!"],
     BALL: [
       "Yay! Wub baww!",
       "Wub bouncy baww!",

@@ -798,7 +798,8 @@ class PlayWithBallDesire extends Desire {
       );
     if (!hasBall) return 0;
 
-    return 30;
+    // Bored fluffies want to play more (Play.js)
+    return 30 + (typeof playDesireBonus === "function" ? playDesireBonus(horse) : 0);
   }
   execute(horse) {
     return horse.positioning.scoutForBall();
@@ -832,7 +833,7 @@ class PlayWithBlocksDesire extends Desire {
       );
     if (!hasBlock) return 0;
 
-    return 30;
+    return 30 + (typeof playDesireBonus === "function" ? playDesireBonus(horse) : 0);
   }
   execute(horse) {
     return horse.positioning.scoutForBlock();

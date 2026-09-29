@@ -44,6 +44,7 @@ const TRICKS = [
   { key: "bow", name: "Bow", pose: "BENDING_2", time: 2.5 },
   { key: "dance", name: "Dance", pose: "FLUFFY_STOMPIE", time: 3, spin: true },
   { key: "wave", name: "Wave", pose: "FLUFFY_JAB", time: 2.5 },
+  { key: "fetch", name: "Fetch", time: 25, needsBall: true }, // (Play.js)
 ];
 const TRICK_KNOWN = 0.7;
 const TRICK_TRIES_PER_DAY = 10;
@@ -144,6 +145,9 @@ function tryTrick(f, key, target = null) {
     else if (why === "scared" && !f.tooYoungToSpeak()) f.speak(getDialogue(["TRUST", "FLEE"], f), true);
     return why;
   }
+  // Fetch needs a ball lying about
+  const ball = trick.needsBall ? fetchableBall(f) : null;
+  if (trick.needsBall && !ball) return "noball";
   const d = _trDay();
   if (!f.trickTries || f.trickTries.day !== d) f.trickTries = { day: d, n: 0 };
   f.trickTries.n++;
@@ -156,8 +160,10 @@ function tryTrick(f, key, target = null) {
   }
   if (Math.random() < trickChance(f, key)) {
     startTrick(f, key, target);
+    if (ball) f.trickNow.ballId = ball.id;
     _trSay(f, key.toUpperCase());
     _trWatchers(f, key);
+    if (typeof onFluffyPlayed === "function") onFluffyPlayed(f, "trick"); // a bit less bored (Play.js)
     return "done";
   }
   // Wrong: does some other trick, or wanders off when called
@@ -176,6 +182,22 @@ function startTrick(f, key, target = null, time = null) {
   const trick = getTrick(key);
   const now = _trNow();
   f.trickNow = { key, start: now, until: now + (time ?? trick.time), x: target ? target.x : f.x, y: target ? target.y : f.y, started: false };
+}
+
+// The nearest ball lying still in its room (for Fetch)
+function fetchableBall(f) {
+  if (typeof objects === "undefined") return null;
+  let best = null;
+  let bestD = Infinity;
+  for (const o of objects) {
+    if (!(o instanceof Ball) || o.scene !== f.scene || o.isDragging || o.carriedBy || o.currentCage !== f.currentCage) continue;
+    const d = Math.hypot(o.x - f.x, o.y - f.y);
+    if (d < bestD) {
+      bestD = d;
+      best = o;
+    }
+  }
+  return best;
 }
 
 // Foals watching pick a little of it up
@@ -244,6 +266,7 @@ class TrickDesire extends Desire {
     const t = h.trickNow;
     if (!t) return 0;
     if (!h.isAlive || h.isDragging || h.placedOn || h.currentStateKey === "SLEEPING" || _trNow() > t.until) {
+      _dropFetchBall(h);
       h.trickNow = null;
       return 0;
     }
@@ -253,6 +276,7 @@ class TrickDesire extends Desire {
     const t = h.trickNow;
     if (!t) return false;
     const trick = getTrick(t.key);
+    if (t.key === "fetch") return _doFetch(h, t);
     if (t.key === "come") {
       if (!t.started) {
         t.started = true;
@@ -279,6 +303,66 @@ class TrickDesire extends Desire {
       h.stateTimer = trick.spin || trick.pose === "FLUFFY_JAB" ? 0.5 : Math.max(0.5, t.until - _trNow());
     }
     return true;
+  }
+}
+
+// Fetch: run to the ball, carry it back to where it was asked, drop it, sit
+function _doFetch(h, t) {
+  const ball = typeof objects !== "undefined" ? objects.find((o) => o.id === t.ballId && o instanceof Ball) : null;
+  if (!ball || ball.isDragging || ball.scene !== h.scene) {
+    _dropFetchBall(h);
+    h.trickNow = null;
+    return false;
+  }
+  if (!t.started) {
+    t.started = true;
+    h.initBehavior("MOVING");
+    h.setTargetPosition(ball.x, ball.y);
+    return true;
+  }
+  if (!t.carrying) {
+    if (h.isMovingOrRunning()) return true;
+    if (Math.hypot(ball.x - h.x, ball.y - h.y) > 80) {
+      h.initBehavior("MOVING");
+      h.setTargetPosition(ball.x, ball.y);
+      return true;
+    }
+    // Got it: bring it back
+    t.carrying = true;
+    ball.carriedBy = h.id;
+    h.initBehavior("MOVING");
+    h.setTargetPosition(t.x, t.y);
+    return true;
+  }
+  // Carrying it in its mouth
+  ball.x = h.x + (h.facingRight ? 38 : -38) * (h.scale || 1);
+  ball.y = h.y - 30 * (h.growth || 1);
+  ball.vx = 0;
+  ball.vy = 0;
+  ball.groundY = ball.y;
+  if (!h.isMovingOrRunning() && !t.arrived) {
+    t.arrived = true;
+    _dropFetchBall(h);
+    if (typeof onFluffyPlayed === "function") onFluffyPlayed(h, "fetch");
+    t.until = _trNow() + 2.5;
+    h.initBehavior("SITTING");
+    h.stateTimer = 2.5;
+    if (!h.tooYoungToSpeak()) h.speak(getDialogue(["TRICK", "FETCHED"], h), true);
+  } else if (t.arrived && h.currentStateKey !== "SITTING") {
+    h.initBehavior("SITTING");
+    h.stateTimer = Math.max(0.5, t.until - _trNow());
+  }
+  return true;
+}
+
+function _dropFetchBall(h) {
+  if (typeof objects === "undefined") return;
+  for (const o of objects) {
+    if (o instanceof Ball && o.carriedBy === h.id) {
+      o.carriedBy = null;
+      o.y = h.y + 10;
+      o.groundY = o.y;
+    }
   }
 }
 
@@ -321,7 +405,7 @@ function getTrickMenuLayout() {
   const top = f.y - cam.y - 90 - 60 * (f.growth || 1);
   const chips = [];
   if (trickUI.phase === "menu") {
-    const w = 96;
+    const w = 92;
     const gap = 6;
     const total = TRICKS.length * w + (TRICKS.length - 1) * gap;
     let x = Math.max(8, Math.min(width - total - 8, cx - total / 2));
@@ -389,6 +473,7 @@ function _trAsk(f, key, target = null) {
       tired: `${_trName(f)} has had enough tricks for today.`,
       scared: `${_trName(f)} is too scared of you to learn.`,
       smarty: `Smarties don't do tricks.`,
+      noball: "There's no ball here to fetch.",
     }[res];
     if (msg && typeof addUIMessage === "function") addUIMessage(msg);
   }

@@ -256,8 +256,8 @@ function weightBelly(f) {
 function dietLevel(f) {
   const d = typeof f.diet === "number" ? f.diet : DIET_START;
   if (d >= 0.85) return ["Excellent", "good"];
-  if (d >= 0.65) return ["Good", "good"];
-  if (d >= 0.45) return ["Fair", "ok"];
+  if (d >= 0.58) return ["Good", "good"]; // (a new fluffy, 0.6, is "Good")
+  if (d >= 0.42) return ["Fair", "ok"];
   if (d >= 0.25) return ["Poor", "bad"];
   return ["Malnourished", "bad"];
 }
