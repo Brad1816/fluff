@@ -16,15 +16,54 @@ function updateUIMessages(dt) {
   }
 }
 
+// Where messages go: top middle, just below the top bar and the wall, so
+// they're clear of the money, clock and buttons in the top left
+const UI_MESSAGE_MAX = 5; // newest ones shown at once
+const UI_MESSAGE_WIDTH = 620;
+
+function uiMessageLayout() {
+  return { cx: width / 2, top: Math.round(height * 0.15) + 10, maxW: Math.min(UI_MESSAGE_WIDTH, width - 40) };
+}
+
+function _wrapMessage(c, text, maxW) {
+  const words = String(text).split(" ");
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w;
+    if (line && c.measureText(test).width > maxW) {
+      lines.push(line);
+      line = w;
+    } else line = test;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
 function drawUIMessages(ctx) {
   if (uiMessages.length === 0) return;
+  const L = uiMessageLayout();
   ctx.save();
-  ctx.font = "14px Arial";
-  ctx.textAlign = "left";
-  uiMessages.forEach((msg, i) => {
-    ctx.fillStyle = `rgba(255, 255, 255, ${msg.opacity})`;
-    ctx.fillText(msg.text, 20, 40 + i * 20);
-  });
+  ctx.font = "bold 14px Arial";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  let y = L.top;
+  for (const msg of uiMessages.slice(-UI_MESSAGE_MAX)) {
+    const lines = _wrapMessage(ctx, msg.text, L.maxW - 28);
+    const w = Math.min(L.maxW, Math.max(...lines.map((l) => ctx.measureText(l).width)) + 28);
+    const h = lines.length * 18 + 10;
+    const a = Math.max(0, Math.min(1, msg.opacity ?? 1));
+    ctx.globalAlpha = a;
+    ctx.fillStyle = "rgba(20, 22, 32, 0.82)";
+    if (typeof fillRoundRect === "function") fillRoundRect(ctx, L.cx - w / 2, y, w, h, 10);
+    else ctx.fillRect(L.cx - w / 2, y, w, h);
+    ctx.strokeStyle = "rgba(255, 214, 240, 0.35)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = "white";
+    lines.forEach((l, i) => ctx.fillText(l, L.cx, y + 14 + i * 18));
+    y += h + 6;
+  }
   ctx.restore();
 }
 

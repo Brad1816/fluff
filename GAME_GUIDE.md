@@ -1640,3 +1640,10 @@ door stays (it's on the wall). Other areas keep their arrows.
   (`houseKeyTowardsLocked`) first says the price ("Press D again to buy
   new quarters for $50,000"); pressing again within 4 s buys it
   (`buyRoomPortal`, also used by clicking the chip, which buys at once).
+
+### Messages moved to the top middle (`UIMessages.js drawUIMessages`)
+Game messages (`addUIMessage`) used to be plain white text in the top left,
+on top of the money, clock and buttons. Now they stack in the top middle,
+just below the top bar / wall (`uiMessageLayout`: `height * 0.15 + 10`),
+each on a dark rounded card, wrapped at `UI_MESSAGE_WIDTH` (620px); only the
+newest `UI_MESSAGE_MAX` (5) show at once. They still fade out after 5 s.
