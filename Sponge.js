@@ -45,6 +45,9 @@ class Sponge {
   attemptClean() {
     let cleanedSomething = false;
 
+    // 0. Bath time: rubbing a fluffy (Bath.js)
+    if (typeof spongeFluffy === "function" && spongeFluffy(this)) return true;
+
     // 1. Check Puddles
     if (typeof puddles !== "undefined") {
       const baseA = 200;

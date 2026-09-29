@@ -93,6 +93,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Tricks.js` | **Tricks and training**: right-click trick menu (screen layer 6), rewards, learning speed, Fetch, showing off. See section 9 (Tricks and training). |
 | `Diet.js` | **Food and diet**: kibble brands, tastes and favourite food, diet score, weight. See section 9 (Food and diet). |
 | `Play.js` | **Play and boredom**: boredom, favourite toy, playing ball with you, mischief. See section 9 (Play and boredom). |
+| `Bath.js` | **Dirt and bath time**: fluffies get grubby (mess, accidents, rain, time), look it, sponge baths with likes/dislikes. See section 9 (Dirt and bath time). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
 | `Systems.js` | **The list of systems** updated every step (`registerSystem`, `updateSystems`) and `Ticker` for "every N seconds". |
@@ -151,7 +152,7 @@ Several things are now one line to add, in the file of the feature itself:
   30 herds, 40 territory, 50 weather/clock (`worldTime`), 60 separation,
   70 naming, 80 settling in, 90 goals, 100 morning report, 110 night
   events, 120 alicorn acceptance, 125 pregnancy care, 130 ageing, 135
-  affection, 136 tricks, 137 diet, 138 play, 140 abandoned pets, 145
+  affection, 136 tricks, 137 diet, 138 play, 139 bath, 140 abandoned pets, 145
   warmth, 150 flu, 160 corpses, 170 customer orders, 180 stock market,
   190 shows. The "systems" test (tests/screens.test.js) checks every one of
   these is registered, in order.
@@ -1910,4 +1911,30 @@ brushes, plays ball and trains twice a day). What changed:
   (`spawnBaby`: peep). Mute and the volume slider apply as for all sounds.
 - Measured in a room of 6 (4 adults, 2 foals) with a ball: roughly one
   voice clip every 10-15 seconds, plus the foals' usual chirps.
+
+### Dirt and bath time (`Bath.js`)
+- **Dirt** `f.dirt` 0..1 (saved), fluffies you own. `updateBath` (system
+  order 139, every second) adds: `DIRT_PER_DAY` (0.08) always; standing in
+  bodily waste (`_inMess`, Puddle.js `isBodilyWaste`) `DIRT_FROM_MESS`
+  0.004 a second, twice lying/asleep; bleeding 0.01 a second; outside 0.01
+  an hour, plus `DIRT_MUD_PER_HOUR` 0.12 x rain. From HorseToilet: going on
+  the floor `DIRT_FROM_ACCIDENT` 0.006 (pee a third), the runs 0.02 a
+  second, eating mess 0.02 a second (`addDirt`).
+- Levels (`dirtLevel`): grubby 0.25, dirty 0.5, filthy 0.8. Simulated homes
+  (6 untrained fluffies): cleaned hourly - dirty after a day, filthy after
+  about 2.5; never cleaned - filthy within a day. Litter training helps.
+- **Effects**: `beginDirtLook` (Horse.draw) adds a sepia/darker canvas
+  filter from 0.2 up; `drawDirtEffects` draws smell lines and flies when
+  filthy. Shows `dirtShowPenalty` (-15 x dirt); price `dirtPriceMultiplier`
+  (x1..0.8). Filthy: -0.05 happiness an hour, grumbles (`BATH.FILTHY`) or
+  a neighbour says it smells (`BATH.SMELLY`).
+- **Baths**: the sponge (Sponge.js `attemptClean`) checks for a fluffy under
+  it first (`spongeFluffy` -> `scrubFluffy`): -`BATH_SCRUB` (0.08) a rub,
+  4 rubs a second, bubbles. The first rub of a bath (`BATH_SESSION` 12 s)
+  decides the reaction from `f.bathLike` (-1..1, saved; random, +gentle,
+  +playful, +brave): likes it -> happy, affection "bathed" (0.03, 2 a day
+  in full); hates it -> CRYING_SHOCKED, unhappier, a little fear. Each bath
+  adds `BATH_GET_USED` (0.08), so haters come round. `BATH.CLEAN` when it's
+  spotless.
+- **Shown**: Cleanliness (Overview > Wellbeing), Bath time (Looks & nature).
 

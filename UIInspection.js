@@ -230,6 +230,12 @@ function getFluffyInspectionInfo(f) {
       care.push({ label: "Pregnant", value: pText, tone: pTone });
     }
   }
+  // Dirt and baths (Bath.js)
+  if (f.isAlive && f.adopted && typeof describeDirt === "function") {
+    const [cText, cTone] = describeDirt(f);
+    care.push({ label: "Cleanliness", value: cText, tone: cTone });
+    care.push({ label: "Bath time", value: describeBathLike(f), tone: "" });
+  }
   // Boredom and favourite toy (Play.js)
   if (f.isAlive && f.adopted && typeof describeBoredom === "function" && !f.tooYoungToWalk()) {
     const [bText, bTone] = describeBoredom(f);
@@ -317,7 +323,7 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Hunger", "Health", "Sleep", "Boredom", "Warmth", "Pregnant", "Spayed"] },
+      { title: "Wellbeing", rows: ["Happiness", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Spayed"] },
       { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Settling in", "Sells for"] },
     ],
   },
@@ -334,7 +340,7 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Sexuality", "Colour views"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views"] },
     ],
   },
   {

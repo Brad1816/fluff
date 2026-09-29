@@ -54,6 +54,8 @@ const SAVED_HORSE_FIELDS = [
   { name: "recentMeals", fallback: null, clone: true },
   { name: "boredom", fallback: 0 }, // Play.js
   { name: "toyLikes", fallback: null, clone: true },
+  { name: "dirt", fallback: 0 }, // Bath.js
+  { name: "bathLike", fallback: undefined },
   // Weren't saved before (a reload reset or cured them)
   { name: "castrationBandTimer", fallback: undefined },
   { name: "castrationBandPainTimer", fallback: undefined },

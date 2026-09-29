@@ -30,6 +30,7 @@ addHorseMethods({
               // always true; the filter above now keeps it to waste.)
               this.hunger = Math.min(1.0, this.hunger + 0.015 * dt);
               this.poopStorage = Math.min(1.0, this.poopStorage + 0.01 * dt);
+              if (typeof addDirt === "function") addDirt(this, 0.02 * dt); // (Bath.js)
               if (this.happiness > 0.1) {
                 //prevents wetrooms turning into a wan die-fest
                 this.changeHappiness(HAPPINESS_PENALTY_ATE_BODILY_WASTE * dt);
@@ -175,6 +176,8 @@ addHorseMethods({
       const baseTargetScale = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.growth);
 
       addPointToPuddle(this.scene, pX, pY, puddleColor, 5 / 200, baseTargetScale, 0.02);
+      // Went on the floor: gets a bit on itself (Bath.js)
+      if (typeof addDirt === "function") addDirt(this, DIRT_FROM_ACCIDENT * (isPoop ? 1 : 0.35));
 
       if (nearLitterbox && lbIsFull) {
         nearLitterbox.use();
@@ -224,6 +227,7 @@ addHorseMethods({
   },
 
   excretePoop(dt) {
+    if (typeof addDirt === "function") addDirt(this, 0.02 * dt); // the runs are messy (Bath.js)
     if (typeof fluffySound === "function") fluffySound(this, "shitting"); // (the runs)
     const torsoWidth = this.layout ? this.layout.torso.w : 100;
     const offsetX = (torsoWidth / 2) * (this.facingRight ? -1 : 1) * this.scale;

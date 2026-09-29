@@ -101,6 +101,13 @@ const HELP_TOPICS = [
       "- Very bored fluffies get unhappy and cause trouble: knocking over",
       "  food bowls and picking on others.",
       "- Fetch (a trick): needs a ball in the room; it brings it back to you.",
+      "",
+      "# Dirt and bath time",
+      "- Fluffies get grubby: standing in mess, going on the floor, rain",
+      "  outside, and slowly anyway. Dirty ones look browner; filthy ones",
+      "  smell (flies!), are unhappy, score less at shows and sell for less.",
+      "- Bath time: rub the sponge on a fluffy. Some love it, some scream -",
+      "  but every bath gets them a bit more used to it.",
 
     ],
   },

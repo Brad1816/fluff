@@ -1744,10 +1744,16 @@ class Horse {
     }
     // Rotting corpses darken, fade and get flies (Corpses.js)
     const rotting = !this.isAlive && typeof beginCorpseLook === "function" && beginCorpseLook(ctx, this);
+    // Dirty fluffies look it (Bath.js)
+    const grubby = !rotting && typeof beginDirtLook === "function" && beginDirtLook(ctx, this);
     this.renderer.drawOffScreen(ctx, clip);
     if (rotting) {
       ctx.restore();
       drawCorpseFlies(ctx, this);
+    }
+    if (grubby) {
+      ctx.restore();
+      drawDirtEffects(ctx, this);
     }
     if (this.placedOn instanceof ImmobilizationBoard) {
       this.placedOn.renderStrap(ctx, this);

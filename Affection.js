@@ -51,6 +51,7 @@ const AFFECTION_ACTS = {
   named: { amount: 0.05, perDay: 1 },
   praised: { amount: 0.01, perDay: 5 }, // "Good fluffy!" after a trick (Tricks.js)
   played: { amount: 0.03, perDay: 3 }, // chased the ball in your hand (Play.js)
+  bathed: { amount: 0.03, perDay: 2 }, // a bath it enjoyed (Bath.js)
 };
 const AFFECTION_WEAK = 0.2; // after the daily allowance, each counts this much
 
@@ -71,6 +72,7 @@ Object.assign(MEMORY_TEXT, {
   named: "You gave it a name",
   praised: "You said it was a good fluffy",
   played: "Played ball with you",
+  bathed: "Had a nice bath",
   horrid: "You put something horrid on it",
   hungry: "You let it go hungry",
   cold: "You left it in the cold",

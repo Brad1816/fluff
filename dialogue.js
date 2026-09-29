@@ -395,6 +395,14 @@ const DIALOGUE = {
       "Speshuw pwesent! Wub it!",
     ],
   },
+  // Bath time (Bath.js)
+  BATH: {
+    LOVE: ["Bubbwes! Wub baffie!", "Spwash spwash! Hehe!", "Su nice an' wawm! Mowe baffie!"],
+    HATE: ["NUUU! NU WAN WATEW!", "Wet fwuff! Hate it! Hate it!", "Pwease nu baffie! Huu huu!", "*SCREEEE* NU BAFF!"],
+    CLEAN: ["<Speaker> aww cwean nao!", "Fwuff su soft an' fwuffy!", "Smeww wike fwowews!"],
+    FILTHY: ["Fwuff aww yucky...", "<Speaker> itchy... need baffie...", "Why fwuff smeww wike poopies?"],
+    SMELLY: ["Yu smeww wike poopies!", "Eww! Stinky fwen!", "Pwease hab baffie, fwen...", "*sniff* ...yuck!"],
+  },
   // Tricks and training (Tricks.js)
   TRICK: {
     COME: ["Coming, daddeh!", "<Speaker> comin'!", "Hewe <speaker> come!"],
