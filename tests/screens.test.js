@@ -61,7 +61,7 @@ module.exports = [
       const want = [
         "familyRecords", "bonds", "herds", "territory", "worldTime", "separation", "naming", "settling", "goals",
         "dayReport", "nightEvents", "alicornAcceptance", "aging", "abandoned", "illness", "corpses", "orders",
-        "stockMarket", "shows", "pregnancy", "affection", "tricks", "diet", "play", "warmth", "bath",
+        "stockMarket", "shows", "pregnancy", "upbringing", "affection", "tricks", "diet", "play", "warmth", "bath",
       ];
       const names = r.map((x) => x[0]);
       for (const n of want) check(names.includes(n), `${n} is registered: ${names}`);

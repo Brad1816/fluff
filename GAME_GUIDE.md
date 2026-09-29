@@ -95,6 +95,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Play.js` | **Play and boredom**: boredom, favourite toy, playing ball with you, mischief. See section 9 (Play and boredom). |
 | `Bath.js` | **Dirt and bath time**: fluffies get grubby (mess, accidents, rain, time), look it, sponge baths with likes/dislikes. See section 9 (Dirt and bath time). |
 | `Lessons.js` | **Lessons**: talking a fluffy out of colour prejudice, alicorn fear, messy habits or being a Smarty; a second row in the right-click trick menu. See section 9 (Lessons). |
+| `Upbringing.js` | **Upbringing**: foals drift towards the colour views and alicorn feelings of the grown-ups raising them (mum most). See section 9 (Upbringing). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -2019,3 +2020,24 @@ second row of lesson chips, only the ones that apply (`lessonsFor`):
 - The passive route: Fluff TV's Play Time channel lines marked
   `reducesColorism` lower `coloristDegree` 0.05 for each watcher.
 - Tests: `tests/lessons.test.js`.
+
+### Upbringing (`Upbringing.js`)
+Foals learn their views from whoever raises them, so training a mare (Lessons)
+pays off in every foal she raises. System "upbringing" (order 132), 1-second
+ticker, foals only (`growth < 1`):
+- `upbringingInfluences(f)`: every grown fluffy in the same scene within
+  `UPBRINGING_RANGE` (600px). Weights (`UPBRINGING_WEIGHTS`): mum (`motherId`,
+  so an adoptive mare counts) 1, dad (`fatherId`) 0.5, anyone else 0.15.
+- `applyUpbringing(f, seconds)`: moves the foal towards the weighted average
+  of their views by `UPBRINGING_RATE` (0.001) a second x min(1, total weight).
+  A whole foalhood (~1680 s) with mum gets it about 80% of the way to her.
+  - colour views (`coloristDegree`) when World Colorism is on
+  - alicorn comfort when World Alicorn Intolerance is on; past 0.75 towards a
+    grown-up who fully accepts alicorns it snaps to `acceptAlicorns`.
+- Nobody around (another room, or on its own): nothing changes.
+- Lessons on a foal still work, but a prejudiced mum pulls it back.
+- Magnifying glass: Looks & nature "Growing up" row (`describeUpbringing`),
+  e.g. "Learning from Mum (Daisy): mean to poopie fluffies". Not a header
+  warning.
+- No new saved fields (the views it changes were already saved).
+- Tests: `tests/upbringing.test.js`.

@@ -227,6 +227,11 @@ function getFluffyInspectionInfo(f) {
     const [cText, cTone] = describeInspectionColorism(f);
     care.push({ label: "Colour views", value: cText, tone: cTone });
   }
+  // Foals copy the grown-ups raising them (Upbringing.js)
+  if (typeof describeUpbringing === "function") {
+    const up = describeUpbringing(f);
+    if (up) care.push({ label: "Growing up", value: up[0], tone: up[1] });
+  }
   if (f.gender === "female") {
     care.push({ label: "Spayed", value: f.spayed ? "Yes" : "No" });
     if (f.isAlive) {
@@ -345,7 +350,7 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Growing up"] },
     ],
   },
   {
@@ -382,7 +387,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;
