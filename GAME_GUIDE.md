@@ -1504,14 +1504,24 @@ Ordinary orders last 15-35 game minutes, too short to breed for, so they
 can only be filled from fluffies you already have. Commissions close that
 gap, and customers now remember you.
 - **Commissions** (`makeCommission`, posted by `updateCommissions`, which
-  Orders.js `updateCustomerOrders` calls): the first a quarter of a day into
-  a game, then one about every `COMMISSION_EVERY` (1.5) game days, at the
-  front of the board, one at a time, staying a day. Requirements: 1-3
-  things you breed for (the first is always coat, pattern or type; never a
-  plain earthy or an alicorn), plus `bredHere` ("Bred by you"). Reward:
-  the usual formula x `COMMISSION_MULT` (2.5). `timeAllowed`:
-  `COMMISSION_DAYS` (4) game days, 5 if it must be fully grown. They count
-  towards your 3 active orders.
+  Orders.js `updateCustomerOrders` calls): there is always one on the
+  Bounty Board (the first as soon as the game starts). Each
+  stays up `COMMISSION_EVERY` (1) game day, then a new one replaces it
+  (`customerOrders.nextCommissionAt = { board, web }`; accepting one doesn't
+  stop the next). Requirements: 1-3 things you breed for (the first is
+  always coat, pattern or type; the type is a unicorn or pegasus - never a
+  plain earthy - or, from game day `COMMISSION_ALICORN_DAY` (4), an
+  alicorn `COMMISSION_ALICORN_CHANCE` (20%) of the time, whatever your
+  reputation: `_commissionType`), plus `bredHere` ("Bred by you"). Reward: the usual
+  formula x `COMMISSION_MULT` (2.5). `timeAllowed`: `COMMISSION_DAYS` (4)
+  game days, +1 if it must be fully grown. They count towards your 3
+  active orders.
+- **FluffList exclusives** (`makeCommission(level, rnd, { exclusive: true })`,
+  `source: "web"`): a second daily commission only on the Computer
+  (OrderBoard.js `ordersList` hides it on the Bounty Board): one reputation
+  level higher, one more requirement (at most 3), `EXCLUSIVE_MULT` (3.5)
+  and `EXCLUSIVE_EXTRA_DAYS` (+1). Purple border, "EXCLUSIVE". The message
+  about a new one only shows if you own a Computer.
 - **Deposit**: `COMMISSION_DEPOSIT` (20%) paid when you accept
   (`order.depositPaid`); delivery pays the rest. Giving up or missing one
   takes the deposit back (`noteOrderFailed`) and costs

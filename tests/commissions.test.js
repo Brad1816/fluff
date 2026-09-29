@@ -18,7 +18,7 @@ const SETUP = `() => {
 
 module.exports = [
   {
-    name: "commissions: bred to order, pay well, give days, never ask for alicorns",
+    name: "commissions: bred to order, pay well, give days, no plain earthies",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -30,7 +30,8 @@ module.exports = [
             if (kinds[kinds.length - 1] !== "bredHere") out.problems.push("no Bred by you");
             if (new Set(kinds).size !== kinds.length) out.problems.push(`repeat ${kinds}`);
             if (!["coat", "pattern", "type"].includes(kinds[0])) out.problems.push(`first is ${kinds[0]}`);
-            if (c.reqs.some((q) => q.kind === "type" && (q.type === "alicorn" || q.type === "earthy"))) out.problems.push("alicorn/earthy");
+            if (c.reqs.some((q) => q.kind === "type" && q.type === "earthy")) out.problems.push("plain earthy");
+            if (c.reqs.some((q) => q.type === "alicorn")) out.problems.push("alicorn on day 1");
             if (c.timeAllowed < COMMISSION_DAYS * DAY_LENGTH) out.problems.push("too little time");
             if (c.deposit !== Math.round((c.reward * 0.2) / 10) * 10) out.problems.push("deposit");
             if (!c.commission || c.leavesAt !== DAY_LENGTH) out.problems.push("board time");
@@ -206,46 +207,117 @@ module.exports = [
     },
   },
   {
-    name: "commissions: one appears on the board by itself, is saved, and the board draws it",
+    name: "commissions: one on the board and one FluffList exclusive from the start, each replaced daily; saved; the board draws",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
         customerOrders.postTimer = 1e9; // no ordinary orders
-        timePlayed = 0;
-        updateCustomerOrders(0);
-        const first = customerOrders.posted.filter((o) => o.commission).length;
-        timePlayed = DAY_LENGTH * 0.3;
-        updateCustomerOrders(0);
-        const later = customerOrders.posted.filter((o) => o.commission).length;
-        timePlayed = DAY_LENGTH * 0.4;
-        updateCustomerOrders(0);
-        const stillOne = customerOrders.posted.filter((o) => o.commission).length;
+        customerOrders.reputation = 6; // Known breeder (level 2)
+        const count = () => ({
+          board: customerOrders.posted.filter((o) => o.commission && o.source === "board").length,
+          web: customerOrders.posted.filter((o) => o.commission && o.source === "web").length,
+        });
+        const at = (t) => {
+          timePlayed = t;
+          updateCustomerOrders(0);
+          return count();
+        };
+        const out = {};
+        out.day3 = at(0); // straight away
+        out.day4 = at(DAY_LENGTH * 3.1); // a day or two later: still one of each
+        const first = customerOrders.posted.find((o) => o.source === "board").id;
+        out.sameDay = at(DAY_LENGTH * 3.5);
+        out.nextDay = at(DAY_LENGTH * 4.2); // the day's up: new ones
+        out.replaced = !customerOrders.posted.some((o) => o.id === first);
+        // Accepting one doesn't stop tomorrow's
+        const b = customerOrders.posted.find((o) => o.source === "board");
+        acceptCustomerOrder(b.id);
+        out.afterAccept = count().board;
+        out.tomorrow = at(DAY_LENGTH * 5.3).board;
+        // Board vs FluffList
+        openOrdersScreen("board");
+        out.boardShows = ordersList("posted").filter((o) => o.commission).map((o) => o.source);
+        openOrdersScreen("web");
+        out.webShows = ordersList("posted").filter((o) => o.commission).map((o) => o.source).sort();
+        closeOrdersScreen();
+        // Saved
         const data = {};
         writeSavedGameState(data);
         const json = JSON.parse(JSON.stringify(data));
         customerOrders = freshCustomerOrders();
         readSavedGameState(json);
-        const saved = customerOrders.posted.some((o) => o.commission && o.reqs.some((q) => q.kind === "bredHere"));
+        out.saved = customerOrders.posted.some((o) => o.source === "web" && o.reqs.some((q) => q.kind === "bredHere"));
+        // Draws in both places
         getClient(customerOrders.posted[0].customer).loyalty = 3;
-        acceptCustomerOrder(customerOrders.posted[0].id);
-        openOrdersScreen("board");
-        ordersTab = "orders";
-        let drew = true;
-        try {
-          drawOrdersScreen(ctx);
-        } catch (e) {
-          drew = e.message;
+        out.drew = [];
+        for (const mode of ["board", "web"]) {
+          openOrdersScreen(mode);
+          ordersTab = "orders";
+          try {
+            drawOrdersScreen(ctx);
+            out.drew.push(true);
+          } catch (e) {
+            out.drew.push(e.message);
+          }
+          closeOrdersScreen();
         }
-        closeOrdersScreen();
-        return { first, later, stillOne, saved, drew, days: formatDaysLeft(DAY_LENGTH * 2 + HOUR_LENGTH * 3), hours: formatDaysLeft(HOUR_LENGTH * 5) };
+        out.days = formatDaysLeft(DAY_LENGTH * 2 + HOUR_LENGTH * 3);
+        out.hours = formatDaysLeft(HOUR_LENGTH * 5);
+        return out;
       }, SETUP);
-      checkEqual(r.first, 0, "not straight away");
-      checkEqual(r.later, 1, "one appears");
-      checkEqual(r.stillOne, 1, "only one at a time");
+      checkEqual(JSON.stringify(r.day3), JSON.stringify({ board: 1, web: 1 }), "one of each from the start");
+      checkEqual(JSON.stringify(r.day4), JSON.stringify({ board: 1, web: 1 }), "one of each later");
+      checkEqual(JSON.stringify(r.sameDay), JSON.stringify({ board: 1, web: 1 }), "still one of each");
+      checkEqual(JSON.stringify(r.nextDay), JSON.stringify({ board: 1, web: 1 }), "a day later");
+      check(r.replaced, "the old one was replaced by a new one");
+      checkEqual(r.afterAccept, 0, "accepted: off the board");
+      checkEqual(r.tomorrow, 1, "a new one the next day");
+      checkEqual(JSON.stringify(r.boardShows), JSON.stringify(["board"]), "the Bounty Board doesn't show the exclusive");
+      checkEqual(JSON.stringify(r.webShows), JSON.stringify(["board", "web"]), "FluffList shows both");
       check(r.saved, "saved with the game");
-      checkEqual(r.drew, true, "the board draws");
+      checkEqual(JSON.stringify(r.drew), JSON.stringify([true, true]), "draws");
       checkEqual(r.days, "2 days 3 h", "days left");
       checkEqual(r.hours, "5 h", "hours left");
+    },
+  },
+  {
+    name: "commissions: FluffList exclusives are a tier harder, pay more and give a day longer; alicorn commissions from day 4",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const avg = (xs) => xs.reduce((s, x) => s + x, 0) / xs.length;
+        const normal = [];
+        const excl = [];
+        const reqN = [];
+        const reqE = [];
+        const alicorn = { early: 0, late: 0 };
+        for (let i = 0; i < 300; i++) {
+          const n = makeCommission(2);
+          const e = makeCommission(2, Math.random, { exclusive: true });
+          normal.push(n.reward);
+          excl.push(e.reward);
+          reqN.push(n.reqs.length);
+          reqE.push(e.reqs.length);
+          if (i === 0) Object.assign(alicorn, { eLevel: e.level, source: [n.source, e.source] });
+          alicorn.eTime = Math.min(alicorn.eTime ?? Infinity, e.timeAllowed);
+          alicorn.nTime = Math.min(alicorn.nTime ?? Infinity, n.timeAllowed);
+          // Day 3 vs day 4, at the lowest reputation
+          timePlayed = DAY_LENGTH * 2.5;
+          if (makeCommission(1, Math.random, { exclusive: true }).reqs.some((q) => q.type === "alicorn") || makeCommission(1).reqs.some((q) => q.type === "alicorn")) alicorn.early++;
+          timePlayed = DAY_LENGTH * 3.1;
+          if (makeCommission(1).reqs.some((q) => q.type === "alicorn")) alicorn.late++;
+          timePlayed = 0;
+        }
+        return { normal: avg(normal), excl: avg(excl), reqN: avg(reqN), reqE: avg(reqE), maxE: Math.max(...reqE), alicorn };
+      }, SETUP);
+      check(r.excl > r.normal * 1.8, `exclusives pay more ($${Math.round(r.excl)} vs $${Math.round(r.normal)})`);
+      check(r.reqE > r.reqN, `more requirements (${r.reqE} vs ${r.reqN})`);
+      check(r.maxE <= 4, "at most 3 plus Bred by you");
+      checkEqual(r.alicorn.eLevel, 3, "a tier up");
+      check(r.alicorn.eTime > r.alicorn.nTime, `a day longer (${r.alicorn.eTime} vs ${r.alicorn.nTime})`);
+      checkEqual(JSON.stringify(r.alicorn.source), JSON.stringify(["board", "web"]), "sources");
+      checkEqual(r.alicorn.early, 0, "no alicorn commissions before day 4");
+      check(r.alicorn.late > 5, `alicorn commissions from day 4, even at the lowest reputation (${r.alicorn.late} of 300)`);
     },
   },
 ];

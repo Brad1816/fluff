@@ -10,7 +10,10 @@
 
 // The posted / active order lists (empty if the save data is odd)
 function ordersList(name) {
-  return (customerOrders && Array.isArray(customerOrders[name]) && customerOrders[name]) || [];
+  const list = (customerOrders && Array.isArray(customerOrders[name]) && customerOrders[name]) || [];
+  // FluffList exclusives (Commissions.js) aren't on the Bounty Board
+  if (name === "posted" && ordersScreenMode === "board") return list.filter((o) => o.source !== "web");
+  return list;
 }
 
 // ======================= The bounty board on Shopping Street ===============
@@ -384,7 +387,7 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   c.fill();
   // Commissions (Commissions.js): a gold border
   if (o.commission) {
-    c.strokeStyle = "#d4a017";
+    c.strokeStyle = o.source === "web" ? "#8e44ad" : "#d4a017";
     c.lineWidth = 3;
     _osRR(c, card.x + 1.5, card.y + 1.5, card.w - 3, card.h - 3, 7);
     c.stroke();
@@ -411,7 +414,7 @@ function _drawOrderCard(c, card, theme, m, isActive) {
     noteX += c.measureText(badge).width + 8;
   }
   const noteRight = card.x + card.w - 14 - (o.commission ? 80 : 0);
-  if (o.commission) _osText(c, "COMMISSION", card.x + card.w - 14, card.y + 45, "#b8860b", "bold 11px Arial", "right");
+  if (o.commission) _osText(c, o.source === "web" ? "EXCLUSIVE" : "COMMISSION", card.x + card.w - 14, card.y + 45, o.source === "web" ? "#8e44ad" : "#b8860b", "bold 11px Arial", "right");
   c.font = "italic 12px Arial";
   _osText(c, fitText(c, `"${o.note}"`, noteRight - noteX), noteX, card.y + 45, theme.sub, "italic 12px Arial");
 

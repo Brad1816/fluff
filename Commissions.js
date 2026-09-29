@@ -1,9 +1,12 @@
 // ---------------------------------------------------------------------------
 // Commissions and regular customers (on top of Orders.js).
 //
-// COMMISSIONS: a customer asks you to BREED a fluffy for them. They're on
-// the board like other orders (a gold border, "Commission"), one at a time,
-// a new one about every COMMISSION_EVERY game days. Every commission needs
+// COMMISSIONS: a customer asks you to BREED a fluffy for them. There's
+// always one on the Bounty Board (a gold border, "Commission"); each stays
+// up a day, then a new one takes its place (COMMISSION_EVERY). Alicorn
+// commissions only from game day COMMISSION_ALICORN_DAY. FluffList, the website on the Computer, has its
+// own exclusive one too, a tier harder and better paid (EXCLUSIVE_*); the
+// board never shows it. Every commission needs
 // "Bred by you" (born to one of your mares - f.bredHere, set at birth by
 // Pregnancy.js onFoalBorn) plus things you breed for (type, coat, pattern,
 // size, hidden genes, personality...). You get COMMISSION_DAYS game days to
@@ -27,7 +30,11 @@
 // if it's frightened of everything (customerOrders.letters).
 // ---------------------------------------------------------------------------
 
-const COMMISSION_EVERY = 1.5; // game days between new commissions
+const COMMISSION_ALICORN_DAY = 4; // alicorn commissions from this game day
+const COMMISSION_ALICORN_CHANCE = 0.2; // share of type requirements that are alicorns then
+const COMMISSION_EVERY = 1; // game days each stays up before a new one replaces it
+const EXCLUSIVE_MULT = 3.5; // FluffList exclusives: reward vs a normal order
+const EXCLUSIVE_EXTRA_DAYS = 1; // ...and a day longer to deliver
 const COMMISSION_DAYS = 4; // game days to deliver (+1 if it must be grown)
 const COMMISSION_MULT = 2.5; // reward compared with a normal order
 const COMMISSION_DEPOSIT = 0.2; // share of the reward paid when you accept
@@ -182,11 +189,28 @@ function _commissionReqCount(level, rnd) {
 const COMMISSION_KINDS = ["type", "coat", "pattern", "size", "carrier", "gender", "trait", "age"];
 const COMMISSION_FIRST = ["coat", "pattern", "type"];
 
-function makeCommission(level = getOrderLevel(), rnd = Math.random) {
+// The type a commission asks for: a unicorn or pegasus (a plain earthy
+// isn't worth breeding for), sometimes an alicorn from day
+// COMMISSION_ALICORN_DAY (whatever your reputation)
+function _commissionType(rnd, taken) {
+  const day = typeof getDayNumber === "function" ? getDayNumber() : 1;
+  const hidden = taken.carrier && taken.carrier.trait; // can't both show and hide it
+  if (day >= COMMISSION_ALICORN_DAY && !hidden && rnd() < COMMISSION_ALICORN_CHANCE) return { type: "alicorn", value: 1500 };
+  let options = ["unicorn", "pegasus"];
+  if (hidden === "wings") options = ["unicorn"];
+  if (hidden === "horn") options = ["pegasus"];
+  return { type: options[Math.floor(rnd() * options.length)], value: 200 };
+}
+
+// opts.exclusive: a FluffList exclusive - a tier harder (one more
+// requirement, up to 3), better paid, a day longer
+function makeCommission(level = getOrderLevel(), rnd = Math.random, opts = {}) {
+  const exclusive = !!opts.exclusive;
+  if (exclusive) level = Math.min(5, level + 1);
   const customer = pickOrderCustomer(rnd);
   const reqs = [];
   const taken = {};
-  const want = _commissionReqCount(level, rnd);
+  const want = Math.min(3, _commissionReqCount(level, rnd) + (exclusive ? 1 : 0));
   let tries = 0;
   while (reqs.length < want && tries++ < 60) {
     const pool = (reqs.length === 0 ? COMMISSION_FIRST : COMMISSION_KINDS).filter(
@@ -194,14 +218,11 @@ function makeCommission(level = getOrderLevel(), rnd = Math.random) {
     );
     if (!pool.length) break;
     const kind = pool[Math.floor(rnd() * pool.length)];
-    const made = ORDER_REQUIREMENTS[kind].make(rnd, level, taken);
+    const made = kind === "type" ? _commissionType(rnd, taken) : ORDER_REQUIREMENTS[kind].make(rnd, level, taken);
     if (!made) {
       taken[kind] = { skipped: true };
       continue;
     }
-    // A plain earthy isn't worth breeding for, and an alicorn can't be
-    // bred to order in a few days
-    if (kind === "type" && (made.type === "earthy" || made.type === "alicorn")) continue;
     const req = { kind, ...made };
     taken[kind] = req;
     reqs.push(req);
@@ -210,7 +231,7 @@ function makeCommission(level = getOrderLevel(), rnd = Math.random) {
   const valueSum = reqs.reduce((s, r) => s + (r.value || 0), 0);
   const n = reqs.length - 1;
   const base = (100 + valueSum) * (1 + 0.3 * (level - 1)) * (1 + 0.15 * Math.max(0, n - 1));
-  const reward = Math.round((base * COMMISSION_MULT) / 10) * 10;
+  const reward = Math.round((base * (exclusive ? EXCLUSIVE_MULT : COMMISSION_MULT)) / 10) * 10;
   const grown = reqs.some((r) => r.kind === "age" && !r.foal);
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   const order = {
@@ -221,25 +242,36 @@ function makeCommission(level = getOrderLevel(), rnd = Math.random) {
     reward,
     level,
     commission: true,
+    source: exclusive ? "web" : "board", // web: only on FluffList
     deposit: Math.round((reward * COMMISSION_DEPOSIT) / 10) * 10,
     depositPaid: 0,
     postedAt: now,
     leavesAt: now + DAY_LENGTH,
-    timeAllowed: (COMMISSION_DAYS + (grown ? 1 : 0)) * DAY_LENGTH,
+    timeAllowed: (COMMISSION_DAYS + (grown ? 1 : 0) + (exclusive ? EXCLUSIVE_EXTRA_DAYS : 0)) * DAY_LENGTH,
     dueAt: null,
   };
   return applyClientBonus(order);
 }
 
-// Orders.js updateCustomerOrders: one commission on the board at a time
+function ownsComputer() {
+  return typeof Computer !== "undefined" && objects.some((x) => x instanceof Computer);
+}
+
+// Orders.js updateCustomerOrders: one commission on the board and one
+// exclusive on FluffList, each replaced by a new one a day after it went up
 function updateCommissions(now) {
   const o = customerOrders;
-  if (typeof o.nextCommissionAt !== "number") o.nextCommissionAt = now + DAY_LENGTH * 0.25;
-  const onBoard = o.posted.some((x) => x.commission);
-  if (!onBoard && now >= o.nextCommissionAt) {
-    o.posted.unshift(makeCommission());
-    o.nextCommissionAt = now + COMMISSION_EVERY * DAY_LENGTH;
-    if (typeof addUIMessage === "function") addUIMessage("A customer has posted a commission: they want a fluffy bred for them.");
+  // (older saves kept a single time here)
+  if (!o.nextCommissionAt || typeof o.nextCommissionAt !== "object") o.nextCommissionAt = { board: 0, web: 0 };
+  for (const source of ["board", "web"]) {
+    const up = o.posted.some((x) => x.commission && (x.source || "board") === source);
+    if (up || now < (o.nextCommissionAt[source] || 0)) continue;
+    o.posted.unshift(makeCommission(getOrderLevel(), Math.random, { exclusive: source === "web" }));
+    o.nextCommissionAt[source] = now + COMMISSION_EVERY * DAY_LENGTH;
+    if (typeof addUIMessage === "function") {
+      if (source === "board") addUIMessage("A new commission is on the Bounty Board: a customer wants a fluffy bred for them.");
+      else if (ownsComputer()) addUIMessage("FluffList: a new exclusive commission has been posted.");
+    }
   }
   // Letters from past customers
   const letters = o.letters || (o.letters = []);
