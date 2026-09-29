@@ -246,7 +246,7 @@ function describeGenes(genes) {
     spotColor: rgbAt(84, 85, 86, "rgb(255, 255, 255)"),
     stripes: _geneSum(genes, 87, 4), // shows at 4 of 4
     stripeColor: rgbAt(92, 93, 94, "rgb(0, 0, 0)"),
-    gradient: _geneSum(genes, 95, 4), // shows at 2 of 4
+    gradient: _geneSum(genes, 95, 4), // shows at 4 of 4
     gradientColor: rgbAt(100, 101, 102, "rgb(255, 255, 255)"),
     size, // -3 (tiny) .. +3 (big)
     maneStyle: genes[63] || 0,
@@ -744,7 +744,7 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
     ["Horn", g.horn, 5, 4, "#c9a0ff"],
     ["Spots", g.spots, 4, 4, g.spotColor],
     ["Stripes", g.stripes, 4, 4, g.stripeColor],
-    ["Gradient", g.gradient, 4, 2, g.gradientColor],
+    ["Gradient", g.gradient, 4, 4, g.gradientColor],
     ["Fancy mane", g.maneFancy, 4, 4, g.maneColor2],
   ];
   for (const [label, have, total, needed, color] of geneRows) {

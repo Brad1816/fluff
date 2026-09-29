@@ -163,7 +163,7 @@ function makeSellRequest(candidates, rnd = Math.random) {
   const level = _buyerLevel();
   const kind = pickBuyerKind(level, rnd);
   // The one they ask about: likelier the more they like it
-  const scored = candidates.map((f) => ({ f, w: 0.15 + buyerLikes(kind, f) ** 2 }));
+  const scored = candidates.map((f) => ({ f, w: 0.05 + buyerLikes(kind, f) ** 2 }));
   let pick = rnd() * scored.reduce((s, x) => s + x.w, 0);
   let target = scored[scored.length - 1].f;
   for (const x of scored) {

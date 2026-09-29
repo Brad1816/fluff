@@ -1565,7 +1565,8 @@ Before, a random fluffy got a fixed take-it-or-leave-it offer of its
   `generous` (how far above their offer they'd go).
 - **Which fluffy** (`makeSellRequest`, called from script.js
   `updateMoneyAndRequests` with the same candidates as before - the sell
-  cage first): weighted by 0.15 + like^2.
+  cage first): weighted by 0.05 + like^2 (choosy: a fluffy they like
+  twice as much is asked about about three times as often).
 - **The offer** (`buyerOffer`): price x `buyerConditionFactor` (health
   under 70, missing parts -25% each, flu showing x0.5, the runs x0.85) x
   budget x (1 + 6% per reputation level above 1) x (0.85 + 0.3 x like).
@@ -1612,3 +1613,10 @@ with the tail to match.
 - **Prism Stables**: a stock-market breeder (line "mane", from level 3)
   whose grandparents show or strongly carry fancy manes, rainbow 35% of the
   time.
+- **Gradients made rare too**: the gradient (mane and tail fading into a
+  second colour, genes 95-98) now shows only with all 4 genes, like spots
+  and stripes (`hasGradient = gradientCount === 4`; Gene Lab and family
+  tree match). Before, 2 of 4 was enough and about two thirds of all
+  fluffies had one. Now about 6% do, and roughly three in four fluffies are
+  plain (no spots, stripes, gradient or fancy mane). Existing fluffies with
+  2-3 gradient genes lose it but carry it.

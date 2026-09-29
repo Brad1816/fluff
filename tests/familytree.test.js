@@ -161,18 +161,18 @@ module.exports = [
         const genes = new Array(103).fill(0);
         genes[53] = genes[54] = genes[55] = 1; // 3 of 5 wing genes: a carrier
         for (let i = 58; i < 63; i++) genes[i] = 1; // 5 of 5 horn genes: has a horn
-        genes[95] = genes[96] = 1; // 2 of 4 gradient genes: shows
+        genes[95] = genes[96] = genes[97] = 1; // 3 of 4 gradient genes: carries it (all 4 show it)
         const g = describeGenes(genes);
         return {
           wings: [g.wings, _geneVerdict(g.wings, 4)[0]],
           horn: [g.horn, _geneVerdict(g.horn, 4)[0]],
-          gradient: [g.gradient, _geneVerdict(g.gradient, 2)[0]],
+          gradient: [g.gradient, _geneVerdict(g.gradient, 4)[0]],
           spots: [g.spots, _geneVerdict(g.spots, 4)[0]],
         };
       });
       checkEqual(JSON.stringify(r.wings), JSON.stringify([3, "carrier"]), "wings");
       checkEqual(JSON.stringify(r.horn), JSON.stringify([5, "shows"]), "horn");
-      checkEqual(JSON.stringify(r.gradient), JSON.stringify([2, "shows"]), "gradient");
+      checkEqual(JSON.stringify(r.gradient), JSON.stringify([3, "carrier"]), "gradient");
       checkEqual(JSON.stringify(r.spots), JSON.stringify([0, "none"]), "spots");
     },
   },

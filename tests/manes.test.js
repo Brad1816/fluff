@@ -22,19 +22,30 @@ const SETUP = `() => {
 
 module.exports = [
   {
-    name: "manes: fancy manes are rare in random fluffies, rainbow very rare",
+    name: "manes: most fluffies are plain; fancy manes rare, rainbow very rare",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const N = 20000;
         const c = { fancy: 0, rainbow: 0, streaked: 0, tipped: 0 };
+        // Plain fluffies: gradient, spots, stripes and fancy manes all rare
+        let plainish = 0;
+        let gradient = 0;
+        for (let i = 0; i < 2000; i++) {
+          const h = new Horse(1, null, "INDOORS", "earthy", null, 0.6, 0.6, "female");
+          if (h.hasGradient) gradient++;
+          if (!h.hasGradient && !h.hasSpots && !h.hasStripes && !h.manePattern) plainish++;
+          if (relationships[h.id]) delete relationships[h.id];
+        }
+        c.gradientShare = gradient / 2000;
+        c.plainShare = plainish / 2000;
         for (let i = 0; i < N; i++) {
           const p = manePatternOfGenes(HorseGenetics.prototype.generateRandomGenes.call({ horse: {} }));
           if (!p) continue;
           c.fancy++;
           c[p.kind]++;
         }
-        for (const k in c) c[k] /= N;
+        for (const k of ["fancy", "rainbow", "streaked", "tipped"]) c[k] /= N;
         const len = HorseGenetics.prototype.generateRandomGenes.call({ horse: {} }).length;
         return { ...c, len };
       }, SETUP);
@@ -42,6 +53,8 @@ module.exports = [
       check(r.rainbow > 0.001 && r.rainbow < 0.01, `rainbow about 1 in 200 (${r.rainbow})`);
       check(r.streaked > r.tipped && r.tipped > r.rainbow, `streaked commonest, rainbow rarest ${JSON.stringify(r)}`);
       checkEqual(r.len, 139, "gene count");
+      check(r.gradientShare < 0.1, `gradients are rare now (${r.gradientShare})`);
+      check(r.plainShare > 0.65, `most fluffies are plain (${r.plainShare})`);
     },
   },
   {

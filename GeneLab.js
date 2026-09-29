@@ -246,7 +246,7 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
       count[type]++;
       if (d.spots === 4) count.spots++;
       if (d.stripes === 4) count.stripes++;
-      if (d.gradient >= 2) count.gradient++;
+      if (d.gradient === 4) count.gradient++;
       if (d.manePattern) count.fancyMane++; // ManePatterns.js
       if (d.manePattern && d.manePattern.kind === "rainbow") count.rainbowMane++;
       if (d.wings === 3) count.wingCarrier++;

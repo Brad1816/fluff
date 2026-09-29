@@ -254,7 +254,10 @@ class HorseGenetics {
       (this.horse.genes[96] || 0) +
       (this.horse.genes[97] || 0) +
       (this.horse.genes[98] || 0);
-    this.horse.hasGradient = gradientCount >= 2;
+    // All 4 needed, like spots and stripes (was 2 of 4, which gave about
+    // two thirds of all fluffies a gradient mane and tail): most fluffies
+    // are plain
+    this.horse.hasGradient = gradientCount === 4;
     this.horse.gradientIntensity =
       this.horse.genes[99] !== undefined
         ? Math.max(128, this.horse.genes[99]) / 255
