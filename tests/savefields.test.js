@@ -16,7 +16,7 @@ module.exports = [
           fluImmuneUntil: 1234, fluVaccinated: true, vetCheckedAt: 77, vetNote: "fine", vetLife: "young",
           ribbons: [{ place: 1, show: "Best Coat", day: 4 }], groomedAt: 321,
           pregCare: { sum: 3, n: 4 }, litterSize: 5, litterBorn: 6, birthVigor: 0.9, midwife: true,
-          pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true,
+          pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true, warmth: 0.4,
         };
         Object.assign(f, values);
         const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));

@@ -33,6 +33,7 @@ const STORE_AISLES = [
       "fence",
       "fence_gate",
       "sprinkler",
+      "heater",
       "ball",
       "block",
       "fluff_tv",

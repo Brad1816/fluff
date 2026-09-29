@@ -182,6 +182,8 @@ const NIGHT_EVENTS = [
     id: "cold",
     good: false,
     weight: () => {
+      // Cold is simulated all the time now (Warmth.js): no one-off cold nights
+      if (typeof updateWarmth === "function") return 0;
       const snowing = typeof snowAmount === "function" && snowAmount() > 0.3;
       return _seasonW({ Spring: 0, Summer: 0, Autumn: 1, Winter: 3 }) + (snowing ? 2 : 0);
     },

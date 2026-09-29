@@ -105,7 +105,9 @@ function describeWorldTime() {
 
 function describeWeather() {
   const w = weatherState.target !== weatherState.type ? weatherState.target : weatherState.type;
-  return `${getSeason()} · ${WEATHER_NAMES[w] || "Clear"}`;
+  // How cold it is where you are (Warmth.js)
+  const temp = typeof describeTemperature === "function" ? describeTemperature() : "";
+  return `${getSeason()} · ${WEATHER_NAMES[w] || "Clear"}${temp ? ` · ${temp}` : ""}`;
 }
 
 // ---- Weather ----
@@ -152,7 +154,9 @@ function sleepRateMultipliers() {
 
 // Outdoor fluffies burn more food in the snow (Horse.js hunger)
 function weatherHungerMultiplier(f) {
-  return isOutdoorScene(f.scene) ? 1 + 0.4 * snowAmount() : 1;
+  // ...and cold fluffies anywhere (Warmth.js)
+  const cold = typeof coldHungerMultiplier === "function" ? coldHungerMultiplier(f) : 1;
+  return (isOutdoorScene(f.scene) ? 1 + 0.4 * snowAmount() : 1) * cold;
 }
 
 // How fast grass / berries grow right now (Grass.js, ParkLife.js)

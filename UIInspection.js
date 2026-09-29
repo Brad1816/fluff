@@ -223,6 +223,9 @@ function getFluffyInspectionInfo(f) {
       care.push({ label: "Pregnant", value: pText, tone: pTone });
     }
   }
+  // Cold (Warmth.js)
+  const cold = typeof describeWarmth === "function" ? describeWarmth(f) : null;
+  if (cold) care.push({ label: "Warmth", value: cold[0], tone: cold[1] });
   // How it feels about you and what it remembers (Memory.js)
   if (f.isAlive && typeof describePlayerFeeling === "function") {
     const [feel, feelTone] = describePlayerFeeling(f);

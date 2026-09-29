@@ -190,6 +190,12 @@ const DIALOGUE = {
       "Nee' wawmies... nee' huggies...",
       "White stuffs am cowd on hoofsies!",
     ],
+    COLD: [
+      "Fwuffy so cowd... teefies go cwack cwack...",
+      "Nee' wawmies! Nee' huggies!",
+      "Hoofsies am fweezy... pwease wawm fwuffy...",
+      "Shivvy shivvy... so cowd...",
+    ],
     SUNNY: [
       "Sunnies am wawm! Bestest day!",
       "Fwuffy wub sunnies!",

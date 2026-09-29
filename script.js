@@ -1871,6 +1871,8 @@ function render() {
       if (f.speech.text) f.drawSpeechBubble(osCtx);
       // Herd marker when H is on (Herds.js)
       if (typeof drawHerdMarker === "function") drawHerdMarker(osCtx, f);
+      // A snowflake when it's cold (Warmth.js)
+      if (typeof drawColdMarker === "function") drawColdMarker(osCtx, f);
       if (f.currentStateKey === "SLEEPING") f.drawDream(osCtx);
       const isPairSelection =
         debugMenuAction === "pair" && debugPairFirst === f.id;

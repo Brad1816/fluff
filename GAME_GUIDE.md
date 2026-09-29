@@ -83,6 +83,7 @@ and it runs. About 36,000 lines across ~60 files.
 | `Illness.js` | **Fluffy flu**: a catching illness that spreads to fluffies nearby (not through cages or fences). See section 9 (Fluffy flu and the vet). |
 | `ShoppingBag.js` | **Getting shopping home**: small things go in the shopping bag (tan buttons in the toolbox), big things are delivered to the living room. See section 9 (Shopping bag and deliveries). |
 | `ManePatterns.js` | **Fancy manes**: streaked, tipped and rainbow manes (tail to match), their genes, inheritance, drawing (`paintManePattern`) and value. See section 9 (Fancy manes). |
+| `Warmth.js` | **Cold and heating**: how cold each place is (season, night, snow, rain), fluffy warmth (`f.warmth`), huddling / beds / scarves, freezing damage, the Heater item and its bill. See section 9 (Cold and heating). |
 | `Buyers.js` | **Buyers at the door**: buyer types with tastes and budgets, which fluffy they ask about, offers that count condition, asking for more (agree / final offer / walk off). See section 9 (Buyers at the door). |
 | `Commissions.js` | **Commissions and regular customers**: breed-to-order commissions (gold cards, deposit, days to deliver, "Bred by you"), customer loyalty (Returning / Regular / Loyal pay more), favourite types, letters from past customers. See section 9 (Commissions and regular customers). |
 | `Pregnancy.js` | **Pregnancy and foal care**: litter size runs in families, care during pregnancy sets litter size, stillbirths and foal strength, birth health cost, the vet's scan and midwife, foal growth speed. See section 9 (Pregnancy and foal care). |
@@ -145,7 +146,7 @@ Several things are now one line to add, in the file of the feature itself:
   30 herds, 40 territory, 50 weather/clock (`worldTime`), 60 separation,
   70 naming, 80 settling in, 90 goals, 100 morning report, 110 night
   events, 120 alicorn acceptance, 130 ageing, 140 abandoned pets, 150 flu,
-  125 pregnancy care, 160 corpses, 170 customer orders, 180 stock market,
+  125 pregnancy care, 145 warmth, 160 corpses, 170 customer orders, 180 stock market,
   190 shows. The
   "systems" test checks every one of these is registered.
 - **Something saved with each fluffy**: add `{ name, fallback, clone }` to
@@ -1647,3 +1648,38 @@ on top of the money, clock and buttons. Now they stack in the top middle,
 just below the top bar / wall (`uiMessageLayout`: `height * 0.15 + 10`),
 each on a dark rounded card, wrapped at `UI_MESSAGE_WIDTH` (620px); only the
 newest `UI_MESSAGE_MAX` (5) show at once. They still fade out after 5 s.
+
+### Cold and heating (`Warmth.js`)
+- **How cold a place is** (`placeColdness(scene)`, 0..1): outdoors by
+  season (Spring 0.15, Summer 0, Autumn 0.3, Winter 0.7) + 0.2 x night
+  (0.1 in summer) + 0.2 x snow + 0.1 x rain; house rooms Autumn 0.1 /
+  Winter 0.35 (+0.1 x night); other indoor places half that; shops 0.
+  `coldAt(f)`: 0 in a house room with a working heater; outdoors a heater
+  cuts it within `HEATER_RADIUS` (240px); a park tree takes 0.15 off.
+- **Warmth** (`f.warmth`, saved, `updateWarmth`, system order 145, every
+  second): moves 1% of the way per second towards
+  `1 - coldAt x warmthExposure`. Exposure: foals under half grown x1.5
+  (older foals x1.2), elderly x1.3 (senior x1.1), scarf x0.7, wingjacket
+  x0.75, asleep by a bed x0.6, huddled (others within 60 x 45 px) x0.75 for
+  one, x0.55 for two or more.
+- **Effects**: under `CHILLY_BELOW` (0.6) happiness drains a little, they
+  say WEATHER.COLD lines, and `coldHungerMultiplier` (up to x1.6, folded
+  into WorldTime `weatherHungerMultiplier`) makes them hungrier; under
+  `FREEZING_BELOW` (0.3) they lose up to 0.25 health a second (x2 for
+  foals under half grown) and can die ("Froze to death", with a message
+  if it's yours). Balance: a lone foal out on a snowy winter night freezes
+  by morning; a lone adult gets through hurt; a huddled herd is fine; a
+  whole snowy winter day in the park leaves most wild fluffies cold and
+  hungry but alive. The old one-off "cold night" park event is switched
+  off (NightEvents.js) now that cold is simulated.
+- **Shown**: a snowflake by cold fluffies (`drawColdMarker`, bigger and
+  shivering when freezing), a "Warmth" row in the magnifying glass
+  (`describeWarmth`), and "Cool / Cold / Freezing / Heated" after the
+  weather in the top bar (`describeTemperature`, via `describeWeather`).
+- **The Heater** (class `Heater`, drawn in code - a little radiator that
+  glows and shimmers while heating): Fluff Mart, Home & Play, $400,
+  delivered (ShoppingBag.js). Warms its whole room in the house, or
+  `HEATER_RADIUS` around it elsewhere. A thermostat: it only runs (and
+  costs `HEATER_COST_PER_DAY`, $30 a day, taken as it runs) while its place
+  is cold. Right-click switches it off/on (`on`, saved). Yesterday's bill
+  goes on the morning news (`heatingState`, SAVED_GAME_STATE).

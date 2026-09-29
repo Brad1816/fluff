@@ -141,6 +141,12 @@ const SAVED_GAME_STATE = [
     fresh: () => freshStockMarket(),
   },
   {
+    name: "heatingState", // today's heating bill (Warmth.js)
+    get: () => heatingState,
+    set: (v) => (heatingState = v && typeof v === "object" ? v : freshHeatingState()),
+    fresh: () => freshHeatingState(),
+  },
+  {
     name: "shoppingBag", // small things bought and not yet put down (ShoppingBag.js)
     get: () => shoppingBag,
     set: (v) => (shoppingBag = Array.isArray(v) ? v : []),

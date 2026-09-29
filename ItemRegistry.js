@@ -193,6 +193,18 @@ const ITEM_TYPES = [
     create: (a, sx, sy) => atSpot(new GoldenStatue(currentScene), sx, sy),
   },
   {
+    sellType: "heater", // Warmth.js
+    is: (o) => typeof Heater !== "undefined" && o instanceof Heater,
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new Heater(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawHeaterShape(ctx, 0, 14, 0.42, true, false),
+    onRightClick: (o) => {
+      o.on = !o.on;
+      if (typeof addUIMessage === "function") addUIMessage(o.on ? "Heater on." : "Heater off.");
+    },
+  },
+  {
     sellType: "fluff_tv",
     is: (o) => o instanceof FluffTV,
     icon: "fluff_tv_off",
@@ -661,6 +673,7 @@ const SAVED_CLASSES = {
   LitterpalBox: (d) => new LitterpalBox(d.scene),
   Block: (d) => new Block(d.x, d.y, d.scene),
   GoldenStatue: (d) => new GoldenStatue(d.scene),
+  Heater: (d) => new Heater(d.scene), // Warmth.js
   Fence: (d) => new Fence(d.scene, d.orientation, d.isGate),
   FoalVendor: (d) => new FoalVendor(d.scene),
   FoalInACan: (d) => new FoalInACan(d.scene),
