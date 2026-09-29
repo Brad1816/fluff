@@ -1873,3 +1873,17 @@ brushes, plays ball and trains twice a day). What changed:
 - Simulated 3 x 4 days of 6 fluffies on kibble with a tidy bot: 4 toxo
   deaths without jabs, none with.
 
+### Mess fades, rain washes it away (`Puddle.js fadeMess`)
+- Called at the end of `updatePuddles` every frame. Puddles are recognised
+  by colour (`MESS_COLORS`: poop `#5c4033`, pee `#f1c40f`, sick `#4b5320`,
+  blood `#8a0303`); water and tears are left to their own evaporation.
+- `MESS_FADE` (size lost per game day): poop 0.6 (a normal poop is gone in
+  about a day indoors), pee 1.5, sick 0.9, blood 0 (indoors it needs the
+  sponge). Outside (`getSceneConfig(scene).isOutdoor`: garden, backyard,
+  park...) twice as fast.
+- Rain or storm outside adds `RAIN_WASH` (0.02 a second) x `rainAmount()`:
+  a full downpour clears poop, pee, sick and blood in about 30 seconds.
+- In a simulated home nobody cleaned, the mess now levels off (about 1.5 poop
+  and pee puddles' worth) instead of piling up; toxoplasmosis still happens
+  there, so jabs and cleaning still matter.
+

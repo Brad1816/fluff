@@ -317,6 +317,9 @@ const HELP_TOPICS = [
       "  take hold). One button gives whichever it hasn't had.",
       "- Toxoplasmosis comes from eating poop off the floor and slowly",
       "  kills: keep floors clean, litter train, and jab them.",
+      "- Mess fades by itself: pee in a few hours, poop within a day",
+      "  (twice as fast outside). Rain washes the garden, backyard and park",
+      "  clean in about a minute. Blood indoors needs the sponge.",
     ],
   },
   {

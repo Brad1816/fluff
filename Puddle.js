@@ -124,6 +124,46 @@ function updatePuddles(dt) {
 
     if (!hasGrowth) puddle.isGrowing = false;
   });
+
+  fadeMess(dt);
+}
+
+// ---------------------------------------------------------------------------
+// Mess fades by itself, and rain washes it away outside.
+//   Poop, pee and sick slowly dry up and fade (MESS_FADE: how much of a
+//   puddle's size goes per game day - a normal poop is gone in about a day
+//   indoors, pee sooner). Outside it goes twice as fast.
+//   Rain (and storms) outside wash poop, pee, sick and blood away within a
+//   minute or so at full strength (RAIN_WASH per second x rain amount).
+//   Blood doesn't fade by itself indoors - it needs the sponge (or rain).
+// ---------------------------------------------------------------------------
+const MESS_COLORS = { "#5c4033": "poop", "#f1c40f": "pee", "#4b5320": "vomit", "#8a0303": "blood" };
+const MESS_FADE = { poop: 0.6, pee: 1.5, vomit: 0.9, blood: 0 }; // size per game day
+const RAIN_WASH = 0.02; // size per second in full rain
+
+function _messOutdoor(scene) {
+  const cfg = typeof getSceneConfig === "function" ? getSceneConfig(scene) : null;
+  return !!(cfg && cfg.isOutdoor);
+}
+
+function fadeMess(dt) {
+  const day = typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200;
+  const rain = typeof rainAmount === "function" ? rainAmount() : 0;
+  for (const puddle of puddles) {
+    const kind = MESS_COLORS[puddle.color];
+    if (!kind || !puddle.points.length) continue;
+    const outdoor = _messOutdoor(puddle.scene);
+    let rate = (MESS_FADE[kind] / day) * (outdoor ? 2 : 1);
+    if (outdoor && rain > 0) rate += RAIN_WASH * rain;
+    if (rate <= 0) continue;
+    const step = rate * dt;
+    for (let i = puddle.points.length - 1; i >= 0; i--) {
+      const p = puddle.points[i];
+      p.scale -= step;
+      if (p.targetScale) p.targetScale = Math.max(0, p.targetScale - step);
+      if (p.scale <= 0.005) puddle.points.splice(i, 1);
+    }
+  }
 }
 
 function addPointToPuddle(
