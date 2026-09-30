@@ -372,6 +372,8 @@ function throwParty(f) {
     if (!g.tooYoungToSpeak() && typeof getDialogue === "function" && Math.random() < 0.6) g.speak(getDialogue(["SHARED", "PARTY"], g, f), true);
   }
   if (typeof addRoomClimate === "function") addRoomClimate(f.scene, { w: 4 });
+  // Hats, bunting and confetti (HouseLife.js)
+  if (typeof decorateParty === "function") decorateParty(f, guests);
   const m = makeSharedMemory("party", o.name, [f, ...guests.filter((g) => g !== f)], { key: `party:${f.id}:${o.key}`, good: true, scene: f.scene, x: f.x, y: f.y });
   if (typeof addUIMessage === "function") addUIMessage(`${o.name}! Everyone had treats.`);
   if (typeof poofs !== "undefined" && typeof Poof === "function") poofs.push(new Poof(f.x, f.y - 60, f.scene));

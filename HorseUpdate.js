@@ -321,8 +321,17 @@ addHorseMethods({
 
   // Ear flopping
   _updateEarFlop(dt) {
+    // Sad, grieving, scared or Broken: the ears hang back (HouseLife.js)
+    const droop = typeof earDroopAngle === "function" ? earDroopAngle(this) : null;
+    if (droop !== null) {
+      this.limbs.targetEarFlopAngle = droop;
+      this._earsDrooping = true;
+    } else if (this._earsDrooping) {
+      this._earsDrooping = false;
+      this.limbs.targetEarFlopAngle = 0;
+    }
     // Ear Flopping
-    if (Math.random() < dt / 15.0) {
+    if (droop === null && Math.random() < dt / 15.0) {
       // Random angle avoiding 1/3 pi to 2/3 pi
       this.limbs.targetEarFlopAngle = (Math.random() < 0.5 ? Math.random() / 4 : 3 / 4 + Math.random() / 4) * Math.PI;
     }

@@ -1822,6 +1822,10 @@ function render() {
     return ay - by;
   });
 
+  // Party bunting on the wall, and the glow under a sleeping heap (HouseLife.js)
+  if (!parkCam && typeof drawPartyBunting === "function") drawPartyBunting(osCtx);
+  if (!parkCam && typeof drawSleepHeapShadows === "function") drawSleepHeapShadows(osCtx);
+
   // Draw bed backs before everything else so they're always behind fluffies
   for (const obj of visibleObjects) {
     if (obj instanceof Bed) obj.drawBack(osCtx);
@@ -1841,6 +1845,7 @@ function render() {
   }
 
   drawVFX(osCtx);
+  if (typeof drawConfetti === "function") drawConfetti(osCtx); // (HouseLife.js)
   // Foxes in the park at night (NightEvents.js)
   if (parkCam && typeof drawNightPredators === "function") drawNightPredators(osCtx);
   if (parkCam) {
@@ -1849,6 +1854,8 @@ function render() {
   }
   // Night, sunsets, clouds, rain, snow, lightning (WorldTime.js)
   if (typeof drawSkyAndWeather === "function") drawSkyAndWeather(osCtx);
+  // The feel of the room as a faint wash of colour (HouseLife.js)
+  if (!parkCam && typeof drawRoomTint === "function") drawRoomTint(osCtx);
   // Their eyes shine in the dark (NightEvents.js)
   if (parkCam && typeof drawNightPredatorEyes === "function") drawNightPredatorEyes(osCtx, parkCam);
   // (The UI is drawn once, on the screen, after this buffer: drawUI(ctx)

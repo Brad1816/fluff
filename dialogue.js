@@ -473,6 +473,7 @@ const DIALOGUE = {
     GREET_RUN: ["Mistah back! Mistah back!", "Yay! Mistah home! Huggies?", "<SPEAKER> missed mistah!", "Mistah! Come see, come see!", "Bestest mistah back!"],
     SCATTER: ["*SCREEE* Hide! Hide!", "Nu huwt <speaker>! Pwease!", "Mistah comin'! Wun!", "*whimpew*"],
     FLINCH: ["*fwinch*", "Nu hit! Nu hit!", "Pwease nu...", "*whimpew*"],
+    HUDDLE: ["Stay cwose, <target>...", "<Speaker> nu wike it hewe...", "Huddwe wif fwen...", "Shh... be vewy quiet...", "*snuggwes cwose*"],
   },
   FRIGHT: {
     THUNDER: ["*SCREEEE* Woud sky-noise!", "Sky am angwy! Hewp!", "Nu wike boomies! Huu huu!", "Make it stop! Pwease!"],

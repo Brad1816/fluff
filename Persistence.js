@@ -233,6 +233,9 @@ const SAVED_GAME_STATE = [
 // a game is started or loaded (open windows, cars, the current sell offer...)
 function resetTemporaryGameState() {
   currentSellRequest = null;
+  // Party bunting and confetti (HouseLife.js)
+  if (typeof partyDecor !== "undefined") partyDecor = {};
+  if (typeof _confetti !== "undefined") _confetti = [];
   gibs.length = 0;
   cars.length = 0;
   carSpawnTimer = 0;

@@ -1774,6 +1774,8 @@ class HorseRenderer {
       drawScars(ctx, this, "head");
       if (this.horse.limbs.tail) drawScars(ctx, this, "tail");
     }
+    // A party hat (HouseLife.js)
+    if (this.horse.partyHat && typeof drawPartyHat === "function") drawPartyHat(ctx, this);
 
     // Near Legs
     const nearLegs = this.horse.facingRight ? [0, 1] : [2, 3];
