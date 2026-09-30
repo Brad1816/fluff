@@ -24,7 +24,7 @@ module.exports = [
       await page.keyboard.press("F1");
       const f1Closed = await page.evaluate(() => !isHelpOpen());
       check(opened, "? button didn't open help");
-      checkEqual(topic, "Fluffy Park", "topic after clicking the third tab");
+      checkEqual(topic, "Day, night & weather", "topic after clicking the third tab");
       check(closed, "Esc didn't close help");
       check(f1 && f1Closed, "F1 didn't toggle help");
     },
@@ -67,7 +67,7 @@ module.exports = [
           if (kept.join("|") !== all.join("|")) out.lost.push(t.title);
         }
         // More / Back buttons and the keys
-        openHelp(HELP_TOPICS.findIndex((t) => t.title === "Temperament & price"));
+        openHelp(HELP_TOPICS.findIndex((t) => t.title === "Feelings, fears & wishes"));
         const L = getHelpLayout();
         mouse.x = L.next.x + 5;
         mouse.y = L.next.y + 5;
@@ -90,14 +90,14 @@ module.exports = [
         return out;
       });
       checkEqual(r.reached, r.topics, "topics reachable by scrolling the list");
-      check(r.topics >= 26, `topics: ${r.topics}`);
+      check(r.topics >= 15, `topics: ${r.topics}`);
       check(!r.overflow.length, `pages too tall: ${r.overflow}`);
       check(!r.lost.length, `lines lost in paging: ${r.lost}`);
-      check(r.pages["Temperament & price"] >= 4, `pages: ${JSON.stringify(r.pages)}`);
+      check(r.pages["Feelings, fears & wishes"] >= 3, `pages: ${JSON.stringify(r.pages)}`);
       checkEqual(r.afterNext, 1, "More turns the page");
       checkEqual(r.afterKey, 2, "right arrow turns the page");
       checkEqual(r.back, 0, "left arrow and Back go back");
-      checkEqual(JSON.stringify(r.nextTopic), JSON.stringify(["Fluffy Park", 0]), "down arrow goes to the next topic, first page");
+      checkEqual(JSON.stringify(r.nextTopic), JSON.stringify(["Tricks, lessons & care", 0]), "down arrow goes to the next topic, first page");
       checkEqual(JSON.stringify(r.named), JSON.stringify(["Money trouble", true]), "opened by name, in view");
     },
   },

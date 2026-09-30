@@ -68,7 +68,7 @@ module.exports = [
       checkEqual(r.shown, "pregnant", "hint for the first pregnancy");
       check(r.inHelp, `topic ${r.topic} is a help page`);
       check(r.used && r.helpOpen, "Read more opened help");
-      checkEqual(r.helpTopic, "Pregnancy & foals", "at the right page");
+      checkEqual(r.helpTopic, "Breeding & foals", "at the right page");
       checkEqual(r.behindScreen, false, "no card while help is open");
       checkEqual(r.scar, "scar", "next hint once help closed");
       check(r.gone, "card went by itself");
