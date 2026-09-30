@@ -205,7 +205,8 @@ function showScore(f, theme) {
   const diet =
     (typeof dietShowBonus === "function" ? dietShowBonus(f) : 0) +
     (typeof boredomShowBonus === "function" ? boredomShowBonus(f) : 0) - // Play.js
-    (typeof dirtShowPenalty === "function" ? dirtShowPenalty(f) : 0); // a dirty coat (Bath.js)
+    (typeof dirtShowPenalty === "function" ? dirtShowPenalty(f) : 0) - // a dirty coat (Bath.js)
+    (typeof scarShowPenalty === "function" ? scarShowPenalty(f) : 0); // scars (Scars.js)
   return Math.round(_showClamp(theme.score(showParts(f)) - showConditionPenalty(f) + groomed + tricks + diet));
 }
 
@@ -226,6 +227,7 @@ function showComment(f, theme) {
   if (theme.id === "trained" && p.trained >= 80) good.push("perfect manners");
   if (isFreshlyGroomed(f)) good.push("beautifully groomed");
   if (showConditionPenalty(f) >= 20) bad.push("not looking its best");
+  if (typeof scarsOf === "function" && scarsOf(f).length >= 2) bad.push("badly scarred");
   const parts = [];
   if (good.length) parts.push(`"${good.join(", ")}"`);
   if (bad.length) parts.push(`but ${bad.join(", ")}`);

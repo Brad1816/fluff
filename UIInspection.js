@@ -166,6 +166,12 @@ function getFluffyInspectionInfo(f) {
     // What its life has done to it, and what it loves most (Personality.js)
     const shifts = typeof describeTraitShifts === "function" ? describeTraitShifts(f) : null;
     if (shifts) about.push({ label: "Life made it", value: shifts });
+    const scars = typeof describeScars === "function" ? describeScars(f) : null; // Scars.js
+    if (scars) about.push({ label: "Scars", value: scars[0], tone: scars[1], tip: scars[2] });
+    const role = typeof describeFamilyRole === "function" ? describeFamilyRole(f) : null; // Gossip.js
+    if (role) about.push({ label: "Family role", value: role[0], tone: role[1] });
+    const heard = typeof describeGossip === "function" ? describeGossip(f) : null;
+    if (heard) about.push({ label: "Heard", value: heard[0], tone: heard[1] });
     const fav = typeof describeFavouriteCare === "function" ? describeFavouriteCare(f) : null;
     if (fav) about.push({ label: "Loves most", value: fav[0], tone: fav[1] });
     const wish = typeof describeWish === "function" ? describeWish(f) : null; // Wishes.js
@@ -372,15 +378,15 @@ const INSPECTION_TABS = [
     id: "looks",
     name: "Looks & nature",
     cols: [
-      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Growing up"] },
+      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Scars", "Ribbons"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Growing up"] },
     ],
   },
   {
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Wishes for", "Loves most", "Tricks", "Lessons", "Remembers", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Wishes for", "Loves most", "Tricks", "Lessons", "Remembers", "Heard", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },
@@ -464,6 +470,7 @@ function drawInspectionColumn(ctx, title, rows, x, y, colW, maxY = Infinity) {
   const lineSpacing = 20;
   for (const row of rows) {
     if (y > maxY) break;
+    const top = y - 15;
     ctx.font = "14px Arial";
     ctx.fillStyle = "#b8b8c8";
     ctx.fillText(row.label, x, y);
@@ -474,8 +481,33 @@ function drawInspectionColumn(ctx, title, rows, x, y, colW, maxY = Infinity) {
       ctx.fillText(sub, x + labelW, y);
       y += lineSpacing;
     }
+    // Rows with more to say on hover (Scars.js: how each one happened)
+    if (row.tip && typeof mouse !== "undefined" && mouse.x >= x && mouse.x <= x + colW && mouse.y >= top && mouse.y < y - 15) {
+      _inspectionTip = row.tip;
+    }
     y += 5;
   }
+}
+
+let _inspectionTip = null;
+function _drawInspectionTip(ctx) {
+  const lines = _inspectionTip;
+  _inspectionTip = null;
+  if (!lines || !lines.length) return;
+  ctx.save();
+  ctx.font = "13px Arial";
+  const w = Math.min(width - 20, Math.max(...lines.map((l) => ctx.measureText(l).width)) + 18);
+  const h = lines.length * 18 + 10;
+  const x = Math.max(10, Math.min(width - w - 10, mouse.x + 14));
+  const y = Math.max(10, Math.min(height - h - 10, mouse.y + 16));
+  ctx.fillStyle = "rgba(10, 6, 16, 0.94)";
+  if (typeof fillRoundRect === "function") fillRoundRect(ctx, x, y, w, h, 8);
+  else ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = "white";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  lines.forEach((l, i) => ctx.fillText(l, x + 9, y + 6 + i * 18));
+  ctx.restore();
 }
 
 function _inspectionChip(ctx, x, y, text, colour, maxW) {
@@ -626,6 +658,7 @@ function drawInspectionModal(ctx) {
     drawGlassButton(L.treeBtnX, L.btnY, L.btnW, L.btnH, "Family tree");
     drawGlassButton(L.closeBtnX, L.btnY, L.btnW, L.btnH, "Close");
   }
+  _drawInspectionTip(ctx);
   ctx.restore();
 }
 

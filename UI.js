@@ -523,6 +523,7 @@ function drawUI(ctx) {
   drawSellRequest(ctx);
   drawDebugMenu();
   drawUIMessages(ctx);
+  if (typeof drawClimateTooltip === "function") drawClimateTooltip(ctx); // (on top of the messages, Climate.js)
   drawDebugWatcher();
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   // Every pop-up screen, bottom layer first (Screens.js)

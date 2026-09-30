@@ -381,6 +381,8 @@ class HorseGenetics {
     if (typeof dietPriceMultiplier === "function") price *= dietPriceMultiplier(this.horse);
     // A dirty fluffy sells for less (Bath.js)
     if (typeof dirtPriceMultiplier === "function") price *= dirtPriceMultiplier(this.horse);
+    // Scars: -5% each, at most -20% (Scars.js)
+    if (typeof scarPriceMultiplier === "function") price *= scarPriceMultiplier(this.horse);
 
     return Math.floor(price);
   }

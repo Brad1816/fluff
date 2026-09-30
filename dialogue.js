@@ -437,6 +437,11 @@ const DIALOGUE = {
     BELL: ["Ding-ding! Nummy time!", "Wobot say nummies!", "Nummies! Nummies!"],
   },
   // Frights (Fears.js)
+  // Gossip (Gossip.js): passing on what it knows about you
+  GOSSIP: {
+    HARM: ["<Target>, be cawefuw! Mistah huwt fwuffies!", "Nu make mistah angwy... mistah gib huwties.", "<Speaker> saw bad fings... mistah am scawy.", "Shh! Mistah can heaw!"],
+    KIND: ["Mistah am nice, <target>! Gib bestest huggies!", "Nu be scawed, <target>. Mistah gud!", "Mistah gib sketties an' bwushies!", "<Target> wiww wike it hewe!"],
+  },
   // Room climate (Climate.js): "mistah" becomes what it calls you
   CLIMATE: {
     GREET_RUN: ["Mistah back! Mistah back!", "Yay! Mistah home! Huggies?", "<SPEAKER> missed mistah!", "Mistah! Come see, come see!", "Bestest mistah back!"],

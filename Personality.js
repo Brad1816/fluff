@@ -50,6 +50,7 @@ const GROW_PICKED_ON = 6;
 const UPBRINGING_SHIFT_SHARE = 0.3;
 
 // The rules: [progress key, trait, direction, story line]
+const GROW_ROOM_DAYS = 2; // a foal's days in a Warm (or Tense/Fearful) room
 const GROWTH_RULES = {
   fearGone: { trait: "bravery", dir: 1, why: (n, p, x) => `Getting over ${p.poss} fear of ${x} made ${n} braver.` },
   comforted: { trait: "temper", dir: -1, need: GROW_COMFORTS, why: (n, p) => `Being comforted through so many frights made ${n} calmer.` },
@@ -58,6 +59,9 @@ const GROWTH_RULES = {
   loved: { trait: "social", dir: 1, need: GROW_LOVED_DAYS, why: (n, p) => `Being loved made ${n} friendlier.` },
   played: { trait: "energy", dir: 1, need: GROW_PLAYS, why: (n, p) => `All that play made ${n} livelier.` },
   pickedOn: { trait: "temper", dir: 1, need: GROW_PICKED_ON, why: (n, p) => `Being picked on made ${n} grumpier.` },
+  // Foals absorb the feel of the room they grow up in (Climate.js)
+  warmRoom: { trait: "social", dir: 1, need: GROW_ROOM_DAYS * DAY_LENGTH, why: (n, p) => `Growing up in a warm, happy room made ${n} friendlier.` },
+  fearRoom: { trait: "bravery", dir: -1, need: GROW_ROOM_DAYS * DAY_LENGTH, why: (n, p) => `Growing up in a frightened, tense room made ${n} more timid.` },
 };
 
 const personalityTicker = new Ticker(5);
@@ -183,6 +187,12 @@ function updatePersonality(dt) {
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted) continue;
     if (f.hunger < 0.2) _pnAdd(f, "hungry", step);
+    // A foal takes in the feel of its room (Climate.js)
+    if (f.growth < 1 && typeof climateOf === "function" && typeof getSceneConfig === "function" && getSceneConfig(f.scene).insidePlayerQuarters) {
+      const label = climateOf(f.scene).label;
+      if (label === "Warm") _pnAdd(f, "warmRoom", step);
+      else if (label === "Tense" || label === "Fearful") _pnAdd(f, "fearRoom", step);
+    }
     // Once a day: loved, and fears it got over
     if (!f.growthProgress || typeof f.growthProgress !== "object") f.growthProgress = {};
     const gp = f.growthProgress;

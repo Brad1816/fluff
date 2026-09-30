@@ -103,6 +103,7 @@ function _canNotice(f) {
 function onFluffiesChatted(a, b) {
   changeOpinion(a, b, 0.03);
   changeOpinion(b, a, 0.03);
+  if (typeof onGossipChat === "function") onGossipChat(a, b); // what they've heard about you (Gossip.js)
 }
 
 function onFluffiesHugged(a, b) {

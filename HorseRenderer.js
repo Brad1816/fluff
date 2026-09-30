@@ -1659,6 +1659,7 @@ class HorseRenderer {
 
     // Torso & Overlays
     drawPart(this.tinted.torso, this.layout.torso);
+    if (typeof drawScars === "function" && this.horse.scars) drawScars(ctx, this, "torso"); // Scars.js
     if (this.tinted.udders && !this.horse.tooYoungToWalk()) {
       const tW = this.layout.torso.w,
         tH = this.layout.torso.h;
@@ -1769,6 +1770,10 @@ class HorseRenderer {
 
     drawPart(this.tinted.head, this.layout.head);
     if (this.horse.limbs.tail) drawPart(this.tinted.tail, this.layout.tail);
+    if (typeof drawScars === "function" && this.horse.scars) {
+      drawScars(ctx, this, "head");
+      if (this.horse.limbs.tail) drawScars(ctx, this, "tail");
+    }
 
     // Near Legs
     const nearLegs = this.horse.facingRight ? [0, 1] : [2, 3];

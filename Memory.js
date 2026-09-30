@@ -125,6 +125,8 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
   if (!isDead && victim.isAlive) {
     changePlayerFear(victim, fear);
     rememberPlayerEvent(victim, isTraining ? "training" : weaponType);
+    // It may carry the mark for good (Scars.js)
+    if (!isTraining && !isAmputation && typeof scarFromYou === "function") scarFromYou(victim, weaponType);
   }
   // Everyone who saw or heard it gets scared of you too
   for (const other of fluffies) {

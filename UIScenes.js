@@ -613,7 +613,6 @@ function drawHouseNav(c) {
     c.fillText(chip.label, chip.x + chip.w / 2, chip.y + chip.h / 2 + 1);
   }
   c.restore();
-  if (typeof drawClimateTooltip === "function") drawClimateTooltip(c);
 }
 
 // Buy the room behind a locked portal. Returns true if bought.

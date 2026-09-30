@@ -111,6 +111,8 @@ addHorseMethods({
     const mild = intent === "BULLY" || (intent === "SMARTY_VIOLENCE" && this.isSmarty() && typeof smartyInBadMood === "function" && !smartyInBadMood(this));
     if (!mild && Math.random() < 0.15) {
       target.bleedingTimer = 5;
+      // (and it may scar, Scars.js)
+      if (typeof scarFromFight === "function") scarFromFight(target, this, behavior);
     }
     target.attackCooldown = 5.0;
     target.chaseTarget = null;

@@ -27,6 +27,9 @@
 // It's shown next to the room's name at the top (with a trend arrow);
 // hover it for why.
 // Fluffies that fear you flinch when your hand comes close, anywhere.
+// You hear it too: happy chirps in a Warm room, whimpers in a Fearful or
+// Grieving one. Foals growing up in a Warm room grow friendlier, in a Tense
+// or Fearful one more timid (Personality.js).
 // ---------------------------------------------------------------------------
 
 const CLIMATE_TAU = 1.5 * DAY_LENGTH; // scores fade to a third in this time
@@ -56,7 +59,7 @@ const CLIMATE_WEIGHTS = {
   attacked: [0, 1.2, 0.2, 0],
   lesson: [0, 0.4, 0.2, 0],
   wish_denied: [0, 0.8, 0, 0.3],
-  harmed: [0, 0.6, 1.8, 0],
+  harmed: [0, 0.6, 1.2, 0], // (only a fifth for those who just saw it)
   fright: [0, 0, 0.3, 0],
   nightmare: [0, 0, 0.3, 0],
   scarred: [0, 0.5, 3, 0],
@@ -135,11 +138,13 @@ function noteClimateStory(kind, ids, opts = {}) {
   const scene = opts.s || (main && main.scene);
   if (!scene || typeof scene !== "string") return;
   const r = _clRoom(scene, true);
-  r.w = Math.min(CLIMATE_CAP, r.w + w[0]);
-  r.t = Math.min(CLIMATE_CAP, r.t + w[1]);
-  r.f = Math.max(0, Math.min(CLIMATE_CAP, r.f + w[2]));
-  r.g = Math.min(CLIMATE_CAP, r.g + w[3]);
-  r.why[kind] = (r.why[kind] || 0) + Math.abs(w[0]) + Math.abs(w[1]) + Math.abs(w[2]) + Math.abs(w[3]);
+  // Watching someone else get hurt: it's the one hit, not one per watcher
+  const seen = kind === "harmed" && typeof MEMORY_TEXT !== "undefined" && (opts.x === MEMORY_TEXT.witness || opts.x === MEMORY_TEXT.witness_family) ? 0.2 : 1;
+  r.w = Math.min(CLIMATE_CAP, r.w + w[0] * seen);
+  r.t = Math.min(CLIMATE_CAP, r.t + w[1] * seen);
+  r.f = Math.max(0, Math.min(CLIMATE_CAP, r.f + w[2] * seen));
+  r.g = Math.min(CLIMATE_CAP, r.g + w[3] * seen);
+  if (seen === 1) r.why[kind] = (r.why[kind] || 0) + 1; // (how many lately, fading)
   _climateCache = null;
 }
 
@@ -210,7 +215,10 @@ function climateOf(scene) {
     trend = d > 0.5 ? 1 : d < -0.5 ? -1 : 0;
   }
   // Why: the biggest things behind it
-  const all = Object.entries(r.why).map(([k, v]) => [CLIMATE_REASON[k] || k, v]).concat(extra);
+  const size = (k) => (CLIMATE_WEIGHTS[k] || [1]).reduce((a, x) => a + Math.abs(x), 0);
+  const all = Object.entries(r.why)
+    .map(([k, n]) => [`${CLIMATE_REASON[k] || k}${n >= 1.5 ? ` (${Math.round(n)})` : ""}`, n * size(k)])
+    .concat(extra);
   all.sort((a, b) => b[1] - a[1]);
   const reasons = all.filter((x) => x[1] >= 0.3).slice(0, 4).map((x) => x[0]);
   const out = { label, colour: CLIMATE_LABELS[label].colour, score, trend, reasons };
@@ -313,10 +321,22 @@ function _clFlinch(f) {
   return true;
 }
 
+// The sound of the room: happy chirps in a Warm one, whimpers in a Fearful one
+const CLIMATE_SOUND_CHANCE = 0.012; // per check (4 a second)
+function _clRoomSound() {
+  if (typeof fluffySound !== "function" || Math.random() > CLIMATE_SOUND_CHANCE) return;
+  const c = climateOf(currentScene);
+  const kind = c.label === "Warm" ? "happy" : c.label === "Fearful" || c.label === "Grieving" ? "sad" : null;
+  if (!kind) return;
+  const here = fluffies.filter((f) => f.isAlive && f.adopted && f.scene === currentScene && f.currentStateKey !== "SLEEPING");
+  if (here.length) fluffySound(here[Math.floor(Math.random() * here.length)], kind);
+}
+
 const climateTicker = new Ticker(0.25);
 function updateClimate(dt) {
   if (!climateTicker.step(dt)) return;
   if (typeof fluffies === "undefined" || typeof mouse === "undefined" || typeof currentScene === "undefined") return;
+  _clRoomSound();
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted || f.scene !== currentScene || f.isDragging) continue;
     if ((f.playerFear || 0) < CLIMATE_FLINCH_FEAR || f.currentStateKey === "SLEEPING") continue;
@@ -342,13 +362,14 @@ function drawClimateLabel(c, right, y) {
   c.fillText(text, right, y);
   const w = c.measureText(text).width;
   c.restore();
-  _climateLabelRect = { x: right - w - 4, y: y - 10, w: w + 8, h: 20 };
+  _climateLabelRect = { x: right - w - 4, y: y - 10, w: w + 8, h: 20, scene: currentScene };
   return w;
 }
 
 function drawClimateTooltip(c) {
   const R = _climateLabelRect;
-  if (!R || typeof mouse === "undefined" || typeof isPointInRect !== "function") return;
+  if (!R || R.scene !== currentScene || typeof mouse === "undefined" || typeof isPointInRect !== "function") return;
+  if (typeof playerQuartersAndNotBackyard === "function" && !playerQuartersAndNotBackyard(currentScene)) return;
   if (!isPointInRect(mouse.x, mouse.y, R.x, R.y, R.w, R.h)) return;
   const cl = climateOf(currentScene);
   const lines = [`This room feels ${cl.label.toLowerCase()}.`];

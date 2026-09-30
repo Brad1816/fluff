@@ -44,7 +44,7 @@ module.exports = [
         out.learn = climateLearnMultiplier(f);
         out.play = climateDesireMultiplier(f, "PlayWithBall");
         // Harsh: three hard hits in here
-        for (let i = 0; i < 3; i++) recordStory("harmed", g, { x: "hit " + i });
+        for (let i = 0; i < 4; i++) recordStory("harmed", g, { x: "hit " + i });
         const fear = climateOf("INDOORS");
         out.fear = [fear.label, fear.reasons[0]];
         out.frightMult = climateFrightMultiplier(f);
@@ -63,12 +63,12 @@ module.exports = [
       }, SETUP);
       checkEqual(r.start, "Calm", "a new room is Calm");
       checkEqual(r.warm[0], "Warm", "brushing and play make it Warm");
-      check(r.warm[1].includes("brushing"), `why: ${r.warm[1]}`);
+      check(r.warm[1].some((s) => /^brushing \(6\)$/.test(s)), `why: ${r.warm[1]}`);
       checkEqual(r.happy, 0.05, "they settle happier");
       checkEqual(r.learn, 1.1, "and learn a little faster");
       check(r.play > 1, "and play more");
       checkEqual(r.fear[0], "Fearful", "hurting them makes it Fearful");
-      checkEqual(r.fear[1], "your harshness", "and it says so");
+      checkEqual(r.fear[1], "your harshness (4)", "and it says so");
       checkEqual(r.frightMult, 1.2, "frights hit harder");
       check(r.fearHappy < 0, "they settle less happy");
       checkEqual(r.faded, "Calm", "it fades over days");
@@ -173,7 +173,7 @@ module.exports = [
           drawHouseNav(ctx);
           mouse.x = _climateLabelRect.x + 4;
           mouse.y = _climateLabelRect.y + 4;
-          drawHouseNav(ctx);
+          drawClimateTooltip(ctx);
         } catch (e) {
           err = String(e);
         }
@@ -190,6 +190,25 @@ module.exports = [
       checkEqual(r.flinch, "CRYING_SHOCKED", "a feared hand makes it flinch");
       checkEqual(r.noFlinch, null, "a loved one doesn't");
       checkEqual(r.err, null, "the label and hover draw");
+    },
+  },
+  {
+    name: "climate: a foal growing up in a warm room grows friendlier, in a fearful one more timid",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const warm = __mk(300, "INDOORS", 0.3);
+        const scared = __mk(300, "INDOORSL1", 0.3);
+        for (let i = 0; i < 10; i++) recordStory("brushed", warm);
+        for (let i = 0; i < 4; i++) recordStory("harmed", scared, { x: "hit " + i });
+        const labels = [climateOf("INDOORS").label, climateOf("INDOORSL1").label];
+        personalityTicker.fireNext();
+        updatePersonality(GROW_ROOM_DAYS * DAY_LENGTH + 1);
+        return { labels, warm: warm.traitShift && warm.traitShift.social, scared: scared.traitShift && scared.traitShift.bravery };
+      }, SETUP);
+      checkEqual(r.labels.join(), "Warm,Fearful", "the rooms");
+      check(r.warm > 0, `friendlier ${r.warm}`);
+      check(r.scared < 0, `more timid ${r.scared}`);
     },
   },
 ];

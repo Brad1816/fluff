@@ -67,6 +67,8 @@ const SAVED_HORSE_FIELDS = [
   { name: "contentUntil", fallback: undefined },
   { name: "seenPark", fallback: false },
   { name: "hatWishGrantedAt", fallback: undefined },
+  { name: "scars", fallback: undefined, clone: true }, // Scars.js
+  { name: "gossip", fallback: undefined, clone: true }, // Gossip.js
   { name: "diet", fallback: null }, // Diet.js
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },

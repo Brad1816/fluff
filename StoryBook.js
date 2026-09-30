@@ -60,6 +60,9 @@ const STORY_KINDS = {
   wish_granted: { big: true, text: (e) => `${e.x}` },
   wish_denied: { big: true, text: (e) => `${e.x}` },
   nightmare: { big: false },
+  // Phase 3 (Gossip.js, Scars.js)
+  scar: { big: true, text: (e, n) => `${n} was left with a ${e.x || "scar"}.` },
+  gossip: { big: true, text: (e, n) => `${n}: ${String(e.x || "").replace(/\{obj\}/g, "it").replace(/\{poss\}/g, "its")}` },
   dream: { big: false },
   ill: { big: true, text: (e, n) => `${n} caught ${e.x}.` },
   feedbot_tip: { big: false },

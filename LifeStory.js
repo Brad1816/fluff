@@ -196,6 +196,10 @@ function storyLine(e, f, fam = null) {
       return e.x || null;
     case "ill":
       return `${p.Sub} caught ${e.x || "something"} ${day}.`;
+    case "scar": // (Scars.js)
+      return e.x ? `${p.Sub} was left with a ${e.x}.` : null;
+    case "gossip": // (Gossip.js)
+      return e.x ? String(e.x).replace(/\{obj\}/g, p.obj).replace(/\{poss\}/g, p.poss) : null;
     case "turning":
     case "fav_found":
     case "trait_shift":
