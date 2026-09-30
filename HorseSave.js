@@ -20,6 +20,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "traumas", fallback: [], clone: true },
   { name: "hurtByPlayerAt", fallback: null }, // Memory.js
   { name: "killedByPlayer", fallback: false },
+  { name: "hasKilled", fallback: 0 }, // Kinship.js
   { name: "fromPark", fallback: false }, // Wellbeing.js settling in
   { name: "settling", fallback: false },
   { name: "settleStart", fallback: null },

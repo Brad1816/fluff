@@ -712,6 +712,9 @@ addHorseMethods({
           typeof fluffyDisplayNameById === "function"
             ? fluffyDisplayNameById(this.lastAttackerId)
             : fluffyNames[this.lastAttackerId] || "Fluffy";
+        // It's a killer now (Kinship.js: something's not right with it)
+        const killer = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === this.lastAttackerId) : null;
+        if (killer) killer.hasKilled = (killer.hasKilled || 0) + 1;
         this.die(null, `Killed by ${attackerName}`);
       } else {
         this.die(null, "Bled to death");

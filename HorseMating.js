@@ -16,6 +16,14 @@ addHorseMethods({
       !canFluffiesMate(this, friend, force)
     )
       return false;
+    // Not with close family, unless you make them or something's wrong
+    // with them (Kinship.js)
+    if (typeof kinBlocksMating === "function" && kinBlocksMating(this, friend, maleForced, femaleForced)) {
+      if (this.gender === "male") this.specialHuggiesCooldown = Math.max(this.specialHuggiesCooldown || 0, 30);
+      if (typeof this.tooYoungToSpeak === "function" && !this.tooYoungToSpeak() && Math.random() < 0.3 && typeof getDialogue === "function")
+        this.speak(getDialogue(["SPECIAL_HUGGIES", "FAMILY"], this, friend));
+      return false;
+    }
     const isMaleOnMaleUnconsensual =
       this.gender === "male" && friend.gender === "male" && !isSexuallyAttractedTo(friend, this);
     if (isMaleOnMaleUnconsensual && canFightBack(friend)) {

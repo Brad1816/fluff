@@ -1157,6 +1157,7 @@ const DIALOGUE = {
   },
   // Special hugs
   SPECIAL_HUGGIES: {
+    FAMILY: ["Nu! <Target> am famiwy!", "Ew! Nu speshuw huggies wif famiwy!", "<Speaker> nu do dat wif famiwy...", "Famiwy am fow nowmaw huggies onwy!"],
     ENF: ["Enf, enf, enf..."],
     IP: ["Ip, ip, ip, ip..."],
     GUD_FEEWS: ["GUD FEEWS!", "GUUUUD FEEEWS!!", "BESTEST FEEWS!!"],

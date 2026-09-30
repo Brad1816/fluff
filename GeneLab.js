@@ -616,7 +616,15 @@ function _drawGeneLabPrediction(c) {
   if (pair.pregnancy) _glText(c, "(her current pregnancy)", x + c.measureText(`${momName} ♀  +  ${pair.dadName} ♂`).width + 12, y, "#f7d774", "13px Arial");
   y += 22;
   if (relation) {
-    _glText(c, `⚠ These two are related: ${relation}.`, x, y, "#ffb86b", "bold 13px Arial");
+    // How close, and whether they'd do it on their own (Kinship.js)
+    let extra = "";
+    if (typeof relatedness === "function" && pair.dadId !== null && pair.dadId !== undefined) {
+      const r = relatedness(pair.mom.id, pair.dadId);
+      extra = ` (${Math.round(r * 1000) / 10}% related)`;
+      const dad = fluffies.find((f) => f.id === pair.dadId);
+      if (!pair.pregnancy && dad && typeof kinBlocksMating === "function" && kinBlocksMating(dad, pair.mom) && kinBlocksMating(pair.mom, dad)) extra += " - they won't mate on their own";
+    }
+    _glText(c, `⚠ These two are related: ${relation}${extra}.`, x, y, "#ffb86b", "bold 13px Arial");
   } else {
     _glText(c, "Not related (as far as the family records know).", x, y, "#9fe0a8", "13px Arial");
   }

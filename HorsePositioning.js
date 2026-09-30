@@ -960,6 +960,7 @@ class HorsePositioning {
         f.currentCage === this.horse.currentCage &&
         fenceCanReachThing(this.horse, f) &&
         !this.horse.fluffyIsRelatedOrSpecialFriend(f) &&
+        !(typeof kinBlocksRomance === "function" && kinBlocksRomance(this.horse, f)) &&
         !f.fearedFluffies.some((ff) => ff.id === this.horse.id) &&
         rels[f.id] === "friend" &&
         !this.horse.friendshipCooldowns[f.id] &&

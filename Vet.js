@@ -26,6 +26,9 @@ const VET_W = 1000;
 
 let vetOpen = false;
 let vetPage = 0;
+// Breeding advice (Kinship.js): on, and who it's for
+let vetAdviceOn = false;
+let vetAdvicePick = null;
 
 // ---- The clinic on Shopping Street ----
 
@@ -266,6 +269,8 @@ function vetCondition(f) {
 function openVet() {
   vetOpen = true;
   vetPage = 0;
+  vetAdviceOn = false;
+  vetAdvicePick = null;
 }
 function closeVet() {
   vetOpen = false;
@@ -305,10 +310,13 @@ function getVetLayout() {
     rows,
     pages,
     list,
-    checkAll: { x: x + w - 400, y: y + 60, w: 180, h: 32 },
-    // The vet plan (Economy.js)
-    plan: { x: x + w - 610, y: y + 60, w: 200, h: 32 },
-    jabAll: { x: x + w - 210, y: y + 60, w: 190, h: 32 },
+    // Along the bottom: breeding advice, the vet plan (Economy.js), and
+    // everyone at once
+    // (after the page arrows and "1 / 2", before Close)
+    advice: { x: x + 196, y: y + h - 46, w: 160, h: 32 },
+    plan: { x: x + 362, y: y + h - 46, w: 180, h: 32 },
+    checkAll: { x: x + 548, y: y + h - 46, w: 130, h: 32 },
+    jabAll: { x: x + 684, y: y + h - 46, w: Math.max(110, w - 684 - 160), h: 32 },
     prev: { x: x + 24, y: y + h - 46, w: 50, h: 32 },
     next: { x: x + 80, y: y + h - 46, w: 50, h: 32 },
     close: { x: x + w - 150, y: y + h - 46, w: 130, h: 32 },
@@ -338,7 +346,17 @@ function drawVet(c) {
     L.x + 24,
     L.y + 64,
   );
-  c.fillText("Flu spreads to fluffies nearby: pen new arrivals for a day or two. Toxoplasmosis comes from eating poop: keep floors clean.", L.x + 24, L.y + 84);
+  if (vetAdviceOn) {
+    const pick = vetAdvicePick !== null ? L.list.find((f) => f.id === vetAdvicePick) : null;
+    c.fillStyle = "#f7d774";
+    if (!pick) c.fillText("Breeding advice: pick a grown fluffy to see who it should (and shouldn't) have foals with.", L.x + 24, L.y + 84);
+    else {
+      const best = typeof bestMatches === "function" ? bestMatches(pick, 3) : [];
+      const names = best.map((b) => `${_vetName(b.f)} (${Math.round(b.advice.alive * 100)}% born alive)`);
+      c.fillText(fitText(c, `Best matches for ${_vetName(pick)}: ${names.length ? names.join(", ") : "nobody here yet"}.`, L.w - 48), L.x + 24, L.y + 84);
+    }
+  } else c.fillText("Flu spreads to fluffies nearby: pen new arrivals for a day or two. Toxoplasmosis comes from eating poop: keep floors clean.", L.x + 24, L.y + 84);
+  _vetButton(c, L.advice, vetAdviceOn ? "Back to patients" : "Breeding advice", true);
   _vetButton(c, L.checkAll, "Check everyone", L.list.length > 0);
   if (typeof onVetPlan === "function") _vetButton(c, L.plan, onVetPlan() ? `On the plan ($${planPremium()}/day)` : `Join plan ($${planPremium()}/day)`, true);
   const jabCost = L.list.filter((f) => vetCanJab(f)).reduce((s, f) => s + vetJabPrice(f), 0);
@@ -349,7 +367,7 @@ function drawVet(c) {
   c.fillText("Fluffy", L.x + 40, L.y + 128);
   c.fillText("Age", L.x + 250, L.y + 128);
   c.fillText("Health", L.x + 370, L.y + 128);
-  c.fillText("Condition", L.x + 470, L.y + 128);
+  c.fillText(vetAdviceOn ? "As a match" : "Condition", L.x + 470, L.y + 128);
 
   if (!L.rows.length) {
     c.textAlign = "center";
@@ -377,6 +395,11 @@ function drawVet(c) {
     c.fillRect(r.x + 350, r.y + 19, 80, 10);
     c.fillStyle = hp > 70 ? "#6fd08c" : hp > 35 ? "#f7d774" : "#ff6b6b";
     c.fillRect(r.x + 350, r.y + 19, 80 * (hp / 100), 10);
+    // Breeding advice instead of the patient's condition
+    if (vetAdviceOn) {
+      _drawVetAdviceRow(c, r);
+      continue;
+    }
     const [cond, tone] = vetCondition(f);
     c.fillStyle = tone === "bad" ? "#ff8a80" : tone === "good" ? "#9fe0a8" : "rgba(255,255,255,0.7)";
     const pregnant = f.isPregnant && f.gender === "female";
@@ -416,6 +439,44 @@ function drawVet(c) {
   c.restore();
 }
 
+// ---- Breeding advice (Kinship.js) ----
+
+// A row in advice mode: how it goes with the picked fluffy
+function _drawVetAdviceRow(c, r) {
+  const f = r.f;
+  const pick = vetAdvicePick !== null ? fluffies.find((x) => x.id === vetAdvicePick && x.isAlive) : null;
+  const w = r.jab.x + r.jab.w - (r.x + 450);
+  const grown = f.growth >= 1;
+  c.textAlign = "left";
+  if (pick === f) {
+    c.strokeStyle = "#f7d774";
+    c.lineWidth = 2;
+    c.beginPath();
+    if (c.roundRect) c.roundRect(r.x, r.y, r.w, r.h, 8);
+    else c.rect(r.x, r.y, r.w, r.h);
+    c.stroke();
+    c.font = "bold 13px Arial";
+    c.fillStyle = "#f7d774";
+    c.fillText("Advice for this one", r.x + 450, r.y + 22);
+  } else if (!pick || !grown || f.gender === pick.gender) {
+    c.font = "13px Arial";
+    c.fillStyle = "rgba(255,255,255,0.45)";
+    c.fillText(!grown ? "Too young to breed" : pick ? "-" : "", r.x + 450, r.y + 22);
+  } else {
+    const a = pairAdvice(pick, f);
+    const best = bestMatches(pick, 3).some((b) => b.f === f);
+    c.font = "bold 13px Arial";
+    c.fillStyle = a.tone === "bad" ? "#ff8a80" : a.tone === "good" ? "#9fe0a8" : "#f7d774";
+    c.fillText(fitText(c, `${best ? "\u2605 " : ""}${a.verdict}`, w - 110), r.x + 450, r.y + 22);
+    c.font = "12px Arial";
+    c.fillStyle = "rgba(255,255,255,0.7)";
+    const parts = [a.relation ? a.relation.charAt(0).toUpperCase() + a.relation.slice(1) : "Not related", `${Math.round(a.alive * 100)}% of foals born alive`];
+    if (!a.willMate) parts.push(a.why);
+    c.fillText(fitText(c, parts.join(" \u00B7 "), w - 110), r.x + 450, r.y + 40);
+  }
+  if (grown) _vetButton(c, r.jab, pick === f ? "Picked" : "Pick", true);
+}
+
 // Mouse down (screen positions); swallows clicks while open
 function handleVetClick() {
   if (!vetOpen) return false;
@@ -428,6 +489,11 @@ function handleVetClick() {
   if (typeof onVetPlan === "function" && hit(L.plan)) {
     if (onVetPlan()) leaveVetPlan();
     else joinVetPlan();
+    return true;
+  }
+  if (hit(L.advice)) {
+    vetAdviceOn = !vetAdviceOn;
+    vetAdvicePick = null;
     return true;
   }
   if (hit(L.checkAll)) {
@@ -447,6 +513,13 @@ function handleVetClick() {
     return true;
   }
   for (const r of L.rows) {
+    if (vetAdviceOn) {
+      if (hit(r.jab) && r.f.growth >= 1) {
+        vetAdvicePick = vetAdvicePick === r.f.id ? null : r.f.id;
+        return true;
+      }
+      continue;
+    }
     if (hit(r.check)) vetCheckUp(r.f);
     else if (hit(r.treat)) vetTreat(r.f);
     else if (hit(r.jab)) {

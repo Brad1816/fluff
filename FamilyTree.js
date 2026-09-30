@@ -697,6 +697,15 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
     // Bought stock (StockMarket.js)
     _ftText(c, `From ${rec.boughtFrom}`, tx, y + 84, "#cfcfcf", "13px Arial");
   }
+  // Its line, and how related it is to the one in the middle (Kinship.js)
+  const focusId = typeof familyTreeFocusId !== "undefined" ? familyTreeFocusId : null;
+  if (typeof relatedness === "function" && focusId !== null && focusId !== rec.id) {
+    const r = relatedness(focusId, rec.id);
+    if (r >= 0.01) _ftText(c, `${Math.round(r * 1000) / 10}% related to ${getFamilyName(getFamilyRecord(focusId))}`, tx, y + 102, "#f7d774", "12px Arial");
+  } else if (typeof lineReputation === "function" && typeof lineRootOf === "function") {
+    const rep = lineReputation(lineRootOf(rec.id));
+    if (rep) _ftText(c, `Line: ${rep}`, tx, y + 102, "#9fe0a8", "12px Arial");
+  }
   y += 116;
 
   const nameOf = (id) => (id === null || id === undefined ? "Unknown" : getFamilyName(getFamilyRecord(id) || { id }));
@@ -829,6 +838,11 @@ function drawFamilyTree(c) {
   c.stroke();
 
   _ftText(c, `${getFamilyName(focus)}'s family`, FT_W / 2, 44, "white", "bold 28px Arial", "center");
+  // The family line's name, if it's earned one (FamilyLines.js)
+  if (typeof describeLine === "function") {
+    const line = describeLine({ id: focus.id });
+    if (line && line[0]) _ftText(c, line[0], FT_W / 2, 66, line[1] === "good" ? "#9fe0a8" : "#f7d774", "bold 14px Arial", "center");
+  }
 
   c.drawImage(cache.canvas, 10, 0);
 
