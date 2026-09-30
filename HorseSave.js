@@ -74,6 +74,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "formerPet", fallback: null, clone: true }, // Runaways.js
   { name: "_learntFromMum", fallback: undefined }, // FamilyLines.js
   { name: "_echoed", fallback: undefined },
+  { name: "rescued", fallback: undefined }, // Shelter.js / Inspector.js
   { name: "title", fallback: null }, // Titles.js
   { name: "titleSince", fallback: undefined },
   { name: "titleState", fallback: undefined, clone: true },

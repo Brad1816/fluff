@@ -73,6 +73,8 @@ function placeColdness(scene) {
 
 function heatersIn(scene) {
   if (typeof Heater === "undefined") return [];
+  // (no power while you're in debt, Pressure.js)
+  if (typeof powerCut === "function" && powerCut()) return [];
   return objects.filter((o) => o instanceof Heater && o.scene === scene && o.on && !o.isDragging);
 }
 
@@ -183,7 +185,7 @@ function _runHeaters(step) {
   const perSecond = HEATER_COST_PER_DAY / DAY_LENGTH;
   for (const h of objects) {
     if (!(h instanceof Heater)) continue;
-    h.heating = h.on && placeColdness(h.scene) > 0.05;
+    h.heating = h.on && placeColdness(h.scene) > 0.05 && !(typeof powerCut === "function" && powerCut());
     if (!h.heating) continue;
     s.owed += perSecond * step;
   }

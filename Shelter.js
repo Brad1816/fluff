@@ -187,6 +187,24 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
   h.playerFear = kind.goodNature ? 0 : Math.random() < 0.5 ? Math.random() * 0.4 : 0;
   h.pottyTraining = origin === "surrendered" ? Math.random() * 0.8 : Math.random() * 0.3;
   h.sensitiveBaby = false;
+  // Now and then: taken from a dealer, broken (rescue and rehab, Inspector.js)
+  let fromDealer = false;
+  if (growth >= 1 && Math.random() < SHELTER_DEALER_CHANCE) {
+    fromDealer = true;
+    h.title = "Broken";
+    h.titleSince = typeof timePlayed === "number" ? timePlayed : 0;
+    h.breakLimit = 8 + Math.random() * 4;
+    h.strain = h.breakLimit;
+    h.titleState = { lovedDays: 0, defends: 0, respect: 0, healing: 0, maxStrain: h.strain, lastHarm: -1e9, day: dayNumber };
+    h.playerFear = 0.55 + Math.random() * 0.25;
+    h.playerTrust = 0.02 + Math.random() * 0.08;
+    h.happiness = 0.2;
+    h.rescued = true;
+    if (typeof addScar === "function") {
+      h.isAlive = true;
+      addScar(h, Math.random() < 0.5 ? "flank" : "bald", "From its time with a dealer");
+    }
+  }
   // A name: the shelter's, or its old owner's
   const used = new Set([
     ...Object.values(typeof fluffyNames !== "undefined" ? fluffyNames : {}),
@@ -210,9 +228,9 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
     id: h.id,
     data,
     name,
-    origin,
-    notes: _shNotes(h),
-    backstory: _shBackstory(origin, h),
+    origin: fromDealer ? "dealer" : origin,
+    notes: fromDealer ? ["Rescued from a dealer. Needs a lot of patience.", "Flinches at hands."] : _shNotes(h),
+    backstory: _shBackstory(fromDealer ? "dealer" : origin, h),
     arrivedDay: dayNumber,
     timesUpDay: dayNumber + Math.round(_shRand(SHELTER_STAY_DAYS)),
     type: h.type,
@@ -223,7 +241,13 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
 }
 
 // Its first chapter (the Story tab, LifeStory.js)
+const SHELTER_DEALER_CHANCE = 0.1;
 const SHELTER_BACKSTORIES = {
+  dealer: [
+    "Taken from a dealer by the welfare inspector, broken by what was done to {obj}",
+    "Found in a dealer's van, too frightened to make a sound",
+  ],
+  seized: ["Taken from a keeper by the welfare inspector"],
   stray: [
     "Found alone in the rain behind the shops",
     "Found living under a bench in the park",
@@ -618,7 +642,7 @@ function shelterCardLayout() {
 // The plaque, as lines of plain English
 function shelterPlaqueLines(r) {
   const what = `${r.gender === "female" ? (r.grown ? "Mare" : "Filly") : r.grown ? "Stallion" : "Colt"}, ${r.type}, ${r.ageText}`;
-  const origin = { stray: "Found as a stray", surrendered: "Given up by its owner", born: "Born here at the shelter" }[r.origin] || "";
+  const origin = { stray: "Found as a stray", surrendered: "Given up by its owner", born: "Born here at the shelter", dealer: "Rescued from a dealer", seized: "Taken from its keeper by the inspector" }[r.origin] || "";
   const left = shelterDaysLeft(r);
   const timesUp = left <= 0 ? `Time's up: today (Day ${r.timesUpDay}) - half price` : `Time's up: Day ${r.timesUpDay} (${left} day${left === 1 ? "" : "s"} left)`;
   return { what, origin, notes: r.notes.map((n) => `"${n}"`), timesUp };

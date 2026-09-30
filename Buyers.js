@@ -211,7 +211,8 @@ function buyerOffer(kind, f, level = _buyerLevel(), rnd = Math.random) {
   const like = buyerLikes(kind, f);
   const wealth = 1 + 0.06 * (level - 1);
   const fam = (kind.id === "family" || kind.id === "kid") && typeof familyRepBudget === "function" ? familyRepBudget() : 1;
-  const base = (kind.flatPrice ? kind.flatPrice(f) : f.calculatePrice() * buyerConditionFactor(f)) * kind.budget * wealth * fam;
+  const market = typeof marketOfferMultiplier === "function" ? marketOfferMultiplier() : 1; // (Pressure.js)
+  const base = (kind.flatPrice ? kind.flatPrice(f) : f.calculatePrice() * buyerConditionFactor(f)) * kind.budget * wealth * fam * market;
   const offer = Math.max(5, Math.round((base * (0.85 + 0.3 * like)) / 5) * 5);
   const maxPay = Math.max(offer, Math.round((offer * (1 + kind.generous * (0.4 + 0.6 * like) + 0.1 * rnd())) / 5) * 5);
   return { offer, maxPay, like };

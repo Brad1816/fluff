@@ -47,6 +47,7 @@ function _parentsOf(f) {
 const GOALS = [
   // Wishes (Wishes.js)
   { id: "first_wish", text: "Make a fluffy's wish come true", reward: 100, check: (s) => (s.wishes || 0) >= 1 },
+  { id: "rehab", text: "Heal a Broken fluffy", reward: 300, check: (s) => (s.rehabs || 0) >= 1 },
   { id: "five_wishes", text: "Make 5 wishes come true", reward: 400, check: (s) => (s.wishes || 0) >= 5, progress: (s) => `${Math.min(5, s.wishes || 0)}/5` },
   {
     id: "first_litter",
@@ -216,6 +217,8 @@ function noteGoalEvent(kind, info = {}) {
     s.litters = (s.litters || 0) + 1;
   } else if (kind === "broughtHome") {
     s.broughtHome = (s.broughtHome || 0) + 1;
+  } else if (kind === "rehab") {
+    s.rehabs = (s.rehabs || 0) + 1; // (Inspector.js)
   } else if (kind === "wish") {
     s.wishes = (s.wishes || 0) + 1;
   } else if (kind === "showPlace") {

@@ -21,7 +21,7 @@
 // Shown in the Household screen.
 // ---------------------------------------------------------------------------
 
-const NOTE_CHANCE = { family: 0.75, kid: 0.7, farmer: 0.5, collector: 0.4, show: 0.6, bargain: 0.35, order: 0.6, shop: 0.2 };
+const NOTE_CHANCE = { family: 0.75, kid: 0.7, farmer: 0.5, collector: 0.4, show: 0.6, bargain: 0.35, order: 0.6, shop: 0.2, wholesale: 0 };
 const REP_PRAISE = 2;
 const REP_COMPLAINT = 2;
 const REP_BITE = 3;

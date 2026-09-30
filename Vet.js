@@ -106,6 +106,8 @@ function vetClinicClick() {
 function _vetPay(amount) {
   if (typeof showDebugMenu !== "undefined" && showDebugMenu) return true;
   if (money < amount) {
+    // Pay later? (a second click: on credit, Pressure.js)
+    if (typeof vetOnCredit === "function") return vetOnCredit(amount);
     if (typeof addUIMessage === "function") addUIMessage(`The vet needs $${amount}.`);
     return false;
   }

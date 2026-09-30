@@ -219,6 +219,8 @@ const SAVED_GAME_STATE = [
   { name: "keeperWord", get: () => keeperWord, set: (v) => (keeperWord = typeof v === "string" ? v : "daddeh"), fresh: () => "daddeh" }, // Identity.js
   { name: "roomClimate", get: () => roomClimate, set: (v) => { roomClimate = v && typeof v === "object" ? v : freshRoomClimate(); _climateCache = null; }, fresh: () => freshRoomClimate() }, // Climate.js
   { name: "sharedMemories", get: () => sharedMemories, set: (v) => (sharedMemories = v && typeof v === "object" ? v : freshSharedMemories()), fresh: () => freshSharedMemories() }, // SharedMemories.js
+  { name: "inspector", get: () => inspector, set: (v) => (inspector = v && typeof v === "object" ? v : freshInspector()), fresh: () => freshInspector() }, // Inspector.js
+  { name: "pressure", get: () => pressure, set: (v) => (pressure = v && typeof v === "object" ? v : freshPressure()), fresh: () => freshPressure() }, // Pressure.js
   { name: "weekStats", get: () => weekStats, set: (v) => (weekStats = v && typeof v === "object" ? v : freshWeekStats()), fresh: () => freshWeekStats() }, // WeekSummary.js
   { name: "livesBook", get: () => livesBook, set: (v) => (livesBook = v && typeof v === "object" ? v : freshLivesBook()), fresh: () => freshLivesBook() }, // Lives.js
   { name: "keeperRep", get: () => keeperRep, set: (v) => (keeperRep = v && typeof v === "object" ? v : freshKeeperRep()), fresh: () => freshKeeperRep() }, // Reputation.js

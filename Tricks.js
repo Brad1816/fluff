@@ -440,6 +440,7 @@ function rightClickActions(f) {
   if (typeof partyActions === "function") out.push(...partyActions(f)); // SharedMemories.js
   if (typeof releaseActions === "function") out.push(...releaseActions(f)); // Runaways.js
   if (typeof photoActions === "function") out.push(...photoActions(f)); // Lives.js
+  if (typeof wholesaleActions === "function") out.push(...wholesaleActions(f)); // the mill trade (Inspector.js)
   return out;
 }
 

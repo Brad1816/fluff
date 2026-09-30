@@ -46,7 +46,8 @@ function updateMoneyAndRequests(dt) {
     const indoorCount = indoorFluffies.length;
 
     // Timer decreases faster with more indoor fluffies
-    sellRequestTimer -= dt * Math.max(1, Math.log2(indoorCount));
+    // (slow or busy days, Pressure.js)
+    sellRequestTimer -= dt * Math.max(1, Math.log2(indoorCount)) * (typeof marketBuyerRate === "function" ? marketBuyerRate() : 1);
 
     if (sellRequestTimer <= 0) {
       if (indoorCount > 0) {

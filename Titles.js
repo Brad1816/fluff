@@ -145,6 +145,7 @@ function setTitle(f, title, why) {
   else if (typeof recordStory === "function") recordStory("turning", f, { x: line });
   if (title === "Broken" && typeof fluffySound === "function") fluffySound(f, "sad");
   if (typeof noteWeekTitle === "function") noteWeekTitle(f, title); // (WeekSummary.js)
+  if (typeof noteRehab === "function") noteRehab(f, before, title); // healed from Broken (Inspector.js)
   return true;
 }
 

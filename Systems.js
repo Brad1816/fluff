@@ -12,7 +12,7 @@
 //   125 pregnancy care, 130 ageing, 133 family lines, 134 care actions, 135 affection, 136 tricks, 137 diet,
 //   138 play, 140 abandoned pets, 141 fears and runaways, 142 population, 143 room
 //   climate, 144 sleeping piles, 145 warmth, 146 shared memories, 150 flu, 160 corpses,
-//   170 orders, 175 reputation, 180 breeders' market, 190 shows
+//   170 orders, 175 reputation, 176 inspector, 180 breeders' market, 190 shows
 //
 // Ticker: "do this every N seconds" without hand-written timers.
 //

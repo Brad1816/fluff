@@ -10,7 +10,7 @@
 //             shelter (Shelter.js)
 // Anything you can't pay is owed (billsOwed, saved) and taken first from
 // the next mornings' money. The day report shows the bill, and what you owe.
-// Nothing bad happens yet when you owe money; that's for phase 6.
+// Owing money for days has consequences (Pressure.js).
 // Free while the debug menu is open (like everything else).
 // ---------------------------------------------------------------------------
 
@@ -59,6 +59,8 @@ function chargeDailyBills() {
   if (billsOwed > 0 && typeof addUIMessage === "function") {
     addUIMessage(`You couldn't pay all the bills. You owe $${billsOwed.toLocaleString()}.`);
   }
+  // Days in debt: a final notice, the power cut, the bailiffs (Pressure.js)
+  if (typeof notePressureMorning === "function") notePressureMorning(billsOwed);
   return { ...bill, paid, owed: billsOwed };
 }
 
