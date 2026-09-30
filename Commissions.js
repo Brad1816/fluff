@@ -36,7 +36,7 @@ const COMMISSION_ALICORN_CHANCE = 0.2; // share of type requirements that are al
 const COMMISSION_EVERY = 1; // game days each stays up before a new one replaces it
 const EXCLUSIVE_MULT = 3.5; // FluffList exclusives: reward vs a normal order
 const EXCLUSIVE_EXTRA_DAYS = 1; // ...and a day longer to deliver
-const COMMISSION_DAYS = 4; // game days to deliver (+1 if it must be grown)
+const COMMISSION_DAYS = 4; // game days to deliver (+2 if it must be grown: foals take 2 days to grow up)
 const COMMISSION_MULT = 2.5; // reward compared with a normal order
 const COMMISSION_DEPOSIT = 0.2; // share of the reward paid when you accept
 const COMMISSION_REP_MISSED = 5;
@@ -259,7 +259,7 @@ function makeCommission(level = getOrderLevel(), rnd = Math.random, opts = {}) {
     depositPaid: 0,
     postedAt: now,
     leavesAt: now + DAY_LENGTH,
-    timeAllowed: (COMMISSION_DAYS + (grown ? 1 : 0) + (exclusive ? EXCLUSIVE_EXTRA_DAYS : 0)) * DAY_LENGTH,
+    timeAllowed: (COMMISSION_DAYS + (grown ? 2 : 0) + (exclusive ? EXCLUSIVE_EXTRA_DAYS : 0)) * DAY_LENGTH,
     dueAt: null,
   };
   return applyClientBonus(order);

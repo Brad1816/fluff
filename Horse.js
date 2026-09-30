@@ -1,4 +1,4 @@
-const pregnancyDuration = 300;
+const pregnancyDuration = 560; // about 2 weeks (Aging.js: a game day ~ a month)
 
 function areSpecialFriends(id1, id2) {
   if (!relationships[id1] || !relationships[id2]) return false;

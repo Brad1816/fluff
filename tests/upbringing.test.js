@@ -35,8 +35,8 @@ module.exports = [
         b.scene = "BACKYARD";
         a.coloristDegree = b.coloristDegree = 0.5;
         const out = { row: describeUpbringing(a), rowKind: describeUpbringing(b), who: upbringingInfluences(a).map((i) => i.who) };
-        // A whole foalhood (about 1680 seconds)
-        for (let s = 0; s < 1680; s++) {
+        // A whole foalhood (GROW_UP_TIME)
+        for (let s = 0; s < GROW_UP_TIME; s++) {
           applyUpbringing(a, 1);
           applyUpbringing(b, 1);
         }
@@ -86,7 +86,7 @@ module.exports = [
         acceptAlicorns(mum);
         const foal = __mk(260, 0.2, mum.id);
         foal.alicornComfort = 0;
-        for (let s = 0; s < 1680 && getAlicornComfort(foal) < 1; s++) applyUpbringing(foal, 1);
+        for (let s = 0; s < GROW_UP_TIME && getAlicornComfort(foal) < 1; s++) applyUpbringing(foal, 1);
         const out = { comfort: getAlicornComfort(foal), tolerant: !!(foal.tolerantOfAlicorns && foal.tolerantOfAlicorns()) };
         // The system (1s ticker) copies colour views over time
         const mean = __mk(800);

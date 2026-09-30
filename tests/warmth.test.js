@@ -50,8 +50,8 @@ module.exports = [
             outLabel: describeTemperature(PARK_SCENE),
           };
         };
-        // Spring days 1-4, summer 5-8, autumn 9-12, winter 13-16
-        return { summerDay: at(6, 13), winterDay: at(14, 13), winterSnowNight: at(14, 23, "snow"), autumnNight: at(10, 23) };
+        // Spring days 1-3, summer 4-6, autumn 7-9, winter 10-12
+        return { summerDay: at(5, 13), winterDay: at(11, 13), winterSnowNight: at(11, 23, "snow"), autumnNight: at(8, 23) };
       }, SETUP);
       check(r.summerDay.park === 0 && r.summerDay.house === 0, `summer is warm ${JSON.stringify(r.summerDay)}`);
       check(r.winterDay.park >= 0.65 && r.winterDay.park <= 0.75, `winter day outside ${r.winterDay.park}`);
@@ -68,7 +68,7 @@ module.exports = [
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
-        __setTime(14, 21, "snow");
+        __setTime(11, 21, "snow");
         const foal = __mk(PARK_SCENE, 400, 1200, 0.3);
         const lone = __mk(PARK_SCENE, 900, 1200);
         const herd = [__mk(PARK_SCENE, 1500, 1200), __mk(PARK_SCENE, 1530, 1210), __mk(PARK_SCENE, 1515, 1225)];
@@ -112,7 +112,7 @@ module.exports = [
       const r = await page.evaluate((setup) => {
         eval(setup)();
         heatingState = freshHeatingState();
-        __setTime(14, 12, "snow");
+        __setTime(11, 12, "snow");
         const adult = __mk("INDOORS", 400, 450);
         const foal = __mk("INDOORS", 900, 450, 0.3);
         __run(6 * HOUR_LENGTH);
@@ -142,7 +142,7 @@ module.exports = [
         const realMsg = window.addUIMessage;
         window.addUIMessage = (t) => said.push(t);
         try {
-          __setTime(14, 23, "snow");
+          __setTime(11, 23, "snow");
           heatingState.day = 14;
           heatingState.today = 7;
           __setTime(15, 9, "snow");

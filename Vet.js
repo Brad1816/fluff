@@ -5,7 +5,7 @@
 // For each of your fluffies (sick ones listed first):
 //   Check-up (VET_CHECK_PRICE)  finds flu that isn't showing yet (Illness.js),
 //        and for older fluffies says roughly how long they have left
-//        (Aging.js: most live to about 35 days)
+//        (Aging.js: most live to 5-7 years)
 //   Treat (vetTreatmentPrice)   cures Fluffy flu, poisoning, toxoplasmosis,
 //        the runs and incontinence, stops bleeding and heals to full health
 //   Jabs                        flu jab (VET_JAB_PRICE): can't catch Fluffy
@@ -139,9 +139,9 @@ function vetLifeNote(f) {
   if (typeof ageDays !== "function" || f.growth < 1) return "";
   const d = ageDays(f);
   if (d < SENIOR_DAYS) return "young and healthy for years yet";
-  const left = Math.round(35 - d);
-  if (left <= 1) return "very old - could go any day now";
-  return `getting on - about ${left} days left`;
+  const left = (OLD_AGE_RISK_DAYS + MAX_AGE_DAYS) / 2 - d;
+  if (left <= 2) return "very old - could go any day now";
+  return `getting on - about ${fluffyAgeText(left)} left`;
 }
 
 function vetCheckUp(f) {
@@ -348,9 +348,9 @@ function drawVet(c) {
     c.fillText(fitText(c, name, 200), r.x + 20, r.y + 29);
     c.font = "13px Arial";
     const stage = typeof lifeStage === "function" ? lifeStage(f) : "";
-    const days = typeof ageDays === "function" ? Math.floor(ageDays(f)) : 0;
+    const age = typeof ageDays === "function" ? fluffyAgeShort(ageDays(f)) : "";
     c.fillStyle = stage === "elderly" ? "#ff8a80" : stage === "senior" ? "#f7d774" : "rgba(255,255,255,0.85)";
-    c.fillText(`${stage.charAt(0).toUpperCase() + stage.slice(1)}, ${days}d`, r.x + 230, r.y + 29);
+    c.fillText(`${stage.charAt(0).toUpperCase() + stage.slice(1)}, ${age}`, r.x + 230, r.y + 29);
     // Health bar
     const hp = Math.max(0, Math.min(100, f.health ?? 100));
     c.fillStyle = "rgba(255,255,255,0.15)";

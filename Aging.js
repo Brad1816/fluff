@@ -2,15 +2,23 @@
 // Growing old: life stages, greying, and dying of old age.
 //
 // A fluffy's age is f.age (game seconds since it was born; saved). A game
-// day is DAY_LENGTH (1,200s, WorldTime.js).
-//   foal      growing up (about 1.4 days, HorseUpdate._updateGrowingUp)
-//   adult     until SENIOR_DAYS (16)
-//   senior    from 16 days: its mane and tail start to go grey
-//   elderly   from ELDERLY_DAYS (24): grey, slower (Horse.updateSpeed x0.75),
-//             mares can't get pregnant any more (HorseMating), worth less
-//   old age   from OLD_AGE_RISK_DAYS (28) there's a chance each day of dying
-//             peacefully of old age, rising until MAX_AGE_DAYS (40), when
-//             it always happens. Most live to about 35 days.
+// day is DAY_LENGTH (1,200s, WorldTime.js). The calendar: a season is 3 days
+// and a year 12 (WorldTime.js DAYS_PER_SEASON), so one game day is about one
+// month of a fluffy's life (DAYS_PER_YEAR, fluffyAgeText). Fluffies live 5 to
+// 7 years.
+//   foal      growing up: GROW_UP_TIME, about 2 months (2 days;
+//             HorseUpdate._updateGrowingUp). Walks at 30% grown.
+//   adult     until SENIOR_DAYS (42 = 3.5 years)
+//   senior    its mane and tail start to go grey
+//   elderly   from ELDERLY_DAYS (60 = 5 years): grey, slower
+//             (Horse.updateSpeed x0.75), mares can't get pregnant any more
+//             (HorseMating), worth less
+//   old age   from OLD_AGE_RISK_DAYS (66 = 5.5 years) there's a chance each
+//             day of dying peacefully of old age, rising until MAX_AGE_DAYS
+//             (84 = 7 years), when it always happens.
+// Pregnancy lasts about 2 weeks (Horse.js pregnancyDuration, ~11 game hours)
+// and a mare nurses from conception until her foals can walk
+// (LACTATION_TIME, HorseAnatomy.triggerPregnancy).
 //
 // Price (HorseGenetics.calculatePrice): senior x0.8, elderly x0.5.
 // Greying: agedColor() blends the mane/tail colour toward silver
@@ -21,11 +29,14 @@
 // StockMarket.js) instead of starting at 0.
 // ---------------------------------------------------------------------------
 
-const GROW_UP_TIME = 1680; // seconds from newborn to grown (HorseUpdate)
-const SENIOR_DAYS = 16;
-const ELDERLY_DAYS = 24;
-const OLD_AGE_RISK_DAYS = 28;
-const MAX_AGE_DAYS = 40;
+const DAYS_PER_YEAR = 12; // (4 seasons of 3 days: one game day ~ one month)
+const GROW_UP_TIME = 2 * 1200; // seconds from newborn to grown: about 2 months (HorseUpdate)
+const SENIOR_DAYS = 42; // 3.5 years
+const ELDERLY_DAYS = 60; // 5 years
+const OLD_AGE_RISK_DAYS = 66; // 5.5 years
+const MAX_AGE_DAYS = 84; // 7 years
+// A mare nurses from conception until her foals walk (at 30% grown)
+const LACTATION_TIME = 560 + 0.36 * GROW_UP_TIME;
 const AGING_TICK = 5; // seconds
 
 const agingTicker = new Ticker(AGING_TICK);
@@ -47,7 +58,7 @@ function lifeStage(f) {
 function greyAmount(f) {
   const d = ageDays(f);
   if (d < SENIOR_DAYS) return 0;
-  return Math.min(1, (d - SENIOR_DAYS) / (ELDERLY_DAYS + 4 - SENIOR_DAYS));
+  return Math.min(1, (d - SENIOR_DAYS) / (ELDERLY_DAYS + 6 - SENIOR_DAYS));
 }
 
 // "rgb(r, g, b)" blended toward silver by amount (0..1)
@@ -65,11 +76,40 @@ function maneColorFor(f) {
   return agedColor(f.colors.mane, 0.8 * greyAmount(f));
 }
 
-// Magnifying glass: "Foal, 40% grown" / "Adult, 5 days old" / "Elderly, 27 days old"
+// An age in game days as a fluffy's age: "2 weeks", "3 months",
+// "1 year", "4 years, 2 months" (one game day ~ one month)
+function fluffyAgeText(days) {
+  const d = Math.max(0, days || 0);
+  if (d < 1) {
+    const weeks = Math.floor(d * 4.3);
+    if (weeks < 1) return "newborn";
+    return weeks === 1 ? "1 week" : `${weeks} weeks`;
+  }
+  const months = Math.floor(d);
+  const years = Math.floor(months / DAYS_PER_YEAR);
+  const m = months % DAYS_PER_YEAR;
+  const mText = m === 1 ? "1 month" : `${m} months`;
+  if (years < 1) return mText;
+  const yText = years === 1 ? "1 year" : `${years} years`;
+  return m ? `${yText}, ${mText}` : yText;
+}
+
+// Short form for tables: "3mo", "4y 2mo"
+function fluffyAgeShort(days) {
+  const d = Math.max(0, days || 0);
+  if (d < 1) return Math.floor(d * 4.3) < 1 ? "newborn" : `${Math.floor(d * 4.3)}wk`;
+  const months = Math.floor(d);
+  const years = Math.floor(months / DAYS_PER_YEAR);
+  const m = months % DAYS_PER_YEAR;
+  if (years < 1) return `${m}mo`;
+  return m ? `${years}y ${m}mo` : `${years}y`;
+}
+
+// Magnifying glass: "Foal, 40% grown (1 month old)" / "Adult, 2 years, 3 months old"
 function describeAge(f) {
   if (!f) return "";
-  const days = Math.floor(ageDays(f));
-  const old = days === 1 ? "1 day old" : `${days} days old`;
+  const t = fluffyAgeText(ageDays(f));
+  const old = t === "newborn" ? "newborn" : `${t} old`;
   const stage = lifeStage(f);
   if (stage === "foal") return `Foal, ${Math.floor(f.growth * 100)}% grown (${old})`;
   const word = { adult: "Adult", senior: "Senior", elderly: "Elderly" }[stage];
@@ -104,7 +144,7 @@ function oldAgeDailyRisk(f) {
 
 // A believable age for a fluffy that turns up already grown.
 // minDays/maxDays: the range for adults (days old).
-function setSpawnAge(f, minDays = GROW_UP_TIME / DAY_LENGTH + 0.5, maxDays = 13) {
+function setSpawnAge(f, minDays = GROW_UP_TIME / DAY_LENGTH + 0.5, maxDays = 34) {
   if (!f) return;
   if (f.growth < 1) f.age = f.growth * GROW_UP_TIME;
   else f.age = (minDays + Math.random() * (maxDays - minDays)) * DAY_LENGTH;

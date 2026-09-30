@@ -192,7 +192,7 @@ module.exports = [
         mum.fears = { thunder: 1, dark: 0, bot: 0 };
         const foal = __mk(650, 0, 0.3, mum.id);
         foal.fears = { thunder: 0, dark: 0, bot: 0 };
-        for (let s = 0; s < 1680; s++) applyUpbringing(foal, 1);
+        for (let s = 0; s < GROW_UP_TIME; s++) applyUpbringing(foal, 1);
         out.foal = fearOf(foal, "thunder");
         // Magnifying glass draws with a frightened fluffy
         startFright(mum, "thunder");

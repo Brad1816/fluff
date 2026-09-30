@@ -1377,7 +1377,7 @@ function updateDayCare(dt) {
         typeof debugGrowthMultiplier !== "undefined"
           ? debugGrowthMultiplier
           : 1.0;
-      data.growth = Math.min(1.0, data.growth + (dt / 1680.0) * growthMult);
+      data.growth = Math.min(1.0, data.growth + (dt / GROW_UP_TIME) * growthMult);
       if (data.growth >= 1.0) {
         if (typeof relationships !== "undefined") {
           for (const ownerId in relationships) {

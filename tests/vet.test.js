@@ -82,8 +82,8 @@ module.exports = [
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const strong = __mk(400, { days: 5 });
-        const old = __mk(1000, { days: 30 });
-        old.age = 30 * DAY_LENGTH;
+        const old = __mk(1000, { days: 70 });
+        old.age = 70 * DAY_LENGTH;
         catchFlu(strong, FLU_HIDDEN);
         catchFlu(old, FLU_HIDDEN);
         __tick(FLU_LENGTH);
@@ -100,7 +100,7 @@ module.exports = [
         eval(setup)();
         money = 1000;
         const a = __mk(400, { days: 6 });
-        const old = __mk(700, { days: 30 });
+        const old = __mk(700, { days: 70 });
         catchFlu(a); // hidden
         const out = { before: vetCondition(a)[0] };
         vetCheckUp(a);
@@ -158,7 +158,7 @@ module.exports = [
       check(/Looks well/.test(r.before), `before: ${r.before}`);
       check(r.found[0], "check-up finds hidden flu");
       check(/Fluffy flu/.test(r.found[1]), r.found[1]);
-      check(/about \d+ days left|any day/.test(r.found[2]), `old fluffy note: ${r.found[2]}`);
+      check(/about .+ left|any day/.test(r.found[2]), `old fluffy note: ${r.found[2]}`);
       checkEqual(r.moneyAfterChecks, 960, "two check-ups");
       checkEqual(r.price, 90, "flu treatment");
       checkEqual(r.priceMore, 190, "flu + poison + hurt");

@@ -2160,3 +2160,36 @@ A helper robot that keeps its room fed. Built after the design doc's
   Fluff-Bot hoovers spills when there's no other mess (`Roomba._nearestSpill`).
   Its registry entry sits before "bowl" so it's never sold as one.
 - Tests: `tests/feedbot.test.js`.
+
+### Calendar and lifespans (Phase 0, stage 1)
+Fluffies now live 5 to 7 years, as in the lore. A season is 3 game days
+(`WorldTime.js DAYS_PER_SEASON`), so a year is 12 days and one game day is
+about one month of a fluffy's life (`Aging.js DAYS_PER_YEAR`). A game day is
+still 20 minutes at 1x, so per-day rates (hunger, boredom, dirt, trust...) are
+unchanged.
+| Stage | Age | Game days | Before |
+|---|---|---|---|
+| Pregnancy (`Horse.js pregnancyDuration`) | 2 weeks | 560s (~11 game hours) | 300s |
+| Growing up (`GROW_UP_TIME`, used by `HorseUpdate` and day care) | 2 months | 2 | 1.4 |
+| Walks (30% grown) | ~3 weeks | 0.6 | 0.4 |
+| Senior (`SENIOR_DAYS`) | 3.5 years | 42 | 16 |
+| Elderly (`ELDERLY_DAYS`, stops breeding) | 5 years | 60 | 24 |
+| Old-age risk (`OLD_AGE_RISK_DAYS`) | 5.5 years | 66 | 28 |
+| Oldest (`MAX_AGE_DAYS`) | 7 years | 84 | 40 |
+- **Nursing:** `LACTATION_TIME` (pregnancy + 36% of growing up) from
+  conception, so a mare nurses until her foals walk; prolactin caps at it too.
+- **Ages shown** as a fluffy's age: `fluffyAgeText(days)` ("3 weeks",
+  "4 months", "2 years, 3 months") in the magnifying glass and vet notes;
+  `fluffyAgeShort` ("4mo", "2y 3mo", "newborn") in Records and the vet list.
+- **Retuned with it:** upbringing rate (`1.68 / GROW_UP_TIME`, still ~80% of
+  the way over a foalhood); greying runs from senior to 6 days into elderly;
+  spawned adults are 2.5-34 days old (stock 2.5-20); grown commissions get 2
+  extra days; the vet's "time left" counts from the middle of the old-age
+  window. `Aging.js` now loads right after `WorldTime.js` (other files use
+  `GROW_UP_TIME` at load).
+- **Simulations:** 8-day household and 3-day park runs: no errors, no
+  starvation in the house. Breeding houses still collapse from constant inbred
+  pregnancies and mares dying in childbirth, exactly as on the previous version
+  run side by side; the park holds 28-47 fluffies with fewer starving but more
+  fights. Stage 2 (population limits, mares resting between litters) targets
+  both.

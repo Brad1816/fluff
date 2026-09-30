@@ -12,7 +12,7 @@
 // The drift is towards the weighted average of their views, at
 // UPBRINGING_RATE a second times how much influence there is (capped at 1,
 // so a foal with its mum around copies at the full rate). A foal that spends
-// all of its foalhood (about a day and a half) with its mum ends up close to
+// all of its foalhood (about 2 months, GROW_UP_TIME) with its mum ends up close to
 // her views - so a mare you've talked out of colour prejudice (Lessons.js)
 // raises tolerant foals, and a prejudiced one raises prejudiced foals.
 //
@@ -28,7 +28,7 @@
 // Shown in the magnifying glass (Looks & nature, "Growing up") for foals.
 // ---------------------------------------------------------------------------
 
-const UPBRINGING_RATE = 0.001; // a second: about 80% of the way over a whole foalhood
+const UPBRINGING_RATE = 1.68 / GROW_UP_TIME; // a second: about 80% of the way over a whole foalhood
 const UPBRINGING_RANGE = 600;
 const UPBRINGING_WEIGHTS = { mum: 1, dad: 0.5, other: 0.15 };
 

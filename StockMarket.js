@@ -278,7 +278,7 @@ function buyStockListing(listingId) {
 
   const f = new Horse(l.growth, null, STOCK_ARRIVE_SCENE, "earthy", l.genes.slice(), null, null, l.gender);
   _raisedByBreeder(f, l);
-  if (typeof setSpawnAge === "function") setSpawnAge(f, 2, 10); // young stock (Aging.js)
+  if (typeof setSpawnAge === "function") setSpawnAge(f, 2.5, 20); // young stock: 2 months to about a year and a half (Aging.js)
   f.adopted = true;
   f.x = sceneW(STOCK_ARRIVE_SCENE) * (0.35 + Math.random() * 0.3);
   f.y = height * 0.7;

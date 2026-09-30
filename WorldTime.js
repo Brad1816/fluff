@@ -32,7 +32,7 @@
 const DAY_LENGTH = 1200; // game seconds in a day
 const HOUR_LENGTH = DAY_LENGTH / 24;
 const START_HOUR = 8;
-const DAYS_PER_SEASON = 4;
+const DAYS_PER_SEASON = 3; // a 12-day year: one game day ~ a month of a fluffy's life (Aging.js)
 const SEASONS = ["Spring", "Summer", "Autumn", "Winter"];
 
 // Chances of each weather, per season

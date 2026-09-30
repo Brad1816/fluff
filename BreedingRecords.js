@@ -45,7 +45,7 @@ function _brRare(rec) {
 // What became of a foal: [text, tone]
 function describeFoalOutcome(rec) {
   const s = rec.status;
-  if (s === "alive") return [`alive, ${_brAgeDays(rec)}d`, "good"];
+  if (s === "alive") return [`alive, ${fluffyAgeShort((rec.age || 0) / DAY_LENGTH)}`, "good"];
   if (s === "sold") return [rec.soldFor ? `sold $${rec.soldFor.toLocaleString()}` : "sold", "money"];
   if (s === "dead") {
     const cause = rec.causeOfDeath === "Old age" ? "old age" : rec.causeOfDeath ? rec.causeOfDeath.toLowerCase() : "died";
@@ -283,7 +283,7 @@ function _drawParentRow(c, r) {
   let status;
   let tone = "";
   if (p.status === "alive") {
-    status = `${p.stage ? p.stage.charAt(0).toUpperCase() + p.stage.slice(1) : "Alive"}, ${p.ageDays}d`;
+    status = `${p.stage ? p.stage.charAt(0).toUpperCase() + p.stage.slice(1) : "Alive"}, ${fluffyAgeShort(p.ageDays)}`;
     tone = p.stage === "elderly" ? "bad" : "good";
   } else {
     status = typeof FAMILY_STATUS_TEXT !== "undefined" ? FAMILY_STATUS_TEXT[p.status] || p.status : p.status;
@@ -301,8 +301,8 @@ function _drawParentRow(c, r) {
   c.fillStyle = p.rare ? "#9fd8ff" : "rgba(255,255,255,0.5)";
   c.fillText(p.rare ? `★ ${p.rare}` : "-", col(7), r.y + 25);
   if (p.daysLeft !== null) {
-    c.fillStyle = p.daysLeft <= 3 ? _BR_TONES.bad : _BR_TONES[""];
-    c.fillText(p.daysLeft > 0 ? `${p.daysLeft} days` : "too old", col(8), r.y + 25);
+    c.fillStyle = p.daysLeft <= 6 ? _BR_TONES.bad : _BR_TONES[""];
+    c.fillText(p.daysLeft > 0 ? fluffyAgeShort(p.daysLeft) : "too old", col(8), r.y + 25);
   } else {
     c.fillStyle = "rgba(255,255,255,0.4)";
     c.fillText(p.gender === "male" && p.status === "alive" ? "any time" : "-", col(8), r.y + 25);
@@ -347,7 +347,7 @@ function drawBreedingRecords(c) {
   c.fillText(
     recordsTab === "litters"
       ? "Newest first. ★ = unicorn, pegasus, alicorn, spots or stripes. Click a litter to see mum's family tree."
-      : "Everyone you've bred from, best earners first. Breeding left: days until a mare is too old. Click for the family tree.",
+      : "Everyone you've bred from, best earners first. Breeding left: time until a mare is too old. Click for the family tree.",
     L.x + 290,
     L.y + 81,
   );

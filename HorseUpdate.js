@@ -391,7 +391,7 @@ addHorseMethods({
       const wasTooYoungToSpeak = this.tooYoungToSpeak();
       // Strong, well-fed foals grow faster (Pregnancy.js)
       const rate = typeof foalGrowthRate === "function" ? foalGrowthRate(this) : 1;
-      this.growth = Math.min(1.0, this.growth + (dt / 1680.0) * debugGrowthMultiplier * rate);
+      this.growth = Math.min(1.0, this.growth + (dt / GROW_UP_TIME) * debugGrowthMultiplier * rate);
       if (this.growth >= 1.0) {
         for (const ownerId in relationships) {
           if (relationships[ownerId][this.id] === "baby_child") {

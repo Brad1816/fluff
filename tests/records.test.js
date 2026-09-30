@@ -1,6 +1,8 @@
 // Breeding records (BreedingRecords.js)
 const { check, checkEqual } = require("./helpers");
 
+const ELDERLY = 60; // Aging.js ELDERLY_DAYS
+
 module.exports = [
   {
     name: "records: litters, what became of each foal, and what each parent earned",
@@ -75,11 +77,11 @@ module.exports = [
       checkEqual(r.totals.sold, 1, "sold");
       checkEqual(r.totals.earned, 300, "earned");
       checkEqual(r.totals.died, 1, "died");
-      checkEqual(JSON.stringify(r.mum), JSON.stringify({ litters: 2, foals: 5, sold: 1, earned: 300, best: 300, daysLeft: 18 }), "mum");
+      checkEqual(JSON.stringify(r.mum), JSON.stringify({ litters: 2, foals: 5, sold: 1, earned: 300, best: 300, daysLeft: ELDERLY - 6 }), "mum");
       check(r.dad && r.dad.foals === 5 && r.dad.earned === 300 && r.dad.daysLeft === null, JSON.stringify(r.dad));
       checkEqual(r.outcomes[0], "sold $300", "sold foal");
       checkEqual(r.outcomes[1], "died (starved)", "dead foal");
-      check(/^alive, 0d$/.test(r.outcomes[2]), r.outcomes[2]);
+      check(/^alive, (newborn|\d+wk)$/.test(r.outcomes[2]), r.outcomes[2]);
       check(r.wildBred === false || r.wildBred === "no record", `wild foal isn't yours: ${r.wildBred}`);
       checkEqual(r.boughtBred, false, "bought stock isn't bred by you");
       checkEqual(r.legacy, true, "old saves: guessed");

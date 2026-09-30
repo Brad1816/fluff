@@ -543,7 +543,7 @@ class HorseAnatomy {
   triggerPregnancy(father) {
     this.horse.isPregnant = true;
     this.horse.pregnancyTimer = pregnancyDuration;
-    this.horse.lactatingTimer = 900; // 15 minutes
+    this.horse.lactatingTimer = LACTATION_TIME; // until the foals can walk (Aging.js)
     this.horse.fatherGenes = [...father.genes];
     this.horse.babyDaddyId = father.id;
     this.horse.updateGrowthStats();

@@ -515,7 +515,7 @@ const DRUG_METABOLISM = {
     effect: (horse, amount) => {
       if (horse.gender === "female") {
         horse.lactatingTimer = Math.min(
-          900,
+          typeof LACTATION_TIME === "number" ? LACTATION_TIME : 900,
           horse.lactatingTimer + amount * 5.0,
         );
       }

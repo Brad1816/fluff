@@ -17,6 +17,7 @@ module.exports = [
           evening: at(11.5 * HOUR_LENGTH), // 7:30 PM
           midnight: at(16 * HOUR_LENGTH),
           day5: at(4 * DAY_LENGTH),
+          day10: at(9 * DAY_LENGTH),
           day13: at(12 * DAY_LENGTH),
         };
         timePlayed = 0;
@@ -31,7 +32,8 @@ module.exports = [
       checkEqual(r.midnight.night, 1, "darkness at midnight");
       check(r.midnight.isNight && !r.noon.isNight, "night/day");
       checkEqual(r.day5.season, "Summer", "season on day 5");
-      checkEqual(r.day13.season, "Winter", "season on day 13");
+      checkEqual(r.day10.season, "Winter", "season on day 10 (3-day seasons)");
+      checkEqual(r.day13.season, "Spring", "a new year on day 13");
     },
   },
   {
@@ -104,7 +106,7 @@ module.exports = [
         p.initBehavior("IDLE");
         res.stayScore = shelter.evaluate(p);
         // Winter: no berries, little grass, snow makes outdoor fluffies hungry
-        timePlayed = 12 * DAY_LENGTH;
+        timePlayed = 10 * DAY_LENGTH;
         res.winterBerries = growthMultiplier("berries");
         setWeather("snow");
         updateWorldTime(20);
