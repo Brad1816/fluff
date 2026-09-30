@@ -75,7 +75,7 @@ module.exports = [
         };
       });
       check(r.missing.length === 0, `every row is on a tab ${JSON.stringify(r.missing)}`);
-      check(r.ids.length === 4, `four tabs ${JSON.stringify(r.ids)}`);
+      check(r.ids.length === 5 && r.ids[4] === "story", `five tabs, the Story last ${JSON.stringify(r.ids)}`);
       check(r.hungerWarn, "a starving fluffy gets a header warning");
       check(!r.litterWarn, "litter training is not a header warning");
       if (r.tab) {

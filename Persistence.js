@@ -216,6 +216,7 @@ const SAVED_GAME_STATE = [
   { name: "nextHerdId", get: () => nextHerdId, set: (v) => (nextHerdId = v), fresh: () => 1 },
   { name: "alleyBoxSpawnTimer", get: () => alleyBoxSpawnTimer, set: (v) => (alleyBoxSpawnTimer = v), fresh: () => 60.0 },
   { name: "dayCareFluffies", get: () => dayCareFluffies, set: (v) => (dayCareFluffies = v), fresh: () => [] },
+  { name: "keeperWord", get: () => keeperWord, set: (v) => (keeperWord = typeof v === "string" ? v : "daddeh"), fresh: () => "daddeh" }, // Identity.js
   { name: "shelter", get: () => shelter, set: (v) => { shelter = v && typeof v === "object" ? v : freshShelter(); _shelterPortraits = {}; }, fresh: () => freshShelter() }, // Shelter.js
 ];
 

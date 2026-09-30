@@ -2173,6 +2173,19 @@ const DIALOGUE = {
     ],
   },
 
+  // Pride in a name, or wishing for one (Identity.js)
+  NAME_PRIDE: [
+    "<Speaker> am <Speaker>! Bestest name!",
+    "Nice mistah gib <speaker> suuu speshuw name!",
+    "Am <Speaker>! Dat am <speaker> name!",
+    "<Speaker>! <Speaker>! Wub nyu name!",
+  ],
+  NAME_WISH: [
+    "Fwens hab names... <speaker> nu hab name...",
+    "Wan' name wike odda fwuffies...",
+    "Nice mistah, gib name? Pwease?",
+  ],
+
   // A Smarty shoving someone out of its way (SmartyMood.js)
   SMARTY_BULLY: [
     "MOVE, DUMMEH!",
@@ -2594,7 +2607,8 @@ function getDialogue(keys = [], speaker = null, target = null) {
           const rels = relationships[speaker.id];
           const relType = rels ? rels[target.id] : null;
 
-          let label = "fwuffy";
+          // A description (Identity.js): "wingy-fwen", "poopie fwuffy"...
+          let label = (typeof fluffyCallsOther === "function" && fluffyCallsOther(speaker, target)) || "fwuffy";
           if (
             relType === "baby_child" ||
             relType === "child" ||
@@ -2623,6 +2637,9 @@ function getDialogue(keys = [], speaker = null, target = null) {
       text = text.split(code).join(replacement);
     }
   }
+
+  // What your own fluffies call you (Identity.js): daddeh, nice pewson, munstah
+  if (speaker && typeof applyKeeperName === "function") text = applyKeeperName(text, speaker);
 
   return text;
 }

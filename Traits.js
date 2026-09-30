@@ -84,11 +84,14 @@ function traitGeneSum(horseOrGenes, key) {
   return sum;
 }
 
-// -1 (very low) .. 0 (average) .. +1 (very high)
+// -1 (very low) .. 0 (average) .. +1 (very high). For a fluffy (not just
+// genes), what its life has done to it counts too (Personality.js)
 function traitValue(horseOrGenes, key) {
   const sum = traitGeneSum(horseOrGenes, key);
   if (sum === null) return 0;
-  return (sum - TRAIT_GENES_EACH / 2) / (TRAIT_GENES_EACH / 2);
+  const v = (sum - TRAIT_GENES_EACH / 2) / (TRAIT_GENES_EACH / 2);
+  const shift = !Array.isArray(horseOrGenes) && horseOrGenes && horseOrGenes.traitShift ? horseOrGenes.traitShift[key] || 0 : 0;
+  return Math.max(-1, Math.min(1, v + shift));
 }
 
 // The labels a fluffy shows: [{ key, label, code, high }]
@@ -97,8 +100,10 @@ function getTraitLabels(horseOrGenes) {
   for (const t of TRAITS) {
     const sum = traitGeneSum(horseOrGenes, t.key);
     if (sum === null) continue;
-    if (sum >= 4) out.push({ key: t.key, label: t.high, code: t.highCode, high: true });
-    else if (sum <= 1) out.push({ key: t.key, label: t.low, code: t.lowCode, high: false });
+    // (genes 4 of 5 = 0.6; a fluffy's life can push it over, Personality.js)
+    const v = traitValue(horseOrGenes, t.key);
+    if (v >= 0.59) out.push({ key: t.key, label: t.high, code: t.highCode, high: true });
+    else if (v <= -0.59) out.push({ key: t.key, label: t.low, code: t.lowCode, high: false });
   }
   return out;
 }
@@ -111,7 +116,7 @@ function hasTraitLabel(horseOrGenes, label) {
 function describeTraits(horseOrGenes) {
   const genes = _traitGenes(horseOrGenes);
   if (!genes || genes.length < TRAIT_GENE_TOTAL) return "Unknown";
-  const labels = getTraitLabels(genes).map((t) => t.label);
+  const labels = getTraitLabels(horseOrGenes).map((t) => t.label);
   return labels.length ? labels.join(", ") : "Easygoing (no strong traits)";
 }
 

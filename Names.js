@@ -260,6 +260,8 @@ function saveNamingPopup() {
       // A name from you (Affection.js)
       const f = first && typeof giveAffection === "function" ? fluffies.find((x) => x.id === id) : null;
       if (f) giveAffection(f, "named");
+      // A name is a fluffy's pride (Identity.js)
+      if (f && typeof noteTurningPoint === "function") noteTurningPoint(f, `${n} has a name now.`, { record: false });
     }
   });
   namingPopup = null;

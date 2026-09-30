@@ -144,6 +144,14 @@ class HorseAnatomy {
     this.horse.currentStateKey = "IDLE";
     this.horse.deathWeapon = weaponType;
     if (cause !== "Born non-viable") if (typeof recordStory === "function") recordStory("died", this.horse, { x: cause || (weaponType ? `killed with the ${weaponType}` : "") });
+    // Its foals lose their mum or dad: a turning point for yours (Identity.js)
+    if (cause !== "Born non-viable" && typeof noteTurningPoint === "function" && typeof fluffies !== "undefined") {
+      const who = this.horse.gender === "male" ? "dad" : "mum";
+      for (const c of fluffies) {
+        if (!c.isAlive || !c.adopted || (c.motherId !== this.horse.id && c.fatherId !== this.horse.id)) continue;
+        noteTurningPoint(c, `${fluffyDisplayName(c)} lost ${c.gender === "male" ? "his" : "her"} ${who}.`, { record: false });
+      }
+    }
     this.horse.bloodTolerance = 1;
     if (typeof notifyViolence !== "undefined" && weaponType) {
       notifyViolence(this.horse, true, weaponType);

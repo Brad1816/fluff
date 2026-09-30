@@ -139,10 +139,13 @@ function giveAffection(f, type, scale = 1) {
   let amount = act.amount * scale * (n < act.perDay ? 1 : AFFECTION_WEAK);
   // A frightened fluffy is slow to believe you mean it
   if ((f.playerFear || 0) >= 0.45) amount *= 0.5;
+  // What it loves most counts extra (Personality.js)
+  if (typeof onFavouriteCare === "function") amount *= onFavouriteCare(f, type);
   const before = f.playerTrust;
   changePlayerTrust(f, amount);
   f.lastKindnessAt = now;
   rememberPlayerEvent(f, type);
+  if (typeof onKindnessToNamed === "function") onKindnessToNamed(f); // (Identity.js)
   return f.playerTrust - before;
 }
 

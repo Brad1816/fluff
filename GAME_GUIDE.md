@@ -105,6 +105,9 @@ and it runs. About 55,000 lines across ~120 files.
 | `Population.js` | **Population limits**: crowded rooms (unhappiness, scuffles), mares resting after a litter, park births following food. See section 9 (Population and bills). |
 | `Bills.js` | **Rent and bills** charged every morning with the day report; unpaid bills are owed. See section 9 (Population and bills). |
 | `StoryBook.js` | **The story book**: one shared record of big events (births, deaths, names, sales, tricks, harm...) and daily tallies of small things, that every fluffy, family and herd points into. See section 9 (The story book). |
+| `LifeStory.js` | **Life stories**: the Story tab in the magnifying glass - chapters in plain English from the story book. See section 9 (Phase 1). |
+| `Identity.js` | **Turning points**, what fluffies call you (daddeh / nice pewson / munstah) and each other, pride in a name. See section 9 (Phase 1). |
+| `Personality.js` | **Favourite care** and **personality growth** (life shifts traits). See section 9 (Phase 1). |
 | `StoryDebug.js` | **Story debug view** (J): what the story book holds for a fluffy, its family, and in total. See section 9 (The story book). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
@@ -2350,6 +2353,66 @@ three stallions in three hours.
   was killed by the Smarty (before: 2-3 starved, 3-8 killed).
 - Tests: `tests/smarty.test.js`.
 
+### Phase 1: story and identity (`LifeStory.js`, `Identity.js`, `Personality.js`)
+- **Story tab** (magnifying glass, 5th tab; `lifeStoryChapters`,
+  `drawLifeStoryTab`, pages with Earlier / Later): chapters by age at the
+  time - Before you (a fluffy that came to you: its backstory and age),
+  Foalhood (to `GROW_UP_TIME`), Growing up (first year), Adult years (to
+  `SENIOR_DAYS`), Old age. Big events are one line each (`storyLine`: born to
+  whom, raised by, named, tricks, lessons, harm, scars, injuries (`injured`
+  from `Horse.amputate`), illness (`ill` from `catchFlu`), shows, herds,
+  sold / given up, deaths - its own with the cause, and its close family's).
+  Litters are one line ("She had a litter of 3 on day 4: Pip and one more;
+  1 didn't live."). Small things are summed per chapter (`_lsTallyLines`):
+  "You brushed her almost every day and cuddled her often." - frequency from
+  how long the chapter has lasted. Plain English; a fluffy's own words only
+  in quotes (`e.q`).
+- **Turning points** (`noteTurningPoint`, story kind `turning`, a "✦"
+  message at most once per fluffy per game hour and 20s apart): first
+  steps, first words, all grown up, walking up to you (trust 0.6), flinching
+  from you (fear 0.5), going grey (`checkMilestones`, `f.milestones`), a
+  name, a first trick, losing its mum or dad.
+- **What they call you** (`keeperNameFor` / `applyKeeperName`, run by
+  `getDialogue` for your own fluffies): "nice mistah" becomes `keeperWord`
+  ("daddeh" / "mummah", saved, button on the Household screen) when loved
+  (trust 0.65+, fear under 0.3), "munstah" when feared (fear 0.5+), "nice
+  pewson" otherwise; a bare "mistah" too for loved and feared. Strays keep
+  "nice mistah"; "Mistah fence" is left alone. Phase 4 hooks
+  `keeperNameOverride` ("owna").
+- **What they call each other** (`fluffyCallsOther`, getDialogue's
+  `<target>` for an unnamed target without a family word): names always;
+  otherwise "munstah" (feared alicorn), "poopie fwuffy" (brown coat, from a
+  colourist), or a description - owie / no-see / hat / wingy / pointy /
+  wingy-pointy / spotty / stwipey / widdwe / owd / its colour - as
+  "X-fwen" (liked), "dat X one" (disliked) or "X fwuffy".
+- **Name pride**: every 30s one named, happy, awake fluffy in the room may
+  say a `NAME_PRIDE` line (unnamed: `NAME_WISH`); kindness to a named one
+  adds `NAME_CALLED_BONUS` happiness once a game hour.
+- **Favourite care** (`f.favouriteCare`, one of brushing, treats, play,
+  praise, presents, cuddles): x1.6 affection and +0.03 happiness
+  (`onFavouriteCare` from `giveAffection`); found the first time - a turning
+  point, a story line ("She was never much for treats, but she'd melt when
+  you brushed her."), and "Loves most" in the Mind tab.
+- **Personality growth** (`f.traitShift`, added in `traitValue`, so labels,
+  desires and everything else follow; +/-0.1 a step, at most 0.6 and 3 steps
+  per rule): comforted 6 times -> calmer; hurt by you 4 times -> more timid;
+  hungry 2 days -> greedier; loved (trust 0.8+) 5 days -> friendlier;
+  played 12 times -> livelier; picked on 6 times -> grumpier; a fear from
+  0.3+ gone -> braver. Each is a story line; "Life made it" in the Nature
+  column. Foals copy 30% of their raisers' shifts (Upbringing.js).
+- **Shelter, finished**: residents arrive with a backstory line
+  (`SHELTER_BACKSTORIES`, the story's first chapter); most given-up ones
+  miss their old owner (`missingOwner`). **Give up** (button on each of your
+  fluffies in the boarding window, `giveUpToShelter`): it leaves your house
+  (story: "You gave her up to the shelter"), misses you (more if it loved
+  you), and gets a kennel for 4-6 days; if time runs out, the last chapter
+  says it was put down and the family book records it. **Boarding**
+  (`updateBoarders`): -0.05 happiness a day (not below 0.25), old-age death
+  while boarded (news), picked up with the mood it's in, loved ones at home
+  +0.05, and a stay of a day or more goes in its story.
+- Tests: `tests/lifestory.test.js`, `tests/identity.test.js`,
+  `tests/personality.test.js`, more in `tests/shelter.test.js`.
+
 ### The shelter (`Shelter.js`, was the day care)
 Through the door in Shelter Alley (the scene is still `DAY_CARE`, the alley
 `ALLEY_DAY_CARE`, so old saves and links keep working).
@@ -2369,8 +2432,8 @@ Through the door in Shelter Alley (the scene is still `DAY_CARE`, the alley
   glass on them - the plaque is all you get.
 - **Residents** (`shelter.residents`, saved): `makeShelterResident` makes a
   real fluffy and keeps it serialized. Coat: `SHELTER_NICE_COAT_CHANCE`
-  (12%) rolled for a bright coat; otherwise 65% near the browns
-  (`generateRandomGenes` with a low body quality), else random but re-rolled
+  (12%) rolled for a bright coat; otherwise 72% near the browns
+  (`generateRandomGenes` with body quality 0-0.25), else random but re-rolled
   if bright. Type: mostly earthy, 10% unicorn, 10% pegasus;
   `SHELTER_HIDDEN_GENES_CHANCE` (8%) carries 3 of 5 wing or horn genes it
   doesn't show. Nature: `SHELTER_GOOD_NATURE_CHANCE` (12%) gentle and social

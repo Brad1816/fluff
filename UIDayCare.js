@@ -3,6 +3,11 @@
 // UI.js. Adopting from the kennels is Shelter.js.
 // ---------------------------------------------------------------------------
 
+// The small "Give up" button on one of your fluffies' rows
+function dayCareGiveUpRect(col1X, colW, itemY) {
+  return { x: col1X + colW - 150, y: itemY + 12, w: 62, h: 26 };
+}
+
 function drawDayCareModal(ctx) {
   if (!dayCareModalOpen) return;
   if (ctx.canvas !== canvas) return; // screen pass only (see drawInspectionModal)
@@ -157,6 +162,12 @@ function drawDayCareModal(ctx) {
             ? "rgba(60, 140, 60, 0.35)"
             : "rgba(140, 60, 60, 0.35)",
         });
+      }
+
+      // "Give up" to the shelter (Shelter.js)
+      if (typeof giveUpToShelter === "function") {
+        const gb = dayCareGiveUpRect(col1X, colW, itemY);
+        drawGlassButton(gb.x, gb.y, gb.w, gb.h, "Give up", { fontSize: 11, borderRadius: 6, disabled: !canGiveUpToShelter() });
       }
 
       // Swatch
@@ -475,6 +486,12 @@ function handleDayCareModalClick() {
     const idx = startBroughtIdx + i;
     if (idx >= broughtFluffies.length) break;
     const itemY = listStartY + i * (itemH + itemGap);
+    // Give it up to the shelter
+    const gb = dayCareGiveUpRect(col1X, colW, itemY);
+    if (typeof giveUpToShelter === "function" && isPointInRect(mouse.x, mouse.y, gb.x, gb.y, gb.w, gb.h)) {
+      giveUpToShelter(broughtFluffies[idx]);
+      return true;
+    }
     if (isPointInRect(mouse.x, mouse.y, col1X, itemY, colW, itemH)) {
       if (!showDebugMenu && money < DAY_CARE_MOVE_COST) {
         if (typeof addUIMessage !== "undefined") {
@@ -509,8 +526,8 @@ function handleDayCareModalClick() {
       const data = f.serialize();
       data.type = f.type;
       data.hunger = 1.0;
-      data.happiness = 0.5;
       data.scene = "DAY_CARE";
+      data.boardedAt = typeof timePlayed === "number" ? timePlayed : 0; // (Shelter.js: its story, lonely days)
       data.bodyColor = f.colors && f.colors.body ? f.colors.body : "#ffffff";
       // (null if nobody named it, so it doesn't come back named "Fluffy")
       data.name = typeof fluffyNames !== "undefined" && fluffyNames[f.id] ? fluffyNames[f.id] : null;
@@ -551,7 +568,6 @@ function handleDayCareModalClick() {
 
       const data = dayCareFluffies.splice(idx, 1)[0];
       data.hunger = 1.0;
-      data.happiness = 0.5;
       data.scene = "DAY_CARE";
       data.x = width / 2 + (Math.random() * 80 - 40);
       const desk = objects.find(
@@ -564,10 +580,16 @@ function handleDayCareModalClick() {
 
       const horse = Horse.deserialize(data);
       horse.hunger = 1.0;
-      horse.happiness = 0.5;
+      // (it keeps the mood it's in: lonely after a long stay, Shelter.js)
+      if (typeof data.happiness !== "number") horse.happiness = 0.5;
       horse.scene = "DAY_CARE";
       horse.adopted = true;
       fluffies.push(horse);
+      if (typeof onBoarderPickedUp === "function") onBoarderPickedUp(horse, data);
+      // Loved ones at home are glad it's back
+      if (typeof getLiking === "function") {
+        for (const o of fluffies) if (o !== horse && o.isAlive && o.adopted && getLiking(o, horse) >= 0.3) o.changeHappiness(0.05);
+      }
 
       if (typeof fluffyNames !== "undefined" && data.name) {
         fluffyNames[horse.id] = data.name;

@@ -49,6 +49,14 @@ const STORY_KINDS = {
   scarred: { big: true, text: (e, n) => `${n} was scarred for life: ${String(e.x || "").toLowerCase()}.` },
   show: { big: true, text: (e, n) => `${n} came ${e.x} at a show.` },
   herd_formed: { big: true, text: (e, n) => `A new herd formed around ${n}: the ${e.x}.` },
+  // Phase 1 (LifeStory.js, Identity.js): x is the whole line
+  backstory: { big: true, text: (e, n) => `${n}, before you: ${e.x}` },
+  turning: { big: true, text: (e) => `Turning point: ${e.x}` },
+  fav_found: { big: true, text: (e) => `${e.x}` },
+  trait_shift: { big: true, text: (e) => `${e.x}` },
+  boarding: { big: true, text: (e) => `${e.x}` },
+  injured: { big: true, text: (e, n) => `${n} lost ${e.x}.` },
+  ill: { big: true, text: (e, n) => `${n} caught ${e.x}.` },
   feedbot_tip: { big: false },
   // Small things (tallies)
   brushed: { big: false },
@@ -129,6 +137,11 @@ function recordStory(kind, who, opts = {}) {
   const ids = (Array.isArray(who) ? who : [who]).map(_idOf).filter((v) => v !== null && v !== undefined);
   if (!def || !ids.length) return null;
   const now = _stNow();
+  // What happens to it slowly changes who it is (Personality.js)
+  if (typeof noteGrowthEvent === "function" && (kind === "comforted" || kind === "harmed" || kind === "played" || kind === "attacked")) {
+    const who = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === ids[0]) : null;
+    if (who) noteGrowthEvent(who, kind);
+  }
   if (!def.big) return _tally(ids[0], kind);
   // Harm from you, again soon: add to the last one
   if (kind === "harmed") {

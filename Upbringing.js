@@ -93,6 +93,18 @@ function applyUpbringing(f, seconds) {
       changed = true;
     }
   }
+  // What life did to its raisers, a little of it (Personality.js)
+  if (typeof TRAITS !== "undefined" && typeof UPBRINGING_SHIFT_SHARE !== "undefined") {
+    for (const t of TRAITS) {
+      const a = _upAverage(list, (o) => ((o.traitShift && o.traitShift[t.key]) || 0) * UPBRINGING_SHIFT_SHARE);
+      if (!a || Math.abs(a.target) < 0.001) continue;
+      if (!f.traitShift || typeof f.traitShift !== "object") f.traitShift = {};
+      const k = Math.min(1, UPBRINGING_RATE * seconds * Math.min(1, a.weight));
+      const now = f.traitShift[t.key] || 0;
+      f.traitShift[t.key] = now + (a.target - now) * k;
+      changed = true;
+    }
+  }
   // Fears (Fears.js): scared grown-ups raise scared foals
   if (typeof FEARS !== "undefined" && typeof fearsOf === "function") {
     const mine = fearsOf(f);

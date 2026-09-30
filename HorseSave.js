@@ -55,6 +55,13 @@ const SAVED_HORSE_FIELDS = [
   { name: "bellLearn", fallback: 0 }, // FeedBot.js
   { name: "feedBotTips", fallback: 0 },
   { name: "lastBirthAt", fallback: null }, // Population.js
+  { name: "milestones", fallback: null, clone: true }, // Identity.js
+  { name: "lastTurningAt", fallback: undefined },
+  { name: "nameCalledAt", fallback: undefined },
+  { name: "favouriteCare", fallback: undefined }, // Personality.js
+  { name: "favouriteFound", fallback: null },
+  { name: "traitShift", fallback: null, clone: true },
+  { name: "growthProgress", fallback: null, clone: true },
   { name: "diet", fallback: null }, // Diet.js
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },

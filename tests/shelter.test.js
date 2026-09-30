@@ -186,4 +186,101 @@ module.exports = [
       checkEqual(JSON.stringify(r.lastDay), JSON.stringify([r.name0]), "the notice board lists who's on their last day");
     },
   },
+  {
+    name: "shelter: give one of yours up - it goes in a kennel, its story says so, and a last chapter if time runs out",
+    run: async (page) => {
+      await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
+      await page.evaluate(() => {
+        __clearScene("DAY_CARE");
+        __seedRandom(24);
+        shelter = freshShelter();
+        shelter.stocked = true;
+        shelter.day = reportDayIndex();
+        storyBook = freshStoryBook();
+        _storyIndex = null;
+        const f = new Horse(1, null, "DAY_CARE", "earthy", null, 0.5, 0.5, "female");
+        f.adopted = true;
+        f.playerTrust = 0.8;
+        f.x = 640;
+        f.y = 600;
+        f.brain.think = () => {};
+        fluffies.push(f);
+        fluffyNames[f.id] = "Hazel";
+        syncFamilyRecords();
+        window.__f = f;
+        changeScene("DAY_CARE");
+        dayCareModalOpen = true;
+      });
+      await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
+      const gb = await page.evaluate(() => {
+        const modalW = 760, modalH = 540;
+        const modalX = Math.floor(width / 2 - modalW / 2);
+        const modalY = Math.floor(height / 2 - modalH / 2);
+        return dayCareGiveUpRect(modalX + 25, 340, modalY + 84 + 40);
+      });
+      await page.mouse.click(gb.x + gb.w / 2, gb.y + gb.h / 2);
+      const r = await page.evaluate(() => {
+        const f = __f;
+        const res = shelter.residents.find((x) => x.id === f.id);
+        const out = {
+          gone: !fluffies.includes(f),
+          res: res && { byYou: res.byYou, name: res.name, origin: res.origin },
+          missing: res && res.data.missingOwner,
+        };
+        out.story = lifeStoryChapters(f).flatMap((c) => c.lines);
+        // Nobody adopts her
+        res.timesUpDay = getDayNumber() - 1;
+        shelterNewDay();
+        out.after = lifeStoryChapters(f).flatMap((c) => c.lines);
+        out.rec = getFamilyRecord(f.id) && getFamilyRecord(f.id).status;
+        return out;
+      });
+      check(r.gone, "no longer in your house");
+      check(r.res && r.res.byYou && r.res.name === "Hazel" && r.res.origin === "surrendered", `in a kennel ${JSON.stringify(r.res)}`);
+      check(r.missing >= 0.9, `misses you, who she loved (${r.missing})`);
+      check(r.story.some((l) => /You gave her up to the shelter on day \d+\./.test(l)), `story ${r.story}`);
+      check(r.after.some((l) => /was put down at the shelter when nobody adopted her/.test(l)), `last chapter ${r.after}`);
+      checkEqual(r.rec, "dead", "family book");
+    },
+  },
+  {
+    name: "shelter: boarders get lonely, keep their mood when picked up, can die of old age there, and a long stay goes in the story",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        __clearScene("DAY_CARE");
+        __seedRandom(25);
+        storyBook = freshStoryBook();
+        _storyIndex = null;
+        const f = new Horse(1, null, "DAY_CARE", "earthy", null, 0.5, 0.5, "male");
+        f.adopted = true;
+        f.happiness = 0.9;
+        const data = f.serialize();
+        data.type = f.type;
+        data.happiness = 0.9;
+        data.boardedAt = timePlayed;
+        data.name = "Bram";
+        const saved = dayCareFluffies;
+        dayCareFluffies = [data];
+        for (let i = 0; i < 20; i++) updateBoarders(DAY_LENGTH / 10);
+        const out = { mood: +data.happiness.toFixed(2) };
+        // Picked up two days later
+        timePlayed += 2 * DAY_LENGTH;
+        const h = Horse.deserialize(data);
+        onBoarderPickedUp(h, data);
+        out.story = storyOf(h).filter((e) => e.k === "boarding").map((e) => e.x);
+        // A very old one
+        const old = { ...data, id: 999001, name: "Gramps", age: (MAX_AGE_DAYS + 1) * DAY_LENGTH, growth: 1 };
+        dayCareFluffies = [old];
+        dayStats = freshDayStats();
+        updateBoarders(1);
+        out.oldGone = dayCareFluffies.length === 0;
+        out.news = dayStats.news.map((n) => n.text || n);
+        dayCareFluffies = saved;
+        return out;
+      });
+      checkEqual(r.mood, 0.8, "a little lonelier after two days");
+      check(r.story.length === 1 && /He spent 2 months boarded at the shelter\./.test(r.story[0]), `story ${r.story}`);
+      check(r.oldGone && r.news.some((n) => /Gramps died of old age while boarded/.test(n)), `old age ${r.news}`);
+    },
+  },
 ];

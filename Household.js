@@ -159,6 +159,8 @@ function getHouseholdLayout(data = computeHousehold()) {
     prev: { x: x + 24, y: y + h - 46, w: 50, h: 32 },
     next: { x: x + 80, y: y + h - 46, w: 50, h: 32 },
     close: { x: x + w - 150, y: y + h - 46, w: 130, h: 32 },
+    // What fluffies who love you call you (Identity.js)
+    keeper: { x: x + w - 370, y: y + h - 46, w: 210, h: 32 },
   };
 }
 
@@ -330,6 +332,10 @@ function drawHousehold(c) {
     c.fillText(`${householdPage + 1} / ${L.pages}`, L.next.x + L.next.w + 12, L.next.y + 21);
   }
   drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 15, borderRadius: 10 });
+  if (typeof keeperWord !== "undefined") {
+    const word = keeperWord === "mummah" ? "Mummah" : "Daddeh";
+    drawGlassButton(L.keeper.x, L.keeper.y, L.keeper.w, L.keeper.h, `Loved ones call you: ${word}`, { fontSize: 13, borderRadius: 8 });
+  }
   c.restore();
 }
 
@@ -358,6 +364,10 @@ function handleHouseholdClick() {
       householdPage = 0;
       return true;
     }
+  }
+  if (typeof toggleKeeperWord === "function" && hit(L.keeper)) {
+    toggleKeeperWord();
+    return true;
   }
   if (L.pages > 1 && hit(L.prev)) {
     householdPage = Math.max(0, householdPage - 1);

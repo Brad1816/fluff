@@ -79,8 +79,8 @@ function _shGenes(kind) {
       genes = g.generateRandomGenes(null, null);
       if (_shCoatP(genes) >= COAT_NICE_LINE) break;
     }
-  } else if (Math.random() < 0.65) {
-    genes = g.generateRandomGenes(Math.random() * 0.35, Math.random() * 0.6); // near the browns
+  } else if (Math.random() < 0.72) {
+    genes = g.generateRandomGenes(Math.random() * 0.25, Math.random() * 0.6); // near the browns
   } else {
     // Random - usually drab or plain; rolled again if it came out bright
     genes = g.generateRandomGenes(null, null);
@@ -198,6 +198,12 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
       : SHELTER_NAMES;
   const fresh = pool.filter((n) => !used.has(n));
   const name = _shPick(fresh.length ? fresh : pool);
+  // Given up by an owner: many miss them (Abandoned.js)
+  if (origin === "surrendered" && Math.random() < 0.7) {
+    h.personalities.push("abandoned");
+    h._abandonedSetUp = true;
+    h.missingOwner = 0.5 + Math.random() * 0.4;
+  }
   const data = h.serialize();
   data.type = h.type;
   return {
@@ -206,6 +212,7 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
     name,
     origin,
     notes: _shNotes(h),
+    backstory: _shBackstory(origin, h),
     arrivedDay: dayNumber,
     timesUpDay: dayNumber + Math.round(_shRand(SHELTER_STAY_DAYS)),
     type: h.type,
@@ -213,6 +220,30 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
     grown: growth >= 1,
     ageText: _shAge(h),
   };
+}
+
+// Its first chapter (the Story tab, LifeStory.js)
+const SHELTER_BACKSTORIES = {
+  stray: [
+    "Found alone in the rain behind the shops",
+    "Found living under a bench in the park",
+    "Found shivering in a cardboard box by the road",
+    "Found hiding under a parked car, very hungry",
+    "Brought in by a kind stranger who found {obj} in an alley",
+  ],
+  surrendered: [
+    "Given up by an owner who moved away",
+    "Given up when {poss} owner's new baby came",
+    "Given up by an owner who said it was too much work",
+    "Given up by a family whose children lost interest",
+    "Given up after {poss} owner could no longer afford {obj}",
+  ],
+  born: ["Born at the shelter to a mother nobody adopted", "Born at the shelter, the smallest of {poss} litter"],
+};
+function _shBackstory(origin, h) {
+  const list = SHELTER_BACKSTORIES[origin] || SHELTER_BACKSTORIES.stray;
+  const male = h.gender === "male";
+  return _shPick(list).replace(/\{poss\}/g, male ? "his" : "her").replace(/\{obj\}/g, male ? "him" : "her");
 }
 
 // ---- Every morning: time's up, new arrivals ----
@@ -235,6 +266,7 @@ function shelterNewDay() {
     if (r.timesUpDay >= today) continue;
     shelter.residents.splice(i, 1);
     shelter.lost = (shelter.lost || 0) + 1;
+    _shelterTimeRanOut(r);
     if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `Time ran out for ${r.name} at the shelter.` });
   }
   // New arrivals
@@ -299,6 +331,8 @@ function adoptShelterResident(id) {
     if (!shelter.named || typeof shelter.named !== "object") shelter.named = {};
     shelter.named[f.id] = r.name;
   }
+  // Its first chapter, then "came to you from the shelter"
+  if (typeof recordStory === "function" && r.backstory) recordStory("backstory", f, { x: r.backstory });
   if (typeof recordFluffy === "function") {
     const rec = recordFluffy(f);
     if (rec) rec.boughtFrom = "the Fluffy Shelter";
@@ -308,6 +342,123 @@ function adoptShelterResident(id) {
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `You adopted ${r.name} from the shelter.` });
   _shelterPortraits = {};
   return f;
+}
+
+// ---- Giving one of yours up ----
+// Instead of selling or dumping it: it goes into a kennel for someone else
+// to adopt, with the usual time's-up day. It counts as leaving you (its
+// story says so, and family at home miss it). If its time runs out, its
+// story gets a last chapter. The shelter must have a free kennel.
+
+const SHELTER_GIVE_UP_STAY = [4, 6];
+
+function canGiveUpToShelter() {
+  return shelter.residents.length < SHELTER_CAGES;
+}
+
+// Returns the new resident, or null (full / not yours)
+function giveUpToShelter(f) {
+  if (!f || !f.isAlive || !f.adopted) return null;
+  if (!canGiveUpToShelter()) {
+    if (typeof addUIMessage === "function") addUIMessage("The shelter has no free kennel today.");
+    return null;
+  }
+  const today = typeof getDayNumber === "function" ? getDayNumber() : 1;
+  if (typeof noteFluffyLeft === "function") noteFluffyLeft(f, "given up");
+  if (f.isDragging) {
+    isGlobalDragging = false;
+    f.isDragging = false;
+  }
+  f.currentCage = null;
+  f.placedOn = null;
+  f.claimedBed = null;
+  const i = fluffies.indexOf(f);
+  if (i >= 0) fluffies.splice(i, 1);
+  // It misses you, more the more it loved you (Abandoned.js)
+  if (!f.personalities.includes("abandoned")) f.personalities.push("abandoned");
+  f._abandonedSetUp = true;
+  f.missingOwner = Math.max(0.3, Math.min(1, (f.playerTrust || 0) + 0.2));
+  f.adopted = false;
+  const data = f.serialize();
+  data.type = f.type;
+  const name = (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || _shPick(SHELTER_NAMES);
+  const r = {
+    id: f.id,
+    data,
+    name,
+    origin: "surrendered",
+    byYou: true,
+    notes: _shNotes(f),
+    arrivedDay: today,
+    timesUpDay: today + Math.round(_shRand(SHELTER_GIVE_UP_STAY)),
+    type: f.type,
+    gender: f.gender,
+    grown: f.growth >= 1,
+    ageText: _shAge(f),
+  };
+  shelter.residents.push(r);
+  _shelterPortraits = {};
+  if (typeof addUIMessage === "function") addUIMessage(`You gave ${name} up to the shelter.`);
+  if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `You gave ${name} up to the shelter.` });
+  return r;
+}
+
+// Time ran out for one you gave up: the last chapter of its story
+function _shelterTimeRanOut(r) {
+  if (!r.byYou) return;
+  if (typeof recordStory === "function") recordStory("died", r.id, { x: "Time ran out at the shelter" });
+  const rec = typeof getFamilyRecord === "function" ? getFamilyRecord(r.id) : null;
+  if (rec) {
+    rec.status = "dead";
+    rec.causeOfDeath = "Put down at the shelter";
+  }
+}
+
+// ---- Boarding (the desk; UIDayCare.js) ----
+// Fed and kept safe, but lonely: happiness slowly drifts down
+// (BOARD_LONELY_PER_DAY, not below BOARD_LONELY_FLOOR). It keeps ageing and
+// can die of old age (you're told). Picking it up keeps its mood; a stay of
+// a day or more goes in its story.
+const BOARD_LONELY_PER_DAY = 0.05;
+const BOARD_LONELY_FLOOR = 0.25;
+
+function updateBoarders(dt) {
+  if (typeof dayCareFluffies === "undefined" || !Array.isArray(dayCareFluffies)) return;
+  for (let i = dayCareFluffies.length - 1; i >= 0; i--) {
+    const d = dayCareFluffies[i];
+    if (typeof d.happiness === "number" && d.happiness > BOARD_LONELY_FLOOR) {
+      d.happiness = Math.max(BOARD_LONELY_FLOOR, d.happiness - (BOARD_LONELY_PER_DAY * dt) / DAY_LENGTH);
+    }
+    if (d.boardedAt === undefined) d.boardedAt = typeof timePlayed === "number" ? timePlayed : 0;
+    // Old age
+    const days = (d.age || 0) / DAY_LENGTH;
+    if ((d.growth === undefined || d.growth >= 1) && days >= OLD_AGE_RISK_DAYS) {
+      const risk = days >= MAX_AGE_DAYS ? 1 : Math.min(1, ((days - OLD_AGE_RISK_DAYS) / (MAX_AGE_DAYS - OLD_AGE_RISK_DAYS)) ** 2);
+      if (Math.random() < (risk * dt) / DAY_LENGTH || days >= MAX_AGE_DAYS) {
+        dayCareFluffies.splice(i, 1);
+        const name = d.name || (typeof fluffyDisplayNameById === "function" ? fluffyDisplayNameById(d.id) : "A fluffy");
+        if (typeof recordStory === "function") recordStory("died", d.id, { x: "Old age" });
+        const rec = typeof getFamilyRecord === "function" ? getFamilyRecord(d.id) : null;
+        if (rec) {
+          rec.status = "dead";
+          rec.causeOfDeath = "Old age (while boarded)";
+        }
+        if (typeof addUIMessage === "function") addUIMessage(`${name} died peacefully of old age while boarded at the shelter.`);
+        if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `${name} died of old age while boarded at the shelter.` });
+      }
+    }
+  }
+}
+
+// Picked up: a line in its story for a stay of a day or more
+function onBoarderPickedUp(horse, data) {
+  const since = data && typeof data.boardedAt === "number" ? data.boardedAt : null;
+  if (since === null || typeof recordStory !== "function") return;
+  const days = ((typeof timePlayed === "number" ? timePlayed : 0) - since) / DAY_LENGTH;
+  if (days < 1) return;
+  const long = typeof fluffyAgeText === "function" ? fluffyAgeText(days) : `${Math.round(days)} days`;
+  const who = horse.gender === "male" ? "He" : "She";
+  recordStory("boarding", horse, { x: `${who} spent ${long} boarded at the shelter.` });
 }
 
 // ---- The kennels (an object in the shelter room, like the desk) ----

@@ -555,7 +555,10 @@ class Horse {
   }
 
   amputate(part, weapon = null) {
-    return this.anatomy.amputate(part, weapon);
+    const lost = this.anatomy.amputate(part, weapon);
+    // A lasting injury goes in its story (LifeStory.js)
+    if (lost && typeof recordStory === "function") recordStory("injured", this, { x: lost });
+    return lost;
   }
 
   getMissingBodyParts() {

@@ -1394,6 +1394,8 @@ function updateDayCare(dt) {
   }
 
   // (the boarding fee is charged each morning with the bills, Bills.js)
+  // Lonely, and getting older (Shelter.js)
+  if (typeof updateBoarders === "function") updateBoarders(dt);
 }
 
 function updateSimulation(dt) {

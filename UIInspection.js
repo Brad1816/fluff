@@ -11,7 +11,9 @@ function openNameModal(fluffy) {
       name = name.charAt(0).toUpperCase() + name.slice(1);
       const first = !fluffyNames[fluffy.id];
       fluffyNames[fluffy.id] = name;
+      if (typeof recordStory === "function") recordStory("named", fluffy, { x: name });
       if (first && typeof giveAffection === "function") giveAffection(fluffy, "named");
+      if (first && typeof noteTurningPoint === "function") noteTurningPoint(fluffy, `${name} has a name now.`, { record: false });
       const key = fluffy.tooYoungToSpeak() ? ["NAME", "CHIRPY"] : ["NAME"];
       fluffy.speak(getDialogue(key, fluffy));
     }
@@ -161,6 +163,11 @@ function getFluffyInspectionInfo(f) {
   // Inherited personality traits (Traits.js)
   if (typeof describeTraits === "function") {
     about.push({ label: "Traits", value: describeTraits(f) });
+    // What its life has done to it, and what it loves most (Personality.js)
+    const shifts = typeof describeTraitShifts === "function" ? describeTraitShifts(f) : null;
+    if (shifts) about.push({ label: "Life made it", value: shifts });
+    const fav = typeof describeFavouriteCare === "function" ? describeFavouriteCare(f) : null;
+    if (fav) about.push({ label: "Loves most", value: fav[0], tone: fav[1] });
   }
   about.push({ label: "Mother", value: nameOf(f.motherId, "Unnamed fluffy") });
   about.push({ label: "Father", value: nameOf(f.fatherId, "Unnamed fluffy") });
@@ -364,17 +371,19 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Growing up"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Growing up"] },
     ],
   },
   {
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Tricks", "Lessons", "Remembers", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Loves most", "Tricks", "Lessons", "Remembers", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },
+  // Its life, told like a book (LifeStory.js)
+  { id: "story", name: "Story", cols: [] },
 ];
 let inspectionTab = "overview";
 
@@ -419,7 +428,7 @@ function getInspectionModalLayout() {
   const btnW = 170;
   const btnH = 40;
   const tabY = listY + 138;
-  const tabW = (listW - 40 - 3 * 8) / 4;
+  const tabW = (listW - 40 - (INSPECTION_TABS.length - 1) * 8) / INSPECTION_TABS.length;
   return {
     listX,
     listY,
@@ -479,6 +488,13 @@ function _inspectionChip(ctx, x, y, text, colour, maxW) {
   ctx.fillText(t, x + 8, y + 12);
   ctx.textBaseline = "alphabetic";
   return w;
+}
+
+// Where the Story tab's text goes
+let _inspectionStoryFor = null;
+function inspectionStoryArea(L) {
+  const y = L.contentY - 22;
+  return { x: L.listX + 30, y, w: L.listW - 60, h: L.btnY - 10 - y };
 }
 
 function drawInspectionModal(ctx) {
@@ -588,10 +604,17 @@ function drawInspectionModal(ctx) {
   ctx.lineTo(L.listX + L.listW - 20, L.tabs[0].y + 44);
   ctx.stroke();
 
-  // The tab's two columns
+  // The tab's two columns (or its story, LifeStory.js)
   const tab = data.tabs.find((x) => x.id === inspectionTab) || data.tabs[0];
   const colW = (L.listW - 60) / 2;
   const maxY = L.btnY - 14;
+  if (tab.id === "story" && typeof drawLifeStoryTab === "function") {
+    if (_inspectionStoryFor !== f.id) {
+      _inspectionStoryFor = f.id;
+      lifeStoryPage = 0;
+    }
+    drawLifeStoryTab(ctx, f, inspectionStoryArea(L));
+  }
   tab.cols.forEach((col, i) => {
     drawInspectionColumn(ctx, col.title, col.rows, L.listX + 25 + i * (colW + 20), L.contentY, colW - 10, maxY);
   });
@@ -616,6 +639,8 @@ function handleInspectionModalClick() {
       return true;
     }
   }
+  // Turning the Story tab's pages (LifeStory.js)
+  if (inspectionTab === "story" && typeof handleLifeStoryClick === "function" && handleLifeStoryClick(inspectionStoryArea(L))) return true;
 
   if (isPointInRect(mouse.x, mouse.y, L.nameBtnX, L.btnY, L.btnW, L.btnH)) {
     const f = inspectedFluffy;

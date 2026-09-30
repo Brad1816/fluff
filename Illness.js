@@ -60,6 +60,7 @@ function canCatchFlu(f) {
 function catchFlu(f, t = 0) {
   if (!canCatchFlu(f)) return false;
   f.illness = { type: "flu", t, known: false };
+  if (typeof recordStory === "function") recordStory("ill", f, { x: "fluffy flu" }); // (LifeStory.js)
   if (f.adopted && t >= FLU_HIDDEN) _announceFlu(f);
   return true;
 }

@@ -131,6 +131,8 @@ function _trLearn(f, key, amount) {
   if (before < TRICK_KNOWN && after >= TRICK_KNOWN && f.adopted && typeof addUIMessage === "function") {
     addUIMessage(`${_trName(f)} knows "${getTrick(key).name}" now! ✓`);
     if (typeof recordStory === "function") recordStory("trick", f, { x: getTrick(key).name });
+    const known = Object.keys(f.tricks).filter((k) => trickSkill(f, k) >= TRICK_KNOWN).length;
+    if (known === 1 && typeof noteTurningPoint === "function") noteTurningPoint(f, `${_trName(f)} learnt ${f.gender === "male" ? "his" : "her"} first trick.`, { record: false });
   }
   return after - before;
 }
