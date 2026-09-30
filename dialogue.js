@@ -2173,6 +2173,16 @@ const DIALOGUE = {
     ],
   },
 
+  // A Smarty shoving someone out of its way (SmartyMood.js)
+  SMARTY_BULLY: [
+    "MOVE, DUMMEH!",
+    "SMAWTY WAN DIS SPOT! GU 'WAY!",
+    "DUMMEH AM IN SMAWTY'S WAY!",
+    "HMPH! DUMMEH SO SWOW!",
+    "SMAWTY AM BESTEST! DUMMEH AM WOWST!",
+    "NU WOOK AT SMAWTY, DUMMEH!",
+  ],
+
   SMARTY_CHASE: {
     DEFAULT: [
       "DUMMEH MAWE WAN ENFIES NAO!",

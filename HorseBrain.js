@@ -850,6 +850,8 @@ class SeekSmartySpecialHuggiesDesire extends Desire {
     if (horse.gender !== "male" || horse.growth < 1.0) return 0;
     if (horse.specialHuggiesCooldown > 0) return 0;
     if (!horse.isSmarty() && !horse.isUnderAphrodisiac()) return 0;
+    // Smarties only go looking every few hours (SmartyMood.js)
+    if (!horse.isUnderAphrodisiac() && typeof smartyReadyForEnfies === "function" && !smartyReadyForEnfies(horse)) return 0;
     if (
       (!horse.isUnderAphrodisiac() && horse.isFrantic) ||
       horse.attackCooldown > 0 ||
@@ -1087,31 +1089,46 @@ class RandomBabbleDesire extends Desire {
   }
 }
 
+// Smarties fight when provoked or in a bad mood, and otherwise just bully
+// now and then - never their own herd, family or friends (SmartyMood.js)
 class SmartyCombatDesire extends Desire {
   constructor() {
     super("SmartyCombat");
   }
   evaluate(horse) {
+    this.target = null;
     if (horse.sleepingOrTargetSet() || horse.isStacking) return 0;
-    if (
-      !horse.isAlive ||
-      !horse.isSmarty() ||
-      horse.gender !== "male" ||
-      horse.growth < 1.0
-    )
-      return 0;
-
-    if (horse.sexuality !== "heterosexual") {
-      return 0;
-    }
-
-    if (horse.isFrantic || !horse.canSee() || horse.attackCooldown > 0)
-      return 0;
+    if (!horse.isAlive || !horse.isSmarty() || horse.growth < 1.0) return 0;
+    if (horse.isFrantic || !horse.canSee() || horse.attackCooldown > 0) return 0;
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 0;
-    return 90; // High priority combat!
+
+    const fight = smartyFightTarget(horse);
+    // (a straight stallion picks fights with other stallions; anyone
+    // fights whoever provoked it)
+    if (fight && (smartyProvokedBy(horse, fight) || (horse.gender === "male" && horse.sexuality === "heterosexual"))) {
+      this.target = fight;
+      this.reason = "ATTACK";
+      return 90;
+    }
+    const bully = smartyBullyTarget(horse);
+    if (bully) {
+      this.target = bully;
+      this.reason = "BULLY";
+      return 60;
+    }
+    return 0;
   }
   execute(horse) {
-    return horse.actionHandler.executeSmartyCombatTargeting();
+    const target = this.target;
+    if (!target || !target.isAlive) return false;
+    if (horse.chaseTarget !== target) {
+      horse.chaseTarget = target;
+      horse.chaseReason = this.reason;
+      target.speech.nextTime = 0;
+      horse.speech.nextTime = this.reason === "BULLY" ? 1 : 0;
+      horse.initBehavior("RUNNING");
+    }
+    return true;
   }
 }
 

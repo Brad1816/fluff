@@ -99,6 +99,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Fears.js` | **Fears**: thunder, the dark and the Fluff-Bot; frights, comforting, the Night Light item. See section 9 (Fears). |
 | `Household.js` | **Household** overview screen (button at the top right, or O): every fluffy you own and what it needs. See section 9 (Household). |
 | `FeedBot.js` | **The Feed-Bot** (Fluff Mart, $300): fills bowls, feeders and orphans from a hopper you pour bags into; modes; tipping over, spills (`FoodSpill`), the Repair Kit. See section 9 (The Feed-Bot). |
+| `SmartyMood.js` | **Smarty moods**: bullies that leave their herd, family and friends alone, fight only when provoked or in a bad mood, and seek enfies every few hours. See section 9 (Smarty moods). |
 | `Population.js` | **Population limits**: crowded rooms (unhappiness, scuffles), mares resting after a litter, park births following food. See section 9 (Population and bills). |
 | `Bills.js` | **Rent and bills** charged every morning with the day report; unpaid bills are owed. See section 9 (Population and bills). |
 | `StoryBook.js` | **The story book**: one shared record of big events (births, deaths, names, sales, tricks, harm...) and daily tallies of small things, that every fluffy, family and herd points into. See section 9 (The story book). |
@@ -1995,8 +1996,9 @@ deaths. Fixed:
   machine).
 Seen and left as designed: in a breeding home most losses are stillbirths
 from inbreeding (Gene Lab shows the odds) and colour-prejudiced mares
-attacking "poopie" foals (world setting: colorism). A Smarty stallion forcing
-pregnant mares causes miscarriages. The park is a hard place for foals.
+attacking "poopie" foals (world setting: colorism; since reworked, see "Coat
+colours and colourism"). A Smarty stallion forcing pregnant mares causes
+miscarriages (since reworked, see "Smarty moods"). The park is a hard place for foals.
 
 
 ### Lessons (`Lessons.js`)
@@ -2263,6 +2265,59 @@ black, pastels, muddy mid-tones) are shunned more than bright ones.
   any foal less perfect than her own coat) had bright mums attacking nearly
   every foal - in 8-day household sims up to 16 of 22 foals were killed.
 - Tests: `tests/colours.test.js`.
+
+### Smarty moods (`SmartyMood.js`)
+Smarties are bullies, not killing machines. Before, SmartyCombat (priority 90)
+sent a grown Smarty stallion after the nearest stallion outside its herd every
+time its attack cooldown ran out, and it sought enfies every 30 seconds with
+the nearest mare, pregnant or not. In household sims one Smarty starved three
+of four housemates (forced again and again, their happiness hit 0) or killed
+three stallions in three hours.
+- **Its own**: `smartyTolerates(s, f)` - same herd, parent, foal, brother or
+  sister, or liked (`getLiking` >= `SMARTY_TOLERATE` 0.2: friends, special
+  friends, family relationships). It never bullies them, and only fights one
+  that provoked it.
+- **Provoked** (`smartyProvokedBy`): hit by that fluffy within
+  `SMARTY_PROVOKED_TIME` (2 game hours; `noteSmartyProvoked` from
+  `wasAttackedBy`), or a deep grudge (opinion <= `OPINION_GRUDGE`).
+- **Bad mood**: happiness under `SMARTY_BAD_MOOD` (0.4).
+- **SmartyCombat** (HorseBrain.js) now scores 90 only for a real fight
+  (`smartyFightTarget`: whoever provoked it first, else in a bad mood the
+  nearest stallion within 500px that isn't its own - straight stallions only),
+  or 60 for a shove (`smartyBullyTarget`: every 2-6 game hours, the nearest
+  fluffy within 300px outside its circle that can walk). Any grown Smarty can
+  do either; mares too.
+- **Fights stop** (`smartyStopsFighting`, checked in `_updateSmartyChase` and
+  after each hit) when it's no longer provoked or cross, or - unless it's in a
+  bad mood - once the other is under `SMARTY_SPARE_HEALTH` (40). A foul-mooded
+  Smarty can still kill.
+- **Shoves** (`performAttack` intent "BULLY"): `SMARTY_BULLY_DAMAGE` (4),
+  never below `SMARTY_BULLY_FLOOR` (30) health, no bleeding; one shove and it
+  walks off. Lines: `SMARTY_BULLY` ("MOVE, DUMMEH!").
+- **Enfies**: after each, `smartyDidEnfies` sets the next chance 2-5 game
+  hours on (`SeekSmartySpecialHuggies` returns 0 until then; aphrodisiacs
+  ignore it). `findSmartyMateTarget` picks the nearest mare that isn't
+  pregnant, and a pregnant one only if there's no other.
+- **Quarrels end** (good mood): after `SMARTY_POINT_HITS` (3) hits, or once
+  the other is under `SMARTY_SPARE_HEALTH` (60), or it's under
+  `SMARTY_RETREAT_HEALTH` (50) itself - then `smartySettle` drops that
+  quarrel (grudge included) for `SMARTY_SETTLED_TIME` (a game day). Only a
+  fresh provocation - not being hit back (intent "RETALIATION") - reopens it.
+  (Health comes back so fast between hits that "until they're hurt" alone
+  never ended a fight: sims showed endless feuds.)
+- **Fear of a fluffy** (`fearedFluffies`, e.g. a mare after forced enfies):
+  she still runs from him whenever she sees him, but one fright costs at most
+  `FEARED_FLUFFY_MAX_LOSS` (0.15) happiness - 0.05 the first time, 0.01 after
+  (`entry.lost`, HorseActionHandler.executeFearedFluffyFear). Before, in a
+  small room she ran every few seconds at -0.05 each until her happiness hit
+  0 and she lay down and starved.
+- The chase no longer needs lumps or the huggies cooldown for a fight or a
+  shove (those only apply to enfies).
+- Sims (Smarty stallion in a 5-fluffy household, 6 days): fight hits 400-830
+  a run before, 45-143 after, plus 13-28 shoves; forced enfies on pregnant
+  mares 0-2 (only when no other mare was free); no grown fluffy starved or
+  was killed by the Smarty (before: 2-3 starved, 3-8 killed).
+- Tests: `tests/smarty.test.js`.
 
 ### The story book (Phase 0, stage 3)
 The foundation for life stories (design doc Phase 1): one shared record,

@@ -1259,6 +1259,9 @@ const HAPPINESS_PENALTY_WITNESS_VIOLENCE = -0.00625;
 const HAPPINESS_PENALTY_LOST_RELATIVE = -0.025;
 const HAPPINESS_PENALTY_DIRTY_PUDDLE = -0.02;
 const HAPPINESS_PENALTY_MATE_FORCED_MARE = -0.1;
+// Most a single fear of another fluffy (fearedFluffies) costs in happiness
+// from running away from it (HorseActionHandler.executeFearedFluffyFear)
+const FEARED_FLUFFY_MAX_LOSS = 0.15;
 const HAPPINESS_PENALTY_MATE_BAD_ENFIES = -0.1;
 const HAPPINESS_PENALTY_CANT_HUG = -0.05;
 const HAPPINESS_PENALTY_BLOOD_FEAR = -0.025;

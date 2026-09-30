@@ -274,7 +274,16 @@ class HorseActionHandler {
       }
       this.horse.speak(getDialogue(dialogueKey, this.horse));
       this.horse.speech.nextTime = 2 + Math.random();
-      this.horse.changeHappiness(-0.05);
+    }
+    // Running away hurts most the first time; one fright can't cost more
+    // than FEARED_FLUFFY_MAX_LOSS however often it runs (in a small room it
+    // used to run every few seconds until it gave up and starved)
+    const entry = this.horse.fearedFluffies.find((ff) => ff.id === target.id);
+    const lost = (entry && entry.lost) || 0;
+    const loss = Math.min(lost > 0 ? 0.01 : 0.05, Math.max(0, FEARED_FLUFFY_MAX_LOSS - lost));
+    if (loss > 0) {
+      this.horse.changeHappiness(-loss);
+      if (entry) entry.lost = lost + loss;
     }
     return true;
   }
@@ -559,48 +568,6 @@ class HorseActionHandler {
       }
       return true;
     }
-    return false;
-  }
-
-  executeSmartyCombatTargeting() {
-    let minDist = Infinity;
-    let target = null;
-    for (const f of fluffies) {
-      if (
-        f.id !== this.horse.id &&
-        f.isAlive &&
-        f.scene === this.horse.scene &&
-        !f.isDragging &&
-        f.currentCage === this.horse.currentCage &&
-        (!worldSettings.alicornIntolerance ||
-          this.horse.tolerantOfAlicorns() ||
-          f.typeVisibleToOthers() !== "alicorn") &&
-        f.gender === "male" &&
-        (this.horse.herdId === null ||
-          f.herdId === null ||
-          this.horse.herdId !== f.herdId)
-      ) {
-        const d = Math.sqrt(
-          (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
-        );
-        if (d < 500 && d < minDist) {
-          minDist = d;
-          target = f;
-        }
-      }
-    }
-
-    if (target) {
-      if (this.horse.chaseTarget !== target) {
-        this.horse.chaseTarget = target;
-        this.horse.chaseReason = "ATTACK";
-        target.speech.nextTime = 0;
-        this.horse.speech.nextTime = 0;
-        this.horse.initBehavior("RUNNING");
-      }
-      return true;
-    }
-
     return false;
   }
 

@@ -49,6 +49,8 @@ addHorseMethods({
 
     target.wasAttackedBy(this);
     if (typeof recordStory === "function") recordStory("attacked", target);
+    // A Smarty someone starts on is provoked; hitting back doesn't count (SmartyMood.js)
+    if (target.isSmarty() && intent !== "RETALIATION" && typeof noteSmartyProvoked === "function") noteSmartyProvoked(target, this);
 
     // Face the target
     this.facingRight = target.x > this.x;
@@ -75,7 +77,12 @@ addHorseMethods({
     target.wasAttackedBy(this);
     // Grudges, and buddies jumping in (Bonds.js)
     if (typeof noteFluffyAttack === "function") noteFluffyAttack(this, target, intent);
-    target.health -= 10;
+    if (intent === "BULLY") {
+      // A Smarty's shove (SmartyMood.js): stings, never kills
+      target.health = Math.min(target.health, Math.max(SMARTY_BULLY_FLOOR, target.health - SMARTY_BULLY_DAMAGE));
+    } else {
+      target.health -= 10;
+    }
     if (target.health <= 0) {
       const attackerName =
         typeof fluffyDisplayName === "function" ? fluffyDisplayName(this) : fluffyNames[this.id] || "Fluffy";
@@ -88,7 +95,7 @@ addHorseMethods({
     if (!target.tooYoungToSpeak()) {
       if (intent === "SMARTY_VIOLENCE") {
         target.speak(getDialogue(["HURT", "SMARTY"], target));
-      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY" || intent === "CROWDED") {
+      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY" || intent === "CROWDED" || intent === "BULLY") {
         target.speak(getDialogue(["HURT"], this));
       } else {
         target.speak(getDialogue(["HURT", "ALICORN_BABY"], target));
@@ -100,7 +107,9 @@ addHorseMethods({
     if (this.chaseReason !== "MATING" && Math.random() < 0.25) {
       this.chaseTarget = null;
     }
-    if (Math.random() < 0.15) {
+    // (a shove, or a Smarty that isn't in a foul mood, doesn't draw blood)
+    const mild = intent === "BULLY" || (intent === "SMARTY_VIOLENCE" && this.isSmarty() && typeof smartyInBadMood === "function" && !smartyInBadMood(this));
+    if (!mild && Math.random() < 0.15) {
       target.bleedingTimer = 5;
     }
     target.attackCooldown = 5.0;

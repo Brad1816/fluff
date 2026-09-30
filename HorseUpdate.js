@@ -797,17 +797,20 @@ addHorseMethods({
     // Smarty & Aphrodisiac Chase Logic
     if (this.isAlive && (this.isSmarty() || this.isUnderAphrodisiac()) && this.chaseTarget && this.canSee()) {
       const target = this.chaseTarget;
+      // A Smarty's fight or shove (SmartyMood.js) rather than enfies
+      const brawl = !this.isUnderAphrodisiac() && (this.chaseReason === "ATTACK" || this.chaseReason === "BULLY");
       // Validation
       if (
         !target.isAlive ||
         target.scene !== this.scene ||
         target.isDragging ||
         target.currentCage !== this.currentCage ||
-        (!this.isUnderAphrodisiac() && this.specialHuggiesCooldown > 0) ||
+        (!brawl && !this.isUnderAphrodisiac() && this.specialHuggiesCooldown > 0) ||
         (!this.isUnderAphrodisiac() && this.isFrantic) ||
         this.isCrawling ||
-        !this.limbs.lumps ||
-        !placedOnValidForSpecialHuggies(target.placedOn) ||
+        (!brawl && !this.limbs.lumps) ||
+        (!brawl && !placedOnValidForSpecialHuggies(target.placedOn)) ||
+        (this.chaseReason === "ATTACK" && this.isSmarty() && smartyStopsFighting(this, target)) ||
         this.happiness <= WAN_DIE_THRESHOLD
       ) {
         this.chaseTarget = null;
@@ -825,7 +828,9 @@ addHorseMethods({
           // Smarty yells 100% of the time if target can't hear.
           // Otherwise, regular logic: 100% if target can see, 20% if target can't.
           const yellChance = !target.canHear() ? 1.0 : target.canSee() ? 1.0 : 0.2;
-          if (Math.random() < yellChance) {
+          if (this.chaseReason === "BULLY") {
+            this.speak(getDialogue(["SMARTY_BULLY"], this, target));
+          } else if (Math.random() < yellChance) {
             const isTargetStallion = target.gender === "male";
             const yellKey = isTargetStallion ? ["SMARTY_CHASE", "STALLION"] : ["SMARTY_CHASE", "MARE"];
             const yellText = this.isUnderAphrodisiac()
@@ -846,7 +851,14 @@ addHorseMethods({
           const isMaleOnMaleUnconsensual =
             this.gender === "male" && target.gender === "male" && !isSexuallyAttractedTo(target, this);
 
-          if (this.chaseReason === "MATING" || this.isUnderAphrodisiac()) {
+          if (this.chaseReason === "BULLY" && !this.isUnderAphrodisiac()) {
+            // A shove, then off it goes (SmartyMood.js)
+            this.performAttack(target, "BULLY");
+            this.speak(getDialogue(["SMARTY_BULLY"], this, target));
+            smartyDidBully(this);
+            this.chaseTarget = null;
+            this.chaseReason = null;
+          } else if (this.chaseReason === "MATING" || this.isUnderAphrodisiac()) {
             if (isMaleOnMaleUnconsensual && canFightBack(target)) {
               this.performAttack(target, "SMARTY_VIOLENCE");
               const attackText = this.isUnderAphrodisiac()
@@ -854,15 +866,23 @@ addHorseMethods({
                 : getDialogue(["ATTACK", "SMARTY", this.tooYoungToSpeak() ? "BABY" : "ADULT"], this);
               this.speak(attackText, this.isUnderAphrodisiac());
             } else if (this.mateWith(target, false, true)) {
+              if (this.isSmarty() && !this.isUnderAphrodisiac()) smartyDidEnfies(this);
               this.chaseTarget = null;
               this.chaseReason = null;
             }
           } else if (this.chaseReason === "ATTACK" || target.gender === "male") {
             if (this.isSmarty()) {
               this.performAttack(target, "SMARTY_VIOLENCE");
+              smartyLandedHit(this, target);
               this.speak(getDialogue(["ATTACK", "SMARTY", this.tooYoungToSpeak() ? "BABY" : "ADULT"], this));
+              // Unless it's in a foul mood, it leaves it at that once they're hurt
+              if (this.chaseTarget && smartyStopsFighting(this, target)) {
+                this.chaseTarget = null;
+                this.chaseReason = null;
+              }
             }
           } else if (this.mateWith(target, false, true)) {
+            if (this.isSmarty()) smartyDidEnfies(this);
             this.chaseTarget = null;
             this.chaseReason = null;
           }

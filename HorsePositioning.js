@@ -827,9 +827,13 @@ class HorsePositioning {
     return false;
   }
 
+  // The nearest fluffy a Smarty could force; a pregnant mare only if
+  // there's nobody else it could go for (SmartyMood.js)
   findSmartyMateTarget() {
-    let minDist = Infinity;
-    let target = null;
+    let best = null,
+      bestD = Infinity,
+      pregnant = null,
+      pregnantD = Infinity;
     for (const f of fluffies) {
       if (
         f !== this.horse &&
@@ -845,13 +849,18 @@ class HorsePositioning {
         const d = Math.sqrt(
           (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
         );
-        if (d < minDist) {
-          minDist = d;
-          target = f;
+        if (f.isPregnant) {
+          if (d < pregnantD) {
+            pregnantD = d;
+            pregnant = f;
+          }
+        } else if (d < bestD) {
+          bestD = d;
+          best = f;
         }
       }
     }
-    return target;
+    return best || pregnant;
   }
 
   findAphrodisiacMateTarget() {
