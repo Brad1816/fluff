@@ -47,7 +47,22 @@ function _prName(f) {
 }
 
 function powerCut() {
-  return _prOk().debtDays >= POWER_CUT_DAY;
+  return _prOk().debtDays >= POWER_CUT_DAY && typeof billsOwed === "number" && billsOwed > 0;
+}
+
+// Pay what you owe now (Accounts): the power comes back at once
+function payDebtNow() {
+  if (!(typeof billsOwed === "number" && billsOwed > 0) || !(money > 0)) return 0;
+  const paid = Math.min(money, billsOwed);
+  money -= paid;
+  billsOwed -= paid;
+  const p = _prOk();
+  if (billsOwed <= 0) {
+    billsOwed = 0;
+    if (p.debtDays >= POWER_CUT_DAY && typeof addUIMessage === "function") addUIMessage("The debt's paid. The power's back on.");
+    p.debtDays = 0;
+  } else if (typeof addUIMessage === "function") addUIMessage(`You paid $${paid.toLocaleString()}. You still owe $${billsOwed.toLocaleString()}.`);
+  return paid;
 }
 
 // Bills.chargeDailyBills, each morning after paying what it could
@@ -76,15 +91,21 @@ function sendBailiffs() {
   if (!grown.length) return null;
   const price = (f) => (typeof f.calculatePrice === "function" ? f.calculatePrice() : 50);
   grown.sort((a, b) => price(b) - price(a));
-  const f = grown[0];
+  // The cheapest one that covers the debt, or the dearest if none does
+  const covers = grown.filter((g) => Math.round(price(g) * BAILIFF_SHARE) >= billsOwed);
+  const f = covers.length ? covers[covers.length - 1] : grown[0];
   const worth = Math.round(price(f) * BAILIFF_SHARE);
   const n = _prName(f);
+  // ...and any change comes back to you
+  const change = Math.max(0, worth - billsOwed);
   billsOwed = Math.max(0, billsOwed - worth);
+  if (change > 0 && !(typeof showDebugMenu !== "undefined" && showDebugMenu)) money += change;
+  if (billsOwed <= 0) _prOk().debtDays = 0;
   if (typeof recordStory === "function") recordStory("turning", f, { x: `${n} was taken by the bailiffs for your debts.` });
   if (typeof noteFluffyLeft === "function") noteFluffyLeft(f, "taken by the bailiffs");
   const i = fluffies.indexOf(f);
   if (i > -1) fluffies.splice(i, 1);
-  const t = `The bailiffs took ${n} for $${worth.toLocaleString()} of what you owe.${billsOwed > 0 ? ` You still owe $${billsOwed.toLocaleString()}.` : ""}`;
+  const t = `The bailiffs took ${n} for $${worth.toLocaleString()} of what you owe.${billsOwed > 0 ? ` You still owe $${billsOwed.toLocaleString()}.` : change > 0 ? ` They gave you $${change.toLocaleString()} change.` : ""}`;
   if (typeof addUIMessage === "function") addUIMessage(t);
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: t });
   return f;
@@ -120,6 +141,10 @@ function marketOfferMultiplier() {
 // true: treat now, pay later
 function vetOnCredit(amount) {
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  if (powerCut()) {
+    if (typeof addUIMessage === "function") addUIMessage(`The vet needs $${amount}, and won't give credit while you're this far behind.`);
+    return false;
+  }
   if (_vetCreditAsk && _vetCreditAsk.amount === amount && now - _vetCreditAsk.at < 8000) {
     _vetCreditAsk = null;
     const due = Math.round(amount * (1 + VET_CREDIT_FEE));

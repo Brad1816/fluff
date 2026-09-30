@@ -19,6 +19,19 @@
 //                 confetti for a moment.
 // ---------------------------------------------------------------------------
 
+// Can a system send this fluffy walking somewhere? Not while it's held,
+// strapped to a board or table, caged, in time-out, being sat with, mating,
+// asleep, or too little to walk. (Used by huddles, greetings at the door,
+// feeding time and bored mischief.)
+function canBeMovedExternally(f) {
+  if (!f || !f.isAlive || f.isDragging || f.placedOn || f.currentCage) return false;
+  if (f.sitWith || (typeof inTimeOut === "function" && inTimeOut(f))) return false;
+  if (f.matingState && f.matingState.isMating) return false;
+  if (f.currentStateKey === "SLEEPING") return false;
+  if (typeof f.tooYoungToWalk === "function" && f.tooYoungToWalk()) return false;
+  return typeof f.initBehavior === "function" && typeof f.setTargetPosition === "function";
+}
+
 // ---- Room tint ----
 
 const ROOM_TINTS = {
@@ -182,13 +195,13 @@ function updateHuddles(dt) {
       }
       // Arrived: sit down beside it, facing it
       if (Math.hypot(o.x - f.x, o.y - f.y) <= HUDDLE_NEAR) {
-        if (f.currentStateKey === "IDLE" && typeof f.initBehavior === "function") f.initBehavior("SITTING");
+        if (f.currentStateKey === "IDLE" && canBeMovedExternally(f)) f.initBehavior("SITTING");
         f.facingRight = o.x > f.x;
         if (typeof f.changeHappiness === "function") f.changeHappiness(HUDDLE_COMFORT);
       }
       continue;
     }
-    if (!uneasy || !HUDDLE_STATES.includes(f.currentStateKey) || f.growth < 0.2) continue;
+    if (!uneasy || !HUDDLE_STATES.includes(f.currentStateKey) || !canBeMovedExternally(f)) continue;
     if (f._huddleRest && now < f._huddleRest) continue;
     if (Math.random() > HUDDLE_CHANCE) continue;
     const o = huddlePartner(f);
@@ -235,7 +248,8 @@ function updateSleepHeaps(dt) {
   const step = _pileT;
   _pileT = 0;
   for (const f of fluffies) {
-    if (!f.isAlive || f.currentStateKey !== "SLEEPING" || f.isDragging || f.claimedBed || f.placedOn) {
+    // (in the house: the park's herds already sleep together - Bonds.js)
+    if (!f.isAlive || f.currentStateKey !== "SLEEPING" || f.isDragging || f.claimedBed || f.placedOn || !isHouseRoom(f.scene)) {
       if (f._pileWith) f._pileWith = null;
       continue;
     }
@@ -262,7 +276,16 @@ function updateSleepHeaps(dt) {
 }
 
 // The heaps in a scene: [[fluffy, ...], ...] (3 or more asleep together)
+// (worked out a few times a second at most: it's drawn every frame)
+let _heapCache = null;
 function sleepHeaps(scene) {
+  const now = _hlRealNow();
+  if (_heapCache && _heapCache.scene === scene && now - _heapCache.at < 0.3) return _heapCache.heaps;
+  const heaps = _sleepHeapsNow(scene);
+  _heapCache = { scene, at: now, heaps };
+  return heaps;
+}
+function _sleepHeapsNow(scene) {
   const sleepers = fluffies.filter((f) => f.isAlive && f.scene === scene && f.currentStateKey === "SLEEPING" && !f.claimedBed && !f.placedOn);
   const seen = new Set();
   const heaps = [];

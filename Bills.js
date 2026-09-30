@@ -61,8 +61,12 @@ function chargeDailyBills() {
   // Last day's takings, and the weekly rent review (Economy.js)
   if (typeof economyMorning === "function") economyMorning();
   const bill = dailyBills();
+  if (typeof showDebugMenu !== "undefined" && showDebugMenu) {
+    // (free: nothing paid, the loan isn't paid down; the market still moves)
+    if (typeof _rollMarket === "function") _rollMarket();
+    return { ...bill, paid: 0, owed: billsOwed, free: true };
+  }
   if (typeof economyBillCharged === "function") economyBillCharged();
-  if (typeof showDebugMenu !== "undefined" && showDebugMenu) return { ...bill, paid: 0, owed: billsOwed, free: true };
   const due = bill.total + billsOwed;
   const paid = Math.max(0, Math.min(money, due));
   money -= paid;

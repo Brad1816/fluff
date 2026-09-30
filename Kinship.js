@@ -44,9 +44,26 @@ function _kinParents(id) {
   return [ok(m) ? m : null, ok(d) ? d : null];
 }
 
+// Is `anc` one of `id`'s ancestors (within a few generations)?
+function _kinIsAncestor(id, anc, memo) {
+  const key = `anc:${id}:${anc}`;
+  if (memo.has(key)) return memo.get(key);
+  let found = false;
+  let frontier = [id];
+  for (let g = 0; g < KIN_GENERATIONS && frontier.length && !found; g++) {
+    const next = [];
+    for (const x of frontier) for (const p of _kinParents(x)) if (p !== null) (p === anc ? (found = true) : next.push(p));
+    frontier = next;
+  }
+  memo.set(key, found);
+  return found;
+}
+
 // Kinship coefficient (the chance a gene picked from each is the same by
-// descent); relatedness is twice this. The later-born one (bigger id) is
-// the one traced back, so ancestors are never traced through descendants.
+// descent); relatedness is twice this. The one traced back is never an
+// ancestor of the other: the descendant if one is, else the later-born
+// (bigger id). (Bought stock's made-up grandparents get bigger ids than the
+// fluffy itself, so the id alone isn't enough.)
 function _kinship(a, b, depth, memo) {
   if (a === null || b === null || depth <= 0) return 0;
   const key = a < b ? `${a}:${b}:${depth}` : `${b}:${a}:${depth}`;
@@ -56,7 +73,8 @@ function _kinship(a, b, depth, memo) {
     const [m, d] = _kinParents(a);
     v = 0.5 * (1 + _kinship(m, d, depth - 1, memo));
   } else {
-    const [young, old] = a > b ? [a, b] : [b, a];
+    let [young, old] = a > b ? [a, b] : [b, a];
+    if (_kinIsAncestor(old, young, memo)) [young, old] = [old, young];
     const [m, d] = _kinParents(young);
     v = 0.5 * (_kinship(m, old, depth - 1, memo) + _kinship(d, old, depth - 1, memo));
   }
@@ -64,11 +82,32 @@ function _kinship(a, b, depth, memo) {
   return v;
 }
 
+// (a pedigree doesn't change once it's known, so results are kept; the
+// cache is cleared when new family records appear, and now and then)
+let _kinCache = new Map();
+let _kinCacheKey = "";
+let _kinCacheAt = 0;
+function _kinCacheCheck() {
+  const n = typeof fluffyRecords !== "undefined" && fluffyRecords ? Object.keys(fluffyRecords).length : 0;
+  const key = `${n}:${typeof fluffies !== "undefined" ? fluffies.length : 0}:${typeof nextFluffyId !== "undefined" ? nextFluffyId : 0}`;
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  if (key !== _kinCacheKey || now - _kinCacheAt > 30000 || _kinCache.size > 20000) {
+    _kinCache = new Map();
+    _kinCacheKey = key;
+    _kinCacheAt = now;
+  }
+}
+
 function relatedness(a, b) {
   const ia = a && typeof a === "object" ? a.id : a;
   const ib = b && typeof b === "object" ? b.id : b;
   if (ia === null || ia === undefined || ib === null || ib === undefined || ia === ib) return ia === ib && ia !== undefined ? 1 : 0;
-  return Math.min(1, 2 * _kinship(ia, ib, KIN_GENERATIONS * 2, new Map()));
+  _kinCacheCheck();
+  const key = ia < ib ? `${ia}:${ib}` : `${ib}:${ia}`;
+  if (_kinCache.has(key)) return _kinCache.get(key);
+  const r = Math.min(1, 2 * _kinship(ia, ib, KIN_GENERATIONS * 2, new Map()));
+  _kinCache.set(key, r);
+  return r;
 }
 
 function isCloseKin(a, b) {

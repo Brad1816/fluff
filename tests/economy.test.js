@@ -56,10 +56,9 @@ module.exports = [
       checkEqual(r.target, 620, "$20 + 12% of $5,000");
       checkEqual(r.first, 60, "at most double + $20 in one review");
       checkEqual(r.second, 140, "then again");
-      checkEqual(r.fall, 119, "falls 15% at most");
+      checkEqual(r.fall, 80, "falls half way to what the landlord would ask (at least 15%)");
       checkEqual(JSON.stringify(r.week), "[1234]", "yesterday's takings");
-      checkEqual(r.reviewed, 1, "reviewed on its day");
-      checkEqual(r.next, 7, "next review in a week");
+      checkEqual(r.reviewed, 0, "no review until there's a full week of takings");
       checkEqual(r.weekAgain, 1, "only once a morning");
       check(r.bill, "the bill uses it");
     },
@@ -77,17 +76,24 @@ module.exports = [
         const season = window.getSeason;
         try {
           window.getSeason = () => "Spring";
-          out.spring = houseHeatingToday();
+          out.spring = houseHeatingRate();
           window.getSeason = () => "Winter";
-          out.winter = houseHeatingToday();
+          out.winter = houseHeatingRate();
+          // It adds up over the day: half a winter day in one room is $6
+          economy.houseHeat = 0;
+          for (let t = 0; t < DAY_LENGTH / 2; t += 5) updateEconomy(5);
+          out.half = houseHeatingToday();
           addHeaterUse(9);
           money = 5000;
           out.billHeat = dailyBills().heating;
+          economy.lastMorning = getDayNumber();
           chargeDailyBills();
-          out.after = economy.heaterUse;
+          out.after = [economy.heaterUse, houseHeatingToday()];
           pressure.debtDays = POWER_CUT_DAY;
-          out.cut = houseHeatingToday();
+          billsOwed = 10;
+          out.cut = houseHeatingRate();
           pressure.debtDays = 0;
+          billsOwed = 0;
         } finally {
           window.getSeason = season;
         }
@@ -96,8 +102,9 @@ module.exports = [
       checkEqual(JSON.stringify(r.rooms), JSON.stringify([0, 15, 75]), "rooms: 15, 25, 35...");
       checkEqual(r.spring, 0, "no heating in spring");
       checkEqual(r.winter, 12, "one room in use, winter");
-      checkEqual(r.billHeat, 21, "house + heaters on the bill");
-      checkEqual(r.after, 0, "heater use charged once");
+      check(r.half >= 6 && r.half <= 7, `half a winter day, one room: ${r.half}`);
+      checkEqual(r.billHeat, r.half + 9, "house + heaters on the bill");
+      checkEqual(JSON.stringify(r.after), "[0,0]", "charged once");
       checkEqual(r.cut, 0, "power cut: no heating bill");
     },
   },
@@ -245,12 +252,67 @@ module.exports = [
       });
       check(opened, "clicking your money opened the accounts");
       check(plan, "joined the plan");
-      checkEqual(JSON.stringify(loan), JSON.stringify([2000, 2300]), "borrowed $2,000");
+      checkEqual(JSON.stringify(loan), JSON.stringify([2000, 2290]), "borrowed $2,000 (after the plan's first $10)");
       checkEqual(drawErr, null, "drawing");
       check(closed, "Esc closed it");
       check(k, "K opened it");
       check(today, "a debt row in Today");
       check(fromToday, "the debt row opened the accounts");
+    },
+  },
+  {
+    name: "economy: review fixes - deposits owed back, the power returns when the debt's paid, bailiffs give change, debug mode stays out of it",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const out = {};
+        // A commission given up with no money: the deposit is owed, not free
+        money = 0;
+        billsOwed = 0;
+        noteOrderFailed({ customer: "Test", commission: true, depositPaid: 800 });
+        out.owedDeposit = billsOwed;
+        // Power cut, then pay it off during the day
+        pressure.debtDays = POWER_CUT_DAY;
+        out.cut = powerCut();
+        money = 1000;
+        out.paid = payDebtNow();
+        out.after = [powerCut(), pressure.debtDays, billsOwed, money];
+        // Bailiffs: the cheapest fluffy that covers it, and change back
+        const a = __ec(300);
+        const b = __ec(500);
+        a.calculatePrice = () => 100;
+        b.calculatePrice = () => 1000;
+        billsOwed = 40;
+        money = 0;
+        pressure.debtDays = 5;
+        sendBailiffs();
+        out.took = [fluffies.includes(a), fluffies.includes(b)];
+        out.change = money;
+        out.cleared = [billsOwed, pressure.debtDays];
+        // Debug mode: no income counted, no loan, no heater bill
+        showDebugMenu = true;
+        try {
+          economy.today = 0;
+          noteIncome(500);
+          out.debugIncome = economy.today;
+          economy.week = [{ day: 1, amount: 1000 }];
+          out.debugLoan = takeLoan(500);
+          addHeaterUse(9);
+          out.debugHeat = economy.heaterUse;
+        } finally {
+          showDebugMenu = false;
+        }
+        return out;
+      }, SETUP);
+      checkEqual(r.owedDeposit, 800, "the deposit you couldn't pay back is owed");
+      check(r.cut, "power cut while owing");
+      checkEqual(JSON.stringify(r.after), JSON.stringify([false, 0, 0, 200]), "paid off in the day: power back at once");
+      checkEqual(JSON.stringify(r.took), JSON.stringify([false, true]), "took the one that covered it");
+      checkEqual(r.change, 20, "and gave the change back ($60 - $40)");
+      checkEqual(JSON.stringify(r.cleared), "[0,0]", "debt cleared, days reset");
+      checkEqual(r.debugIncome, 0, "no takings counted in debug");
+      checkEqual(r.debugLoan, false, "no loans in debug");
+      checkEqual(r.debugHeat, 0, "no heater bill in debug");
     },
   },
 ];

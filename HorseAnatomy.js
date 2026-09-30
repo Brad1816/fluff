@@ -636,13 +636,15 @@ class HorseAnatomy {
       this.horse.bloodReactionTimer = 15;
     }
 
-    if (isViable && this.horse.fatherId !== undefined) {
-      const dad = fluffies.find((f) => f.id == this.horse.fatherId);
+    // The foal's dad is the one who sired it (babyDaddyId), not its
+    // mother's own father
+    const sireId = this.horse.babyDaddyId;
+    if (isViable && sireId !== undefined && sireId !== null) {
+      const dad = fluffies.find((f) => f.id == sireId);
       if (dad && dad.isAlive) {
-        relationships[baby.id][this.horse.fatherId] = "father";
-        if (!relationships[this.horse.fatherId])
-          relationships[this.horse.fatherId] = {};
-        relationships[this.horse.fatherId][baby.id] = "child";
+        relationships[baby.id][sireId] = "father";
+        if (!relationships[sireId]) relationships[sireId] = {};
+        relationships[sireId][baby.id] = "child";
       }
     }
 

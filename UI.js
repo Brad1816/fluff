@@ -277,7 +277,10 @@ function drawUI(ctx) {
     let bestType = null;
     let bestEntry = null;
 
-    const sellable = findSellableItemAt(mouse.x, mouse.y);
+    // (things in the world are at world positions: in the park, add the camera)
+    const wx = mouse.x + (typeof isCameraScene === "function" && isCameraScene(currentScene) && typeof camera !== "undefined" ? camera.x : 0);
+    const wy = mouse.y + (typeof isCameraScene === "function" && isCameraScene(currentScene) && typeof camera !== "undefined" ? camera.y : 0);
+    const sellable = findSellableItemAt(wx, wy);
     if (sellable) {
       bestItem = sellable.item;
       bestEntry = sellable.entry;
@@ -288,7 +291,7 @@ function drawUI(ctx) {
     // Check Fluffies
     for (const f of fluffies) {
       if (f.scene !== currentScene) continue;
-      if (f.hitTestAsSeen(mouse.x, mouse.y)) {
+      if (f.hitTestAsSeen(wx, wy)) {
         const y = f.getBottomY();
         if (y > maxY) {
           maxY = y;
@@ -460,8 +463,10 @@ function drawUI(ctx) {
           bw = img.width;
           bh = img.height;
         }
+        const camX = typeof isCameraScene === "function" && isCameraScene(currentScene) && typeof camera !== "undefined" ? camera.x : 0;
+        const camY = typeof isCameraScene === "function" && isCameraScene(currentScene) && typeof camera !== "undefined" ? camera.y : 0;
         if (
-          isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh)
+          isPointInRect(mouse.x + camX, mouse.y + camY, obj.x - bw / 2, obj.y - bh, bw, bh)
         ) {
           const tooltipText = `Right click to extract foal (Formula: ${obj.formulaCharges})`;
           ctx.font = "bold 14px Arial";
@@ -728,6 +733,18 @@ canvas.addEventListener("mousedown", (e) => {
   if (gameState === "PAUSED") {
     handlePauseMenuClick();
     return;
+  }
+
+  // The middle button does nothing
+  if (e.button === 1) return;
+  // A right-click never presses a button on a pop-up screen (no loans or
+  // jabs by accident). The right-click menu just makes way for another
+  // fluffy's; any other open screen ignores it.
+  if (e.button === 2 && typeof SCREENS !== "undefined") {
+    const open = SCREENS.filter((s) => _screenOpen(s));
+    if (open.length && open.every((s) => s.name === "tricks")) {
+      if (typeof closeTrickUI === "function") closeTrickUI();
+    } else if (open.length) return;
   }
 
   // Pop-up screens, top one first (Screens.js)

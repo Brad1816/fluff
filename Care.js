@@ -131,12 +131,16 @@ function _sitWithTick(f, step) {
   s.left -= d;
   const share = d / SIT_WITH_TIME;
   f.changeHappiness(SIT_WITH_JOY * share);
-  if (f.separation && typeof f.separation.grief === "number") f.separation.grief = Math.max(0, f.separation.grief - SIT_WITH_GRIEF * share);
+  if (f.separation && typeof f.separation.grief === "number") {
+    f.separation.grief = Math.max(0, f.separation.grief - SIT_WITH_GRIEF * share);
+    // ...and the ache it grows back towards eases too, so it lasts
+    if (typeof f.separation.bond === "number") f.separation.bond = Math.max(0, f.separation.bond - SIT_WITH_GRIEF * share * 0.5);
+  }
   if (typeof f.missingOwner === "number") f.missingOwner = Math.max(0, f.missingOwner - 0.1 * share);
   if (s.left <= 0 || _caNow() >= s.until) {
     f.sitWith = null;
     if (typeof giveAffection === "function") giveAffection(f, "sat_with");
-    if (typeof noteTitleCare === "function") noteTitleCare(f, "sat_with"); // healing (Titles.js)
+    if (typeof noteTitleCare === "function") noteTitleCare(f, "sat_with"); // healing (Titles.js; sat_with isn't an affection act)
     if (typeof recordStory === "function") recordStory("comforted", f);
     f.expressionOverride = "GOOD_UPSIES";
     f.expressionOverrideTimer = 2;
@@ -153,7 +157,6 @@ function praiseFluffy(f) {
   f.changeHappiness(0.03);
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 1.5;
-  if (typeof noteTitleCare === "function") noteTitleCare(f, "praised");
   _caSay(f, "PRAISED");
   return true;
 }
@@ -298,7 +301,7 @@ function noteConditionFeed(bowl) {
     if (!f.isAlive || !f.adopted || f.scene !== bowl.scene || f.currentStateKey === "SLEEPING") continue;
     const c = _caCond(f);
     c.food = (c.food || 0) + 1;
-    if (c.food >= CONDITION_AT && f.hunger < 0.7 && !f.isDragging && !inTimeOut(f) && typeof f.setTargetPosition === "function") {
+    if (c.food >= CONDITION_AT && f.hunger < 0.7 && (typeof canBeMovedExternally === "function" ? canBeMovedExternally(f) : !f.isDragging && !inTimeOut(f))) {
       f.initBehavior("RUNNING");
       f.setTargetPosition(bowl.x + (Math.random() - 0.5) * 60, bowl.y + 20);
       f.expressionOverride = "GOOD_UPSIES";

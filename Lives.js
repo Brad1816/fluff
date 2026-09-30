@@ -127,15 +127,19 @@ function _lvCaption(f) {
 // The picture: a square around it, from the screen
 function _lvGrab(f) {
   try {
-    if (typeof canvas === "undefined" || typeof document === "undefined") return null;
+    if (typeof document === "undefined") return null;
+    // From the world picture (script.js render buffer), not the screen: no
+    // menus, buttons or the right-click row in the photo
+    const src = typeof _renderBuffer !== "undefined" && _renderBuffer ? _renderBuffer : typeof canvas !== "undefined" ? canvas : null;
+    if (!src) return null;
     const cam = typeof isCameraScene === "function" && isCameraScene(f.scene) && typeof camera !== "undefined" ? camera : { x: 0, y: 0 };
     const size = 200 * Math.max(0.6, f.scale || 1);
-    const sx = Math.max(0, Math.min(canvas.width - size, f.x - cam.x - size / 2));
-    const sy = Math.max(0, Math.min(canvas.height - size, f.y - cam.y - size * 0.7));
+    const sx = Math.max(0, Math.min(src.width - size, f.x - cam.x - size / 2));
+    const sy = Math.max(0, Math.min(src.height - size, f.y - cam.y - size * 0.7));
     const c = document.createElement("canvas");
     c.width = PHOTO_SIZE;
     c.height = PHOTO_SIZE;
-    c.getContext("2d").drawImage(canvas, sx, sy, size, size, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
+    c.getContext("2d").drawImage(src, sx, sy, size, size, 0, 0, PHOTO_SIZE, PHOTO_SIZE);
     return c.toDataURL("image/jpeg", 0.7);
   } catch (e) {
     return null;

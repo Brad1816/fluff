@@ -125,7 +125,6 @@ function giveAffection(f, type, scale = 1) {
   if (!f || !f.isAlive) return 0;
   const act = AFFECTION_ACTS[type];
   if (!act) return 0;
-  if (type !== "named" && typeof recordStory === "function") recordStory(type, f); // (a tally, StoryBook.js)
   ensurePlayerMemory(f);
   const now = _affNow();
   const day = _affDay();
@@ -136,6 +135,10 @@ function giveAffection(f, type, scale = 1) {
   today.at[type] = now;
   const n = today.n[type] || 0;
   today.n[type] = n + 1;
+  // Only the first few of each a day count for the story, the room's feel
+  // and healing/spoiling - so spam-brushing can't undo a beating
+  const counts = n < act.perDay;
+  if (counts && type !== "named" && typeof recordStory === "function") recordStory(type, f); // (a tally, StoryBook.js)
   let amount = act.amount * scale * (n < act.perDay ? 1 : AFFECTION_WEAK);
   // A frightened fluffy is slow to believe you mean it
   if ((f.playerFear || 0) >= 0.45) amount *= 0.5;
@@ -147,7 +150,7 @@ function giveAffection(f, type, scale = 1) {
   rememberPlayerEvent(f, type);
   if (typeof onKindnessToNamed === "function") onKindnessToNamed(f); // (Identity.js)
   if (typeof noteWishEvent === "function") noteWishEvent(f, type); // a toy of its own (Wishes.js)
-  if (typeof noteTitleCare === "function") noteTitleCare(f, type); // healing, spoiling (Titles.js)
+  if (counts && typeof noteTitleCare === "function") noteTitleCare(f, type); // healing, spoiling (Titles.js)
   return f.playerTrust - before;
 }
 

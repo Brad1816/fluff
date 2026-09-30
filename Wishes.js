@@ -366,6 +366,8 @@ function updateWish(f, step) {
   try {
     still = w.id === "stayWithMum" ? !!_wById(w.target) && _wById(w.target).isAlive : def.when(f) || (def.done && !def.done(f, w) && w.id !== "trick" && w.id !== "toy");
     if ((w.id === "trick" || w.id === "toy") && !_wYoung(f)) still = false;
+    // (a mare that's expecting still wants her foals: it comes true at the birth)
+    if (w.id === "foal" && f.isPregnant) still = true;
     if (w.id === "seeDaughter" && typeof getFamilyRecord === "function") {
       const r = getFamilyRecord(w.target);
       if (r && r.status === "dead") still = false;

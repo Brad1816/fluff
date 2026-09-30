@@ -235,8 +235,20 @@ const SAVED_GAME_STATE = [
 // a game is started or loaded (open windows, cars, the current sell offer...)
 function resetTemporaryGameState() {
   currentSellRequest = null;
-  // A raid on the backyard doesn't carry over (ParkOutings.js)
-  if (typeof _raid !== "undefined") _raid = null;
+  // Once-a-day checks start afresh, so a new game or a load doesn't skip
+  // (or repeat) a day's runaways, inspector, notes, raid chance...
+  if (typeof _inCheckedDay !== "undefined") _inCheckedDay = null;
+  if (typeof _raDayChecked !== "undefined") _raDayChecked = null;
+  if (typeof _repDay !== "undefined") _repDay = null;
+  if (typeof _raidCheckedNight !== "undefined") _raidCheckedNight = null;
+  if (typeof _flDay !== "undefined") _flDay = null;
+  if (typeof _lastTurningMsgAt !== "undefined") _lastTurningMsgAt = -Infinity;
+  if (typeof _loreGreetAt !== "undefined") for (const k of Object.keys(_loreGreetAt)) delete _loreGreetAt[k];
+  // Family ties worked out for the last game (Kinship.js)
+  if (typeof _kinCache !== "undefined") _kinCache = new Map();
+  // Pictures and hint cards from the last game
+  if (typeof _photoImages !== "undefined") for (const k of Object.keys(_photoImages)) delete _photoImages[k];
+  if (typeof currentHint !== "undefined") currentHint = null;
   // Party bunting and confetti (HouseLife.js)
   if (typeof partyDecor !== "undefined") partyDecor = {};
   if (typeof _confetti !== "undefined") _confetti = [];

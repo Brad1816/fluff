@@ -212,15 +212,23 @@ function getRelMapLayout() {
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
   const side = 290;
-  const graph = { x: x + 16, y: y + 100, w: w - side - 40, h: h - 100 - 62 };
-  const pane = { x: graph.x + graph.w + 16, y: y + 60, w: side, h: h - 60 - 62 };
+  const paneX = x + 16 + (w - side - 40) + 16;
+  // Filter chips: a second row if they'd run under the side pane
   const chips = [];
   let cx = x + 24;
+  let cy = y + 58;
   for (const k of REL_KINDS) {
     const cw = 16 + k.label.length * 8 + 22;
-    chips.push({ id: k.id, x: cx, y: y + 58, w: cw, h: 28 });
+    if (cx + cw > paneX - 8 && cx > x + 24) {
+      cx = x + 24;
+      cy += 34;
+    }
+    chips.push({ id: k.id, x: cx, y: cy, w: cw, h: 28 });
     cx += cw + 8;
   }
+  const top = cy + 42;
+  const graph = { x: x + 16, y: top, w: w - side - 40, h: y + h - 62 - top };
+  const pane = { x: paneX, y: y + 60, w: side, h: h - 60 - 62 };
   const data = relMapData();
   const nodes = _relNodePositions(data, graph);
   return {
@@ -466,9 +474,16 @@ function drawRelationshipMap(c) {
     c.fillText("You", L.you.x, L.you.y + 1);
     c.textBaseline = "alphabetic";
   }
-  // Fluffies
+  // Fluffies (the focused one's neighbours worked out once)
+  const near = new Set();
+  if (focus !== null)
+    for (const e of data.edges) {
+      if (!relMapFilters[e.kind] || !e.b) continue;
+      if (e.a.id === focus) near.add(e.b.id);
+      else if (e.b.id === focus) near.add(e.a.id);
+    }
   for (const [id, n] of L.nodes) {
-    const on = focus === null || id === focus || data.edges.some((e) => relMapFilters[e.kind] && ((e.a.id === focus && e.b && e.b.id === id) || (e.b && e.b.id === focus && e.a.id === id)));
+    const on = focus === null || id === focus || near.has(id);
     c.globalAlpha = on ? 1 : 0.35;
     const sel = id === relMapSel;
     c.fillStyle = "rgba(255,255,255,0.12)";

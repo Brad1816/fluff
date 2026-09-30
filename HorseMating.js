@@ -20,6 +20,16 @@ addHorseMethods({
     // with them (Kinship.js)
     if (typeof kinBlocksMating === "function" && kinBlocksMating(this, friend, maleForced, femaleForced)) {
       if (this.gender === "male") this.specialHuggiesCooldown = Math.max(this.specialHuggiesCooldown || 0, 30);
+      // Special friends who turn out to be close family: just friends now,
+      // so each can find someone else
+      if (!femaleForced && typeof relationships !== "undefined") {
+        for (const [x, y] of [
+          [this, friend],
+          [friend, this],
+        ]) {
+          if (relationships[x.id] && relationships[x.id][y.id] === "special_friend") relationships[x.id][y.id] = "friend";
+        }
+      }
       if (typeof this.tooYoungToSpeak === "function" && !this.tooYoungToSpeak() && Math.random() < 0.3 && typeof getDialogue === "function")
         this.speak(getDialogue(["SPECIAL_HUGGIES", "FAMILY"], this, friend));
       return false;

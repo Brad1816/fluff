@@ -313,6 +313,9 @@ function _parkWanderOff() {
       !f.isDragging &&
       !f.currentCage &&
       f.growth >= 1 &&
+      !f.formerPet && // (one of your old fluffies stays: you might meet it again)
+      // (not a mum with a foal still depending on her)
+      !fluffies.some((c) => c.isAlive && c.motherId === f.id && c.growth < 1) &&
       (currentScene !== PARK_SCENE || !isOnParkScreen(f.x, f.y, 150)),
   );
   if (!pool.length) return null;

@@ -189,9 +189,14 @@ function noteTitleCare(f, kind) {
 }
 
 // Bonds.noteFluffyAttack: it stepped in to defend one it cares for
-function noteTitleDefend(f) {
+function noteTitleDefend(f, victim = null) {
   if (!f || !f.adopted) return;
   const st = _tiState(f);
+  // One fight counts once (not every blow of it)
+  const now = _tiNow();
+  const key = victim && victim.id !== undefined ? victim.id : "?";
+  if (st.lastDefend && st.lastDefend.key === key && now - st.lastDefend.at < HOUR_LENGTH) return;
+  st.lastDefend = { key, at: now };
   st.defends = (st.defends || 0) + 1;
   if (st.defends >= GUARDIAN_DEFENDS && !titleOf(f)) setTitle(f, "Guardian");
 }
@@ -297,6 +302,9 @@ function _tiDaily(f) {
     }
     return false;
   }
+  // Cherished only while it's still loved: neglected or drilled until its
+  // trust slips, it's Wary of you (Wary heals back with time)
+  if (t === "Cherished" && (f.playerTrust || 0) < CHERISH_TRUST - 0.2) return setTitle(f, "Wary", `${_tiName(f)} isn't sure of you any more: Wary.`);
   if (t === "Rebel") {
     if ((st.respect || 0) >= REBEL_RESPECT && now - (st.lastHarm ?? -1e9) >= 2 * DAY_LENGTH) return setTitle(f, "Guardian", `${_tiName(f)} was won round: a Rebel no more, a Guardian.`);
     return false;

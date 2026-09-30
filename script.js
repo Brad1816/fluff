@@ -2018,6 +2018,12 @@ window.addEventListener("keydown", (e) => {
     if (typeof transitionPhase !== "undefined" && transitionPhase !== "OFF") {
       return;
     }
+    // A debug action waiting for a click (pair two fluffies...): Esc cancels it
+    if (typeof debugMenuAction !== "undefined" && debugMenuAction) {
+      debugMenuAction = null;
+      debugPairFirst = null;
+      return;
+    }
     // Close the top pop-up screen (Screens.js)
     if (escapeScreens()) {
       return;
@@ -2116,6 +2122,9 @@ window.addEventListener("keydown", (e) => {
     showFluffyNames = !showFluffyNames;
     return;
   }
+  // Holding a key down doesn't flick a screen open and shut (or race
+  // through the speeds)
+  if (e.repeat && ["F1", "KeyG", "KeyL", "KeyK", "KeyM", "KeyT", "KeyO", "KeyJ", "KeyN", "KeyH", "KeyB", "KeyF"].includes(e.code)) return;
   // F1: help (Help.js)
   if (e.code === "F1" && typeof isHelpOpen === "function") {
     e.preventDefault();
@@ -2132,7 +2141,12 @@ window.addEventListener("keydown", (e) => {
   // M: who's who, the relationship map (RelationshipMap.js)
   if (e.code === "KeyM" && typeof isRelationshipMapOpen === "function") {
     if (isRelationshipMapOpen()) closeRelationshipMap();
-    else if (!isAnyScreenOpen()) openRelationshipMap(inspectedFluffy || null);
+    else if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
+      // from a fluffy's magnifying glass: the map, with that one picked
+      const f = inspectedFluffy;
+      inspectedFluffy = null;
+      openRelationshipMap(f);
+    } else if (!isAnyScreenOpen()) openRelationshipMap(null);
     return;
   }
   // G: the goals list (Goals.js)
@@ -2188,11 +2202,6 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "KeyB") {
     showBedNames = !showBedNames;
-    return;
-  }
-  if (e.code === "Escape" && debugMenuAction) {
-    debugMenuAction = null;
-    debugPairFirst = null;
     return;
   }
 

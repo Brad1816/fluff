@@ -166,9 +166,10 @@ function updateTerritories(dt) {
   const herds = _herdList();
   const parkAdults = new Map();
   for (const h of herds) {
+    // (your own herd out on a park outing doesn't claim land - ParkOutings.js)
     parkAdults.set(
       h,
-      getHerdMembers(h).filter((f) => f.scene === PARK_SCENE && _grownUp(f)),
+      typeof herdIsYours === "function" && herdIsYours(h) ? [] : getHerdMembers(h).filter((f) => f.scene === PARK_SCENE && _grownUp(f)),
     );
   }
 
@@ -469,7 +470,7 @@ class HomeTerritoryDesire extends Desire {
     this.lastTime = -Infinity;
   }
   evaluate(horse) {
-    if (horse.scene !== PARK_SCENE) return 0;
+    if (horse.scene !== PARK_SCENE || horse.adopted) return 0;
     if (!horse.isAlive || horse.isDragging || horse.placedOn || horse.isScared || horse.isStacking) return 0;
     if (horse.sleepingOrTargetSet() || horse.tooYoungToWalk() || !horse.canSee()) return 0;
     if (horse.happiness <= WAN_DIE_THRESHOLD || horse.hunger < 0.35) return 0;

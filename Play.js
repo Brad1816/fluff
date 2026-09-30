@@ -262,7 +262,7 @@ function updatePlay(dt) {
     if (f.boredom >= BOREDOM_VERY) {
       f.changeHappiness(-0.1 * hours);
       if (typeof f._nextMischief !== "number") f._nextMischief = now + 300 + Math.random() * 300;
-      if (now >= f._nextMischief && !f.trickNow && f.currentStateKey !== "EATING") {
+      if (now >= f._nextMischief && !f.trickNow && f.currentStateKey !== "EATING" && (typeof canBeMovedExternally !== "function" || canBeMovedExternally(f))) {
         f._nextMischief = now + 480 + Math.random() * 420; // about twice a game day
         boredMischief(f);
       }

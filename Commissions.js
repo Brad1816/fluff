@@ -183,7 +183,12 @@ function noteOrderFailed(order) {
   c.loyalty -= 1; // twice and they sulk for a while (customerIsUpset)
   // A commission's deposit goes back
   if (order.commission && order.depositPaid) {
-    money = Math.max(0, money - order.depositPaid);
+    // (what you can't pay back is owed, like a bill - Bills.js)
+    if (!(typeof showDebugMenu !== "undefined" && showDebugMenu)) {
+      const back = Math.min(money, order.depositPaid);
+      money -= back;
+      if (order.depositPaid > back && typeof billsOwed === "number") billsOwed += order.depositPaid - back;
+    }
     order.depositPaid = 0;
     if (typeof addUIMessage === "function") addUIMessage(`The deposit goes back to ${order.customer}.`);
   }

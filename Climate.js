@@ -180,7 +180,8 @@ function _clElder(scene) {
 // { label, colour, score, trend (-1/0/1), reasons: [text] }
 function climateOf(scene) {
   if (!scene || typeof scene !== "string") return { label: "Calm", colour: CLIMATE_LABELS.Calm.colour, score: 0, trend: 0, reasons: [] };
-  const now = _clNow();
+  // (worked out once a game second: it's asked for all the time)
+  const now = Math.floor(_clNow());
   if (_climateCache && _climateCache.at === now && _climateCache.map[scene]) return _climateCache.map[scene];
   if (!_climateCache || _climateCache.at !== now) _climateCache = { at: now, map: {} };
   const r = _clRoom(scene, false) || { w: 0, t: 0, f: 0, g: 0, why: {} };
@@ -282,11 +283,12 @@ function climateGreetStart() {
 }
 function climateGreetFluffy(f, scene) {
   if (!f || !f.adopted || f.isDragging || f.growth < 0.3) return false;
+  const free = typeof canBeMovedExternally !== "function" || canBeMovedExternally(f);
   const c = climateOf(scene);
   const fear = f.playerFear || 0;
   const trust = f.playerTrust || 0;
   // Scatter: it's afraid of you
-  if (fear >= CLIMATE_FLINCH_FEAR && fear >= trust * 0.8) {
+  if (fear >= CLIMATE_FLINCH_FEAR && fear >= trust * 0.8 && free) {
     const w = typeof sceneW === "function" ? sceneW(scene) : 1280;
     const away = typeof mouse !== "undefined" && mouse.x < w / 2 ? w - 90 - Math.random() * 150 : 90 + Math.random() * 150;
     if (typeof f.initBehavior === "function") f.initBehavior("RUNNING");
@@ -304,7 +306,7 @@ function climateGreetFluffy(f, scene) {
   }
   // Run to you: a happy room and it loves you
   if ((c.label === "Warm" && trust >= 0.6) || (c.label === "Calm" && trust >= 0.8)) {
-    if (_clGreetRunners >= CLIMATE_GREET_RUNNERS || f.currentStateKey === "SLEEPING") return false;
+    if (_clGreetRunners >= CLIMATE_GREET_RUNNERS || f.currentStateKey === "SLEEPING" || !free) return false;
     _clGreetRunners++;
     const top = typeof sceneTop === "function" ? sceneTop(scene) + 60 : 200;
     const tx = typeof mouse !== "undefined" ? mouse.x + (Math.random() - 0.5) * 120 : f.x;
@@ -327,7 +329,7 @@ function _clFlinch(f) {
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 1;
   // a step back, if it's just standing about
-  if (f.currentStateKey === "IDLE" && typeof f.setTargetPosition === "function" && typeof mouse !== "undefined") {
+  if (f.currentStateKey === "IDLE" && typeof f.setTargetPosition === "function" && typeof mouse !== "undefined" && (typeof canBeMovedExternally !== "function" || canBeMovedExternally(f))) {
     const w = typeof sceneW === "function" ? sceneW(f.scene) : 1280;
     const dx = f.x >= mouse.x ? 50 : -50;
     f.initBehavior("MOVING");

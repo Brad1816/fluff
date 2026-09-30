@@ -206,13 +206,16 @@ function updatePersonality(dt) {
       if (typeof fearsOf === "function") {
         const fears = fearsOf(f);
         const had = gp.fears || {};
+        // (the worst each fear has been: getting over it slowly counts too)
+        const peak = { ...had };
         for (const [k, v] of Object.entries(fears)) {
           if ((had[k] || 0) >= 0.3 && v < 0.05) {
             const name = typeof FEARS !== "undefined" ? (FEARS.find((x) => x.key === k) || {}).name || k : k;
             shiftTrait(f, "fearGone", String(name));
-          }
+            peak[k] = v;
+          } else peak[k] = Math.max(had[k] || 0, v);
         }
-        gp.fears = { ...fears };
+        gp.fears = peak;
       }
     }
   }

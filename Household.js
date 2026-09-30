@@ -160,13 +160,24 @@ function getHouseholdLayout(data = computeHousehold()) {
     prev: { x: x + 24, y: y + h - 46, w: 50, h: 32 },
     next: { x: x + 80, y: y + h - 46, w: 50, h: 32 },
     close: { x: x + w - 150, y: y + h - 46, w: 130, h: 32 },
-    // What fluffies who love you call you (Identity.js)
-    keeper: { x: x + w - 370, y: y + h - 46, w: 210, h: 32 },
-    // The Memories book (SharedMemories.js)
-    memories: { x: x + w - 530, y: y + h - 46, w: 150, h: 32 },
-    // Who's who (RelationshipMap.js)
-    relations: { x: x + w - 690, y: y + h - 46, w: 150, h: 32 },
+    // Who's who (RelationshipMap.js), the Memories book (SharedMemories.js)
+    // and what fluffies who love you call you (Identity.js): between the
+    // page arrows and Close, narrower on a small window
+    ..._hhBottomButtons(x, y, w, h),
   };
+}
+
+function _hhBottomButtons(x, y, w, h) {
+  const right = x + w - 150 - 10;
+  const left = x + 200; // (after the page arrows and "1 / 2")
+  const want = [150, 150, 210];
+  const gap = 10;
+  const k = Math.min(1, (right - left - gap * 2) / want.reduce((a, b) => a + b, 0));
+  const ws = want.map((v) => Math.max(70, Math.floor(v * k)));
+  const keeper = { x: right - ws[2], y: y + h - 46, w: ws[2], h: 32 };
+  const memories = { x: keeper.x - gap - ws[1], y: y + h - 46, w: ws[1], h: 32 };
+  const relations = { x: memories.x - gap - ws[0], y: y + h - 46, w: ws[0], h: 32 };
+  return { keeper, memories, relations };
 }
 
 const HH_COLS = { name: 70, room: 330, hearts: 470, needs: 580 };
@@ -342,8 +353,13 @@ function drawHousehold(c) {
     c.textBaseline = "middle";
     c.font = "13px Arial";
     c.fillStyle = "#ffb3b3";
-    const left = L.pages > 1 ? L.next.x + L.next.w + 70 : L.x + 24;
-    c.fillText(fitText(c, hoverText, L.close.x - left - 16), left, L.close.y + L.close.h / 2);
+    // (on its own line above the buttons, so they don't cover it)
+    const left = L.x + 24;
+    const ty = L.close.y - 14;
+    c.fillStyle = "rgba(20, 10, 25, 0.85)";
+    c.fillRect(left - 6, ty - 11, L.w - 36, 22);
+    c.fillStyle = "#ffb3b3";
+    c.fillText(fitText(c, hoverText, L.w - 48), left, ty);
     c.textBaseline = "alphabetic";
   }
   if (L.pages > 1) {

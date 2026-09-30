@@ -292,6 +292,11 @@ function acceptSellRequest() {
   const req = currentSellRequest;
   if (!req) return false;
   const i = fluffies.findIndex((f) => f.id === req.fluffyId);
+  // (it has to still be sellable: no accessories on, not being carried)
+  if (i > -1 && (!fluffies[i].canBeSold() || fluffies[i].isDragging)) {
+    if (typeof addUIMessage === "function") addUIMessage(fluffies[i].isDragging ? "Put it down first." : "Take its accessories off first.");
+    return false;
+  }
   if (i > -1) {
     if (!showDebugMenu) money += req.price;
     if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: req.price });

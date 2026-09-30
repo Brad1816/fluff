@@ -203,6 +203,7 @@ module.exports = [
           updateSleepHeaps(0.5);
         }
         out.after = [d(a, b), d(b, c), d(s, s2)];
+        _heapCache = null; // (kept for a moment, for drawing)
         out.heaps = sleepHeaps("INDOORS").map((h) => h.length);
         out.facing = c._pileWith ? (fluffies.find((x) => x.id === c._pileWith).x > c.x) === c.facingRight : "no buddy";
         // A foal and its mum

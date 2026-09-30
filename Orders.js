@@ -355,7 +355,8 @@ function acceptCustomerOrder(orderId) {
   customerOrders.active.push(order);
   // A commission pays a deposit up front (Commissions.js)
   if (order.commission && order.deposit) {
-    order.depositPaid = order.deposit;
+    // (debug mode: money's locked, so nothing was paid, and nothing's owed back)
+    order.depositPaid = showDebugMenu ? 0 : order.deposit;
     if (!showDebugMenu) money += order.deposit;
     if (typeof addUIMessage === "function") addUIMessage(`${order.customer} paid a $${order.deposit} deposit. The rest when you deliver.`);
   }

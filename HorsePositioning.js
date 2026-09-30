@@ -960,11 +960,12 @@ class HorsePositioning {
         f.currentCage === this.horse.currentCage &&
         fenceCanReachThing(this.horse, f) &&
         !this.horse.fluffyIsRelatedOrSpecialFriend(f) &&
-        !(typeof kinBlocksRomance === "function" && kinBlocksRomance(this.horse, f)) &&
         !f.fearedFluffies.some((ff) => ff.id === this.horse.id) &&
         rels[f.id] === "friend" &&
         !this.horse.friendshipCooldowns[f.id] &&
-        isSexuallyAttractedTo(this.horse, f)
+        isSexuallyAttractedTo(this.horse, f) &&
+        // (last: the family check is the dearest one - Kinship.js)
+        !(typeof kinBlocksRomance === "function" && kinBlocksRomance(this.horse, f))
       ) {
         const d = Math.sqrt(
           (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,

@@ -285,9 +285,11 @@ function getVetLayout() {
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
   const list = vetPatients();
-  const pages = Math.max(1, Math.ceil(list.length / VET_ROWS));
+  // As many rows as fit above the bottom buttons (VET_ROWS at most)
+  const perPage = Math.max(2, Math.min(VET_ROWS, Math.floor((h - 140 - 56) / 54)));
+  const pages = Math.max(1, Math.ceil(list.length / perPage));
   vetPage = Math.max(0, Math.min(pages - 1, vetPage));
-  const rows = list.slice(vetPage * VET_ROWS, (vetPage + 1) * VET_ROWS).map((f, i) => {
+  const rows = list.slice(vetPage * perPage, (vetPage + 1) * perPage).map((f, i) => {
     const ry = y + 140 + i * 54;
     const bx = x + w - 20;
     return {
@@ -299,8 +301,22 @@ function getVetLayout() {
       jab: { x: bx - 96, y: ry + 9, w: 88, h: 30 },
       treat: { x: bx - 96 - 106, y: ry + 9, w: 100, h: 30 },
       check: { x: bx - 96 - 106 - 106, y: ry + 9, w: 100, h: 30 },
-
     };
+  });
+  // Along the bottom, between the page arrows and Close: breeding advice,
+  // the vet plan (Economy.js), and everyone at once. Narrower when the
+  // window is small, so they never run into Close.
+  const close = { x: x + w - 150, y: y + h - 46, w: 130, h: 32 };
+  const left = x + 196;
+  const want = [160, 180, 130, 150];
+  const gap = 6;
+  const room = close.x - 10 - left - gap * (want.length - 1);
+  const k = Math.min(1, room / want.reduce((a2, b2) => a2 + b2, 0));
+  let bxs = left;
+  const bottom = want.map((ww) => {
+    const r = { x: bxs, y: y + h - 46, w: Math.max(60, Math.floor(ww * k)), h: 32 };
+    bxs += r.w + gap;
+    return r;
   });
   return {
     x,
@@ -310,16 +326,13 @@ function getVetLayout() {
     rows,
     pages,
     list,
-    // Along the bottom: breeding advice, the vet plan (Economy.js), and
-    // everyone at once
-    // (after the page arrows and "1 / 2", before Close)
-    advice: { x: x + 196, y: y + h - 46, w: 160, h: 32 },
-    plan: { x: x + 362, y: y + h - 46, w: 180, h: 32 },
-    checkAll: { x: x + 548, y: y + h - 46, w: 130, h: 32 },
-    jabAll: { x: x + 684, y: y + h - 46, w: Math.max(110, w - 684 - 160), h: 32 },
+    advice: bottom[0],
+    plan: bottom[1],
+    checkAll: bottom[2],
+    jabAll: bottom[3],
     prev: { x: x + 24, y: y + h - 46, w: 50, h: 32 },
     next: { x: x + 80, y: y + h - 46, w: 50, h: 32 },
-    close: { x: x + w - 150, y: y + h - 46, w: 130, h: 32 },
+    close,
   };
 }
 
@@ -351,7 +364,7 @@ function drawVet(c) {
     c.fillStyle = "#f7d774";
     if (!pick) c.fillText("Breeding advice: pick a grown fluffy to see who it should (and shouldn't) have foals with.", L.x + 24, L.y + 84);
     else {
-      const best = typeof bestMatches === "function" ? bestMatches(pick, 3) : [];
+      const best = typeof bestMatches === "function" ? _vetBestMatches(pick) : [];
       const names = best.map((b) => `${_vetName(b.f)} (${Math.round(b.advice.alive * 100)}% born alive)`);
       c.fillText(fitText(c, `Best matches for ${_vetName(pick)}: ${names.length ? names.join(", ") : "nobody here yet"}.`, L.w - 48), L.x + 24, L.y + 84);
     }
@@ -441,6 +454,14 @@ function drawVet(c) {
 
 // ---- Breeding advice (Kinship.js) ----
 
+// The picked fluffy's best matches, worked out twice a second at most
+let _vetBestCache = null;
+function _vetBestMatches(pick) {
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  if (!_vetBestCache || _vetBestCache.id !== pick.id || now - _vetBestCache.at > 500) _vetBestCache = { id: pick.id, at: now, list: bestMatches(pick, 3) };
+  return _vetBestCache.list;
+}
+
 // A row in advice mode: how it goes with the picked fluffy
 function _drawVetAdviceRow(c, r) {
   const f = r.f;
@@ -464,7 +485,7 @@ function _drawVetAdviceRow(c, r) {
     c.fillText(!grown ? "Too young to breed" : pick ? "-" : "", r.x + 450, r.y + 22);
   } else {
     const a = pairAdvice(pick, f);
-    const best = bestMatches(pick, 3).some((b) => b.f === f);
+    const best = _vetBestMatches(pick).some((b) => b.f === f);
     c.font = "bold 13px Arial";
     c.fillStyle = a.tone === "bad" ? "#ff8a80" : a.tone === "good" ? "#9fe0a8" : "#f7d774";
     c.fillText(fitText(c, `${best ? "\u2605 " : ""}${a.verdict}`, w - 110), r.x + 450, r.y + 22);

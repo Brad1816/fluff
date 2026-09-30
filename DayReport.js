@@ -196,7 +196,8 @@ function getDayReportLayout() {
   const n = dayReportShown && dayReportShown.nightEvents ? Math.min(DR_NIGHT_ROWS, dayReportShown.nightEvents.length) : 0;
   const h = DR_H + (n ? 30 + n * 20 : 0) + (dayReportShown && dayReportShown.summary ? 78 : 0);
   const y = Math.round(Math.max(8, height / 2 - h / 2));
-  return { x, y, w: DR_W, h, btn: { x: x + DR_W / 2 - 90, y: y + h - 58, w: 180, h: 40 } };
+  // (on a short window the button stays on screen, over the bottom of the card)
+  return { x, y, w: DR_W, h, btn: { x: x + DR_W / 2 - 90, y: Math.min(y + h - 58, height - 50), w: 180, h: 40 } };
 }
 
 function _listText(list, max = 4) {

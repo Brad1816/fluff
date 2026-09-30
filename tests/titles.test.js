@@ -147,7 +147,7 @@ module.exports = [
         out.spoiled = titleOf(s);
         // Guardian
         const g = __mk(700);
-        for (let i = 0; i < GUARDIAN_DEFENDS; i++) noteTitleDefend(g);
+        for (let i = 0; i < GUARDIAN_DEFENDS; i++) noteTitleDefend(g, { id: 1000 + i }); // (three different fights)
         out.guardian = titleOf(g);
         // Survivor: hurt badly, then trusts you again
         const v = __mk(900, "female", { bravery: 0.2, temper: -0.5 });

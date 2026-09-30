@@ -450,8 +450,11 @@ function getTrickMenuLayout() {
   const f = trickUIFluffy();
   if (!f) return null;
   const cam = _trCam();
-  const cx = f.x - cam.x;
-  const top = f.y - cam.y - 90 - 60 * (f.growth || 1);
+  // Pinned where the fluffy was when this step started, so the chips don't
+  // slide away from the mouse as it walks
+  if (!trickUI.anchor || trickUI.anchor.phase !== trickUI.phase) trickUI.anchor = { phase: trickUI.phase, x: f.x, y: f.y };
+  const cx = trickUI.anchor.x - cam.x;
+  const top = trickUI.anchor.y - cam.y - 90 - 60 * (f.growth || 1);
   const chips = [];
   if (trickUI.phase === "menu") {
     const w = 92;

@@ -13,6 +13,7 @@ const SETUP = `() => {
     f.hunger = 1;
     f.happiness = 0.8;
     f.sexuality = "heterosexual";
+    f.personalities = f.personalities.filter((p) => p !== "smarty");
     f.motherId = mum ? mum.id : null;
     f.fatherId = dad ? dad.id : null;
     fluffies.push(f);
@@ -127,6 +128,7 @@ module.exports = [
         const a = new Horse(1, null, "INDOORS", "earthy", null, 0.6, 0.6, "male");
         const b = new Horse(1, null, "INDOORS", "earthy", null, 0.6, 0.6, "female");
         a.adopted = b.adopted = true;
+        a.personalities = a.personalities.filter((p) => p !== "smarty"); // (not a Smarty already)
         fluffies.push(a, b);
         b.lastAttackerId = a.id;
         b.lastAttackTimer = 5;

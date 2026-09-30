@@ -68,7 +68,7 @@ function _ecSay(t) {
 
 // ---- Income (DayReport.noteDayEvent for sales and orders; Shows; tips) ----
 function noteIncome(amount) {
-  if (!(amount > 0)) return;
+  if (!(amount > 0) || _ecFree()) return; // (debug mode: money's locked, nothing really earned)
   _ecOk().today += amount;
 }
 
@@ -93,7 +93,8 @@ function reviewRent() {
   const target = rentTarget();
   let rent = old;
   if (target > old) rent = Math.min(target, old * 2 + RENT_RISE_EXTRA);
-  else if (target < old) rent = Math.max(target, Math.round(old * (1 - RENT_FALL)), RENT_BASE);
+  // Down at least RENT_FALL, or half way to the target if that's more
+  else if (target < old) rent = Math.max(target, Math.round(old - Math.max(old * RENT_FALL, (old - target) / 2)), RENT_BASE);
   rent = Math.max(RENT_BASE, Math.round(rent));
   e.rent = rent;
   e.nextReview = _ecDay() + RENT_REVIEW_DAYS;
@@ -113,7 +114,8 @@ function economyMorning() {
   e.week.push({ day: day - 1, amount: Math.round(e.today) });
   while (e.week.length > RENT_REVIEW_DAYS) e.week.shift();
   e.today = 0;
-  if (day >= e.nextReview) reviewRent();
+  // (a full week of takings first: an old save starts counting now)
+  if (day >= e.nextReview && e.week.length >= RENT_REVIEW_DAYS) reviewRent();
 }
 
 // ---- Rooms ----
@@ -133,14 +135,28 @@ function _ecRoomsInUse() {
   }
   return rooms.size;
 }
-function houseHeatingToday() {
+// What heating the house costs a day right now (rooms in use, the season)
+function houseHeatingRate() {
   if (typeof powerCut === "function" && powerCut()) return 0;
   const season = typeof getSeason === "function" ? getSeason() : "Spring";
   return (HEAT_PER_ROOM[season] || 0) * _ecRoomsInUse();
 }
+// ...and what it's cost since the last bill (it adds up as the day goes, so
+// moving everyone into one room at 5:59 doesn't cheat it)
+function houseHeatingToday() {
+  return Math.round(_ecOk().houseHeat || 0);
+}
 // Warmth.js: heaters' running costs go on the bill
 function addHeaterUse(dollars) {
-  if (dollars > 0) _ecOk().heaterUse += dollars;
+  if (dollars > 0 && !_ecFree()) _ecOk().heaterUse += dollars;
+}
+const economyTicker = new Ticker(5);
+function updateEconomy(dt) {
+  const step = economyTicker.step(dt);
+  if (!step || _ecFree()) return;
+  const day = typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200;
+  const e = _ecOk();
+  e.houseHeat = (e.houseHeat || 0) + (houseHeatingRate() * step) / day;
 }
 
 // ---- The vet plan ----
@@ -165,8 +181,16 @@ function planPremium() {
 function joinVetPlan() {
   const e = _ecOk();
   if (e.plan) return false;
+  // The first day's premium up front (so joining late and leaving before
+  // the morning bill isn't free cover)
+  const first = planPremium();
+  if (!_ecFree()) {
+    const paid = Math.min(money, first);
+    money -= paid;
+    if (first > paid && typeof billsOwed === "number") billsOwed += first - paid;
+  }
   e.plan = { since: _ecDay() };
-  _ecSay(`You joined the FluffVet plan: $${planPremium()} a day with the bills. It covers you from tomorrow.`);
+  _ecSay(`You joined the FluffVet plan: $${first} now, then $${planPremium()} a day with the bills. It covers you from tomorrow.`);
   return true;
 }
 function leaveVetPlan() {
@@ -198,6 +222,10 @@ function loanOffers() {
 function takeLoan(amount) {
   const e = _ecOk();
   if (e.loan || !loanOffers().includes(amount)) return false;
+  if (_ecFree()) {
+    if (typeof addUIMessage === "function") addUIMessage("No loans in debug mode (money's locked).");
+    return false;
+  }
   const total = Math.round(amount * (1 + LOAN_INTEREST));
   e.loan = { amount, total, left: total, perDay: Math.ceil(total / LOAN_DAYS), day: _ecDay() };
   if (!_ecFree()) money += amount;
@@ -241,6 +269,7 @@ function economyBillLines() {
 function economyBillCharged() {
   const e = _ecOk();
   e.heaterUse = 0;
+  e.houseHeat = 0;
   if (e.loan) {
     e.loan.left -= loanPaymentToday();
     if (e.loan.left <= 0) {
@@ -291,6 +320,7 @@ function getAccountsLayout() {
     col2,
     offers,
     repay: e.loan ? { x: col2, y: y + 380, w: 240, h: 34 } : null,
+    payDebt: typeof billsOwed === "number" && billsOwed > 0 ? { x: x + 28, y: y + h - 50, w: 220, h: 36 } : null,
     plan: { x: col2, y: y + 230, w: 240, h: 34 },
     close: { x: x + w - 150, y: y + h - 50, w: 130, h: 36 },
   };
@@ -411,6 +441,7 @@ function drawAccounts(c) {
     c.fillText(`He'll lend up to $${loanLimit().toLocaleString()} (3 x last week's takings).`, x2, y + 20);
     for (const o of L.offers) drawGlassButton(o.x, o.y, o.w, o.h, `Borrow $${o.amount.toLocaleString()}`, { fontSize: 14, borderRadius: 9 });
   }
+  if (L.payDebt) drawGlassButton(L.payDebt.x, L.payDebt.y, L.payDebt.w, L.payDebt.h, `Pay what you owe ($${Math.min(money, billsOwed).toLocaleString()})`, { fontSize: 14, borderRadius: 9, disabled: !(money > 0) });
   drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 16, borderRadius: 10 });
   c.restore();
 }
@@ -432,6 +463,10 @@ function handleAccountsClick() {
     repayLoan();
     return true;
   }
+  if (hit(L.payDebt)) {
+    if (typeof payDebtNow === "function") payDebtNow();
+    return true;
+  }
   for (const o of L.offers) {
     if (hit(o)) {
       takeLoan(o.amount);
@@ -449,6 +484,8 @@ function moneyClick() {
   openAccounts();
   return true;
 }
+
+registerSystem("economy", updateEconomy, 177);
 
 registerScreen({
   name: "accounts",

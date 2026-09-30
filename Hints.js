@@ -269,7 +269,8 @@ function getHintLayout(c) {
   if (!currentHint) return null;
   const w = Math.min(HINT_W, width - 24);
   const x = width - w - 12;
-  const y = 128;
+  // (below the park outing's banner when that's showing - ParkOutings.js)
+  const y = typeof getOutingBanner === "function" && getOutingBanner() ? 176 : 128;
   let lines = [currentHint.text];
   if (c && typeof wrapText === "function") {
     c.save();

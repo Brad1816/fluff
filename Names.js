@@ -275,7 +275,8 @@ function skipNamingPopup() {
 
 function getNamingLayout() {
   const n = namingPopup ? namingPopup.ids.length : 1;
-  const rowH = 64;
+  // (a big litter on a short window: tighter rows, so Save stays on screen)
+  const rowH = Math.max(40, Math.min(64, Math.floor((height - 20 - 200) / Math.max(1, n))));
   const w = 580;
   const h = 130 + n * rowH + 70;
   const x = Math.round(width / 2 - w / 2);
@@ -283,7 +284,7 @@ function getNamingLayout() {
   const rows = [];
   for (let i = 0; i < n; i++) {
     const ry = y + 96 + i * rowH;
-    rows.push({ y: ry, box: { x: x + 250, y: ry + 12, w: 300, h: 36 } });
+    rows.push({ y: ry, box: { x: x + 250, y: ry + (rowH >= 64 ? 12 : Math.max(2, Math.round((rowH - 36) / 2))), w: 300, h: Math.min(36, rowH - 4) } });
   }
   const by = y + h - 56;
   return {

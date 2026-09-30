@@ -146,6 +146,7 @@ function noteFluffyAttack(attacker, victim, intent) {
       const guardian = typeof titleOf === "function" && titleOf(w) === "Guardian";
       if (
         !hitBack &&
+        intent !== "BULLY" && // (a Smarty's shove isn't a fight worth jumping into)
         liking >= OPINION_BUDDY &&
         (brave >= 0 || guardian) &&
         dist < (guardian ? 160 : 110) &&
@@ -156,7 +157,7 @@ function noteFluffyAttack(attacker, victim, intent) {
       ) {
         w.counterattack.fluffy = attacker;
         w.counterattack.timer = 0.4 + Math.random() * 0.4;
-        if (typeof noteTitleDefend === "function") noteTitleDefend(w);
+        if (typeof noteTitleDefend === "function") noteTitleDefend(w, victim);
         if (!w.tooYoungToSpeak()) w.speak(getDialogue(["BOND", "DEFEND"], w, victim), true);
       }
     } else if (!hitBack) {

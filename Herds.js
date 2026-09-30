@@ -258,6 +258,13 @@ function _join(h, f) {
   _say(f, ["HERD", "JOIN"], getHerdLeader(h));
 }
 
+// Which side a herd is on: yours (most members adopted) or the park's.
+// A fluffy that changes sides (runs away, is let go, comes home) leaves.
+function herdIsYours(h) {
+  const m = getHerdMembers(h);
+  return m.length > 0 && m.filter((f) => f.adopted).length * 2 >= m.length;
+}
+
 function _leave(h, f, quietly = false) {
   h.memberIds = h.memberIds.filter((id) => id !== f.id);
   _herdChanged();
@@ -281,7 +288,12 @@ function updateHerds(dt) {
     if (h.memberIds.length !== before) _herdChanged();
 
     let members = getHerdMembers(h);
+    const yours = herdIsYours(h);
     for (const f of members) {
+      if (!!f.adopted !== yours && members.length > 1) {
+        _leave(h, f, true);
+        continue;
+      }
       if (f.growth < 1 || members.length < 2) continue; // foals stay with mum
       const others = members.filter((m) => m !== f);
       const avg = others.reduce((s, m) => s + getLiking(f, m), 0) / others.length;
@@ -319,6 +331,7 @@ function updateHerds(dt) {
     let best = null;
     let bestBonds = 0;
     for (const h of _herdList()) {
+      if (herdIsYours(h) !== !!f.adopted) continue; // (yours and the park's don't mix)
       const leader = getHerdLeader(h);
       if (leader && _dislikesLeader(f, leader)) continue; // won't follow that one
       if (_recentlyLeft(f, h)) continue; // split off not long ago
@@ -348,7 +361,7 @@ function updateHerds(dt) {
         const f = queue.shift();
         group.push(f);
         for (const g of list) {
-          if (!seen.has(g) && _bonded(f, g)) {
+          if (!seen.has(g) && !!f.adopted === !!g.adopted && _bonded(f, g)) {
             seen.add(g);
             queue.push(g);
           }

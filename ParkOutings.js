@@ -39,12 +39,22 @@ const RAID_MAX = 5;
 const RAID_HOURS = 3;
 const RAID_LEAVE = 0.5; // a miserable fluffy in the backyard leaving with them
 const RAID_FIGHT = 0.08; // a raider picking a fight, per check
+const RAID_HITS = 6; // most blows landed in one raid
 
 function freshOutings() {
-  return { outing: null, lastRaidNight: null, raids: 0 };
+  return { outing: null, lastRaidNight: null, raids: 0, raid: null };
 }
-let outings = freshOutings(); // { outing: { ids, home, start }, lastRaidNight, raids }
-let _raid = null; // { ids, until, from: {id: {x,y}} } (not saved: a raid ends by morning)
+let outings = freshOutings(); // { outing: { ids, home, start }, lastRaidNight, raids, raid }
+// The raid going on now: { ids, until, from: {id: {x,y}}, ... }. It lives in
+// outings (so it's saved: raiders loaded mid-raid still go home by morning).
+Object.defineProperty(window, "_raid", {
+  get: () => (outings && typeof outings === "object" ? outings.raid || null : null),
+  set: (v) => {
+    if (!outings || typeof outings !== "object") outings = freshOutings();
+    outings.raid = v;
+  },
+  configurable: true,
+});
 
 function _poOk() {
   if (!outings || typeof outings !== "object") outings = freshOutings();
@@ -92,9 +102,19 @@ function outingCandidates(scene) {
         !f.placedOn &&
         !f.isDragging &&
         f.currentStateKey !== "SLEEPING" &&
+        !(f.matingState && f.matingState.isMating) &&
+        // (not a mare about to give birth)
+        !(f.isPregnant && (f.pregnancyTimer || 0) < 60) &&
         !(typeof f.tooYoungToWalk === "function" && f.tooYoungToWalk()),
     )
     .slice(0, OUTING_MAX);
+}
+
+// Little foals that can't walk yet come along with their mum (carried)
+function _outingBabies(members) {
+  if (typeof fluffies === "undefined") return [];
+  const mums = new Set(members.map((f) => f.id));
+  return fluffies.filter((f) => f.isAlive && mums.has(f.motherId) && !members.includes(f) && !f.isDragging && !f.currentCage && typeof f.tooYoungToWalk === "function" && f.tooYoungToWalk());
 }
 
 // Right-click, at home
@@ -109,8 +129,9 @@ function outingActions(f) {
 function startOuting(home) {
   const o = _poOk();
   if (o.outing) return false;
-  const who = outingCandidates(home);
-  if (!who.length) return false;
+  const walkers = outingCandidates(home);
+  if (!walkers.length) return false;
+  const who = [...walkers, ..._outingBabies(walkers).filter((b) => b.scene === home)];
   o.outing = { ids: who.map((f) => f.id), home, start: _poNow(), memory: false };
   if (typeof changeScene === "function") changeScene(PARK_SCENE);
   const mid = _poMiddle();
@@ -135,6 +156,15 @@ function endOuting(why = "home") {
   if (!o.outing) return 0;
   const home = o.outing.home;
   const who = outingMembers();
+  // Foals born in the park on the outing are yours: they come home too
+  if (typeof fluffies !== "undefined") {
+    const ids = new Set(o.outing.ids);
+    for (const b of fluffies) {
+      if (!b.isAlive || b.scene !== PARK_SCENE || ids.has(b.id) || !ids.has(b.motherId) || b.growth >= 1 || b.formerPet) continue;
+      b.adopted = true;
+      who.push(b);
+    }
+  }
   const minutes = (_poNow() - o.outing.start) / 60;
   let n = 0;
   for (const f of who) {
@@ -313,6 +343,7 @@ function raidingHerd() {
   if (typeof herdState === "undefined" || typeof getHerdLeader !== "function") return null;
   let best = null;
   for (const h of herdState.list || []) {
+    if (typeof herdIsYours === "function" && herdIsYours(h)) continue; // (your own herd, not a park one)
     const leader = getHerdLeader(h);
     if (!leader || leader.adopted || !leader.formerPet) continue;
     const rebel = typeof titleOf === "function" && titleOf(leader) === "Rebel";
@@ -367,7 +398,7 @@ function endRaid(why = "morning") {
   // A miserable one of yours goes with them
   if (why === "morning" && typeof fluffies !== "undefined") {
     for (const f of fluffies.slice()) {
-      if (!f.isAlive || !f.adopted || f.scene !== "BACKYARD" || f.currentCage || f.growth < 1) continue;
+      if (!f.isAlive || !f.adopted || f.scene !== "BACKYARD" || f.currentCage || f.placedOn || f.isDragging || f.growth < 1) continue;
       const unhappy = f.happiness < 0.3 || (typeof titleOf === "function" && titleOf(f) === "Rebel");
       if (unhappy && Math.random() < RAID_LEAVE && typeof _goWild === "function") {
         _goWild(f, "ran away");
@@ -382,8 +413,10 @@ function endRaid(why = "morning") {
   }
   for (const id of r.ids) {
     const f = _poById(id);
-    if (!f || !f.isAlive || f.adopted) continue;
+    if (!f || !f.isAlive) continue;
     f.raiding = false;
+    // (one you're holding, caged, or took somewhere else stays where it is)
+    if (f.adopted || f.scene !== "BACKYARD" || f.isDragging || f.currentCage || f.placedOn) continue;
     f.scene = PARK_SCENE;
     const at = r.from[id] || { x: 400, y: 600 };
     f.x = at.x;
@@ -415,15 +448,23 @@ function _updateRaid(step) {
     if (_poNow() - _raid.seenAt > 4) endRaid("you");
     return;
   }
-  // Trouble: a fight now and then
-  const mine = typeof fluffies !== "undefined" ? fluffies.filter((f) => f.isAlive && f.adopted && f.scene === "BACKYARD" && !f.currentCage) : [];
+  // Trouble: a scuffle now and then - up close, not with sleepers or
+  // little foals, and only so many a raid
+  const mine =
+    typeof fluffies !== "undefined"
+      ? fluffies.filter((f) => f.isAlive && f.adopted && f.scene === "BACKYARD" && !f.currentCage && !f.placedOn && f.currentStateKey !== "SLEEPING" && !(typeof f.tooYoungToWalk === "function" && f.tooYoungToWalk()))
+      : [];
   for (const f of raiders) {
-    if (!mine.length || Math.random() > RAID_FIGHT * step) continue;
+    if (!mine.length || (_raid.hits || 0) >= RAID_HITS || Math.random() > RAID_FIGHT * step) continue;
+    if (f.isDragging || f.currentStateKey === "SLEEPING" || (f.attackCooldown || 0) > 0) continue;
     const t = mine[Math.floor(Math.random() * mine.length)];
-    if (Math.hypot(t.x - f.x, t.y - f.y) > 400) {
+    if (Math.hypot(t.x - f.x, t.y - f.y) > 70) {
       f.initBehavior("MOVING");
       f.setTargetPosition(t.x, t.y);
-    } else if (typeof f.performAttack === "function") f.performAttack(t, "GRUDGE");
+    } else if (typeof f.performAttack === "function") {
+      f.performAttack(t, "GRUDGE");
+      _raid.hits = (_raid.hits || 0) + 1;
+    }
   }
 }
 
