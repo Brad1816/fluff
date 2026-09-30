@@ -39,6 +39,7 @@ const GOSSIP_PASS = 0.5;
 const GOSSIP_FADE = 3 * DAY_LENGTH; // hearsay fades to a third
 const GOSSIP_PAIR_GAP = HOUR_LENGTH;
 const GOSSIP_SAY = 0.35; // chance it says it out loud
+const GOSSIP_TRAIL = 3; // who it heard from, remembered
 
 function _gNow() {
   return typeof timePlayed === "number" ? timePlayed : 0;
@@ -115,6 +116,7 @@ function passGossip(from, to) {
   const tales = gossipTales(from);
   if (tales.harm < 0.05 && tales.kind < 0.05) return null;
   const out = { harm: 0, kind: 0 };
+  let told = null; // what got through, for the relationship map
   const gt = _gossipOf(to, true);
   if (typeof ensurePlayerMemory === "function") ensurePlayerMemory(to);
   // Harm: only news to one that didn't see it itself
@@ -128,6 +130,7 @@ function passGossip(from, to) {
     const heard = tales.harm * GOSSIP_PASS;
     if (heard > gt.harm) gt.harm = heard;
     out.harm = amount;
+    told = "harm";
     // A Rebel stirs them up: they trust you a little less (Titles.js)
     if (typeof titleOf === "function" && titleOf(from) === "Rebel" && to.adopted && titleOf(to) !== "Rebel") {
       const room2 = Math.max(0, 0.1 - (gt.defied || 0));
@@ -161,11 +164,18 @@ function passGossip(from, to) {
     const heard = tales.kind * GOSSIP_PASS;
     if (heard > gt.kind) gt.kind = heard;
     out.kind = amount;
+    if (!told || amount > out.harm) told = "kind";
     if (!gt.heardKind) {
       gt.heardKind = true;
       const n = _gName(from);
       if (typeof recordStory === "function") recordStory("gossip", to, { x: `${n || "Another fluffy"} told {obj} you were kind.` });
     }
+  }
+  // Who told whom (RelationshipMap.js draws the paths): the last few
+  if (told) {
+    const trail = Array.isArray(gt.from) ? gt.from.filter((x) => x && x.id !== from.id) : [];
+    trail.push({ id: from.id, kind: told, t: _gNow() });
+    gt.from = trail.slice(-GOSSIP_TRAIL);
   }
   // Saying it out loud (now and then)
   if ((out.harm > 0 || out.kind > 0) && Math.random() < GOSSIP_SAY && typeof getDialogue === "function" && typeof from.speak === "function") {

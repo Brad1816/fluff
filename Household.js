@@ -164,6 +164,8 @@ function getHouseholdLayout(data = computeHousehold()) {
     keeper: { x: x + w - 370, y: y + h - 46, w: 210, h: 32 },
     // The Memories book (SharedMemories.js)
     memories: { x: x + w - 530, y: y + h - 46, w: 150, h: 32 },
+    // Who's who (RelationshipMap.js)
+    relations: { x: x + w - 690, y: y + h - 46, w: 150, h: 32 },
   };
 }
 
@@ -358,6 +360,7 @@ function drawHousehold(c) {
     drawGlassButton(L.keeper.x, L.keeper.y, L.keeper.w, L.keeper.h, `Loved ones call you: ${word}`, { fontSize: 13, borderRadius: 8 });
   }
   if (typeof openMemoriesBook === "function") drawGlassButton(L.memories.x, L.memories.y, L.memories.w, L.memories.h, "Memories book", { fontSize: 13, borderRadius: 8 });
+  if (typeof openRelationshipMap === "function") drawGlassButton(L.relations.x, L.relations.y, L.relations.w, L.relations.h, "Relationships (M)", { fontSize: 13, borderRadius: 8 });
   c.restore();
 }
 
@@ -386,6 +389,11 @@ function handleHouseholdClick() {
       householdPage = 0;
       return true;
     }
+  }
+  if (typeof openRelationshipMap === "function" && hit(L.relations)) {
+    closeHousehold();
+    openRelationshipMap();
+    return true;
   }
   if (typeof openMemoriesBook === "function" && hit(L.memories)) {
     closeHousehold();

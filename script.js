@@ -2123,6 +2123,12 @@ window.addEventListener("keydown", (e) => {
     else if (!isAnyScreenOpen()) openHelp();
     return;
   }
+  // M: who's who, the relationship map (RelationshipMap.js)
+  if (e.code === "KeyM" && typeof isRelationshipMapOpen === "function") {
+    if (isRelationshipMapOpen()) closeRelationshipMap();
+    else if (!isAnyScreenOpen()) openRelationshipMap(inspectedFluffy || null);
+    return;
+  }
   // G: the goals list (Goals.js)
   if (e.code === "KeyG" && typeof isGoalsOpen === "function") {
     if (isGoalsOpen()) closeGoals();
