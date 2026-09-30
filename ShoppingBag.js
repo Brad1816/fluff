@@ -22,7 +22,7 @@
 // Saved: shoppingBag (SAVED_GAME_STATE).
 // ---------------------------------------------------------------------------
 
-const SHOPPING_BAG_TYPES = ["bag", "bowl", "feeder", "ball", "block", "litterbox", "accessory", "night_light"];
+const SHOPPING_BAG_TYPES = ["bag", "bowl", "feeder", "ball", "block", "litterbox", "accessory", "night_light", "repair_kit"];
 const DELIVERY_SCENE = "INDOORS";
 
 let shoppingBag = [];

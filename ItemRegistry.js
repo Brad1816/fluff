@@ -115,6 +115,13 @@ function atSpot(obj, sx, sy) {
 const ITEM_TYPES = [
   // ---- Food and feeding ----
   {
+    sellType: "food_spill", // FeedBot.js: food on the floor (before "bowl": it is one)
+    is: (o) => typeof FoodSpill !== "undefined" && o instanceof FoodSpill,
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    canPickUp: () => false,
+    sellable: false,
+  },
+  {
     sellType: "bowl",
     is: (o) =>
       o instanceof Bowl &&
@@ -214,6 +221,25 @@ const ITEM_TYPES = [
       o.on = !o.on;
       if (typeof addUIMessage === "function") addUIMessage(o.on ? "Fluff-Bot on." : "Fluff-Bot off.");
     },
+  },
+  {
+    sellType: "feedbot", // FeedBot.js
+    is: (o) => typeof FeedBot !== "undefined" && o instanceof FeedBot,
+    inCage: "never",
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    canPickUp: (o) => o.state !== "away",
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new FeedBot(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawFeedBotShape(ctx, 0, 22, 0.5, { fill: 0.6, formula: 0.5 }),
+    onRightClick: (o) => o.rightClick(),
+  },
+  {
+    sellType: "repair_kit", // FeedBot.js
+    is: (o) => typeof RepairKit !== "undefined" && o instanceof RepairKit,
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new RepairKit(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawRepairKitShape(ctx, 0, 12, 0.8),
   },
   {
     sellType: "night_light", // Fears.js
@@ -697,6 +723,9 @@ const SAVED_CLASSES = {
   Heater: (d) => new Heater(d.scene), // Warmth.js
   Roomba: (d) => new Roomba(d.scene), // Roomba.js
   NightLight: (d) => new NightLight(d.scene), // Fears.js
+  FeedBot: (d) => new FeedBot(d.scene), // FeedBot.js
+  FoodSpill: (d) => new FoodSpill(d.scene, d.foodType, d.food),
+  RepairKit: (d) => new RepairKit(d.scene),
   Fence: (d) => new Fence(d.scene, d.orientation, d.isGate),
   FoalVendor: (d) => new FoalVendor(d.scene),
   FoalInACan: (d) => new FoalInACan(d.scene),

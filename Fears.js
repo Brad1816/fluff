@@ -380,7 +380,7 @@ function updateFears(dt) {
   const step = fearsTicker.step(dt);
   if (!step) return;
   const now = _fNow();
-  const bots = typeof objects !== "undefined" && typeof Roomba !== "undefined" ? objects.filter((o) => o instanceof Roomba && o.on && o.state !== "docked" && !o.isDragging) : [];
+  const bots = typeof objects !== "undefined" && typeof Roomba !== "undefined" ? objects.filter((o) => (o instanceof Roomba && o.on && o.state !== "docked" && !o.isDragging) || (typeof FeedBot !== "undefined" && o instanceof FeedBot && o.state === "driving")) : [];
   for (const f of fluffies) {
     if (!f.isAlive) continue;
     // A fright ends

@@ -98,6 +98,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Upbringing.js` | **Upbringing**: foals drift towards the colour views and alicorn feelings of the grown-ups raising them (mum most). See section 9 (Upbringing). |
 | `Fears.js` | **Fears**: thunder, the dark and the Fluff-Bot; frights, comforting, the Night Light item. See section 9 (Fears). |
 | `Household.js` | **Household** overview screen (button at the top right, or O): every fluffy you own and what it needs. See section 9 (Household). |
+| `FeedBot.js` | **The Feed-Bot** (Fluff Mart, $300): fills bowls, feeders and orphans from a hopper you pour bags into; modes; tipping over, spills (`FoodSpill`), the Repair Kit. See section 9 (The Feed-Bot). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -2120,3 +2121,42 @@ Household screen took at most ~20 ms to build with 14 fluffies. Found:
 - Starvation in the park is no worse than before these features.
 - Left as designed: orphaned newborns starve unless you bottle-feed them, and a
   fluffy in despair (happiness 0) stops eating.
+
+### The Feed-Bot (`FeedBot.js`)
+A helper robot that keeps its room fed. Built after the design doc's
+"Side project: the Feed-Bot".
+- **Hopper:** `FeedBot.hopper` = `[[foodType, portions], ...]`, oldest first,
+  up to `FEEDBOT_HOPPER` (50). A held food bag over it pours 5 portions a go
+  (`pourIntoFeedBot`, called first in `FoodBag.attemptFill`). Formula goes into
+  `formula` (up to `FEEDBOT_TANK`, 25).
+- **Jobs** (`_findJob`, nearest first): an orphan (too young to walk, hunger
+  < 0.5, no nursing mum in the room) gets formula carried to it; baby feeders
+  below half get formula; bowls and troughs get food by mode (`_bowlTarget`).
+  It drives (`FEEDBOT_SPEED`) to a spot beside the target, serves, and goes back
+  to its dock (where it was last put down).
+- **Modes** (right-click cycles, `FEEDBOT_MODES`): `full` (fill any bowl below
+  half), `meals` (at `FEEDBOT_MEALS` 8 and 18 it rings a bell and fills every
+  bowl; each fluffy hearing it gains `bellLearn`, saved, and from 0.5 comes
+  running to the nearest bowl), `small` (fills to half when below a quarter),
+  `off`.
+- **No affection:** it fills bowls directly, never through `onBowlFilledByYou`.
+  Serving near a fluffy scared of bots lowers that fear by `FEEDBOT_FEAR_FADE`;
+  a driving Feed-Bot can also set off bot frights (Fears.js).
+- **Tipping over** (`_checkTipping`, once a second while it has food): each
+  adult within 75px has a `FEEDBOT_TIP_CHANCE` (0.002) x `feedBotRowdiness` x 2
+  when crowded (3+) or at a pending mealtime. Rowdiness = energy and temper
+  (above average), boredom, very hungry (+0.5), Smarty (+1). A 6-day household
+  simulation (calm, well fed) saw it tipped once.
+  `tipOver(f)`: `FEEDBOT_BREAK` (25%, 60% if tipped again within
+  `FEEDBOT_RETIP`) it breaks; 3-7 portions spill as a `FoodSpill`; the culprit's
+  `feedBotTips` (saved) goes up; bot-scared fluffies nearby get a fright.
+- **Fixing it:** tipped - pick it up or right-click (`standUp`). Broken - a
+  `RepairKit` (`REPAIR_KIT_PRICE` $40, shopping bag) held over it, or right-click
+  `sendForRepair` (`FEEDBOT_REPAIR_PRICE` $80): state "away" until the next game
+  day. The Household screen lists Feed-Bots that are tipped, broken, away, low
+  or out of food (`feedBotStatusLines`).
+- **`FoodSpill`** extends `Bowl` (type "spill"): eaten like a bowl, can't be
+  picked up or refilled, gone after `FOOD_SPILL_LIFE` (300s) or when eaten; the
+  Fluff-Bot hoovers spills when there's no other mess (`Roomba._nearestSpill`).
+  Its registry entry sits before "bowl" so it's never sold as one.
+- Tests: `tests/feedbot.test.js`.

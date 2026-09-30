@@ -18,7 +18,7 @@ module.exports = [
           pregCare: { sum: 3, n: 4 }, litterSize: 5, litterBorn: 6, birthVigor: 0.9, midwife: true,
           pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true, warmth: 0.4,
           lastKindnessAt: 555, affectionToday: { day: 3, n: { brushed: 2 }, at: { brushed: 500 } },
-          tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 }, lessonTries: { day: 3, n: 2 }, smartyReform: 0.3, smartyReformed: true, fears: { thunder: 0.6, dark: 0, bot: 0.2 },
+          tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 }, lessonTries: { day: 3, n: 2 }, smartyReform: 0.3, smartyReformed: true, fears: { thunder: 0.6, dark: 0, bot: 0.2 }, bellLearn: 0.4, feedBotTips: 2,
           diet: 0.83, weight: 0.4, tastes: { kibble: -0.5 }, recentMeals: ["premium_kibble", "kibble"],
           boredom: 0.45, toyLikes: { ball: 0.9 }, dirt: 0.6, bathLike: -0.3,
           castrationBandTimer: 42, castrationBandPainTimer: 3, isDiarrhea: true, isIncontinent: true,

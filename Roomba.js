@@ -100,6 +100,21 @@ class Roomba {
     return best;
   }
 
+  _nearestSpill() {
+    if (typeof FoodSpill === "undefined" || typeof objects === "undefined") return null;
+    let best = null;
+    let bd = Infinity;
+    for (const o of objects) {
+      if (!(o instanceof FoodSpill) || o.scene !== this.scene || o.food <= 0) continue;
+      const d = Math.hypot(o.x - this.x, o.y - this.y);
+      if (d < bd) {
+        bd = d;
+        best = o;
+      }
+    }
+    return best;
+  }
+
   _driveTo(tx, ty, dt) {
     const B = this._bounds();
     tx = Math.max(B.left, Math.min(B.right, tx));
@@ -171,6 +186,18 @@ class Roomba {
       if (this._stuckFor > 2) {
         mess._botSkipUntil = (typeof timePlayed === "number" ? timePlayed : 0) + 60;
         this._stuckFor = 0;
+      }
+      if (this.scene === currentScene) this._bumpFluffies();
+    } else if (this._nearestSpill()) {
+      // Food spilled on the floor (FeedBot.js): hoover it up
+      const sp = this._nearestSpill();
+      this.state = "cleaning";
+      if (this._driveTo(sp.x, sp.y, dt) || Math.hypot(sp.x - this.x, sp.y - this.y) < 30) {
+        sp._botEaten = (sp._botEaten || 0) + 3 * dt;
+        if (sp._botEaten >= 1) {
+          sp._botEaten -= 1;
+          sp.food = Math.max(0, sp.food - 1);
+        }
       }
       if (this.scene === currentScene) this._bumpFluffies();
     } else if (this.state !== "docked") {

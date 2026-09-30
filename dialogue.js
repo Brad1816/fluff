@@ -425,6 +425,12 @@ const DIALOGUE = {
     PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "Nummy tweat! Tank yu!"],
     SHOW_OFF: ["Wook daddeh! Wook what <speaker> can do!", "Watch <speaker>!", "Daddeh wook!"],
   },
+  // The Feed-Bot (FeedBot.js)
+  FEEDBOT: {
+    FOND: ["Nummy-wobot! Tank yu!", "Wobot bwing nummies!", "Yay! Nummy-wobot hewe!", "Bestest wobot!"],
+    TIP: ["Hehe! Wobot faww down!", "Gib ALL nummies!", "Nummies! Aww fow <speaker>!", "Stupid wobot! Bonk!"],
+    BELL: ["Ding-ding! Nummy time!", "Wobot say nummies!", "Nummies! Nummies!"],
+  },
   // Frights (Fears.js)
   FRIGHT: {
     THUNDER: ["*SCREEEE* Woud sky-noise!", "Sky am angwy! Hewp!", "Nu wike boomies! Huu huu!", "Make it stop! Pwease!"],

@@ -275,6 +275,15 @@ function drawHousehold(c) {
   c.font = "12px Arial";
   c.fillStyle = "rgba(255,255,255,0.55)";
   c.fillText("Click a fluffy to go to it and open its magnifying glass.", L.x + 370, L.y + 81);
+  // Helpers that need you (FeedBot.js)
+  const bots = typeof feedBotStatusLines === "function" ? feedBotStatusLines() : [];
+  if (bots.length) {
+    c.textAlign = "right";
+    c.font = "bold 12px Arial";
+    c.fillStyle = "#ffb3b3";
+    c.fillText(fitText(c, "⚠ " + bots.join(" · "), 460), L.x + L.w - 24, L.y + 104);
+    c.textAlign = "left";
+  }
   // Column headings
   c.font = "bold 12px Arial";
   c.fillStyle = "rgba(255,255,255,0.6)";

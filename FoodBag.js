@@ -46,6 +46,8 @@ class FoodBag {
   attemptFill() {
     if (this.amount <= 0) return false;
     if (typeof objects === "undefined") return false;
+    // Pouring into the Feed-Bot's hopper (FeedBot.js)
+    if (typeof pourIntoFeedBot === "function" && pourIntoFeedBot(this)) return true;
 
     const bowls = objects.filter((o) => o instanceof Bowl);
     for (const bowl of bowls) {
