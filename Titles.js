@@ -67,7 +67,7 @@ const SPOIL_TREATS = 12;
 const SPOIL_DAYS = 3;
 const BREAK_BASE = 10;
 const STRAIN_HARM = 1;
-const STRAIN_SEEN = 0.25;
+const STRAIN_SEEN = 0.1;
 const STRAIN_FADE = 1; // a day without harm (x1.5 if it trusts you)
 const STRAIN_TRAINING = 0.3; // a whack in training (the Sorry Stick, a strict Smack)
 const HEAL_CARE = { sat_with: 0.08, praised: 0.02, comforted: 0.03, brushed: 0.02, played: 0.02, held_happy: 0.01 };
@@ -275,10 +275,9 @@ function _tiDaily(f) {
   const now = _tiNow();
   const harmedToday = now - (st.lastHarm ?? -1e9) < DAY_LENGTH;
   const t = titleOf(f);
-  if (!harmedToday) {
-    f.strain = Math.max(0, (f.strain || 0) - STRAIN_FADE * ((f.playerTrust || 0) >= 0.5 ? 1.5 : 1));
-    if (t === "Broken") st.healing = Math.min(1, (st.healing || 0) + HEAL_DAY);
-  }
+  // Strain fades a little every day, more on a day without harm
+  f.strain = Math.max(0, (f.strain || 0) - STRAIN_FADE * (harmedToday ? 0.4 : 1) * ((f.playerTrust || 0) >= 0.5 ? 1.5 : 1));
+  if (!harmedToday && t === "Broken") st.healing = Math.min(1, (st.healing || 0) + HEAL_DAY);
   if ((f.playerTrust || 0) >= CHERISH_TRUST && !harmedToday) st.lovedDays = (st.lovedDays || 0) + 1;
   else if ((f.playerTrust || 0) < CHERISH_TRUST - 0.1) st.lovedDays = 0;
   // Spoiled: treats in the last few days, and no lessons or scoldings

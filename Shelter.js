@@ -284,15 +284,19 @@ function shelterFee(r) {
 
 function shelterNewDay() {
   const today = typeof getDayNumber === "function" ? getDayNumber() : 1;
-  // Time's up
+  // Time's up (the news names the ones that were yours; the rest are counted)
+  let others = 0;
   for (let i = shelter.residents.length - 1; i >= 0; i--) {
     const r = shelter.residents[i];
     if (r.timesUpDay >= today) continue;
     shelter.residents.splice(i, 1);
     shelter.lost = (shelter.lost || 0) + 1;
     _shelterTimeRanOut(r);
-    if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `Time ran out for ${r.name} at the shelter.` });
+    if (r.byYou) {
+      if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `Time ran out for ${r.name} at the shelter.` });
+    } else others++;
   }
+  if (others && typeof noteDayEvent === "function") noteDayEvent("news", { text: `Time ran out for ${others === 1 ? "one fluffy" : `${others} fluffies`} at the shelter.` });
   // New arrivals
   const want = shelter.stocked ? Math.round(_shRand(SHELTER_ARRIVALS)) : SHELTER_START;
   shelter.stocked = true;

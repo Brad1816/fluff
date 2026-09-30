@@ -76,7 +76,7 @@ module.exports = [
       });
       check(!r.left.includes(r.ids[0]), "past its day: gone");
       check(r.left.includes(r.ids[1]) && r.left.includes(r.ids[2]), "last day and later: still there");
-      check(r.news.some((n) => n.includes(`Time ran out for ${r.nameA}`)), `news ${r.news}`);
+      check(r.news.some((n) => /Time ran out for (one fluffy|\d+ fluffies) at the shelter/.test(n)), `news (counted, not named: it wasn't yours) ${r.news}`);
       checkEqual(JSON.stringify(r.fees), JSON.stringify([30, 60]), "half price on its last day");
       checkEqual(r.lost, 1, "counted");
     },

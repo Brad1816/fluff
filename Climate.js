@@ -5,9 +5,9 @@
 // What happens in a room (StoryBook.recordStory calls noteClimateStory)
 // adds to four scores for that room, which fade away over a few days
 // (CLIMATE_TAU):
-//   warm   brushing, cuddles, play, treats, toys, praise, comfort, births,
+//   warm   brushing, cuddles, play, treats, toys, praise, comfort, lessons, births,
 //          tricks, wishes coming true
-//   tense  fights, being picked on, harsh lessons
+//   tense  fights, being picked on, scoldings and strict training
 //   fear   harm from you, frights, nightmares, scars and injuries
 //   grief  deaths, stillbirths, family sold or taken away
 // Also, while it lasts: a crowded room is tense, a tense room next door
@@ -57,12 +57,12 @@ const CLIMATE_WEIGHTS = {
   wish_granted: [2, 0, 0, 0],
   named: [0.5, 0, 0, 0],
   attacked: [0, 1.2, 0.2, 0],
-  lesson: [0, 0.4, 0.2, 0],
+  lesson: [0.2, 0, 0, 0], // (a kind lesson; strict ones are "drilled")
   scolded: [0, 0.5, 0.2, 0],
   drilled: [0, 0.4, 0.2, 0],
   wish_denied: [0, 0.8, 0, 0.3],
   harmed: [0, 0.6, 1.2, 0], // (only a fifth for those who just saw it)
-  fright: [0, 0, 0.3, 0],
+  fright: [0, 0, 0.2, 0],
   nightmare: [0, 0, 0.3, 0],
   scarred: [0, 0.5, 3, 0],
   injured: [0, 0.3, 2, 0],
@@ -75,7 +75,7 @@ const CLIMATE_WEIGHTS = {
 const CLIMATE_REASON = {
   brushed: "brushing", held_happy: "cuddles", treat: "treats", gift: "gifts", toy: "toys", praised: "praise",
   played: "play", comforted: "comfort", bathed: "baths", born: "new foals", trick: "tricks learnt", show: "show wins",
-  wish_granted: "wishes come true", named: "names given", attacked: "fights", lesson: "harsh lessons",
+  wish_granted: "wishes come true", named: "names given", attacked: "fights", lesson: "lessons",
   wish_denied: "wishes denied", scolded: "scoldings", drilled: "harsh training", harmed: "your harshness", fright: "frights", nightmare: "nightmares",
   scarred: "scars", injured: "injuries", died: "a death", stillborn: "a lost foal", sold: "family taken away",
 };
@@ -214,9 +214,10 @@ function climateOf(scene) {
   }
   const bad = t + f + g + uneasy;
   let label = "Calm";
-  if (g >= 3 && g >= t && g >= f) label = "Grieving";
-  else if (f >= 4 && f >= t) label = "Fearful";
-  else if (t >= 4) label = "Tense";
+  // (a bad feel has to outweigh the good: a loving house shrugs off a storm)
+  if (g >= 3 && g >= t && g >= f && g > w * 0.3) label = "Grieving";
+  else if (f >= 4 && f >= t && f > w * 0.5) label = "Fearful";
+  else if (t >= 4 && t > w * 0.5) label = "Tense";
   else if (bad >= 2 && bad > w) label = "Uneasy";
   else if (w >= 4 && w > bad * 1.5) label = "Warm";
   const score = w - bad;
