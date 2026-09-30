@@ -52,7 +52,8 @@ function todayItems() {
   const now = typeof performance !== "undefined" ? performance.now() : 0;
   if (_todayCache && now - _todayCache.at < TODAY_CACHE_MS) return _todayCache.items;
   const items = [];
-  const add = (level, text, f = null) => items.push({ level, text, f });
+  const add = (level, text, f = null, open = null) => items.push({ level, text, f, open });
+  const accounts = typeof openAccounts === "function" ? openAccounts : null;
   const own = typeof fluffies !== "undefined" ? fluffies.filter((f) => f.isAlive && f.adopted) : [];
 
   // ---- Urgent ----
@@ -64,9 +65,14 @@ function todayItems() {
           ? "the bailiffs are coming"
           : "the power's cut off"
         : `the power goes off in ${POWER_CUT_DAY - d} day${POWER_CUT_DAY - d === 1 ? "" : "s"}`;
-    add("urgent", `You owe $${billsOwed.toLocaleString()} (${d} day${d === 1 ? "" : "s"} in debt): ${next}.`);
+    add("urgent", `You owe $${billsOwed.toLocaleString()} (${d} day${d === 1 ? "" : "s"} in debt): ${next}.`, null, accounts);
   } else if (typeof billsOwed === "number" && billsOwed > 0) {
-    add("urgent", `You owe $${billsOwed.toLocaleString()}. It comes out of tomorrow's money first.`);
+    add("urgent", `You owe $${billsOwed.toLocaleString()}. It comes out of tomorrow's money first.`, null, accounts);
+  }
+  // Tomorrow's bill more than you've got (Bills.js, Economy.js)
+  if (typeof dailyBills === "function" && typeof money === "number" && !(billsOwed > 0)) {
+    const bt = dailyBills().total;
+    if (bt > money) add("urgent", `Tomorrow morning's bill ($${bt.toLocaleString()}) is more than you have.`, null, accounts);
   }
   if (typeof inspector !== "undefined" && inspector && inspector.warned !== null && inspector.warned !== undefined) {
     add("urgent", "The welfare inspector is coming tomorrow morning. (They don't look in back rooms or cages.)");
@@ -234,6 +240,12 @@ function handleTodayClick() {
     return true;
   }
   for (const r of L.rows) {
+    // Money rows: the accounts (Economy.js)
+    if (hit(r) && typeof r.item.open === "function") {
+      closeToday();
+      r.item.open();
+      return true;
+    }
     if (hit(r) && r.item.f && r.item.f.isAlive) {
       closeToday();
       if (typeof goToFluffy === "function") goToFluffy(r.item.f);

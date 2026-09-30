@@ -2123,6 +2123,12 @@ window.addEventListener("keydown", (e) => {
     else if (!isAnyScreenOpen()) openHelp();
     return;
   }
+  // K: the accounts (Economy.js)
+  if (e.code === "KeyK" && typeof isAccountsOpen === "function") {
+    if (isAccountsOpen()) closeAccounts();
+    else if (!isAnyScreenOpen()) openAccounts();
+    return;
+  }
   // M: who's who, the relationship map (RelationshipMap.js)
   if (e.code === "KeyM" && typeof isRelationshipMapOpen === "function") {
     if (isRelationshipMapOpen()) closeRelationshipMap();

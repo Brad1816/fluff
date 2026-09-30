@@ -404,6 +404,7 @@ function runShow() {
     const prize = show.prizes[yours.place - 1];
     result.prize = prize;
     if (!(typeof showDebugMenu !== "undefined" && showDebugMenu)) money += prize;
+    if (typeof noteIncome === "function") noteIncome(prize); // (Economy.js)
     if (typeof customerOrders !== "undefined" && customerOrders) {
       const before = getOrderLevel();
       customerOrders.reputation += 4 - yours.place;

@@ -173,11 +173,6 @@ function _runHeaters(step) {
   const s = heatingState && typeof heatingState === "object" ? heatingState : (heatingState = freshHeatingState());
   const day = typeof getDayNumber === "function" ? getDayNumber() : 1;
   if (s.day !== day) {
-    if (s.today > 0) {
-      const text = `Heating bill yesterday: $${Math.round(s.today)}.`;
-      if (typeof noteDayEvent === "function") noteDayEvent("news", { text });
-      if (typeof addUIMessage === "function") addUIMessage(text);
-    }
     s.day = day;
     s.today = 0;
   }
@@ -193,7 +188,9 @@ function _runHeaters(step) {
     const whole = Math.floor(s.owed);
     s.owed -= whole;
     s.today += whole;
-    if (!(typeof showDebugMenu !== "undefined" && showDebugMenu)) money -= whole;
+    // (it goes on the morning bill, Economy.js)
+    if (typeof addHeaterUse === "function") addHeaterUse(whole);
+    else if (!(typeof showDebugMenu !== "undefined" && showDebugMenu)) money -= whole;
   }
 }
 

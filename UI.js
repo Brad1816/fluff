@@ -17,6 +17,24 @@ function drawUI(ctx) {
   const moneyText = `$${money}`;
   ctx.strokeText(moneyText, 10, 10 + 20);
   ctx.fillText(moneyText, 10, 10 + 20);
+  // Click it for the accounts (Economy.js); what you owe beside it
+  if (typeof getMoneyRect === "function") {
+    const mr = getMoneyRect();
+    const over = isPointInRect(mouse.x, mouse.y, mr.x, mr.y, mr.w, mr.h) && !isAnyScreenOpen();
+    if (over) {
+      ctx.fillRect(10, 10 + 32, mr.w - 12, 2);
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "white";
+      ctx.strokeText("Accounts (K)", mr.x + mr.w + 8, 10 + 20);
+      ctx.fillText("Accounts (K)", mr.x + mr.w + 8, 10 + 20);
+    } else if (typeof billsOwed === "number" && billsOwed > 0) {
+      ctx.font = "bold 13px Arial";
+      ctx.fillStyle = "#ff8a80";
+      const t = `owe $${billsOwed.toLocaleString()}`;
+      ctx.strokeText(t, mr.x + mr.w + 8, 10 + 20);
+      ctx.fillText(t, mr.x + mr.w + 8, 10 + 20);
+    }
+  }
 
   if (showDebugMenu) {
     ctx.fillStyle = "#e74c3c";
@@ -717,6 +735,10 @@ canvas.addEventListener("mousedown", (e) => {
   }
   // A first-time hint card (Hints.js)
   if (typeof hintClick === "function" && hintClick()) {
+    return;
+  }
+  // Your money: the accounts (Economy.js)
+  if (typeof moneyClick === "function" && moneyClick()) {
     return;
   }
 

@@ -124,6 +124,12 @@ const HINTS = [
     text: () => "A fluffy ran away. Unhappy fluffies and Rebels slip out when you're not looking; you may meet it again in the park.",
   },
   {
+    key: "rent",
+    topic: "Money trouble",
+    when: () => typeof economy !== "undefined" && economy && (economy.rentLog || []).some((r) => r.rent > RENT_BASE),
+    text: () => `The landlord has put your rent up to $${economy.rent} a day: it follows what you earn. Click your money (top left) to see your accounts.`,
+  },
+  {
     key: "debt",
     topic: "Money trouble",
     when: () => typeof billsOwed === "number" && billsOwed > 0,

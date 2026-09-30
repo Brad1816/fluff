@@ -73,11 +73,13 @@ function noteDayEvent(kind, info = {}) {
     case "sold":
       dayStats.sold.count++;
       dayStats.sold.money += info.money || 0;
+      if (typeof noteIncome === "function") noteIncome(info.money || 0); // Economy.js
       if (typeof noteGoalEvent === "function") noteGoalEvent("sold", info); // Goals.js
       break;
     case "order":
       dayStats.orders.count++;
       dayStats.orders.money += info.money || 0;
+      if (typeof noteIncome === "function") noteIncome(info.money || 0); // Economy.js
       break;
     case "news":
       _pushNews(info.text);

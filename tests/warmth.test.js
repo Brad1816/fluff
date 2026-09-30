@@ -122,35 +122,30 @@ module.exports = [
         h.setPosition(640, 600);
         objects.push(h);
         money = 1000;
+        economy = freshEconomy();
         heatingState.day = getDayNumber();
         __run(6 * HOUR_LENGTH);
         out.heated = { adult: +adult.warmth.toFixed(2), foal: +foal.warmth.toFixed(2), coldAt: coldAt(foal), label: describeTemperature("INDOORS") };
-        out.bill6h = 1000 - money;
+        // (the running cost goes on the morning bill, Economy.js)
+        out.bill6h = economy.heaterUse;
+        out.moneyUntouched = money === 1000;
         // Off: no bill
         h.on = false;
-        const m0 = money;
+        const m0 = economy.heaterUse;
         __run(2 * HOUR_LENGTH);
-        out.offBill = m0 - money;
+        out.offBill = economy.heaterUse - m0;
         h.on = true;
         // Summer: no bill
         __setTime(6, 12);
-        const m1 = money;
+        const m1 = economy.heaterUse;
         __run(2 * HOUR_LENGTH);
-        out.summerBill = m1 - money;
-        // Next day: yesterday's bill in the news
-        const said = [];
-        const realMsg = window.addUIMessage;
-        window.addUIMessage = (t) => said.push(t);
-        try {
-          __setTime(11, 23, "snow");
-          heatingState.day = 14;
-          heatingState.today = 7;
-          __setTime(15, 9, "snow");
-          __run(1);
-        } finally {
-          window.addUIMessage = realMsg;
-        }
-        out.news = said.find((t) => /Heating bill yesterday/.test(t)) || null;
+        out.summerBill = economy.heaterUse - m1;
+        // On the morning bill, and cleared once charged
+        economy.heaterUse = 7;
+        out.news = dailyBills().heating;
+        money = 10000;
+        chargeDailyBills();
+        out.cleared = economy.heaterUse;
         // Saved
         const copy = loadObjectCopy(h);
         out.saved = copy;
@@ -176,7 +171,9 @@ module.exports = [
       check(r.bill6h >= 6 && r.bill6h <= 9, `about $30 a day: $${r.bill6h} for 6 hours`);
       checkEqual(r.offBill, 0, "switched off: free");
       checkEqual(r.summerBill, 0, "summer: it doesn't run");
-      checkEqual(r.news, "Heating bill yesterday: $7.", "the morning news");
+      check(r.moneyUntouched, "not taken as it runs");
+      check(r.news >= 7, `on the morning bill: ${r.news}`);
+      checkEqual(r.cleared, 0, "charged once");
       checkEqual(JSON.stringify(r.saved), JSON.stringify({ cls: "Heater", on: false, added: true }), "saved");
     },
   },

@@ -174,14 +174,14 @@ module.exports = [
         unlockedRoomsR = 0;
         return out;
       }, SETUP);
-      checkEqual(JSON.stringify(r.bill), JSON.stringify({ rent: 20, rooms: 30, fluffies: 33, total: 83 }), "rent + 2 rooms + 6.5 fluffies");
-      checkEqual(r.money, 417, "paid from your money");
+      checkEqual(JSON.stringify(r.bill), JSON.stringify({ rent: 20, rooms: 40, fluffies: 33, total: 93 }), "rent + 2 rooms (the second dearer) + 6.5 fluffies");
+      checkEqual(r.money, 407, "paid from your money");
       checkEqual(r.moneyShort, 0, "all you had");
-      checkEqual(r.short.owed, 63, "the rest is owed");
-      check(/you owe \$63/.test(r.text), r.text);
-      checkEqual(r.moneyNext, 1000 - 83 - 63, "next morning: the bill and what you owed");
+      checkEqual(r.short.owed, 73, "the rest is owed");
+      check(/you owe \$73/.test(r.text), r.text);
+      checkEqual(r.moneyNext, 1000 - 93 - 73, "next morning: the bill and what you owed");
       checkEqual(r.next.owed, 0, "debt cleared");
-      check(r.report && r.report.total === 83, `on the day report ${JSON.stringify(r.report)}`);
+      check(r.report && r.report.total === 93 + (r.report.heating || 0), `on the day report ${JSON.stringify(r.report)}`);
       checkEqual(r.err, null, "the report draws");
     },
   },

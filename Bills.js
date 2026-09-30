@@ -34,8 +34,9 @@ function _billsFluffies() {
 
 // { rent, rooms, fluffies, boarding?, total }
 function dailyBills() {
-  const rent = BILL_RENT;
-  const rooms = BILL_PER_ROOM * _billsRooms();
+  // Rent rises and falls with what you earn; each room costs more (Economy.js)
+  const rent = typeof economy !== "undefined" && economy && economy.rent > 0 ? economy.rent : BILL_RENT;
+  const rooms = typeof roomsBill === "function" ? roomsBill(_billsRooms()) : BILL_PER_ROOM * _billsRooms();
   const pets = Math.round(BILL_PER_FLUFFY * _billsFluffies());
   const bill = { rent, rooms, fluffies: pets, total: rent + rooms + pets };
   // Fluffies boarding at the shelter (UIDayCare.js)
@@ -44,13 +45,23 @@ function dailyBills() {
     bill.boarding = boarders * DAY_CARE_RECURRING_FEE_PER_FLUFFY;
     bill.total += bill.boarding;
   }
+  // Heating, the vet plan, a loan (Economy.js)
+  if (typeof economyBillLines === "function") {
+    for (const [k, v] of Object.entries(economyBillLines())) {
+      bill[k] = v;
+      bill.total += v;
+    }
+  }
   return bill;
 }
 
 // Every morning (DayReport.js, before the day's card is made).
 // Returns { total, paid, owed } for the card.
 function chargeDailyBills() {
+  // Last day's takings, and the weekly rent review (Economy.js)
+  if (typeof economyMorning === "function") economyMorning();
   const bill = dailyBills();
+  if (typeof economyBillCharged === "function") economyBillCharged();
   if (typeof showDebugMenu !== "undefined" && showDebugMenu) return { ...bill, paid: 0, owed: billsOwed, free: true };
   const due = bill.total + billsOwed;
   const paid = Math.max(0, Math.min(money, due));
@@ -72,6 +83,9 @@ function describeBills(b) {
   if (b.rooms) parts.push(`rooms $${b.rooms}`);
   if (b.fluffies) parts.push(`fluffies $${b.fluffies}`);
   if (b.boarding) parts.push(`boarding $${b.boarding}`);
+  if (b.heating) parts.push(`heating $${b.heating}`);
+  if (b.plan) parts.push(`vet plan $${b.plan}`);
+  if (b.loan) parts.push(`loan $${b.loan}`);
   let t = `-$${b.total.toLocaleString()} (${parts.join(", ")})`;
   if (b.owed > 0) t += ` · you owe $${b.owed.toLocaleString()}`;
   return t;

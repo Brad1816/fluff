@@ -300,6 +300,7 @@ function deliverCustomerLetter(l) {
   if (l.mood === "delighted") {
     text = `Letter from ${l.customer}: "${l.fluffy} is a joy - thank you! Here's a little extra." +$${l.tip}`;
     if (!(typeof showDebugMenu !== "undefined" && showDebugMenu)) money += l.tip;
+    if (typeof noteIncome === "function") noteIncome(l.tip); // (Economy.js)
   } else if (l.mood === "upset") {
     text = `Letter from ${l.customer}: "${l.fluffy} is scared of everything. I expected better."`;
     getClient(l.customer).loyalty -= 1;

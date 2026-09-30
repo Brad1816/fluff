@@ -103,8 +103,16 @@ function vetClinicClick() {
 
 // ---- Services ----
 
-function _vetPay(amount) {
+// kind: "check", "treat", "midwife" (the vet plan helps with those,
+// Economy.js) or "jab"
+function _vetPay(amount, kind = "treat") {
+  const full = amount;
+  if (kind !== "jab" && typeof vetPlanPrice === "function") amount = vetPlanPrice(amount, kind);
   if (typeof showDebugMenu !== "undefined" && showDebugMenu) return true;
+  if (amount <= 0) {
+    if (typeof noteVetClaim === "function") noteVetClaim(full, 0);
+    return true;
+  }
   if (money < amount) {
     // Pay later? (a second click: on credit, Pressure.js)
     if (typeof vetOnCredit === "function") return vetOnCredit(amount);
@@ -112,7 +120,13 @@ function _vetPay(amount) {
     return false;
   }
   money -= amount;
+  if (typeof noteVetClaim === "function") noteVetClaim(full, amount);
   return true;
+}
+
+// What you'd pay (on the plan or not)
+function vetPrice(amount, kind = "treat") {
+  return kind !== "jab" && typeof vetPlanPrice === "function" ? vetPlanPrice(amount, kind) : amount;
 }
 
 function _vetName(f) {
@@ -147,7 +161,7 @@ function vetLifeNote(f) {
 }
 
 function vetCheckUp(f) {
-  if (!f || !f.isAlive || !_vetPay(VET_CHECK_PRICE)) return false;
+  if (!f || !f.isAlive || !_vetPay(VET_CHECK_PRICE, "check")) return false;
   f.vetCheckedAt = typeof timePlayed === "number" ? timePlayed : 0;
   const found = [];
   if (typeof hasFlu === "function" && hasFlu(f)) {
@@ -185,7 +199,8 @@ function vetTreat(f) {
   f.vetCheckedAt = typeof timePlayed === "number" ? timePlayed : 0;
   f.vetNote = "treated - all better";
   if (typeof giveAffection === "function") giveAffection(f, "vet");
-  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} is all better ($${price}).`);
+  const paid = vetPrice(price);
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} is all better ($${paid}${paid < price ? ", on the plan" : ""}).`);
   return true;
 }
 
@@ -196,7 +211,7 @@ function canBookMidwife(f) {
 }
 
 function vetMidwife(f) {
-  if (!canBookMidwife(f) || !_vetPay(VET_MIDWIFE_PRICE)) return false;
+  if (!canBookMidwife(f) || !_vetPay(VET_MIDWIFE_PRICE, "midwife")) return false;
   f.midwife = true;
   if (typeof addUIMessage === "function") addUIMessage(`Vet: a midwife will be there when ${_vetName(f)} gives birth.`);
   return true;
@@ -220,7 +235,7 @@ function vetCanJab(f) {
 function vetJab(f) {
   if (!vetCanJab(f)) return false;
   const price = vetJabPrice(f);
-  if (!_vetPay(price)) return false;
+  if (!_vetPay(price, "jab")) return false;
   const got = [];
   if (!f.fluVaccinated) got.push("flu");
   if (!f.isToxoVaccinated && _toxoOn()) got.push("toxoplasmosis");
@@ -291,6 +306,8 @@ function getVetLayout() {
     pages,
     list,
     checkAll: { x: x + w - 400, y: y + 60, w: 180, h: 32 },
+    // The vet plan (Economy.js)
+    plan: { x: x + w - 610, y: y + 60, w: 200, h: 32 },
     jabAll: { x: x + w - 210, y: y + 60, w: 190, h: 32 },
     prev: { x: x + 24, y: y + h - 46, w: 50, h: 32 },
     next: { x: x + 80, y: y + h - 46, w: 50, h: 32 },
@@ -323,6 +340,7 @@ function drawVet(c) {
   );
   c.fillText("Flu spreads to fluffies nearby: pen new arrivals for a day or two. Toxoplasmosis comes from eating poop: keep floors clean.", L.x + 24, L.y + 84);
   _vetButton(c, L.checkAll, "Check everyone", L.list.length > 0);
+  if (typeof onVetPlan === "function") _vetButton(c, L.plan, onVetPlan() ? `On the plan ($${planPremium()}/day)` : `Join plan ($${planPremium()}/day)`, true);
   const jabCost = L.list.filter((f) => vetCanJab(f)).reduce((s, f) => s + vetJabPrice(f), 0);
   _vetButton(c, L.jabAll, `Jab everyone ($${jabCost})`, jabCost > 0);
 
@@ -377,10 +395,11 @@ function drawVet(c) {
     }
     c.fillText(fitText(c, line2, condW), r.x + 450, r.y + 40);
     const price = vetTreatmentPrice(f);
-    _vetButton(c, r.check, `Check-up $${VET_CHECK_PRICE}`, true);
-    _vetButton(c, r.treat, price ? `Treat $${price}` : "Treat", price > 0);
+    const checkPrice = vetPrice(VET_CHECK_PRICE, "check");
+    _vetButton(c, r.check, checkPrice ? `Check-up $${checkPrice}` : "Check-up (plan)", true);
+    _vetButton(c, r.treat, price ? `Treat $${vetPrice(price)}` : "Treat", price > 0);
     // No jabs while pregnant: that button books a midwife instead
-    if (pregnant) _vetButton(c, r.jab, f.midwife ? "Midwife ✓" : `Midwife $${VET_MIDWIFE_PRICE}`, !f.midwife);
+    if (pregnant) _vetButton(c, r.jab, f.midwife ? "Midwife ✓" : `Midwife $${vetPrice(VET_MIDWIFE_PRICE, "midwife")}`, !f.midwife);
     else _vetButton(c, r.jab, vetJabPrice(f) ? `Jab $${vetJabPrice(f)}` : "Jabbed", vetJabPrice(f) > 0);
   }
   if (typeof drawGlassButton === "function") {
@@ -404,6 +423,11 @@ function handleVetClick() {
   const hit = (b) => isPointInRect(mouse.x, mouse.y, b.x, b.y, b.w, b.h);
   if (hit(L.close) || !hit(L)) {
     closeVet();
+    return true;
+  }
+  if (typeof onVetPlan === "function" && hit(L.plan)) {
+    if (onVetPlan()) leaveVetPlan();
+    else joinVetPlan();
     return true;
   }
   if (hit(L.checkAll)) {

@@ -59,7 +59,7 @@ function notePressureMorning(owed) {
   };
   if (owed > 0) {
     p.debtDays++;
-    if (p.debtDays === 1) say(`A final notice: you owe $${owed.toLocaleString()}. Pay it off before things get worse.`);
+    if (p.debtDays === 1) say(`A final notice: you owe $${owed.toLocaleString()}. Pay it off before things get worse. (The landlord can lend you money: click your money, top left.)`);
     if (p.debtDays === POWER_CUT_DAY) say("The power's been cut off until you pay what you owe. The heaters are cold.");
     if (p.debtDays >= BAILIFF_DAY && (p.debtDays - BAILIFF_DAY) % 2 === 0) sendBailiffs();
   } else {
