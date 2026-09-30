@@ -410,6 +410,9 @@ const DIALOGUE = {
   },
   // Tricks and training (Tricks.js)
   TRICK: {
+    // (FearTraining.js)
+    JOYLESS: ["...", "*does it without a sound*", "Yes mistah.", "<Speaker> du it. Pwease nu huwt.", "*twembwes*"],
+    PUNISHED: ["*SCREEE* Sowwy! Sowwy!", "Nu! <Speaker> twy hawdew!", "*whimpew* ...wiww du it wight...", "Pwease nu huwt!"],
     COME: ["Coming, daddeh!", "<Speaker> comin'!", "Hewe <speaker> come!"],
     SIT: ["<Speaker> sit! Wook!", "Sittie!", "Am sittin' su good!"],
     DOWN: ["Wie down... wike dis?", "<Speaker> make fwoppy!", "Down on tummeh!"],
@@ -437,6 +440,16 @@ const DIALOGUE = {
     BELL: ["Ding-ding! Nummy time!", "Wobot say nummies!", "Nummies! Nummies!"],
   },
   // Frights (Fears.js)
+  // Care actions (Care.js): "mistah" becomes what it calls you
+  CARE: {
+    SIT_WITH: ["*sniff* ...mistah stay?", "Mistah nu weave <speaker>?", "Huu... <speaker> nu wike be awone...", "*snuggwe*"],
+    SAT_WITH_DONE: ["<Speaker> feew bettew nao.", "Fank yu mistah...", "Mistah am bestest.", "*happy sigh*"],
+    PRAISED: ["<Speaker> am gud fwuffy?! Yay!", "Mistah say gud! Huuu!", "Bestest pwaise!", "*happy wiggwe*"],
+    SCOLDED: ["*whimpew* ...sowwy mistah...", "Nu be mad! <Speaker> sowwy!", "Nu du it again! Pwomise!", "Huu... sowwy..."],
+    SCOLDED_NOTHING: ["Wha? Wha <speaker> du?", "*confused whimpew*", "Bu... <speaker> nu du nuffin...", "Huu? Wai mistah mad?"],
+    TIME_OUT: ["Nu! Nu wan be in cownew!", "*sniff* ...otay...", "<Speaker> nu wike sittie-cownew...", "Huu... aww awone..."],
+    TIME_OUT_OVER: ["...<speaker> can go nao?", "*sniff* Nu mowe cownew?", "<Speaker> be gud nao..."],
+  },
   // Shared memories and parties (SharedMemories.js)
   SHARED: {
     ANNIV_SAD: ["<Speaker> 'membew... dis was de bad day...", "*sniff* Nu fowget...", "Sad pwace... <speaker> sad hewe.", "Hewe it happen... huu..."],

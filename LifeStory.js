@@ -256,6 +256,8 @@ function _lsTallyLines(c, days, p) {
     );
   } else if (c.comforted) out.push(`You comforted ${p.obj} ${_lsFreq(c.comforted, days)}.`);
   if (c.lesson) out.push(`${p.Sub} had ${c.lesson === 1 ? "a lesson" : `${c.lesson} lessons`}.`);
+  if (c.scolded) out.push(`You scolded ${p.obj} ${_lsFreq(c.scolded, days)}.`); // (Care.js)
+  if (c.drilled) out.push(`You drilled ${p.obj} with fear ${_lsFreq(c.drilled, days)}.`); // (FearTraining.js)
   if (c.attacked) out.push(`Other fluffies went for ${p.obj} ${_lsFreq(c.attacked, days)}.`);
   if (c.nightmare) out.push(`${p.Sub} had ${c.nightmare === 1 ? "a nightmare" : `${c.nightmare} nightmares`} that woke ${p.obj}.`);
   if (c.feedbot_tip) out.push(`${p.Sub} knocked the Feed-Bot over ${c.feedbot_tip === 1 ? "once" : `${c.feedbot_tip} times`}.`);

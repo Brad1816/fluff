@@ -198,6 +198,7 @@ function boredMischief(f) {
     (o) => o !== f && o.isAlive && o.scene === f.scene && o.currentCage === f.currentCage && Math.hypot(o.x - f.x, o.y - f.y) < 400,
   );
   const pick = bowl && (!victim || Math.random() < 0.6) ? "bowl" : victim ? "pick" : null;
+  f._mischiefAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: a scolding can stop it)
   if (pick === "bowl") {
     bowl.food = 0;
     bowl.foodType = null;

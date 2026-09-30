@@ -70,6 +70,14 @@ const SAVED_HORSE_FIELDS = [
   { name: "scars", fallback: undefined, clone: true }, // Scars.js
   { name: "gossip", fallback: undefined, clone: true }, // Gossip.js
   { name: "partiesHad", fallback: undefined, clone: true }, // SharedMemories.js
+  { name: "careToday", fallback: undefined, clone: true }, // Care.js
+  { name: "title", fallback: null }, // Titles.js
+  { name: "titleSince", fallback: undefined },
+  { name: "titleState", fallback: undefined, clone: true },
+  { name: "strain", fallback: 0 },
+  { name: "breakLimit", fallback: undefined },
+  { name: "conditioned", fallback: undefined, clone: true },
+  { name: "trickFear", fallback: undefined, clone: true }, // FearTraining.js
   { name: "_frightsComforted", fallback: undefined },
   { name: "_stormComfortDay", fallback: undefined },
   { name: "diet", fallback: null }, // Diet.js

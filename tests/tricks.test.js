@@ -174,7 +174,7 @@ module.exports = [
       await page.mouse.click(spot.x, spot.y, { button: "right" });
       const menu = await page.evaluate(() => {
         const L = getTrickMenuLayout();
-        return { phase: trickUI && trickUI.phase, chips: L && L.chips.filter((c) => !c.lesson).map((c) => c.key), bow: L && L.chips.find((c) => c.key === "bow") };
+        return { phase: trickUI && trickUI.phase, chips: L && L.chips.filter((c) => c.trick).map((c) => c.key), bow: L && L.chips.find((c) => c.key === "bow") };
       });
       checkEqual(menu.phase, "menu", "right-click opens the trick menu");
       checkEqual(JSON.stringify(menu.chips), JSON.stringify(["come", "sit", "down", "bow", "dance", "wave", "fetch"]), "tricks");

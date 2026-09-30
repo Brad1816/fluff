@@ -137,7 +137,7 @@ function tooOldToBreed(f) {
 
 // Chance of dying of old age within a day at this age (0..1)
 function oldAgeDailyRisk(f) {
-  const d = ageDays(f);
+  const d = ageDays(f) + (typeof titleAgeExtraDays === "function" ? titleAgeExtraDays(f) : 0); // a Broken one dies sooner (Titles.js)
   if (f.growth < 1 || d < OLD_AGE_RISK_DAYS) return 0;
   return Math.min(1, ((d - OLD_AGE_RISK_DAYS) / (MAX_AGE_DAYS - OLD_AGE_RISK_DAYS)) ** 2);
 }

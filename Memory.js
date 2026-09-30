@@ -91,6 +91,8 @@ function changePlayerTrust(f, amount) {
   ensurePlayerMemory(f);
   // Social fluffies warm up to you faster
   if (amount > 0) amount *= 1 + 0.3 * _traitVal(f, "social");
+  // A Survivor is loyal, a Wary one slow to believe (Titles.js)
+  if (amount > 0 && typeof titleTrustMultiplier === "function") amount *= titleTrustMultiplier(f);
   const before = f.playerTrust;
   f.playerTrust = clamp(f.playerTrust + amount, 0, 1);
   if (typeof onAffectionChanged === "function") onAffectionChanged(f, before);
@@ -123,6 +125,7 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
     if (isDead || !victim.isAlive) victim.killedByPlayer = true;
   }
   if (!isDead && victim.isAlive) {
+    if (weaponType === "stick" && typeof noteConditionStick === "function") noteConditionStick(victim); // (Care.js)
     changePlayerFear(victim, fear);
     rememberPlayerEvent(victim, isTraining ? "training" : weaponType);
     // It may carry the mark for good (Scars.js)
@@ -149,6 +152,7 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
 // Brush code (script.js): brushing builds trust and calms
 // (Affection.js: only the first few brushes a day count in full)
 function onFluffyBrushed(f) {
+  if (typeof noteConditionBrush === "function") noteConditionBrush(f); // a bedtime brush (Care.js)
   if (typeof onComfortedByYou === "function") onComfortedByYou(f, "brushed"); // (Fears.js)
   if (typeof giveAffection === "function") giveAffection(f, "brushed");
   else {

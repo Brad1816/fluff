@@ -108,15 +108,19 @@ function trickChance(f, key) {
   if (f.happiness < 0.3) p *= 0.7;
   if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
   if (typeof climateLearnMultiplier === "function") p *= climateLearnMultiplier(f); // the room's feel (Climate.js)
+  if (typeof fearChanceBoost === "function") p = fearChanceBoost(f, key, p); // strict, or drilled in (FearTraining.js)
   return Math.max(0.03, Math.min(0.97, p));
 }
 
 // Why it won't even try (null = it'll try)
-function trickRefusal(f) {
+function trickRefusal(f, key = null) {
   if (!canLearnTricks(f)) return "can't";
   if (f.currentStateKey === "SLEEPING") return "asleep";
   if (f.isSmarty && f.isSmarty()) return "smarty";
-  if ((f.playerFear || 0) >= 0.45) return "scared";
+  const titled = typeof titleRefusesYou === "function" ? titleRefusesYou(f) : null; // a Rebel, or a Spoiled one wanting a treat (Titles.js)
+  if (titled) return titled;
+  // (strict training, a Broken one or the stick held near: fear makes it try - FearTraining.js)
+  if ((f.playerFear || 0) >= 0.45 && !(typeof obeysFromFear === "function" && obeysFromFear(f, key))) return "scared";
   if (trickTriesLeft(f) <= 0) return "tired";
   return null;
 }
@@ -143,7 +147,7 @@ function _trLearn(f, key, amount) {
 function tryTrick(f, key, target = null) {
   const trick = getTrick(key);
   if (!trick || !f) return "can't";
-  const why = trickRefusal(f);
+  const why = trickRefusal(f, key);
   if (why) {
     if (why === "smarty") _trSay(f, "SMARTY");
     else if (why === "tired") _trSay(f, "TIRED");
@@ -157,7 +161,7 @@ function tryTrick(f, key, target = null) {
   if (!f.trickTries || f.trickTries.day !== d) f.trickTries = { day: d, n: 0 };
   f.trickTries.n++;
   // Doesn't like you: often just won't
-  if (typeof affectionLevel === "function" && affectionLevel(f) === "dislikes" && Math.random() < 0.4) {
+  if (typeof affectionLevel === "function" && affectionLevel(f) === "dislikes" && !(typeof obeysFromFear === "function" && obeysFromFear(f, key)) && Math.random() < 0.4) {
     _trSay(f, "REFUSE");
     f.expressionOverride = "ANGRY_PUFFED";
     f.expressionOverrideTimer = 1.5;
@@ -166,7 +170,12 @@ function tryTrick(f, key, target = null) {
   if (Math.random() < trickChance(f, key)) {
     startTrick(f, key, target);
     if (ball) f.trickNow.ballId = ball.id;
-    _trSay(f, key.toUpperCase());
+    // Drilled in with fear: done at once, but joylessly (FearTraining.js)
+    if (typeof isJoylessTrick === "function" && isJoylessTrick(f, key)) {
+      f.expressionOverride = "MISERABLE";
+      f.expressionOverrideTimer = 2;
+      _trSay(f, "JOYLESS");
+    } else _trSay(f, key.toUpperCase());
     _trWatchers(f, key);
     if (typeof onFluffyPlayed === "function") onFluffyPlayed(f, "trick"); // a bit less bored (Play.js)
     return "done";
@@ -255,7 +264,8 @@ function trickPriceMultiplier(f) {
 
 // 0..100 for the Trick Show (Shows.js): the best 3 tricks
 function trickShowScore(f) {
-  const s = TRICKS.map((t) => trickSkill(f, t.key)).sort((a, b) => b - a);
+  // (the judges mark down a trick done out of fear, FearTraining.js)
+  const s = TRICKS.map((t) => (typeof fearShowSkill === "function" ? fearShowSkill(f, t.key) : trickSkill(f, t.key))).sort((a, b) => b - a);
   return Math.round(((s[0] + s[1] + s[2]) / 3) * 100);
 }
 
@@ -475,7 +485,17 @@ function getTrickMenuLayout() {
         ax += aw + gap;
       }
     }
+    // Kind or strict training (FearTraining.js)
+    if (typeof toggleTrainingStyle === "function") chips.push({ x: x - gap - 110, y: y - 32, w: 110, h: 24, key: "style" });
     return { f, chips, titleX, titleY: y - 10, lessonY, actionY };
+  }
+  if (trickUI.phase === "punish") {
+    const w = 140;
+    const x = Math.max(8, Math.min(width - 2 * w - 14, cx - w - 3));
+    const y = Math.max(40, Math.min(height - 80, top - 30));
+    chips.push({ x, y, w, h: 36, key: "scold" });
+    chips.push({ x: x + w + 6, y, w, h: 36, key: "smack" });
+    return { f, chips, titleX: x + w + 3, titleY: y - 10 };
   }
   if (trickUI.phase === "reward") {
     const w = 140;
@@ -503,6 +523,10 @@ function handleTrickClick() {
       closeTrickUI();
       return true;
     }
+    if (hit.key === "style") {
+      toggleTrainingStyle();
+      return true;
+    }
     if (hit.action) {
       closeTrickUI();
       hit.action.run(f);
@@ -528,8 +552,14 @@ function handleTrickClick() {
     return true;
   }
   if (trickUI.phase === "reward") {
-    if (hit) rewardTrick(f, hit.key, trickUI.trick);
+    if (hit && hit.key === "praise" && typeof isStrict === "function" && isStrict()) fearNod(f, trickUI.trick); // a curt nod (FearTraining.js)
+    else if (hit) rewardTrick(f, hit.key, trickUI.trick);
     else _trLearn(f, trickUI.trick, TRICK_LEARN.none);
+    closeTrickUI();
+    return true;
+  }
+  if (trickUI.phase === "punish") {
+    if (hit) fearPunish(f, trickUI.trick, hit.key);
     closeTrickUI();
     return true;
   }
@@ -541,6 +571,8 @@ function _trAsk(f, key, target = null) {
   // Come and Fetch take a while: wait until it gets back, then reward it
   if (res === "done" && (key === "come" || key === "fetch")) trickUI = { phase: "waiting", id: f.id, trick: key, until: _trNow() + getTrick(key).time + 2 };
   else if (res === "done") trickUI = { phase: "reward", id: f.id, trick: key, until: _trNow() + TRICK_REWARD_WINDOW };
+  // Strict: a wrong try can be punished (FearTraining.js)
+  else if (res === "failed" && typeof isStrict === "function" && isStrict()) trickUI = { phase: "punish", id: f.id, trick: key, until: _trNow() + FEAR_PUNISH_WINDOW };
   else {
     closeTrickUI();
     const msg = {
@@ -548,6 +580,8 @@ function _trAsk(f, key, target = null) {
       tired: `${_trName(f)} has had enough tricks for today.`,
       scared: `${_trName(f)} is too scared of you to learn.`,
       smarty: `Smarties don't do tricks.`,
+      rebel: `${_trName(f)} won't do what you say any more.`,
+      spoiled: `${_trName(f)} won't - not without a treat first.`,
       noball: "There's no ball here to fetch.",
     }[res];
     if (msg && typeof addUIMessage === "function") addUIMessage(msg);
@@ -580,6 +614,14 @@ function drawTrickUI(c) {
     for (const ch of L.chips) {
       const s = trickSkill(f, ch.key);
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
+      if (ch.key === "style") {
+        const strict = isStrict();
+        fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, strict ? (hover ? "rgb(170, 70, 70)" : "rgba(120, 40, 45, 0.92)") : hover ? "rgb(60, 140, 110)" : "rgba(30, 80, 70, 0.92)");
+        c.fillStyle = "white";
+        c.font = "bold 12px Arial";
+        c.fillText(strict ? "Style: Strict ⇄" : "Style: Kind ⇄", ch.x + ch.w / 2, ch.y + ch.h / 2 + 1);
+        continue;
+      }
       if (ch.action) {
         const harsh = !!ch.action.harsh;
         fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, hover ? (harsh ? "rgb(170, 70, 70)" : "rgb(60, 140, 110)") : harsh ? "rgba(110, 40, 45, 0.92)" : "rgba(30, 80, 70, 0.92)");
@@ -621,7 +663,18 @@ function drawTrickUI(c) {
       fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, col);
       c.fillStyle = "white";
       c.font = "bold 14px Arial";
-      c.fillText(ch.key === "praise" ? "♥ Good fluffy!" : `Treat $${TRICK_TREAT_COST}`, ch.x + ch.w / 2, ch.y + ch.h / 2);
+      const strictNod = ch.key === "praise" && typeof isStrict === "function" && isStrict();
+      c.fillText(strictNod ? "Nod" : ch.key === "praise" ? "♥ Good fluffy!" : `Treat $${TRICK_TREAT_COST}`, ch.x + ch.w / 2, ch.y + ch.h / 2);
+    }
+  } else if (trickUI.phase === "punish") {
+    const left = Math.max(0, trickUI.until - _trNow());
+    label(`Wrong! Punish it? (${Math.ceil(left)}s)`, L.titleX, L.titleY - 8);
+    for (const ch of L.chips) {
+      const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
+      fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, hover ? "rgb(170, 70, 70)" : "rgba(110, 40, 45, 0.92)");
+      c.fillStyle = "white";
+      c.font = "bold 14px Arial";
+      c.fillText(ch.key === "scold" ? "Scold" : "Smack (stick)", ch.x + ch.w / 2, ch.y + ch.h / 2);
     }
   }
   c.restore();
@@ -649,6 +702,8 @@ function updateTricks(dt) {
     if (t && t.arrived) trickUI = { phase: "reward", id: f.id, trick: trickUI.trick, until: _trNow() + TRICK_REWARD_WINDOW };
     else if (!t || _trNow() > trickUI.until) closeTrickUI();
   }
+  // Missed the moment to punish it (FearTraining.js)
+  if (trickUI && trickUI.phase === "punish" && _trNow() > trickUI.until) closeTrickUI();
   // Missed the moment to reward it
   if (trickUI && trickUI.phase === "reward" && _trNow() > trickUI.until) {
     const f = trickUIFluffy();

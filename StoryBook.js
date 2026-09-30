@@ -83,6 +83,8 @@ const STORY_KINDS = {
   comforted: { big: false },
   attacked: { big: false },
   lesson: { big: false },
+  scolded: { big: false }, // (Care.js)
+  drilled: { big: false }, // (FearTraining.js)
 };
 
 function freshStoryBook() {
@@ -153,6 +155,7 @@ function recordStory(kind, who, opts = {}) {
   }
   // The room's feel (Climate.js)
   if (typeof noteClimateStory === "function") noteClimateStory(kind, ids, opts);
+  if (typeof noteTitleStory === "function" && kind === "harmed") noteTitleStory(kind, ids, opts); // strain (Titles.js)
   // Big moments they went through together (SharedMemories.js)
   if (typeof noteSharedStory === "function" && (kind === "born" || kind === "show" || kind === "died")) noteSharedStory(kind, ids, opts);
   if (!def.big) return _tally(ids[0], kind);

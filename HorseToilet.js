@@ -160,6 +160,7 @@ addHorseMethods({
       } else {
         this.badPoopieTimer = 3.0;
         this.trainedForThisOccurrence = false;
+        this._accidentAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: scold for the mess)
       }
 
       if (this.pottyTraining > 0.2 && Math.random() < 0.5 && !lbIsFull && !nearLitterbox && !this.tooYoungToSpeak()) {

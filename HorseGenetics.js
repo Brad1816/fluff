@@ -383,6 +383,8 @@ class HorseGenetics {
     if (typeof dirtPriceMultiplier === "function") price *= dirtPriceMultiplier(this.horse);
     // Scars: -5% each, at most -20% (Scars.js)
     if (typeof scarPriceMultiplier === "function") price *= scarPriceMultiplier(this.horse);
+    // Titles: Cherished x1.1, Broken x0.8... (Titles.js)
+    if (typeof titlePriceMultiplier === "function") price *= titlePriceMultiplier(this.horse);
 
     return Math.floor(price);
   }

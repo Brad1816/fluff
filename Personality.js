@@ -59,6 +59,10 @@ const GROWTH_RULES = {
   loved: { trait: "social", dir: 1, need: GROW_LOVED_DAYS, why: (n, p) => `Being loved made ${n} friendlier.` },
   played: { trait: "energy", dir: 1, need: GROW_PLAYS, why: (n, p) => `All that play made ${n} livelier.` },
   pickedOn: { trait: "temper", dir: 1, need: GROW_PICKED_ON, why: (n, p) => `Being picked on made ${n} grumpier.` },
+  // Foals take after a titled mum or dad (Titles.js)
+  raisedBrave: { trait: "bravery", dir: 1, why: (n, p) => `Growing up with a Guardian made ${n} braver.` },
+  raisedBroken: { trait: "bravery", dir: -1, why: (n, p) => `Growing up with a broken parent made ${n} more timid.` },
+  raisedLoved: { trait: "social", dir: 1, why: (n, p) => `Growing up with a cherished parent made ${n} friendlier.` },
   // Foals absorb the feel of the room they grow up in (Climate.js)
   warmRoom: { trait: "social", dir: 1, need: GROW_ROOM_DAYS * DAY_LENGTH, why: (n, p) => `Growing up in a warm, happy room made ${n} friendlier.` },
   fearRoom: { trait: "bravery", dir: -1, need: GROW_ROOM_DAYS * DAY_LENGTH, why: (n, p) => `Growing up in a frightened, tense room made ${n} more timid.` },

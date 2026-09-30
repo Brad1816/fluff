@@ -170,6 +170,14 @@ function getFluffyInspectionInfo(f) {
     if (scars) about.push({ label: "Scars", value: scars[0], tone: scars[1], tip: scars[2] });
     const role = typeof describeFamilyRole === "function" ? describeFamilyRole(f) : null; // Gossip.js
     if (role) about.push({ label: "Family role", value: role[0], tone: role[1] });
+    const title = typeof describeTitle === "function" ? describeTitle(f) : null; // Titles.js
+    if (title) about.push({ label: "Title", value: title[0], tone: title[1] });
+    const change = typeof describeTitleProgress === "function" ? describeTitleProgress(f) : null;
+    if (change) about.push({ label: "Changing", value: change, tone: /breaking/.test(change) ? "bad" : "" });
+    const cond = typeof describeConditioning === "function" ? describeConditioning(f) : null; // Care.js
+    if (cond) about.push({ label: "Conditioned", value: cond[0], tone: cond[1] });
+    const drilled = typeof describeFearTraining === "function" ? describeFearTraining(f) : null; // FearTraining.js
+    if (drilled) about.push({ label: "Drilled", value: drilled[0], tone: drilled[1] });
     const heard = typeof describeGossip === "function" ? describeGossip(f) : null;
     if (heard) about.push({ label: "Heard", value: heard[0], tone: heard[1] });
     const fav = typeof describeFavouriteCare === "function" ? describeFavouriteCare(f) : null;
@@ -386,7 +394,7 @@ const INSPECTION_TABS = [
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Wishes for", "Loves most", "Tricks", "Lessons", "Remembers", "Heard", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Title", "Changing", "Wishes for", "Loves most", "Tricks", "Drilled", "Lessons", "Conditioned", "Remembers", "Heard", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },
@@ -418,7 +426,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;

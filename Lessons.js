@@ -147,7 +147,8 @@ function lessonChance(f, key) {
 function lessonRefusal(f) {
   if (!canLearnTricks(f)) return "can't";
   if (f.currentStateKey === "SLEEPING") return "asleep";
-  if ((f.playerFear || 0) >= 0.45) return "scared";
+  if (typeof titleOf === "function" && titleOf(f) === "Rebel") return "rebel"; // (Titles.js)
+  if ((f.playerFear || 0) >= 0.45 && !(typeof obeysFromFear === "function" && obeysFromFear(f))) return "scared";
   if (lessonTriesLeft(f) <= 0) return "tired";
   return null;
 }
@@ -172,13 +173,18 @@ function giveLesson(f, key) {
   if (!f.lessonTries || f.lessonTries.day !== d) f.lessonTries = { day: d, n: 0 };
   f.lessonTries.n++;
   const smarty = key === "smarty";
-  if (Math.random() < lessonChance(f, key)) {
+  // Strict (FearTraining.js): fear makes it listen, and it costs
+  const strict = typeof isStrict === "function" && isStrict();
+  if (strict) fearLessonCost(f);
+  if (Math.random() < (strict ? fearLessonChance(f, key) : lessonChance(f, key))) {
     // Sits and listens
     if (typeof startTrick === "function" && !f.trickNow && !f.currentCage && !f.placedOn) startTrick(f, "sit", null, 3);
     f.expressionOverride = "GOOD_UPSIES";
     f.expressionOverrideTimer = 2;
     const cured = lesson.teach(f);
+    if (strict && !cured) fearLessonAfter(f, key); // (its views soften only half as much)
   if (typeof recordStory === "function") recordStory("lesson", f);
+    if (typeof noteTitleCare === "function") noteTitleCare(f, "lesson"); // a firm hand (Titles.js)
     _lsSay(f, smarty ? "SMARTY_LISTENS" : key.toUpperCase());
     if (cured) {
       if (lesson.doneMsg && typeof addUIMessage === "function") addUIMessage(lesson.doneMsg(_trName(f)));
@@ -245,6 +251,7 @@ function lessonResultMessage(f, res, key) {
       asleep: `${n} is asleep.`,
       tired: `${n} has had enough lessons for today.`,
       scared: `${n} is too scared of you to listen.`,
+      rebel: `${n} won't listen to you any more.`,
       learnt: key === "smarty" ? `${n} listened... this time.` : `${n} listened.`,
       "didn't": key === "smarty" ? `${n} won't listen to a dummeh.` : `${n} didn't take it in.`,
     }[res] || null

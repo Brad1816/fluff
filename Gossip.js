@@ -128,6 +128,16 @@ function passGossip(from, to) {
     const heard = tales.harm * GOSSIP_PASS;
     if (heard > gt.harm) gt.harm = heard;
     out.harm = amount;
+    // A Rebel stirs them up: they trust you a little less (Titles.js)
+    if (typeof titleOf === "function" && titleOf(from) === "Rebel" && to.adopted && titleOf(to) !== "Rebel") {
+      const room2 = Math.max(0, 0.1 - (gt.defied || 0));
+      const d = Math.min(room2, 0.02);
+      if (d > 0) {
+        to.playerTrust = Math.max(0, (to.playerTrust || 0) - d);
+        gt.defied = (gt.defied || 0) + d;
+        out.defiance = d;
+      }
+    }
     if (!gt.heardHarm) {
       gt.heardHarm = true;
       const about = _gFirstHandHarm(from).about;

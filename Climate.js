@@ -58,6 +58,8 @@ const CLIMATE_WEIGHTS = {
   named: [0.5, 0, 0, 0],
   attacked: [0, 1.2, 0.2, 0],
   lesson: [0, 0.4, 0.2, 0],
+  scolded: [0, 0.5, 0.2, 0],
+  drilled: [0, 0.4, 0.2, 0],
   wish_denied: [0, 0.8, 0, 0.3],
   harmed: [0, 0.6, 1.2, 0], // (only a fifth for those who just saw it)
   fright: [0, 0, 0.3, 0],
@@ -74,7 +76,7 @@ const CLIMATE_REASON = {
   brushed: "brushing", held_happy: "cuddles", treat: "treats", gift: "gifts", toy: "toys", praised: "praise",
   played: "play", comforted: "comfort", bathed: "baths", born: "new foals", trick: "tricks learnt", show: "show wins",
   wish_granted: "wishes come true", named: "names given", attacked: "fights", lesson: "harsh lessons",
-  wish_denied: "wishes denied", harmed: "your harshness", fright: "frights", nightmare: "nightmares",
+  wish_denied: "wishes denied", scolded: "scoldings", drilled: "harsh training", harmed: "your harshness", fright: "frights", nightmare: "nightmares",
   scarred: "scars", injured: "injuries", died: "a death", stillborn: "a lost foal", sold: "family taken away",
 };
 
@@ -167,7 +169,12 @@ function _clHouseNeighbours(scene) {
 // An old, contented fluffy in the room (keeps everyone calmer)
 function _clElder(scene) {
   if (typeof fluffies === "undefined" || typeof isElderly !== "function") return null;
-  return fluffies.find((f) => f.isAlive && f.scene === scene && f.adopted && isElderly(f) && f.happiness >= 0.5) || null;
+  // (or a Cherished one, Titles.js)
+  return (
+    fluffies.find(
+      (f) => f.isAlive && f.scene === scene && f.adopted && ((isElderly(f) && f.happiness >= 0.5) || (typeof titleCalmsRoom === "function" && titleCalmsRoom(f))),
+    ) || null
+  );
 }
 
 // { label, colour, score, trend (-1/0/1), reasons: [text] }
@@ -203,7 +210,7 @@ function climateOf(scene) {
     t *= 0.75;
     f *= 0.75;
     const n = typeof fluffyNames !== "undefined" && fluffyNames[elder.id];
-    extra.push([`${n || "an old fluffy"} keeps everyone calm`, 1]);
+    extra.push([`${n || "a calm fluffy"} keeps everyone calm`, 1]);
   }
   const bad = t + f + g + uneasy;
   let label = "Calm";

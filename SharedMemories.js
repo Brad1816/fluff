@@ -47,27 +47,27 @@ function freshSharedMemories() {
   return { list: [], nextId: 1 };
 }
 let sharedMemories = freshSharedMemories();
-let _smFights = {}; // scene -> { t, hits, who: Set }
+let _shmFights = {}; // scene -> { t, hits, who: Set }
 
-function _smOk() {
+function _shmOk() {
   if (!sharedMemories || typeof sharedMemories !== "object" || !Array.isArray(sharedMemories.list)) sharedMemories = freshSharedMemories();
   if (typeof sharedMemories.nextId !== "number") sharedMemories.nextId = sharedMemories.list.length + 1;
   return sharedMemories;
 }
-function _smNow() {
+function _shmNow() {
   return typeof timePlayed === "number" ? timePlayed : 0;
 }
-function _smDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_smNow() / DAY_LENGTH) + 1;
+function _shmDay() {
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_shmNow() / DAY_LENGTH) + 1;
 }
-function _smName(f) {
+function _shmName(f) {
   if (!f) return null;
   return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || null;
 }
-function _smById(id) {
+function _shmById(id) {
   return typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) : null;
 }
-function _smRoomWords(scene) {
+function _shmRoomWords(scene) {
   if (typeof houseRoomName === "function") {
     const n = houseRoomName(scene);
     if (n) return n === "Living room" ? "the living room" : n;
@@ -76,11 +76,11 @@ function _smRoomWords(scene) {
   if (typeof isCameraScene === "function" && isCameraScene(scene)) return "the park";
   return "the house";
 }
-const _SM_NUM = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
-const _SM_ORD = ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
+const _SHM_NUM = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const _SHM_ORD = ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
 
 // Your fluffies awake in the room that could see or hear it
-function _smWatchers(scene, except = []) {
+function _shmWatchers(scene, except = []) {
   if (typeof fluffies === "undefined") return [];
   return fluffies.filter(
     (f) =>
@@ -93,7 +93,7 @@ function _smWatchers(scene, except = []) {
   );
 }
 
-function _smBond(a, b) {
+function _shmBond(a, b) {
   if (a === b || !a || !b || typeof changeOpinion !== "function") return;
   changeOpinion(a, b, SM_BOND, "shared");
   changeOpinion(b, a, SM_BOND, "shared");
@@ -102,8 +102,8 @@ function _smBond(a, b) {
 // Make (or add to) a shared memory. who: fluffies. Returns it, or null (not
 // enough of them - a memory is only shared by 2+).
 function makeSharedMemory(kind, name, who, opts = {}) {
-  _smOk();
-  const now = _smNow();
+  _shmOk();
+  const now = _shmNow();
   const scene = opts.scene || (who[0] && who[0].scene) || null;
   const key = opts.key || kind;
   let m = sharedMemories.list.find((x) => x.key === key && x.kind === kind && now - x.t >= 0 && now - x.t < (opts.window || SM_WINDOW));
@@ -115,7 +115,7 @@ function makeSharedMemory(kind, name, who, opts = {}) {
       kind,
       key,
       name,
-      day: _smDay(),
+      day: _shmDay(),
       t: now,
       s: scene,
       x: opts.x ?? (members[0] ? Math.round(members[0].x) : 0),
@@ -134,7 +134,7 @@ function makeSharedMemory(kind, name, who, opts = {}) {
   m.t = Math.max(m.t, now);
   for (const f of members) {
     if (m.who.includes(f.id)) continue;
-    for (const id of m.who) _smBond(f, _smById(id));
+    for (const id of m.who) _shmBond(f, _shmById(id));
     m.who.push(f.id);
     m.view[f.id] = opts.view ? opts.view(f) : m.good ? "good" : "bad";
     if (typeof recordStory === "function") recordStory("shared", f, { x: m.id });
@@ -143,10 +143,10 @@ function makeSharedMemory(kind, name, who, opts = {}) {
 }
 
 function sharedMemoryById(id) {
-  return _smOk().list.find((m) => m.id === id) || null;
+  return _shmOk().list.find((m) => m.id === id) || null;
 }
 function sharedMemoriesOf(f) {
-  return f ? _smOk().list.filter((m) => m.who.includes(f.id)) : [];
+  return f ? _shmOk().list.filter((m) => m.who.includes(f.id)) : [];
 }
 
 function renameSharedMemory(m, name) {
@@ -162,30 +162,30 @@ function renameSharedMemory(m, name) {
 // StoryBook.recordStory: births, first places, deaths
 function noteSharedStory(kind, ids, opts = {}) {
   if (kind === "born") {
-    const foal = _smById(ids[0]);
-    const mum = _smById(ids[1]);
+    const foal = _shmById(ids[0]);
+    const mum = _shmById(ids[1]);
     if (!foal || !mum || !mum.adopted) return;
-    const watchers = _smWatchers(mum.scene, [foal, mum]);
-    const open = _smOk().list.find((m) => m.key === `birth:${mum.id}` && _smNow() - m.t < SM_WINDOW);
+    const watchers = _shmWatchers(mum.scene, [foal, mum]);
+    const open = _shmOk().list.find((m) => m.key === `birth:${mum.id}` && _shmNow() - m.t < SM_WINDOW);
     if (!open && watchers.length < 2) return;
     const foals = (open ? open.foals || 0 : 0) + 1;
-    const n = _smName(mum);
-    const what = foals === 1 ? "foal" : `${_SM_NUM[foals] || foals} foals`;
+    const n = _shmName(mum);
+    const what = foals === 1 ? "foal" : `${_SHM_NUM[foals] || foals} foals`;
     const m = makeSharedMemory("birth", `When ${n ? n + "'s" : "a mare's"} ${what} came`, [mum, ...watchers, foal], { key: `birth:${mum.id}`, good: true });
     if (m) m.foals = foals;
   } else if (kind === "show" && opts.x === "first") {
-    const f = _smById(ids[0]);
+    const f = _shmById(ids[0]);
     if (!f || !f.adopted) return;
     const rels = typeof relationships !== "undefined" ? relationships[f.id] || {} : {};
     const close = fluffies.filter((o) => o !== f && o.isAlive && o.adopted && (rels[o.id] && rels[o.id] !== "rival" || o.id === f.motherId || o.motherId === f.id));
-    const n = _smName(f);
-    makeSharedMemory("show", `${n ? n + "'s" : "The"} blue ribbon`, [f, ...close], { key: `show:${f.id}:${_smDay()}`, good: true });
+    const n = _shmName(f);
+    makeSharedMemory("show", `${n ? n + "'s" : "The"} blue ribbon`, [f, ...close], { key: `show:${f.id}:${_shmDay()}`, good: true });
   } else if (kind === "died") {
-    const f = _smById(ids[0]);
+    const f = _shmById(ids[0]);
     if (!f) return;
-    const watchers = _smWatchers(opts.s || f.scene, [f]);
+    const watchers = _shmWatchers(opts.s || f.scene, [f]);
     if (watchers.length < 2) return;
-    const n = _smName(f);
+    const n = _shmName(f);
     const grinder = /grinder/i.test(String(opts.x || "")) || f.deathWeapon === "grinder";
     const night = typeof isNightTime === "function" ? isNightTime() : false;
     const name = grinder ? "The day the grinder came" : `The ${night ? "night" : "day"} ${n || "a fluffy"} died`;
@@ -196,13 +196,13 @@ function noteSharedStory(kind, ids, opts = {}) {
 // Fears.startFright (thunder)
 function noteStormFright(f) {
   if (!f || !f.adopted) return;
-  const day = _smDay();
+  const day = _shmDay();
   const key = `storm:${day}`;
-  const s = (_smFights._storm && _smFights._storm.day === day) ? _smFights._storm : (_smFights._storm = { day, who: new Set() });
+  const s = (_shmFights._storm && _shmFights._storm.day === day) ? _shmFights._storm : (_shmFights._storm = { day, who: new Set() });
   s.who.add(f.id);
-  const open = _smOk().list.find((m) => m.key === key);
+  const open = _shmOk().list.find((m) => m.key === key);
   if (!open && s.who.size < SM_STORM_MIN) return;
-  const who = [...s.who].map(_smById).filter(Boolean);
+  const who = [...s.who].map(_shmById).filter(Boolean);
   const m = makeSharedMemory("storm", `The ${who.length >= 5 ? "Great Storm" : "storm"} of day ${day}`, who, {
     key,
     window: DAY_LENGTH,
@@ -214,8 +214,8 @@ function noteStormFright(f) {
 // Fears.onComfortedByYou: comforted through tonight's storm, it remembers it better
 function noteSharedComfort(f) {
   if (!f) return;
-  f._stormComfortDay = _smDay();
-  const m = _smOk().list.find((x) => x.key === `storm:${_smDay()}`);
+  f._stormComfortDay = _shmDay();
+  const m = _shmOk().list.find((x) => x.key === `storm:${_shmDay()}`);
   if (m && m.who.includes(f.id)) m.view[f.id] = "good";
 }
 
@@ -223,15 +223,15 @@ function noteSharedComfort(f) {
 function noteSharedFight(attacker, victim) {
   if (!attacker || !victim || (!attacker.adopted && !victim.adopted)) return;
   const scene = victim.scene;
-  const now = _smNow();
-  let fg = _smFights[scene];
-  if (!fg || !(now >= fg.t) || now - fg.t > SM_WINDOW) fg = _smFights[scene] = { t: now, hits: 0, who: new Set() };
+  const now = _shmNow();
+  let fg = _shmFights[scene];
+  if (!fg || !(now >= fg.t) || now - fg.t > SM_WINDOW) fg = _shmFights[scene] = { t: now, hits: 0, who: new Set() };
   fg.hits++;
   fg.who.add(attacker.id);
   fg.who.add(victim.id);
   if (fg.hits < SM_FIGHT_HITS || fg.who.size < SM_FIGHT_FLUFFIES) return;
-  const who = [...fg.who].map(_smById).filter(Boolean).concat(_smWatchers(scene));
-  makeSharedMemory("fight", `The fight in ${_smRoomWords(scene)}`, [...new Set(who)], { key: `fight:${scene}:${_smDay()}`, scene, window: DAY_LENGTH }); // (one a day per room)
+  const who = [...fg.who].map(_shmById).filter(Boolean).concat(_shmWatchers(scene));
+  makeSharedMemory("fight", `The fight in ${_shmRoomWords(scene)}`, [...new Set(who)], { key: `fight:${scene}:${_shmDay()}`, scene, window: DAY_LENGTH }); // (one a day per room)
 }
 
 // ---- What it does ----
@@ -240,8 +240,8 @@ function noteSharedFight(attacker, victim) {
 function sharedMemoryFrightMultiplier(f, key) {
   if (key !== "thunder" || !f) return 1;
   let m = 1;
-  for (const s of _smOk().list) {
-    if (s.kind !== "storm" || !s.who.includes(f.id) || s.key === `storm:${_smDay()}`) continue;
+  for (const s of _shmOk().list) {
+    if (s.kind !== "storm" || !s.who.includes(f.id) || s.key === `storm:${_shmDay()}`) continue;
     m = s.view[f.id] === "good" ? Math.min(m, 0.8) : Math.max(m, 1.25);
   }
   return m;
@@ -261,16 +261,16 @@ function shareLegend(from, to) {
 }
 
 // Once a game year
-function _smAnniversaries() {
-  const day = _smDay();
-  for (const m of _smOk().list) {
+function _shmAnniversaries() {
+  const day = _shmDay();
+  for (const m of _shmOk().list) {
     const since = day - m.day;
     if (since < SM_YEAR || since % SM_YEAR !== 0 || m.lastAnniv === day) continue;
     m.lastAnniv = day;
     const years = since / SM_YEAR;
-    const here = m.who.map(_smById).filter((f) => f && f.isAlive && f.adopted);
+    const here = m.who.map(_shmById).filter((f) => f && f.isAlive && f.adopted);
     if (!here.length) continue;
-    if (typeof addUIMessage === "function") addUIMessage(`${years === 1 ? "A year" : `${_SM_NUM[years] || years} years`} ago today: ${m.name}.`);
+    if (typeof addUIMessage === "function") addUIMessage(`${years === 1 ? "A year" : `${_SHM_NUM[years] || years} years`} ago today: ${m.name}.`);
     if (!m.good) {
       if (m.s && typeof addRoomClimate === "function") addRoomClimate(m.s, { g: 3 });
       for (const f of here) {
@@ -295,12 +295,12 @@ function _smAnniversaries() {
 const sharedMemoryTicker = new Ticker(10);
 function updateSharedMemories(dt) {
   if (!sharedMemoryTicker.step(dt)) return;
-  _smAnniversaries();
+  _shmAnniversaries();
 }
 
 // ---- Parties ----
 
-function _smStoryDay(f, kind) {
+function _shmStoryDay(f, kind) {
   if (typeof storyOf !== "function") return null;
   const e = storyOf(f).find((x) => x.k === kind && x.w[0] === f.id);
   return e ? Math.floor(e.t / DAY_LENGTH) + 1 : null;
@@ -309,20 +309,20 @@ function _smStoryDay(f, kind) {
 // Why it could have a party now: { key, name } or null
 function partyOccasion(f) {
   if (!f || !f.isAlive || !f.adopted) return null;
-  const day = _smDay();
-  const n = _smName(f) || "Fluffy";
+  const day = _shmDay();
+  const n = _shmName(f) || "Fluffy";
   const out = [];
-  const born = _smStoryDay(f, "born");
-  const came = _smStoryDay(f, "arrived");
+  const born = _shmStoryDay(f, "born");
+  const came = _shmStoryDay(f, "arrived");
   if (born !== null && day > born && (day - born) % SM_YEAR === 0) {
     const y = (day - born) / SM_YEAR;
-    out.push({ key: `birthday:${day}`, name: `${n}'s ${_SM_ORD[y] || y + "th"} birthday` });
+    out.push({ key: `birthday:${day}`, name: `${n}'s ${_SHM_ORD[y] || y + "th"} birthday` });
   }
   if (came !== null && day > came && (day - came) % SM_YEAR === 0) out.push({ key: `camehome:${day}`, name: `A year since ${n} came home` });
   if (came !== null && day - came <= 1 && born === null) out.push({ key: `welcome:${came}`, name: `${n}'s welcome party` });
   // A new litter (hers)
-  const kids = typeof fluffies !== "undefined" ? fluffies.filter((o) => o.isAlive && o.motherId === f.id && _smStoryDay(o, "born") !== null && day - _smStoryDay(o, "born") <= 1) : [];
-  if (kids.length) out.push({ key: `litter:${_smStoryDay(kids[0], "born")}`, name: `The party for ${n}'s foals` });
+  const kids = typeof fluffies !== "undefined" ? fluffies.filter((o) => o.isAlive && o.motherId === f.id && _shmStoryDay(o, "born") !== null && day - _shmStoryDay(o, "born") <= 1) : [];
+  if (kids.length) out.push({ key: `litter:${_shmStoryDay(kids[0], "born")}`, name: `The party for ${n}'s foals` });
   // A first place
   const win = (f.ribbons || []).find((r) => r.place === 1 && typeof r.day === "number" && day - r.day <= 1);
   if (win) out.push({ key: `show:${win.day}`, name: `${n}'s blue ribbon party` });
@@ -401,10 +401,10 @@ function sharedMemoryLines(m) {
   if (!who) who = `${names.length} fluffies`;
   else if (others > 0) who += ` and ${others} other${others === 1 ? "" : "s"}`;
   const alive = m.who.filter((id) => {
-    const f = _smById(id);
+    const f = _shmById(id);
     return f && f.isAlive;
   }).length;
-  const lines = [`Day ${m.day}, ${_smRoomWords(m.s)} · ${who}${alive < m.who.length ? ` (${m.who.length - alive} gone now)` : ""}`];
+  const lines = [`Day ${m.day}, ${_shmRoomWords(m.s)} · ${who}${alive < m.who.length ? ` (${m.who.length - alive} gone now)` : ""}`];
   if (m.kind === "storm") {
     const good = m.who.filter((id) => m.view[id] === "good").length;
     const bad = m.who.length - good;
@@ -424,7 +424,7 @@ function getMemoriesBookLayout() {
   const h = Math.min(600, height - 30);
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
-  const list = _smOk().list.slice().reverse();
+  const list = _shmOk().list.slice().reverse();
   const pages = Math.max(1, Math.ceil(list.length / MB_PER_PAGE));
   memoriesBookPage = Math.max(0, Math.min(pages - 1, memoriesBookPage));
   const rows = list.slice(memoriesBookPage * MB_PER_PAGE, (memoriesBookPage + 1) * MB_PER_PAGE).map((m, i) => {

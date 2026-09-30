@@ -120,7 +120,8 @@ function startFright(f, key) {
     1,
     fearOf(f, key) *
       (typeof climateFrightMultiplier === "function" ? climateFrightMultiplier(f) : 1) *
-      (typeof sharedMemoryFrightMultiplier === "function" ? sharedMemoryFrightMultiplier(f, key) : 1),
+      (typeof sharedMemoryFrightMultiplier === "function" ? sharedMemoryFrightMultiplier(f, key) : 1) *
+      (typeof titleFrightMultiplier === "function" ? titleFrightMultiplier(f) : 1), // (Titles.js)
   );
   if (fear < FEAR_MIN) return false;
   const now = _fNow();

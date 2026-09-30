@@ -183,6 +183,8 @@ class Horse {
     }
     // Doing a trick (Tricks.js)
     if (typeof TrickDesire !== "undefined") this.brain.addDesire(new TrickDesire());
+    // Sitting with you, or in a time-out (Care.js)
+    if (typeof CareDesire !== "undefined") this.brain.addDesire(new CareDesire());
     // Frightened by thunder, the dark or the Fluff-Bot (Fears.js)
     if (typeof FrightDesire !== "undefined") this.brain.addDesire(new FrightDesire());
     // Chasing the ball in your hand (Play.js)

@@ -142,18 +142,21 @@ function noteFluffyAttack(attacker, victim, intent) {
       // Jump in to help, if brave and close enough
       const brave = typeof traitValue === "function" ? traitValue(w, "bravery") : 0;
       const dist = Math.hypot(w.x - attacker.x, w.y - attacker.y);
+      // (a Guardian always has the nerve, and usually does, Titles.js)
+      const guardian = typeof titleOf === "function" && titleOf(w) === "Guardian";
       if (
         !hitBack &&
         liking >= OPINION_BUDDY &&
-        brave >= 0 &&
-        dist < 110 &&
+        (brave >= 0 || guardian) &&
+        dist < (guardian ? 160 : 110) &&
         w.canFightBack() &&
         !w.tooYoungToWalk() &&
         attacker.isAlive &&
-        Math.random() < 0.5
+        Math.random() < (guardian ? 0.9 : 0.5)
       ) {
         w.counterattack.fluffy = attacker;
         w.counterattack.timer = 0.4 + Math.random() * 0.4;
+        if (typeof noteTitleDefend === "function") noteTitleDefend(w);
         if (!w.tooYoungToSpeak()) w.speak(getDialogue(["BOND", "DEFEND"], w, victim), true);
       }
     } else if (!hitBack) {

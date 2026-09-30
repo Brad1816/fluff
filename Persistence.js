@@ -219,6 +219,8 @@ const SAVED_GAME_STATE = [
   { name: "keeperWord", get: () => keeperWord, set: (v) => (keeperWord = typeof v === "string" ? v : "daddeh"), fresh: () => "daddeh" }, // Identity.js
   { name: "roomClimate", get: () => roomClimate, set: (v) => { roomClimate = v && typeof v === "object" ? v : freshRoomClimate(); _climateCache = null; }, fresh: () => freshRoomClimate() }, // Climate.js
   { name: "sharedMemories", get: () => sharedMemories, set: (v) => (sharedMemories = v && typeof v === "object" ? v : freshSharedMemories()), fresh: () => freshSharedMemories() }, // SharedMemories.js
+  { name: "darkMarket", get: () => darkMarket, set: (v) => (darkMarket = v && typeof v === "object" ? v : freshDarkMarket()), fresh: () => freshDarkMarket() }, // Buyers.js
+  { name: "trainingStyle", get: () => trainingStyle, set: (v) => (trainingStyle = v), fresh: () => "kind" }, // FearTraining.js
   { name: "shelter", get: () => shelter, set: (v) => { shelter = v && typeof v === "object" ? v : freshShelter(); _shelterPortraits = {}; }, fresh: () => freshShelter() }, // Shelter.js
 ];
 

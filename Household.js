@@ -207,6 +207,7 @@ function _drawHouseholdRow(c, r, over) {
   if (stage) extra.push(stage.charAt(0).toUpperCase() + stage.slice(1));
   if (f.type) extra.push(f.type);
   if (f.pregnancyTimer > 0) extra.push("pregnant");
+  if (typeof titleOf === "function" && titleOf(f)) extra.push(titleOf(f)); // (Titles.js)
   c.fillText(fitText(c, extra.join(" · "), col("room") - col("name") - 10), col("name"), r.y + 42);
   // Room
   c.font = "13px Arial";

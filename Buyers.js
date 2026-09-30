@@ -44,6 +44,45 @@ function _hasPattern(f) {
   return f.hasSpots || f.hasStripes ? 1 : 0;
 }
 
+// ---- The shady dealer (design doc Phase 4): an early dark-market buyer ----
+// Turns up rarely (DARK_MARKET_WEIGHT when he's due; then not again for
+// DARK_MARKET_GAP_DAYS). Pays by how obedient and crushed it is (darkValue):
+// Broken, tricks drilled in with fear, freezes at the stick, afraid of you.
+// Doesn't care about affection, scars or looks (his price ignores them).
+// Pays little for a happy, spirited one - families want those. (The full
+// dark-market reputation comes later.)
+const DARK_MARKET_WEIGHT = 0.35;
+const DARK_MARKET_GAP_DAYS = 2;
+function freshDarkMarket() {
+  return { lastDay: -99, sold: 0 };
+}
+let darkMarket = freshDarkMarket();
+
+function _dmDay() {
+  return typeof getDayNumber === "function" ? getDayNumber() : 1;
+}
+function darkMarketDue() {
+  if (!darkMarket || typeof darkMarket !== "object") darkMarket = freshDarkMarket();
+  return _dmDay() - (darkMarket.lastDay ?? -99) >= DARK_MARKET_GAP_DAYS;
+}
+
+// 0..1: what the dealer is after
+function darkValue(f) {
+  let v = 0;
+  const title = typeof titleOf === "function" ? titleOf(f) : null;
+  if (title === "Broken") v += 0.45;
+  if (typeof TRICKS !== "undefined" && typeof fearShare === "function") {
+    const drilled = TRICKS.filter((t) => trickSkill(f, t.key) >= TRICK_KNOWN && fearShare(f, t.key) >= 0.5).length;
+    v += Math.min(0.36, 0.12 * drilled);
+  }
+  if (typeof isStickConditioned === "function" && isStickConditioned(f)) v += 0.15;
+  v += 0.2 * (f.playerFear || 0);
+  if ((f.happiness ?? 0.6) > 0.6) v -= 0.2;
+  if (title === "Rebel") v -= 0.3;
+  if (title === "Cherished") v -= 0.2;
+  return Math.max(0, Math.min(1, v));
+}
+
 const BUYER_KINDS = [
   {
     id: "family",
@@ -53,7 +92,10 @@ const BUYER_KINDS = [
     patience: 2,
     generous: 0.25,
     weight: (lvl) => 3,
-    like: (f) => 0.4 * _tame(f) + 0.25 * _happyLevel(f) + 0.15 * (f.growth < 1 ? 1 : 0) + 0.2 * _tricksLevel(f),
+    // (a Cherished one most of all, a Broken one not at all - Titles.js)
+    like: (f) =>
+      0.4 * _tame(f) + 0.25 * _happyLevel(f) + 0.15 * (f.growth < 1 ? 1 : 0) + 0.2 * _tricksLevel(f) +
+      (typeof titleOf === "function" ? { Cherished: 0.2, Broken: -0.4, Rebel: -0.2 }[titleOf(f)] || 0 : 0),
   },
   {
     id: "kid",
@@ -94,6 +136,18 @@ const BUYER_KINDS = [
     generous: 0.35,
     weight: (lvl) => 0.5 + 0.6 * lvl,
     like: (f) => 0.55 * _showCoat(f) + 0.2 * _hasPattern(f) + 0.25 * (f.type !== "earthy" ? 1 : 0),
+  },
+  {
+    id: "shady",
+    label: "A shady dealer",
+    wants: "an obedient one - no questions asked",
+    budget: 1,
+    patience: 1,
+    generous: 0.2,
+    dark: true,
+    weight: (lvl) => (darkMarketDue() ? DARK_MARKET_WEIGHT : 0),
+    like: (f) => darkValue(f),
+    flatPrice: (f) => 40 + 260 * darkValue(f), // (no looks, no affection, no scars)
   },
   {
     id: "show",
@@ -155,7 +209,7 @@ function buyerLikes(kind, f) {
 function buyerOffer(kind, f, level = _buyerLevel(), rnd = Math.random) {
   const like = buyerLikes(kind, f);
   const wealth = 1 + 0.06 * (level - 1);
-  const base = f.calculatePrice() * buyerConditionFactor(f) * kind.budget * wealth;
+  const base = (kind.flatPrice ? kind.flatPrice(f) : f.calculatePrice() * buyerConditionFactor(f)) * kind.budget * wealth;
   const offer = Math.max(5, Math.round((base * (0.85 + 0.3 * like)) / 5) * 5);
   const maxPay = Math.max(offer, Math.round((offer * (1 + kind.generous * (0.4 + 0.6 * like) + 0.1 * rnd())) / 5) * 5);
   return { offer, maxPay, like };
@@ -178,6 +232,7 @@ function makeSellRequest(candidates, rnd = Math.random) {
     }
   }
   const { offer, maxPay, like } = buyerOffer(kind, target, level, rnd);
+  if (kind.dark) darkMarket.lastDay = _dmDay(); // (he won't be back for a while)
   return {
     fluffyId: target.id,
     fluffy: target, // for drawing
@@ -238,6 +293,11 @@ function acceptSellRequest() {
     if (!showDebugMenu) money += req.price;
     if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: req.price });
     if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[i], "sold", req.price);
+    if (getBuyerKind(req.buyer).dark) {
+      darkMarket.sold = (darkMarket.sold || 0) + 1;
+      if (typeof recordStory === "function") recordStory("turning", fluffies[i], { x: `${typeof fluffyDisplayName === "function" ? fluffyDisplayName(fluffies[i]) : "It"} was sold to a shady dealer.` });
+      if (typeof addUIMessage === "function") addUIMessage("The dealer leads it away without a word.");
+    }
     fluffies.splice(i, 1);
   }
   currentSellRequest = null;

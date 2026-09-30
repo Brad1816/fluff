@@ -96,7 +96,11 @@ async function installHelpers(page) {
 async function openGame(context, port) {
   const page = await context.newPage();
   const errors = [];
-  page.on("pageerror", (e) => errors.push(e.message));
+  // (with where it happened: the first line of the stack that's in a game file)
+  page.on("pageerror", (e) => {
+    const at = String(e.stack || "").split("\n").find((l) => /\.js:\d+/.test(l) && !/run-tests/.test(l));
+    errors.push(at ? `${e.message} (${at.trim().replace(/^at /, "").replace(/https?:\/\/[^/]+\//, "")})` : e.message);
+  });
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
   });

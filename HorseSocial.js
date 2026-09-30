@@ -48,6 +48,7 @@ addHorseMethods({
     if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(this, target)) return;
 
     target.wasAttackedBy(this);
+    this._lastAttackAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: scold for fighting)
     if (typeof recordStory === "function") recordStory("attacked", target);
     // A Smarty someone starts on is provoked; hitting back doesn't count (SmartyMood.js)
     if (target.isSmarty() && intent !== "RETALIATION" && typeof noteSmartyProvoked === "function") noteSmartyProvoked(target, this);

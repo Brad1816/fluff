@@ -8,7 +8,7 @@ const SETUP = `() => {
   _storyIndex = null;
   roomClimate = freshRoomClimate();
   sharedMemories = freshSharedMemories();
-  _smFights = {};
+  _shmFights = {};
   _gossipPairs = null;
   money = 1000;
   window.__mk = (x, gender = "female", growth = 1) => {

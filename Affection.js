@@ -147,6 +147,7 @@ function giveAffection(f, type, scale = 1) {
   rememberPlayerEvent(f, type);
   if (typeof onKindnessToNamed === "function") onKindnessToNamed(f); // (Identity.js)
   if (typeof noteWishEvent === "function") noteWishEvent(f, type); // a toy of its own (Wishes.js)
+  if (typeof noteTitleCare === "function") noteTitleCare(f, type); // healing, spoiling (Titles.js)
   return f.playerTrust - before;
 }
 
@@ -207,6 +208,7 @@ function onBowlFilledByYou(bowl, foodType) {
     if (taste < -0.3) continue;
     giveAffection(f, kind, kind === "fed" && taste > 0.5 ? 1.5 : 1);
   }
+  if (typeof noteConditionFeed === "function") noteConditionFeed(bowl); // they learn who brings food (Care.js)
 }
 
 // Ball/Block onDrop: a toy put down near it
