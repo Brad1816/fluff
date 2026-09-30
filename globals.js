@@ -743,6 +743,7 @@ function changeScene(newScene) {
       typeof getDialogue !== "undefined"
     ) {
       const now = gameTimeMs();
+      if (typeof climateGreetStart === "function") climateGreetStart();
       for (const f of fluffies) {
         if (
           f.isAlive &&
@@ -753,7 +754,8 @@ function changeScene(newScene) {
         ) {
           const timeAway = (now - f.lastSeenPlayerTime) / 1000;
           if (timeAway > 60) {
-            f.speak(getDialogue("RETURN_HOME_REMARK", f));
+            // The feel of the room: they may run to you, go quiet or scatter (Climate.js)
+            if (!(typeof climateGreetFluffy === "function" && climateGreetFluffy(f, newScene))) f.speak(getDialogue("RETURN_HOME_REMARK", f));
           }
         }
       }

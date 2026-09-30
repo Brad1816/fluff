@@ -107,6 +107,7 @@ function trickChance(f, key) {
   if (f.hunger < 0.3) p *= 0.7;
   if (f.happiness < 0.3) p *= 0.7;
   if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
+  if (typeof climateLearnMultiplier === "function") p *= climateLearnMultiplier(f); // the room's feel (Climate.js)
   return Math.max(0.03, Math.min(0.97, p));
 }
 

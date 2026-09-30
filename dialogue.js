@@ -437,6 +437,12 @@ const DIALOGUE = {
     BELL: ["Ding-ding! Nummy time!", "Wobot say nummies!", "Nummies! Nummies!"],
   },
   // Frights (Fears.js)
+  // Room climate (Climate.js): "mistah" becomes what it calls you
+  CLIMATE: {
+    GREET_RUN: ["Mistah back! Mistah back!", "Yay! Mistah home! Huggies?", "<SPEAKER> missed mistah!", "Mistah! Come see, come see!", "Bestest mistah back!"],
+    SCATTER: ["*SCREEE* Hide! Hide!", "Nu huwt <speaker>! Pwease!", "Mistah comin'! Wun!", "*whimpew*"],
+    FLINCH: ["*fwinch*", "Nu hit! Nu hit!", "Pwease nu...", "*whimpew*"],
+  },
   FRIGHT: {
     THUNDER: ["*SCREEEE* Woud sky-noise!", "Sky am angwy! Hewp!", "Nu wike boomies! Huu huu!", "Make it stop! Pwease!"],
     DARK: ["It am su dawk... scawy...", "Nu can see! Munstahs in dawk?", "Pwease tuwn on wight...", "*sniff* ...anyone dewe?"],

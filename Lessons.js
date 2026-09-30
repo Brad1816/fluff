@@ -140,6 +140,7 @@ function lessonChance(f, key) {
   if (f.happiness < 0.3) p *= 0.7;
   if (key === "smarty") p *= LESSON_SMARTY_CHANCE;
   if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
+  if (typeof climateLearnMultiplier === "function") p *= climateLearnMultiplier(f); // the room's feel (Climate.js)
   return Math.max(0.02, Math.min(0.95, p));
 }
 

@@ -114,7 +114,8 @@ function _fSay(f, key) {
 // Something scary happened. True if it got frightened.
 function startFright(f, key) {
   if (!f || !f.isAlive || f.isDragging) return false;
-  const fear = fearOf(f, key);
+  // (a Fearful room makes it worse, Climate.js)
+  const fear = Math.min(1, fearOf(f, key) * (typeof climateFrightMultiplier === "function" ? climateFrightMultiplier(f) : 1));
   if (fear < FEAR_MIN) return false;
   const now = _fNow();
   const seconds = (FRIGHT_TIME[key] || 15) * (0.5 + fear);

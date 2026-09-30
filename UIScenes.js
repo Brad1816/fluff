@@ -594,7 +594,13 @@ function drawHouseNav(c) {
     roomLabel += ` · crowded ${Math.round(roomLoad(currentScene))}/${roomSpace(currentScene)}`;
     c.fillStyle = "#ff8a80";
   }
-  c.fillText(roomLabel, first.x - 10, first.y + first.h / 2);
+  // How the room feels (Climate.js), then its name
+  let right = first.x - 10;
+  if (typeof drawClimateLabel === "function") right -= drawClimateLabel(c, right, first.y + first.h / 2) + 8;
+  c.font = "bold 12px Arial";
+  c.textAlign = "right";
+  c.textBaseline = "middle";
+  c.fillText(roomLabel + " ·", right, first.y + first.h / 2);
   for (const chip of chips) {
     const hover = isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h);
     const p = chip.portal;
@@ -607,6 +613,7 @@ function drawHouseNav(c) {
     c.fillText(chip.label, chip.x + chip.w / 2, chip.y + chip.h / 2 + 1);
   }
   c.restore();
+  if (typeof drawClimateTooltip === "function") drawClimateTooltip(c);
 }
 
 // Buy the room behind a locked portal. Returns true if bought.

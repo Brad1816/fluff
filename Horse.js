@@ -1313,8 +1313,12 @@ class Horse {
     if (this.isAlive) {
       this.age += dt;
       // Homeostasis: stabilize at 0.6 over 3 minutes (higher while
-      // content after a wish came true, Wishes.js)
-      const settle = 0.6 + (typeof wishHappinessTarget === "function" ? wishHappinessTarget(this) : 0);
+      // content after a wish came true, Wishes.js; lower or higher with
+      // the feel of the room, Climate.js)
+      const settle =
+        0.6 +
+        (typeof wishHappinessTarget === "function" ? wishHappinessTarget(this) : 0) +
+        (typeof climateHappinessTarget === "function" ? climateHappinessTarget(this) : 0); // the room's feel (Climate.js)
       this.changeHappiness((settle - this.happiness) * (dt / 180));
     } else {
       this.deathTimer += dt;

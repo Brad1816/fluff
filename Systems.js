@@ -10,7 +10,8 @@
 //   60 separation, 70 naming pop-ups, 80 settling in, 90 goals,
 //   100 morning report, 110 night events, 120 alicorn acceptance,
 //   125 pregnancy care, 130 ageing, 135 affection, 136 tricks, 137 diet,
-//   138 play, 140 abandoned pets, 145 warmth, 150 flu, 160 corpses,
+//   138 play, 140 abandoned pets, 141 fears, 142 population, 143 room
+//   climate, 145 warmth, 150 flu, 160 corpses,
 //   170 orders, 180 breeders' market, 190 shows
 //
 // Ticker: "do this every N seconds" without hand-written timers.

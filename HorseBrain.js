@@ -71,6 +71,10 @@ class HorseBrain {
       if (score > 0 && typeof traitDesireMultiplier === "function") {
         score *= traitDesireMultiplier(this.horse, desire.name);
       }
+      // ...and so does the feel of the room (Climate.js)
+      if (score > 0 && typeof climateDesireMultiplier === "function") {
+        score *= climateDesireMultiplier(this.horse, desire.name);
+      }
 
       // Hysteresis
       if (this.currentDesire === desire && score > 0) {

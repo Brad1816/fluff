@@ -147,6 +147,8 @@ function recordStory(kind, who, opts = {}) {
     const who = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === ids[0]) : null;
     if (who) noteGrowthEvent(who, kind);
   }
+  // The room's feel (Climate.js)
+  if (typeof noteClimateStory === "function") noteClimateStory(kind, ids, opts);
   if (!def.big) return _tally(ids[0], kind);
   // Harm from you, again soon: add to the last one
   if (kind === "harmed") {
