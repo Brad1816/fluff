@@ -108,6 +108,8 @@ and it runs. About 55,000 lines across ~120 files.
 | `LifeStory.js` | **Life stories**: the Story tab in the magnifying glass - chapters in plain English from the story book. See section 9 (Phase 1). |
 | `Identity.js` | **Turning points**, what fluffies call you (daddeh / nice pewson / munstah) and each other, pride in a name. See section 9 (Phase 1). |
 | `Personality.js` | **Favourite care** and **personality growth** (life shifts traits). See section 9 (Phase 1). |
+| `Wishes.js` | **Wishes**: one per fluffy, granted / ignored / denied / promised. See section 9 (Phase 2). |
+| `Dreams.js` | **Dreams and nightmares** from each fluffy's story. See section 9 (Phase 2). |
 | `StoryDebug.js` | **Story debug view** (J): what the story book holds for a fluffy, its family, and in total. See section 9 (The story book). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
@@ -2412,6 +2414,44 @@ three stallions in three hours.
   +0.05, and a stay of a day or more goes in its story.
 - Tests: `tests/lifestory.test.js`, `tests/identity.test.js`,
   `tests/personality.test.js`, more in `tests/shelter.test.js`.
+
+### Phase 2: wishes and dreams (`Wishes.js`, `Dreams.js`)
+- **Wishes** (`f.wish = { id, since, ache, target?, promisedAt?, broken? }`,
+  one at a time, picked by `pickWish` from `WISHES` when its cooldown is
+  over; a name first 70% of the time for unnamed ones): name, trick, toy,
+  stayWithMum (foals); specialFriend (with the one it likes most as
+  `target`), foal, park, hat (like a friend's), friend (adults);
+  seeDaughter, warmBed, lastTrip (old ones). Checked every 2s
+  (`updateWish`): came true -> `grantWish` (story `wish_granted`, turning
+  point, +0.2 happiness, `contentUntil` 3 days - `wishHappinessTarget` raises
+  its settling happiness by 0.1 in Horse.update - and the goals "Make a
+  fluffy's wish come true" / "Make 5 wishes come true"); no longer possible
+  -> dropped quietly. After 3 days it aches (-0.01 happiness a game hour,
+  x2 after a broken promise, up to 0.3) and says it more; after 8 days it
+  gives up (a story line).
+- **Denied** (`denyWish`, `noteWishEvent`): you sell or give up its wished-for
+  special friend, mum (before it's grown) or daughter
+  (`FamilyTree.noteFluffyLeft`), take off a wished-for hat within a day
+  (sell mode, UISelling.js), or spay a mare wishing for foals
+  (`Horse.amputate`): -0.15 happiness, -0.1 trust, the memory
+  "wish_denied", and a story line saying what you did.
+- **Promise wish** (right-click menu, new "Other" row - `rightClickActions`
+  in Tricks.js collects `wishActions` and, later, Care.js): for 1.5 days
+  tricks and lessons succeed x1.3 (`wishPromiseBoost`); kept -> +0.05 trust;
+  broken -> "broken_promise" memory, -0.12 trust, -0.1 happiness.
+- Shown: "Wishes for" in the Mind tab (red once aching), "✦ wish" on each
+  Household row (an aching one is an "Aching wish" need).
+- **Dreams** (`chooseDream`, called by HorseUpdate._updateDreams for your
+  fluffies; 60% of dreams): from `dreamMaterial` - mum/dad, friends, you
+  (trust 0.5+), brushing, play, treats, toys, tricks, the park, wishes come
+  true; harm from you, frights, being picked on, losing its mum, being taken.
+  A fright it was comforted through comes back as "safe nao" (the comforted
+  share). Good: +0.02 happiness, worst fear -0.02, grief and missing an old
+  owner ease (0.1 a day at most). Bad: -0.01 (0.05 a day at most); 30% wake
+  it frightened (`wakeFromNightmare`: a "nightmare" fright - cuddle it), at
+  most 2 a day, 2 game hours apart. Drawn by `drawStoryDream`: a cloud
+  (dark for nightmares) with a picture or a heart and a few words.
+- Tests: `tests/wishes.test.js`.
 
 ### The shelter (`Shelter.js`, was the day care)
 Through the door in Shelter Alley (the scene is still `DAY_CARE`, the alley

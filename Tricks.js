@@ -106,6 +106,7 @@ function trickChance(f, key) {
   p *= { adores: 1.15, loves: 1.1, likes: 1, unsure: 0.9, dislikes: 0.6 }[lvl] ?? 1;
   if (f.hunger < 0.3) p *= 0.7;
   if (f.happiness < 0.3) p *= 0.7;
+  if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
   return Math.max(0.03, Math.min(0.97, p));
 }
 
@@ -418,6 +419,16 @@ function closeTrickUI() {
   trickUI = null;
 }
 
+// The right-click menu's third row: other things you can do with it -
+// { key, name, sub, harsh?, run(f) } from Wishes.js (promise its wish) and
+// Care.js (sit with, praise, scold, time-out)
+function rightClickActions(f) {
+  const out = [];
+  if (typeof careActions === "function") out.push(...careActions(f));
+  if (typeof wishActions === "function") out.push(...wishActions(f));
+  return out;
+}
+
 // Chip rectangles in screen positions
 function getTrickMenuLayout() {
   const f = trickUIFluffy();
@@ -432,7 +443,8 @@ function getTrickMenuLayout() {
     const total = TRICKS.length * w + (TRICKS.length - 1) * gap;
     let x = Math.max(8, Math.min(width - total - 8, cx - total / 2));
     const lessons = typeof lessonsFor === "function" ? lessonsFor(f) : [];
-    const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0), top - 40));
+    const actions = rightClickActions(f);
+    const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0) - (actions.length ? 68 : 0), top - 40));
     for (const t of TRICKS) {
       chips.push({ x, y, w, h: 38, key: t.key, trick: t });
       x += w + gap;
@@ -449,7 +461,19 @@ function getTrickMenuLayout() {
         lx += w + gap;
       }
     }
-    return { f, chips, titleX, titleY: y - 10, lessonY };
+    // Other things to do (rightClickActions)
+    let actionY = null;
+    if (actions.length) {
+      actionY = (lessonY !== null ? lessonY : y) + 38 + 30;
+      const aw = 112;
+      const total2 = actions.length * aw + (actions.length - 1) * gap;
+      let ax = Math.max(8, Math.min(width - total2 - 8, titleX - total2 / 2));
+      for (const a of actions) {
+        chips.push({ x: ax, y: actionY, w: aw, h: 38, key: "action:" + a.key, action: a });
+        ax += aw + gap;
+      }
+    }
+    return { f, chips, titleX, titleY: y - 10, lessonY, actionY };
   }
   if (trickUI.phase === "reward") {
     const w = 140;
@@ -475,6 +499,11 @@ function handleTrickClick() {
   if (trickUI.phase === "menu") {
     if (!hit) {
       closeTrickUI();
+      return true;
+    }
+    if (hit.action) {
+      closeTrickUI();
+      hit.action.run(f);
       return true;
     }
     if (hit.lesson) {
@@ -545,9 +574,21 @@ function drawTrickUI(c) {
   if (trickUI.phase === "menu") {
     label(`Train ${_trName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
     if (L.lessonY !== null) label(`Lessons · ${lessonTriesLeft(f)} left today`, L.titleX, L.lessonY - 14);
+    if (L.actionY !== null && L.actionY !== undefined) label("Other", L.titleX, L.actionY - 14);
     for (const ch of L.chips) {
       const s = trickSkill(f, ch.key);
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
+      if (ch.action) {
+        const harsh = !!ch.action.harsh;
+        fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, hover ? (harsh ? "rgb(170, 70, 70)" : "rgb(60, 140, 110)") : harsh ? "rgba(110, 40, 45, 0.92)" : "rgba(30, 80, 70, 0.92)");
+        c.fillStyle = "white";
+        c.font = "bold 13px Arial";
+        c.fillText(ch.action.name, ch.x + ch.w / 2, ch.y + 13);
+        c.font = "11px Arial";
+        c.fillStyle = "#e6dcef";
+        c.fillText(ch.action.sub || "", ch.x + ch.w / 2, ch.y + 28);
+        continue;
+      }
       if (ch.lesson) {
         drawLessonChip(c, f, ch, hover);
         continue;

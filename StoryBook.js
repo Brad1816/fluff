@@ -56,6 +56,11 @@ const STORY_KINDS = {
   trait_shift: { big: true, text: (e) => `${e.x}` },
   boarding: { big: true, text: (e) => `${e.x}` },
   injured: { big: true, text: (e, n) => `${n} lost ${e.x}.` },
+  // Phase 2 (Wishes.js, Dreams.js)
+  wish_granted: { big: true, text: (e) => `${e.x}` },
+  wish_denied: { big: true, text: (e) => `${e.x}` },
+  nightmare: { big: false },
+  dream: { big: false },
   ill: { big: true, text: (e, n) => `${n} caught ${e.x}.` },
   feedbot_tip: { big: false },
   // Small things (tallies)

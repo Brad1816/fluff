@@ -966,7 +966,12 @@ addHorseMethods({
       this.dreamTimer -= dt;
       if (this.dreamTimer <= 0) {
         const dreams = ["sketties", "ball", "block", "man", "sun"];
-        this.currentDream = Math.random() < 0.75 ? null : dreams[Math.floor(Math.random() * dreams.length)];
+        if (Math.random() < 0.75) this.currentDream = null;
+        else {
+          // From its own story, most of the time (Dreams.js)
+          const story = typeof chooseDream === "function" ? chooseDream(this) : undefined;
+          this.currentDream = story !== undefined ? story : dreams[Math.floor(Math.random() * dreams.length)];
+        }
         this.dreamTimer = 3.0 + Math.random() * 5.0;
       }
 

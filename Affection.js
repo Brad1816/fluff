@@ -146,6 +146,7 @@ function giveAffection(f, type, scale = 1) {
   f.lastKindnessAt = now;
   rememberPlayerEvent(f, type);
   if (typeof onKindnessToNamed === "function") onKindnessToNamed(f); // (Identity.js)
+  if (typeof noteWishEvent === "function") noteWishEvent(f, type); // a toy of its own (Wishes.js)
   return f.playerTrust - before;
 }
 

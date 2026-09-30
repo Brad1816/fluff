@@ -62,6 +62,11 @@ const SAVED_HORSE_FIELDS = [
   { name: "favouriteFound", fallback: null },
   { name: "traitShift", fallback: null, clone: true },
   { name: "growthProgress", fallback: null, clone: true },
+  { name: "wish", fallback: null, clone: true }, // Wishes.js
+  { name: "wishCooldownUntil", fallback: undefined },
+  { name: "contentUntil", fallback: undefined },
+  { name: "seenPark", fallback: false },
+  { name: "hatWishGrantedAt", fallback: undefined },
   { name: "diet", fallback: null }, // Diet.js
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },

@@ -139,6 +139,7 @@ function lessonChance(f, key) {
   if (f.hunger < 0.3) p *= 0.7;
   if (f.happiness < 0.3) p *= 0.7;
   if (key === "smarty") p *= LESSON_SMARTY_CHANCE;
+  if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
   return Math.max(0.02, Math.min(0.95, p));
 }
 

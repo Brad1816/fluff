@@ -50,6 +50,8 @@ const MEMORY_TEXT = {
   took_family: "Saw you take its family away",
   taken_away: "Taken from its herd and family",
   taken_from_mum: "Taken from its mum",
+  wish_denied: "Had its wish taken away", // Wishes.js
+  broken_promise: "A promise you broke",
 };
 
 // Memories of harm from you (for the story book, StoryBook.js)

@@ -168,6 +168,8 @@ function getFluffyInspectionInfo(f) {
     if (shifts) about.push({ label: "Life made it", value: shifts });
     const fav = typeof describeFavouriteCare === "function" ? describeFavouriteCare(f) : null;
     if (fav) about.push({ label: "Loves most", value: fav[0], tone: fav[1] });
+    const wish = typeof describeWish === "function" ? describeWish(f) : null; // Wishes.js
+    if (wish) about.push({ label: "Wishes for", value: wish[0], tone: wish[1] });
   }
   about.push({ label: "Mother", value: nameOf(f.motherId, "Unnamed fluffy") });
   about.push({ label: "Father", value: nameOf(f.fatherId, "Unnamed fluffy") });
@@ -378,7 +380,7 @@ const INSPECTION_TABS = [
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Loves most", "Tricks", "Lessons", "Remembers", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Wishes for", "Loves most", "Tricks", "Lessons", "Remembers", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },

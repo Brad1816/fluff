@@ -189,7 +189,11 @@ function storyLine(e, f, fam = null) {
       if (e.w[0] === me) return `A new herd formed around ${p.obj}: the ${e.x}.`;
       return `${p.Sub} joined the ${e.x} when it formed.`;
     case "injured":
+      if (e.x === "spay") return `${p.Sub} was spayed ${day}.`;
       return `${p.Sub} lost ${_lsPart(e.x, p)} ${day}.`;
+    case "wish_granted":
+    case "wish_denied":
+      return e.x || null;
     case "ill":
       return `${p.Sub} caught ${e.x || "something"} ${day}.`;
     case "turning":
@@ -242,6 +246,7 @@ function _lsTallyLines(c, days, p) {
   } else if (c.comforted) out.push(`You comforted ${p.obj} ${_lsFreq(c.comforted, days)}.`);
   if (c.lesson) out.push(`${p.Sub} had ${c.lesson === 1 ? "a lesson" : `${c.lesson} lessons`}.`);
   if (c.attacked) out.push(`Other fluffies went for ${p.obj} ${_lsFreq(c.attacked, days)}.`);
+  if (c.nightmare) out.push(`${p.Sub} had ${c.nightmare === 1 ? "a nightmare" : `${c.nightmare} nightmares`} that woke ${p.obj}.`);
   if (c.feedbot_tip) out.push(`${p.Sub} knocked the Feed-Bot over ${c.feedbot_tip === 1 ? "once" : `${c.feedbot_tip} times`}.`);
   return out;
 }

@@ -59,7 +59,8 @@ function _fTrait(f, key) {
   return typeof traitValue === "function" ? traitValue(f, key) : 0;
 }
 function getFear(key) {
-  return FEARS.find((x) => x.key === key) || null;
+  // (a nightmare is a fright, not a fear it has: Dreams.js)
+  return FEARS.find((x) => x.key === key) || (key === "nightmare" ? { key, name: "a bad dream" } : null);
 }
 
 // { thunder, dark, bot }, made the first time
@@ -84,6 +85,7 @@ function fearOf(f, key) {
 
 function changeFear(f, key, amount) {
   const fs = fearsOf(f);
+  if (!FEARS.some((x) => x.key === key)) return fs[key] || 0; // (not a real fear: a nightmare)
   fs[key] = Math.round(Math.max(0, Math.min(1, (fs[key] || 0) + amount)) * 1000) / 1000;
   return fs[key];
 }

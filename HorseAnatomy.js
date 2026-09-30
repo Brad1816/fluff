@@ -619,6 +619,12 @@ class HorseAnatomy {
       }
     }
 
+    // A foal of its own (Wishes.js)
+    if (isViable && typeof noteWishEvent === "function") {
+      noteWishEvent(this.horse, "foal");
+      const dad = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === this.horse.babyDaddyId) : null;
+      if (dad) noteWishEvent(dad, "foal");
+    }
     // The story book (StoryBook.js): born, to whom
     if (typeof recordStory === "function") recordStory(isViable ? "born" : "stillborn", [baby.id, this.horse.id, this.horse.babyDaddyId]);
     if (!isViable) {

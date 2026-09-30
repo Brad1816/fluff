@@ -445,7 +445,26 @@ const DIALOGUE = {
     CALMED: ["Bettew nao...", "Nu scawed anymowe.", "Tank yu fow snuggwes, fwen."],
     MUM: ["Mummah! Mummah! Scawy!", "Mummah, hewp!", "Wan mummah!"],
     FRIEND: ["Fwen! Wait fow <speaker>!", "Hide wif fwen!", "Fwen, hab scawies!"],
+    NIGHTMARE: ["*SCREEE* Bad dweam! Bad dweam!", "Nu! Nu huwt <speaker>! ...wuz dweam?", "*sob* Scawy dweamies...", "Wan huggies... bad dweam..."],
   },
+  // Wishes (Wishes.js): one line per kind, said now and then
+  WISH: {
+    NAME: ["Fwens hab names... <speaker> wan' name too...", "Nice mistah gib <speaker> name? Pwease?"],
+    TRICK: ["<Speaker> wan' weawn twicks!", "Teach <speaker> twick? Pwease?"],
+    TOY: ["Wan' toysie of <speaker> own!", "<Speaker> nu hab toysie... wan' toysie!"],
+    MUM: ["Wan' stay wif mummah fowebah!", "Nu take <speaker> fwom mummah, 'kay?"],
+    SPECIAL_FRIEND: ["<Speaker> wan' speshuw fwen...", "Wish hab speshuw fwen, wike <target>..."],
+    FOAL: ["Wan' babbehs of <speaker> own!", "<Speaker> wiww be bestest mummah... ow daddeh!"],
+    PARK: ["Wan' see big gwassy pwace!", "Hewd abouts pawk... <speaker> wan' see!"],
+    HAT: ["Wan' hat wike <target>!", "<Target> hab pwetty hat... <speaker> wan' one..."],
+    FRIEND: ["Nu hab fwens... <speaker> wan' fwen...", "Wiww sumbody be <speaker> fwen?"],
+    DAUGHTER: ["Wan' see <target> 'gain... <speaker> babbeh...", "Whewe <target>? Miss <target> suuu much..."],
+    BED: ["Owd bones wan' wawm bed...", "<Speaker> tiwed... wan' soft bed..."],
+    OUTSIDE: ["Wan' see outside one mowe time...", "Wan' feew gwass one mowe time..."],
+  },
+  WISH_GRANTED: ["<Speaker> wish come twue!", "Bestest day evah!!", "Tank yu! Tank yu suuu much!"],
+  WISH_DENIED: ["Nu!! <Speaker> wish...", "Wai yu take it 'way?!", "*sob* ...wuz <speaker> wish..."],
+  WISH_PROMISED: ["Pwomise?! <Speaker> be suuu gud!", "<Speaker> be bestest fwuffy fow pwomise!"],
   // Lessons (Lessons.js)
   LESSON: {
     COLOURS: ["Aww cowows am fwens?", "Poopie-cowow fwuffies... am fwuffies too?", "<Speaker> twy be nice to evewy cowow!", "Otha cowow nu bad... okie."],

@@ -135,6 +135,7 @@ function sellModeClick() {
         const slotToRemove = accKeys[0];
         const accData = bestItem.accessories[slotToRemove];
         delete bestItem.accessories[slotToRemove];
+        if (slotToRemove === "head" && typeof noteWishEvent === "function") noteWishEvent(bestItem, "hatOff"); // (Wishes.js)
 
         // Spawn the accessory back into the world
         const droppedAcc = new AccessoryItem(currentScene, accData.id);

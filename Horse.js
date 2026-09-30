@@ -558,6 +558,10 @@ class Horse {
     const lost = this.anatomy.amputate(part, weapon);
     // A lasting injury goes in its story (LifeStory.js)
     if (lost && typeof recordStory === "function") recordStory("injured", this, { x: lost });
+    // Spayed while wishing for foals (Wishes.js)
+    if (lost === "spay" && this.wish && this.wish.id === "foal" && typeof denyWish === "function") {
+      denyWish(this, "You had her spayed, and she never had the foals she wished for.");
+    }
     return lost;
   }
 
@@ -1308,8 +1312,10 @@ class Horse {
 
     if (this.isAlive) {
       this.age += dt;
-      // Homeostasis: stabilize at 0.6 over 3 minutes
-      this.changeHappiness((0.6 - this.happiness) * (dt / 180));
+      // Homeostasis: stabilize at 0.6 over 3 minutes (higher while
+      // content after a wish came true, Wishes.js)
+      const settle = 0.6 + (typeof wishHappinessTarget === "function" ? wishHappinessTarget(this) : 0);
+      this.changeHappiness((settle - this.happiness) * (dt / 180));
     } else {
       this.deathTimer += dt;
     }

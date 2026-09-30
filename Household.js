@@ -36,6 +36,7 @@ function isHouseholdOpen() {
 
 // Warning labels -> a word or two for the chips
 const HH_NEED_WORDS = {
+  "Wishes for": "Aching wish", // (Wishes.js)
   Happiness: "Unhappy",
   Hunger: "Hungry",
   Health: "Hurt",
@@ -235,10 +236,20 @@ function _drawHouseholdRow(c, r, over) {
     c.fillStyle = "rgba(255,255,255,0.7)";
     c.fillText(`+${words.length - shown}`, x, r.y + 20);
   }
-  if (lessons.length) {
+  // Its wish (Wishes.js), then lessons it needs
+  let lx = col("needs");
+  const wish = typeof wishText === "function" ? wishText(f) : null;
+  if (wish) {
+    c.font = "12px Arial";
+    c.fillStyle = "#ffd27a";
+    const t = fitText(c, `✦ ${wish}`, Math.max(60, (maxX - lx) * (lessons.length ? 0.55 : 1)));
+    c.fillText(t, lx, r.y + 42);
+    lx += c.measureText(t).width + 14;
+  }
+  if (lessons.length && lx < maxX - 40) {
     c.font = "12px Arial";
     c.fillStyle = "#7fe0d0";
-    c.fillText(fitText(c, `Lessons: ${lessons.join(", ")}`, maxX - col("needs")), col("needs"), r.y + 42);
+    c.fillText(fitText(c, `Lessons: ${lessons.join(", ")}`, maxX - lx), lx, r.y + 42);
   }
   c.textBaseline = "alphabetic";
   return over && warnings.length ? warnings.join(" · ") : null;

@@ -1084,6 +1084,11 @@ class HorseRenderer {
 
   drawDream(ctx) {
     if (!this.horse.currentDream) return;
+    // A dream from its story (Dreams.js)
+    if (typeof this.horse.currentDream === "object") {
+      if (typeof drawStoryDream === "function") drawStoryDream(ctx, this.horse);
+      return;
+    }
 
     const bx = this.horse.x;
     const by = this.horse.y - 120 * this.horse.scale;
