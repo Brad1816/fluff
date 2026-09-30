@@ -382,11 +382,14 @@ function throwParty(f) {
 
 let memoriesBookOpen = false;
 let memoriesBookPage = 0;
+let memoriesBookTab = "moments"; // "moments" | "lives" | "photos" (Lives.js draws the last two)
 const MB_PER_PAGE = 5;
 
 function openMemoriesBook() {
   memoriesBookOpen = true;
   memoriesBookPage = 0;
+  memoriesBookTab = "moments";
+  if (typeof livesReading !== "undefined") livesReading = null;
 }
 function closeMemoriesBook() {
   memoriesBookOpen = false;
@@ -442,6 +445,7 @@ function getMemoriesBookLayout() {
     prev: { x: x + 24, y: y + h - 50, w: 50, h: 32 },
     next: { x: x + 80, y: y + h - 50, w: 50, h: 32 },
     close: { x: x + w - 150, y: y + h - 50, w: 130, h: 32 },
+    tabs: ["moments", "lives", "photos"].map((id, i) => ({ id, x: x + w - 24 - (3 - i) * 96 + 6, y: y + 22, w: 90, h: 28, label: { moments: "Moments", lives: "Lives", photos: "Photos" }[id] })),
   };
 }
 
@@ -461,6 +465,24 @@ function drawMemoriesBook(c) {
   c.font = "bold 24px Georgia";
   c.fillStyle = "#f5e3c8";
   c.fillText("Memories book", L.x + 24, L.y + 44);
+  // Tabs (Lives.js: the lives you've had in your care, and the photos)
+  if (typeof drawBookLives === "function") {
+    for (const t of L.tabs) {
+      drawGlassButton(t.x, t.y, t.w, t.h, t.label, { fontSize: 13, borderRadius: 8, normalFill: t.id === memoriesBookTab ? "rgba(255, 220, 150, 0.35)" : "rgba(0,0,0,0.2)" });
+    }
+    if (memoriesBookTab === "lives") {
+      drawBookLives(c, L);
+      c.restore();
+      return;
+    }
+    if (memoriesBookTab === "photos") {
+      drawBookPhotos(c, L);
+      c.restore();
+      return;
+    }
+  }
+  c.textAlign = "left";
+  c.textBaseline = "alphabetic";
   c.font = "italic 13px Georgia";
   c.fillStyle = "rgba(245,227,200,0.7)";
   c.fillText("The moments your fluffies went through together", L.x + 24, L.y + 64);
@@ -501,6 +523,18 @@ function handleMemoriesBookClick() {
   if (hit(L.close) || !hit(L)) {
     closeMemoriesBook();
     return true;
+  }
+  if (typeof drawBookLives === "function") {
+    for (const t of L.tabs) {
+      if (hit(t)) {
+        memoriesBookTab = t.id;
+        memoriesBookPage = 0;
+        if (typeof livesReading !== "undefined") livesReading = null;
+        return true;
+      }
+    }
+    if (memoriesBookTab === "lives") return handleBookLivesClick(L);
+    if (memoriesBookTab === "photos") return handleBookPhotosClick(L);
   }
   if (L.pages > 1 && hit(L.prev)) {
     memoriesBookPage = Math.max(0, memoriesBookPage - 1);

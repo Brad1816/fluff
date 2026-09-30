@@ -63,7 +63,8 @@ function _dmDay() {
 }
 function darkMarketDue() {
   if (!darkMarket || typeof darkMarket !== "object") darkMarket = freshDarkMarket();
-  return _dmDay() - (darkMarket.lastDay ?? -99) >= DARK_MARKET_GAP_DAYS;
+  const gap = typeof darkRepGapDays === "function" ? darkRepGapDays() : DARK_MARKET_GAP_DAYS; // (sooner with a dark name, Reputation.js)
+  return _dmDay() - (darkMarket.lastDay ?? -99) >= gap;
 }
 
 // 0..1: what the dealer is after
@@ -91,7 +92,7 @@ const BUYER_KINDS = [
     budget: 1.0,
     patience: 2,
     generous: 0.25,
-    weight: (lvl) => 3,
+    weight: (lvl) => 3 * (typeof familyRepWeight === "function" ? familyRepWeight() : 1), // (your name with families, Reputation.js)
     // (a Cherished one most of all, a Broken one not at all - Titles.js)
     like: (f) =>
       0.4 * _tame(f) + 0.25 * _happyLevel(f) + 0.15 * (f.growth < 1 ? 1 : 0) + 0.2 * _tricksLevel(f) +
@@ -104,7 +105,7 @@ const BUYER_KINDS = [
     budget: 0.6,
     patience: 1,
     generous: 0.1,
-    weight: (lvl) => 2,
+    weight: (lvl) => 2 * (typeof familyRepWeight === "function" ? familyRepWeight() : 1),
     like: (f) => 0.5 * (f.growth < 1 ? 1 : 0) + 0.3 * _happyLevel(f) + 0.2 * _tricksLevel(f),
   },
   {
@@ -145,9 +146,9 @@ const BUYER_KINDS = [
     patience: 1,
     generous: 0.2,
     dark: true,
-    weight: (lvl) => (darkMarketDue() ? DARK_MARKET_WEIGHT : 0),
+    weight: (lvl) => (darkMarketDue() ? DARK_MARKET_WEIGHT * (typeof darkRepWeight === "function" ? darkRepWeight() : 1) : 0),
     like: (f) => darkValue(f),
-    flatPrice: (f) => 40 + 260 * darkValue(f), // (no looks, no affection, no scars)
+    flatPrice: (f) => (40 + 260 * darkValue(f)) * (typeof darkRepPay === "function" ? darkRepPay() : 1), // (no looks, no affection, no scars)
   },
   {
     id: "show",
@@ -209,7 +210,8 @@ function buyerLikes(kind, f) {
 function buyerOffer(kind, f, level = _buyerLevel(), rnd = Math.random) {
   const like = buyerLikes(kind, f);
   const wealth = 1 + 0.06 * (level - 1);
-  const base = (kind.flatPrice ? kind.flatPrice(f) : f.calculatePrice() * buyerConditionFactor(f)) * kind.budget * wealth;
+  const fam = (kind.id === "family" || kind.id === "kid") && typeof familyRepBudget === "function" ? familyRepBudget() : 1;
+  const base = (kind.flatPrice ? kind.flatPrice(f) : f.calculatePrice() * buyerConditionFactor(f)) * kind.budget * wealth * fam;
   const offer = Math.max(5, Math.round((base * (0.85 + 0.3 * like)) / 5) * 5);
   const maxPay = Math.max(offer, Math.round((offer * (1 + kind.generous * (0.4 + 0.6 * like) + 0.1 * rnd())) / 5) * 5);
   return { offer, maxPay, like };
@@ -292,6 +294,7 @@ function acceptSellRequest() {
   if (i > -1) {
     if (!showDebugMenu) money += req.price;
     if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: req.price });
+    if (typeof _saleBuyer !== "undefined") _saleBuyer = req.buyer; // (Reputation.js)
     if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[i], "sold", req.price);
     if (getBuyerKind(req.buyer).dark) {
       darkMarket.sold = (darkMarket.sold || 0) + 1;

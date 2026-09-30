@@ -60,8 +60,8 @@ module.exports = [
       const r = await page.evaluate(() => SYSTEMS.map((s) => [s.name, s.order]));
       const want = [
         "familyRecords", "storyBook", "identity", "personality", "wishes", "titles", "bonds", "herds", "territory", "worldTime", "separation", "naming", "settling", "goals",
-        "dayReport", "nightEvents", "alicornAcceptance", "aging", "abandoned", "illness", "corpses", "orders",
-        "stockMarket", "shelter", "shows", "pregnancy", "upbringing", "fears", "population", "climate", "sleepPiles", "sharedMemories", "care", "affection", "tricks", "diet", "play", "warmth", "bath",
+        "dayReport", "nightEvents", "alicornAcceptance", "familyLines", "aging", "abandoned", "illness", "corpses", "orders",
+        "reputation", "stockMarket", "shelter", "shows", "pregnancy", "upbringing", "fears", "runaways", "population", "climate", "sleepPiles", "sharedMemories", "care", "affection", "tricks", "diet", "play", "warmth", "bath",
       ];
       const names = r.map((x) => x[0]);
       for (const n of want) check(names.includes(n), `${n} is registered: ${names}`);

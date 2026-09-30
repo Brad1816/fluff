@@ -381,7 +381,7 @@ addHorseMethods({
 
   fluffyIsRelatedOrSpecialFriend(f) {
     if (!relationships[this.id]) return false;
-    const rel = relationships[this.id][f.id];
+    const rel = (relationships[this.id] || {})[f.id];
     return (
       rel === "mother" ||
       rel === "father" ||

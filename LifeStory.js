@@ -203,6 +203,12 @@ function storyLine(e, f, fam = null) {
       const how = m.kind === "storm" ? (view === "good" ? ", and got through it with you" : ", and it was terrifying") : "";
       return `${p.Sub} was there for ${m.name}${how}.`;
     }
+    case "photo": { // (Lives.js)
+      const ph = typeof photoById === "function" ? photoById(e.x) : null;
+      return ph ? `You took a photo: "${ph.caption}".` : null;
+    }
+    case "after": // a note from its new owners (Reputation.js)
+      return e.x ? `After ${p.sub} left you, ${p.poss} new owners wrote: "${e.x}"` : null;
     case "scar": // (Scars.js)
       return e.x ? `${p.Sub} was left with a ${e.x}.` : null;
     case "gossip": // (Gossip.js)

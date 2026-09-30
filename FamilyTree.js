@@ -152,6 +152,8 @@ function noteFluffyLeft(f, reason, price = null) {
   if (f) if (typeof recordStory === "function") recordStory("sold", f, { x: reason });
   // Anyone who wished for it (Wishes.js)
   if (f && typeof noteWishEvent === "function") noteWishEvent(null, "left", { who: f, reason });
+  // Notes from new owners, and your name with families (Reputation.js)
+  if (f && typeof noteSoldForRep === "function") noteSoldForRep(f, reason);
   if (!f || !shouldRecordFluffy(f)) return;
   const rec = recordFluffy(f);
   rec.status = reason;

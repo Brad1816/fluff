@@ -17,7 +17,7 @@
 //   3. A test file runs if it mentions any of those names, if it's named
 //      after a changed file (Shelter.js -> shelter.test.js), or if the test
 //      file itself changed.
-//   4. ALWAYS (smoke, screens, savefields) run every time: they load the
+//   4. ALWAYS (smoke, screens, savefields, globals) run every time: they load the
 //      whole game, check every system and screen is registered, and that
 //      saving keeps everything.
 //   5. Everything runs if the test machinery or index.html changed
@@ -31,7 +31,7 @@ const path = require("path");
 
 const GAME_DIR = path.resolve(__dirname, "..");
 const TESTS_DIR = __dirname;
-const ALWAYS = ["smoke", "screens", "savefields"];
+const ALWAYS = ["smoke", "screens", "savefields", "globals"];
 const FULL_RUN_FILES = ["index.html", "tests/run-tests.js", "tests/helpers.js", "tests/select-tests.js", "tests/package.json"];
 const CALLER_DEPTH = 2;
 // Names used all over (getDialogue, SPAWN_ACTIONS, isSmarty...): a change

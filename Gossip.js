@@ -89,7 +89,7 @@ function gossipTales(f) {
   const own = _gFirstHandHarm(f);
   const trust = f.playerTrust || 0;
   const fear = f.playerFear || 0;
-  const lovesYou = f.adopted && trust >= GOSSIP_LOVED && fear < 0.3 ? Math.min(1, (trust - 0.5) * 2) : 0;
+  const lovesYou = (f.adopted || f.formerPet) && trust >= GOSSIP_LOVED && fear < 0.3 ? Math.min(1, (trust - 0.5) * 2) : 0;
   let harm = Math.max(own.s, g ? g.harm : 0);
   let kind = Math.max(lovesYou, g ? g.kind : 0);
   if (typeof gossipTaleHook === "function") ({ harm, kind } = gossipTaleHook(f, { harm, kind }));
@@ -147,7 +147,8 @@ function passGossip(from, to) {
     }
   }
   // Kindness: news that settles a newcomer
-  if (tales.kind >= 0.05 && to.adopted && _gIsNewcomer(to)) {
+  // (a newcomer of yours, or a wild one in the park - Runaways.js herd lore)
+  if (tales.kind >= 0.05 && ((to.adopted && _gIsNewcomer(to)) || !to.adopted)) {
     const room = Math.max(0, GOSSIP_TRUST_MAX - (gt.trusted || 0));
     const amount = Math.min(room, GOSSIP_TRUST * tales.kind);
     if (amount > 0) {

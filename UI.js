@@ -528,6 +528,7 @@ function drawUI(ctx) {
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   // Every pop-up screen, bottom layer first (Screens.js)
   drawScreens(ctx);
+  if (typeof drawPhotoFlash === "function") drawPhotoFlash(ctx); // Snap! (Lives.js)
 }
 
 let inspectedFluffy = null;
@@ -885,7 +886,7 @@ canvas.addEventListener("mousedown", (e) => {
       if (
         mom &&
         mom.canSee() &&
-        relationships[mom.id][f.id] !== "estranged_child"
+        (relationships[mom.id] || {})[f.id] !== "estranged_child"
       ) {
         mom.setShock(3.0);
         mom.changeHappiness(HAPPINESS_PENALTY_BABBEH_GRABBED);

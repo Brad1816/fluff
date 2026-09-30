@@ -71,6 +71,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "gossip", fallback: undefined, clone: true }, // Gossip.js
   { name: "partiesHad", fallback: undefined, clone: true }, // SharedMemories.js
   { name: "careToday", fallback: undefined, clone: true }, // Care.js
+  { name: "formerPet", fallback: null, clone: true }, // Runaways.js
+  { name: "_learntFromMum", fallback: undefined }, // FamilyLines.js
+  { name: "_echoed", fallback: undefined },
   { name: "title", fallback: null }, // Titles.js
   { name: "titleSince", fallback: undefined },
   { name: "titleState", fallback: undefined, clone: true },

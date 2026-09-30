@@ -168,6 +168,8 @@ function updateDayReport(dt) {
     // Rent and bills for the day (Bills.js)
     if (typeof chargeDailyBills === "function") dayStats.bills = chargeDailyBills();
     dayReportShown = _finishDay();
+    // Once a week, a plain-English paragraph about it (WeekSummary.js)
+    if (typeof weekSummaryFor === "function") dayReportShown.summary = weekSummaryFor(dayReportShown);
     if (typeof setGameSpeed === "function") setGameSpeed(1);
     _startDay(index);
   }
@@ -190,7 +192,7 @@ const DR_NIGHT_ROWS = 3; // room for last night's park events
 function getDayReportLayout() {
   const x = Math.round(width / 2 - DR_W / 2);
   const n = dayReportShown && dayReportShown.nightEvents ? Math.min(DR_NIGHT_ROWS, dayReportShown.nightEvents.length) : 0;
-  const h = DR_H + (n ? 30 + n * 20 : 0);
+  const h = DR_H + (n ? 30 + n * 20 : 0) + (dayReportShown && dayReportShown.summary ? 78 : 0);
   const y = Math.round(Math.max(8, height / 2 - h / 2));
   return { x, y, w: DR_W, h, btn: { x: x + DR_W / 2 - 90, y: y + h - 58, w: 180, h: 40 } };
 }
@@ -239,7 +241,7 @@ function drawDayReport(c) {
       delta >= 0 ? "#9fe0a8" : "#ff8a80",
     ],
     ["Rent & bills", (typeof describeBills === "function" && describeBills(r.bills)) || "none", r.bills && r.bills.owed > 0 ? "#ff8a80" : null],
-    ["Sold", r.sold.count ? `${r.sold.count} fluffies for $${r.sold.money.toLocaleString()}` : "none", null],
+    ["Sold", r.sold.count ? `${r.sold.count} fluff${r.sold.count === 1 ? "y" : "ies"} for $${r.sold.money.toLocaleString()}` : "none", null],
     ["Orders filled", r.orders.count ? `${r.orders.count} for $${r.orders.money.toLocaleString()}` : "none", null],
     ["Born", _listText(r.born), r.born.length ? "#9fe0a8" : null],
     ["New arrivals", _listText(r.arrived), null],
@@ -275,6 +277,22 @@ function drawDayReport(c) {
     }
   }
 
+  // This week (WeekSummary.js)
+  if (r.summary) {
+    y += 6;
+    c.font = "bold 15px Arial";
+    c.fillStyle = "#ffd6f0";
+    c.fillText("This week", L.x + 30, y);
+    y += 22;
+    c.font = "italic 14px Georgia, serif";
+    c.fillStyle = "#f1ecf7";
+    const lines = typeof wrapText === "function" ? wrapText(c, r.summary, L.w - 64) : [r.summary];
+    for (const l of lines.slice(0, 3)) {
+      c.fillText(l, L.x + 34, y);
+      y += 18;
+    }
+    y += Math.max(0, 3 - lines.length) * 18;
+  }
   // Park news
   y += 6;
   c.font = "bold 15px Arial";

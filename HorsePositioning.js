@@ -1479,7 +1479,7 @@ class HorsePositioning {
       ) {
         continue;
       }
-      if (relationships[this.horse.id][f.id] === "estranged_child") {
+      if ((relationships[this.horse.id] || {})[f.id] === "estranged_child") {
         continue;
       }
 

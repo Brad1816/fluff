@@ -165,7 +165,8 @@ function describeHerd(f) {
   const n = h.memberIds.length;
   const who = h.leaderId === f.id ? "leader" : `led by ${getHerdLeaderName(h)}`;
   const land = typeof describeTerritory === "function" ? describeTerritory(h) : "";
-  return `${getHerdName(h)} (${who}, ${n} member${n === 1 ? "" : "s"}${land ? `, home: ${land}` : ""})`;
+  const lore = typeof describeHerdLore === "function" ? describeHerdLore(h) : null; // (Runaways.js)
+  return `${getHerdName(h)} (${who}, ${n} member${n === 1 ? "" : "s"}${land ? `, home: ${land}` : ""})${lore ? ` - ${lore}` : ""}`;
 }
 
 // ---- Deciding things ----
@@ -191,6 +192,7 @@ function herdLeadershipScore(f, members) {
   const tv = (k) => (typeof traitValue === "function" ? traitValue(f, k) : 0);
   let score = 1 + 0.8 * tv("bravery") + 0.2 * tv("social") + 0.3 * ((f.health || 100) / 100);
   if (f.isSmarty && f.isSmarty()) score += 0.5;
+  if (typeof runawayLeaderBonus === "function") score += runawayLeaderBonus(f); // a Rebel leads (Runaways.js)
   for (const m of members) if (m !== f) score += 0.15 * getLiking(m, f);
   return score;
 }

@@ -144,6 +144,7 @@ function setTitle(f, title, why) {
   if (typeof noteTurningPoint === "function") noteTurningPoint(f, line);
   else if (typeof recordStory === "function") recordStory("turning", f, { x: line });
   if (title === "Broken" && typeof fluffySound === "function") fluffySound(f, "sad");
+  if (typeof noteWeekTitle === "function") noteWeekTitle(f, title); // (WeekSummary.js)
   return true;
 }
 

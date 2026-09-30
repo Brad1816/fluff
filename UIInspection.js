@@ -186,6 +186,8 @@ function getFluffyInspectionInfo(f) {
     if (wish) about.push({ label: "Wishes for", value: wish[0], tone: wish[1] });
   }
   about.push({ label: "Mother", value: nameOf(f.motherId, "Unnamed fluffy") });
+  const line = typeof describeLine === "function" ? describeLine(f) : null; // (FamilyLines.js)
+  if (line) about.push({ label: "Line", value: line[0], tone: line[1] });
   about.push({ label: "Father", value: nameOf(f.fatherId, "Unnamed fluffy") });
   about.push({
     label: "Special friend",
@@ -378,7 +380,7 @@ const INSPECTION_TABS = [
     id: "family",
     name: "Family & friends",
     cols: [
-      { title: "Family", rows: ["Mother", "Father", "Born", "Named by", "Herd"] },
+      { title: "Family", rows: ["Mother", "Father", "Line", "Born", "Named by", "Herd"] },
       { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Misses"] },
     ],
   },

@@ -238,7 +238,7 @@ addHorseMethods({
 
     const key1 = "HELLO";
     const key2 = getSimpleRelationship(relation);
-    const key3 = getSimpleRelationship(relationships[other.id][this.id]); // get the other side of the relationship
+    const key3 = getSimpleRelationship((relationships[other.id] || {})[this.id]); // get the other side of the relationship
 
     this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
     other.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);

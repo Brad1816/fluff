@@ -440,6 +440,13 @@ const DIALOGUE = {
     BELL: ["Ding-ding! Nummy time!", "Wobot say nummies!", "Nummies! Nummies!"],
   },
   // Frights (Fears.js)
+  // Runaways and letting go (Runaways.js): "mistah" becomes what it calls you
+  RUNAWAY: {
+    LET_GO_SAD: ["Mistah? Mistah nu weave <speaker>...", "Wai mistah go? Huu...", "*sniff* <Speaker> be gud, mistah come back?"],
+    LET_GO_FREE: ["<Speaker> fwee!", "Bye bye scawy housie!", "*wuns off*"],
+    MEET_HAPPY: ["Mistah! Mistah! <Speaker> 'membew yu!", "Mistah come fow <speaker>?!", "Yay! Mistah!"],
+    MEET_SCARED: ["*SCREEE* Mistah fin' <speaker>!", "Nu! Nu take back!", "Wun! Wun!"],
+  },
   // Care actions (Care.js): "mistah" becomes what it calls you
   CARE: {
     SIT_WITH: ["*sniff* ...mistah stay?", "Mistah nu weave <speaker>?", "Huu... <speaker> nu wike be awone...", "*snuggwe*"],

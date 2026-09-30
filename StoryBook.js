@@ -60,6 +60,8 @@ const STORY_KINDS = {
   wish_granted: { big: true, text: (e) => `${e.x}` },
   wish_denied: { big: true, text: (e) => `${e.x}` },
   nightmare: { big: false },
+  photo: { big: true, text: (e, n) => { const p = typeof photoById === "function" ? photoById(e.x) : null; return `A photo: "${p ? p.caption : n}"`; } }, // (Lives.js)
+  after: { big: true, text: (e, n) => `${n}, after leaving you: ${e.x}` }, // (Reputation.js)
   // Phase 3 (Gossip.js, Scars.js)
   shared: { big: true, text: (e, n) => { const m = typeof sharedMemoryById === "function" ? sharedMemoryById(e.x) : null; return `${n} was there for ${m ? m.name : "a moment they all remember"}.`; } },
   scar: { big: true, text: (e, n) => `${n} was left with a ${e.x || "scar"}.` },

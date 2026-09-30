@@ -99,7 +99,8 @@ async function openGame(context, port) {
   // (with where it happened: the first line of the stack that's in a game file)
   page.on("pageerror", (e) => {
     const at = String(e.stack || "").split("\n").find((l) => /\.js:\d+/.test(l) && !/run-tests/.test(l));
-    errors.push(at ? `${e.message} (${at.trim().replace(/^at /, "").replace(/https?:\/\/[^/]+\//, "")})` : e.message);
+    const stack = String(e.stack || "").split("\n").slice(1, 3).map((l) => l.trim()).join(" / ");
+    errors.push(at ? `${e.message} (${at.trim().replace(/^at /, "").replace(/https?:\/\/[^/]+\//, "")})` : `${e.message}${stack ? ` [${stack}]` : ""}`);
   });
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());

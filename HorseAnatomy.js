@@ -144,6 +144,8 @@ class HorseAnatomy {
     this.horse.currentStateKey = "IDLE";
     this.horse.deathWeapon = weaponType;
     if (cause !== "Born non-viable") if (typeof recordStory === "function") recordStory("died", this.horse, { x: cause || (weaponType ? `killed with the ${weaponType}` : "") });
+    // Its life goes in the Memories book with an epilogue (Lives.js)
+    if (cause !== "Born non-viable" && typeof recordLife === "function") recordLife(this.horse, cause || (weaponType ? `killed with the ${weaponType}` : ""));
     // Its foals lose their mum or dad: a turning point for yours (Identity.js)
     if (cause !== "Born non-viable" && typeof noteTurningPoint === "function" && typeof fluffies !== "undefined") {
       const who = this.horse.gender === "male" ? "dad" : "mum";

@@ -271,6 +271,13 @@ function drawHousehold(c) {
   c.fillStyle = "#ffd6f0";
   c.font = "bold 24px Arial";
   c.fillText("Household", L.x + 24, L.y + 40);
+  // Your name with families and with the dark market (Reputation.js)
+  if (typeof describeReputations === "function") {
+    const rep = describeReputations();
+    c.font = "13px Arial";
+    c.fillStyle = "rgba(255,255,255,0.7)";
+    c.fillText(`Families: ${rep.family} · Dark market: ${rep.dark}`, L.x + 160, L.y + 39);
+  }
   c.font = "14px Arial";
   c.fillStyle = "rgba(255,255,255,0.75)";
   c.textAlign = "right";

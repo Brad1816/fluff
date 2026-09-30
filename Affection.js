@@ -183,6 +183,7 @@ function onAffectionChanged(f, before) {
   const up = rank[lvlNow] > rank[lvlBefore];
   let msg = null;
   if (up && lvlNow === "loves") msg = `${_affName(f)} loves you now! ♥`;
+  if (up && (lvlNow === "loves" || lvlNow === "adores") && typeof noteWeekLoved === "function") noteWeekLoved(f); // (WeekSummary.js)
   else if (up && lvlNow === "adores") msg = `${_affName(f)} adores you! ♥♥`;
   else if (!up && lvlBefore === "loves") msg = `${_affName(f)} doesn't love you like before.`;
   else if (!up && lvlNow === "dislikes") msg = `${_affName(f)} doesn't like you any more.`;

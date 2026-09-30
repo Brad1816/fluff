@@ -788,6 +788,7 @@ addHorseMethods({
         this.speak(getDialogue(key, this));
         this.changeHappiness(1.0 - this.happiness);
       }
+      if (!this.adopted && this.formerPet && typeof onFormerPetHome === "function") onFormerPetHome(this); // (Runaways.js)
       this.adopted = true;
     }
   },
