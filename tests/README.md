@@ -22,7 +22,7 @@ In a terminal in the `tests` folder:
 ```
 npm test
 ```
-It takes about 5 minutes and ends with e.g. `222 passed, 0 failed`.
+It takes about 2-3 minutes and ends with e.g. `222 passed, 0 failed`.
 A failure says which test failed and why, e.g.
 `Grinder: sold for $50, expected $1250`.
 
@@ -44,6 +44,17 @@ and `savefields` every time. It prints why each test file was picked. Add
 machinery (`run-tests.js`, `helpers.js`, `select-tests.js`) or anything in
 `index.html` other than adding a script runs everything. It's a good guess,
 not a proof, so run the full `npm test` now and then too.
+
+**Reusing the game between tests.** Loading the game is most of a test's
+time, so each worker keeps its page and starts a new game in it, after
+putting back anything the last test changed that a new game doesn't reset
+(game functions a test swapped out, class methods, `Math.random`, the
+game's top-level settings). If a test fails in a reused page it's run again
+in a freshly loaded one; if it passes there it counts, but it's listed at
+the end under "Only passed in a freshly loaded page" - something an earlier
+test left behind, worth fixing. A test can always get a fresh page with
+`fresh: true`, and `TEST_REUSE=0 npm test` turns reuse off. On a computer
+with more cores, `TEST_WORKERS=6 npm test` (or 8) may be faster still.
 
 ## The files
 

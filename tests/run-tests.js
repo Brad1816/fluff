@@ -58,23 +58,9 @@ function startServer() {
   );
 }
 
-// Open the game and start a new game. Returns once we're playing.
-async function openGame(context, port) {
-  const page = await context.newPage();
-  const errors = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => {
-    if (m.type() === "error") errors.push(m.text());
-  });
-  await page.goto(`http://127.0.0.1:${port}/index.html`);
-  await page.waitForFunction(() => typeof gameState !== "undefined" && gameState === "TITLE");
-  await page.waitForTimeout(500);
-  await page.mouse.click(640, 510); // "New game"
-  await page.waitForFunction(() => showWorldSettingsPrompt === true);
-  await page.mouse.click(553, 594); // "Start Game"
-  await page.waitForFunction(() => gameState === "PLAYING", null, { timeout: 15000 });
-  await page.waitForTimeout(200);
-  // Helpers every test can use inside page.evaluate(...)
+// Helpers every test can use inside page.evaluate(...), and the switches
+// that keep tests predictable (run again after each in-page new game)
+async function installHelpers(page) {
   await page.evaluate(() => {
     // Same "random" numbers every run, so tests don't randomly fail
     window.__seedRandom = (seed = 12345) => {
@@ -104,7 +90,139 @@ async function openGame(context, port) {
       isGlobalDragging = false;
     };
   });
+}
+
+// Open the game and start a new game. Returns once we're playing.
+async function openGame(context, port) {
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => {
+    if (m.type() === "error") errors.push(m.text());
+  });
+  await page.goto(`http://127.0.0.1:${port}/index.html`);
+  await page.waitForFunction(() => typeof gameState !== "undefined" && gameState === "TITLE");
+  await page.waitForTimeout(500);
+  await page.mouse.click(640, 510); // "New game"
+  await page.waitForFunction(() => showWorldSettingsPrompt === true);
+  await page.mouse.click(553, 594); // "Start Game"
+  await page.waitForFunction(() => gameState === "PLAYING", null, { timeout: 15000 });
+  await page.waitForTimeout(200);
+  await installHelpers(page);
   return { page, errors };
+}
+
+// ---- Reusing a page between tests ----
+// Loading the game is most of a test's time (about 4 of 5 seconds), so each
+// worker keeps its page and starts a new game in it instead (TEST_REUSE=0
+// turns this off). Before each test it puts back what the last test may
+// have changed that a new game doesn't reset: Math.random, every game
+// function (tests swap some out), every class's methods, and the plain
+// values (numbers, text, true/false) of the game's top-level `let`s. A test
+// that fails in a reused page is run again in a freshly loaded one; if it
+// passes there it counts, and is listed at the end as leaking state. A test
+// can ask for a fresh page with `fresh: true`. Pages are replaced every
+// REUSE_LIMIT tests.
+const REUSE = process.env.TEST_REUSE !== "0";
+const REUSE_LIMIT = 25;
+
+// The game's top-level `let`/`var` names and classes (from its source)
+function gameGlobals() {
+  const lets = new Set();
+  const classes = new Set();
+  for (const file of fs.readdirSync(GAME_DIR)) {
+    if (!file.endsWith(".js")) continue;
+    const src = fs.readFileSync(path.join(GAME_DIR, file), "utf8");
+    for (const m of src.matchAll(/^(?:let|var)\s+([A-Za-z_$][\w$]*)/gm)) lets.add(m[1]);
+    for (const m of src.matchAll(/^class\s+([A-Za-z_$][\w$]*)/gm)) classes.add(m[1]);
+  }
+  return { lets: [...lets], classes: [...classes] };
+}
+const GAME_GLOBALS = gameGlobals();
+
+// Right after a fresh load: remember how things are
+async function snapshotPage(page) {
+  await page.evaluate(({ lets, classes }) => {
+    const g = (0, eval); // global scope, where the game's lets live
+    const snap = { random: Math.random, fns: new Map(), protos: new Map(), prims: new Map() };
+    for (const k of Object.getOwnPropertyNames(window)) {
+      let v;
+      try {
+        v = window[k];
+      } catch (e) {
+        continue;
+      }
+      if (typeof v === "function") snap.fns.set(k, v);
+    }
+    const protoOf = (C) => {
+      if (typeof C !== "function" || !C.prototype || snap.protos.has(C)) return;
+      const d = {};
+      for (const k of Object.getOwnPropertyNames(C.prototype)) d[k] = Object.getOwnPropertyDescriptor(C.prototype, k);
+      snap.protos.set(C, d);
+    };
+    for (const name of classes) {
+      try {
+        protoOf(g(name));
+      } catch (e) {}
+    }
+    for (const v of snap.fns.values()) if (/^\s*class\b/.test(Function.prototype.toString.call(v))) protoOf(v);
+    for (const name of lets) {
+      try {
+        const v = g(name);
+        if (v === null || ["number", "string", "boolean", "undefined"].includes(typeof v)) snap.prims.set(name, v);
+      } catch (e) {}
+    }
+    window.__testSnapshot = snap;
+  }, GAME_GLOBALS);
+}
+
+// Before a reused test: put things back and start a new game in the page
+async function resetPage(opened) {
+  const { page, errors } = opened;
+  await page.evaluate(() => {
+    const snap = window.__testSnapshot;
+    Math.random = snap.random;
+    for (const [k, v] of snap.fns) if (window[k] !== v) window[k] = v;
+    for (const [C, d] of snap.protos) {
+      for (const k of Object.getOwnPropertyNames(C.prototype)) if (!(k in d)) delete C.prototype[k];
+      for (const [k, desc] of Object.entries(d)) {
+        const now = Object.getOwnPropertyDescriptor(C.prototype, k);
+        if (!now || now.value !== desc.value || now.get !== desc.get || now.set !== desc.set)
+          Object.defineProperty(C.prototype, k, desc);
+      }
+    }
+    // Switches the helpers turn off, back on for the new game, as on a
+    // fresh load (installHelpers turns them off again after)
+    if (typeof parkLife !== "undefined") parkLife.enabled = true;
+    if (typeof namingPopupsEnabled !== "undefined") namingPopupsEnabled = true;
+    // Back to the title screen, nothing open
+    if (typeof resetScreens === "function") resetScreens();
+    showSaveList = false;
+    showWorldSettingsPrompt = false;
+    isGlobalDragging = false;
+    transitionPhase = "OFF";
+    gameState = "TITLE";
+  });
+  await page.mouse.click(640, 510); // "New game"
+  await page.waitForFunction(() => showWorldSettingsPrompt === true, null, { timeout: 5000 });
+  await page.mouse.click(553, 594); // "Start Game"
+  await page.waitForFunction(() => gameState === "PLAYING", null, { timeout: 15000 });
+  await page.evaluate(() => {
+    // The rest of the fresh-game values (flags, speed, scene...)
+    const g = (0, eval);
+    window.__restoreValue = undefined;
+    for (const [name, v] of window.__testSnapshot.prims) {
+      if (["gameState", "transitionPhase", "transitionTimer", "preTransitionState"].includes(name)) continue;
+      try {
+        if (g(name) !== v) {
+          window.__restoreValue = v;
+          g(`${name} = window.__restoreValue`);
+        }
+      } catch (e) {}
+    }
+  });
+  await installHelpers(page);
+  errors.length = 0;
 }
 
 function loadTests(filter, files = null) {
@@ -147,37 +265,70 @@ function loadTests(filter, files = null) {
   const browser = await chromium.launch();
   let passed = 0;
   const failures = [];
+  const leaky = []; // passed only in a freshly loaded page
   const workers = Math.max(1, Math.min(tests.length, parseInt(process.env.TEST_WORKERS || "4", 10) || 1));
   const startedAll = Date.now();
 
-  console.log(`Running ${tests.length} tests (${workers} at a time)...\n`);
+  console.log(`Running ${tests.length} tests (${workers} at a time${REUSE ? ", reusing pages" : ""})...\n`);
   let next = 0;
   const worker = async () => {
     // Its own browser context: separate saves (IndexedDB) from other workers
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    let opened = null; // the page this worker is reusing
+    let uses = 0;
+    const fresh = async () => {
+      if (opened) await opened.page.close().catch(() => {});
+      opened = await openGame(context, port);
+      uses = 0;
+      if (REUSE) await snapshotPage(opened.page);
+    };
+    const attempt = async (t) => {
+      await t.run(opened.page);
+      if (opened.errors.length) throw new Error("Game errors: " + opened.errors.slice(0, 3).join(" | "));
+    };
     while (next < tests.length) {
       const t = tests[next++];
       const started = Date.now();
-      let page = null;
+      let reused = false;
       try {
-        const opened = await openGame(context, port);
-        page = opened.page;
-        await t.run(page);
-        if (opened.errors.length) throw new Error("Game errors: " + opened.errors.slice(0, 3).join(" | "));
+        if (!REUSE || !opened || t.fresh || uses >= REUSE_LIMIT) await fresh();
+        else {
+          try {
+            await resetPage(opened);
+            reused = true;
+          } catch (e) {
+            await fresh();
+          }
+        }
+        uses++;
+        try {
+          await attempt(t);
+        } catch (e) {
+          if (!reused) throw e;
+          // Maybe something left over from an earlier test: try it fresh
+          await fresh();
+          uses++;
+          await attempt(t);
+          leaky.push(`${t.fullName} (in a reused page: ${e.message.split("\n")[0].slice(0, 120)})`);
+        }
         passed++;
         console.log(`  PASS  ${t.fullName}  (${((Date.now() - started) / 1000).toFixed(1)}s)`);
       } catch (e) {
         failures.push(t.fullName);
         console.log(`  FAIL  ${t.fullName}\n        ${e.message}`);
+        // Don't reuse a page a failed test was in
+        if (opened) await opened.page.close().catch(() => {});
+        opened = null;
       }
-      if (page) await page.close();
     }
+    if (opened) await opened.page.close().catch(() => {});
     await context.close();
   };
   await Promise.all(Array.from({ length: workers }, worker));
 
   await browser.close();
   server.close();
+  if (leaky.length) console.log(`\nOnly passed in a freshly loaded page (something earlier left state behind):\n${leaky.map((f) => "  " + f).join("\n")}`);
   if (failures.length) console.log(`\nFailed:\n${failures.map((f) => "  " + f).join("\n")}`);
   console.log(`\nTook ${Math.round((Date.now() - startedAll) / 1000)}s`);
   console.log(`\n${passed} passed, ${failures.length} failed`);

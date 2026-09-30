@@ -521,6 +521,21 @@ run. Replaying the last dozen commits, small ones picked 4-13 of 57 test
 files and wide ones about 45, and every test that actually failed on those
 commits was picked. The full suite still runs before each check-in.
 
+**Reusing pages** (`TEST_REUSE`, default on): loading the game was about
+4 of every 5 seconds, so each worker keeps its page. `snapshotPage` (right
+after the first fresh load) remembers `Math.random`, every function on
+`window`, every class's prototype (class names from the source), and the
+plain values of every top-level `let`/`var` (names from the source, read
+with a global `eval`). `resetPage` puts them back, switches park life and
+naming pop-ups back on as on a fresh load, returns to the title and clicks
+New game / Start Game, restores the remaining values and reinstalls the
+helpers (`installHelpers`). A test that fails in a reused page is re-run in
+a fresh one; passing there counts, and it's listed as leaving state behind.
+Pages are replaced every `REUSE_LIMIT` (25) tests; `fresh: true` on a test
+always gets a new page. The full suite went from about 300s to 140-175s (4
+workers on 2 cores; 2 or 3 workers were slower), a targeted run from 29s to
+22s.
+
 **Running 4 at a time.** Tests run `TEST_WORKERS` at once (default 4; set
 `TEST_WORKERS=1` in the terminal to run them one by one, e.g. to read the
 output in order). Each worker has its own browser context, so saves don't
