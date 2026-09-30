@@ -159,6 +159,7 @@ function addTrauma(f, type) {
   if (!Array.isArray(f.traumas)) f.traumas = [];
   if (f.traumas.some((t) => t.type === type)) return false;
   f.traumas.push({ type, text: def.text, severity: def.severity, blames: def.blames, at: _sepNow() });
+  if (typeof recordStory === "function") recordStory("scarred", f, { x: def.text });
   if (typeof noteDayEvent === "function") noteDayEvent("scarred", { name: _sepName(f) }); // morning report
   if (def.blames) {
     if (typeof changePlayerFear === "function") changePlayerFear(f, 0.3 * def.severity);

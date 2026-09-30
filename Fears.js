@@ -126,6 +126,7 @@ function startFright(f, key) {
     return true;
   }
   f.fright = { key, until: now + seconds, start: now };
+  if (typeof recordStory === "function") recordStory("fright", f);
   if (f.currentStateKey === "SLEEPING" && typeof f.initBehavior === "function") f.initBehavior("IDLE"); // wakes up
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 2.5;
@@ -165,6 +166,7 @@ function onComfortedByYou(f, how = "held") {
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 2;
   _fSay(f, "COMFORTED");
+  if (typeof recordStory === "function") recordStory("comforted", f);
   f._frightsComforted = (f._frightsComforted || 0) + 1;
   return true;
 }

@@ -48,6 +48,7 @@ addHorseMethods({
     if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(this, target)) return;
 
     target.wasAttackedBy(this);
+    if (typeof recordStory === "function") recordStory("attacked", target);
 
     // Face the target
     this.facingRight = target.x > this.x;

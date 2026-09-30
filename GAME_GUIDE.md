@@ -101,6 +101,8 @@ and it runs. About 55,000 lines across ~120 files.
 | `FeedBot.js` | **The Feed-Bot** (Fluff Mart, $300): fills bowls, feeders and orphans from a hopper you pour bags into; modes; tipping over, spills (`FoodSpill`), the Repair Kit. See section 9 (The Feed-Bot). |
 | `Population.js` | **Population limits**: crowded rooms (unhappiness, scuffles), mares resting after a litter, park births following food. See section 9 (Population and bills). |
 | `Bills.js` | **Rent and bills** charged every morning with the day report; unpaid bills are owed. See section 9 (Population and bills). |
+| `StoryBook.js` | **The story book**: one shared record of big events (births, deaths, names, sales, tricks, harm...) and daily tallies of small things, that every fluffy, family and herd points into. See section 9 (The story book). |
+| `StoryDebug.js` | **Story debug view** (J): what the story book holds for a fluffy, its family, and in total. See section 9 (The story book). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -2229,3 +2231,42 @@ steady sink.
   66; no mares lost in childbirth); the park held 25-39 with about 40% fewer
   fights and half the non-viable births.
 - Tests: `tests/population.test.js`.
+
+### The story book (Phase 0, stage 3)
+The foundation for life stories (design doc Phase 1): one shared record,
+saved with the game (SAVED_GAME_STATE "storyBook"), that stories are told
+from. Nothing player-facing reads it yet except the debug view.
+- **Events** (`StoryBook.js`, `storyBook.events`, oldest first):
+  `{ i, t, k, w: [ids], s?, h?, x?, q?, n? }` - kind `k`, the fluffies in it
+  `w` (first = who it's mostly about), scene, herd, a detail, a quoted line,
+  a repeat count. An event is stored **once** however many fluffies are in
+  it; `storyOf(f)` uses an index (fluffy id -> events) rebuilt when needed.
+  `storyOfFamily(f)` adds parents, foals and brothers and sisters (from the
+  family book, or the live fluffies for one just born); `storyOfHerd(id)`.
+- **Big events** (`STORY_KINDS` with `big: true`) are kept for good: born /
+  stillborn (`HorseAnatomy.spawnBaby`, with mum and dad), died with the cause
+  (`HorseAnatomy.die`), arrived (`FamilyTree.recordFluffy`, a new fluffy of
+  yours you didn't breed), abandoned (`Abandoned.js`), named (`Names.js`),
+  sold / left (`FamilyTree.noteFluffyLeft`), trick learnt (`Tricks._trLearn`),
+  lesson that stuck and Smarty reformed (`Lessons.js`), harm from you
+  (`Memory.rememberPlayerEvent`, merged within 60s into one event with `n`),
+  scarred (`Separation.addTrauma`), show placings (`Shows.js`), herd formed
+  (`Herds.js`, members with the leader first).
+- **Small things** (affection acts from `giveAffection`, frights, comfort,
+  being attacked, lesson attempts, Feed-Bot tip-overs) go into one tally per
+  fluffy per game day: `{ k: "tally", w: [id], d: day, c: { brushed: 3 } }`.
+- **Compaction** (`compactStory`, system "storyBook" order 15, once a game
+  day): day tallies older than a year (12 days) become one per fluffy per
+  year; if the book is still over `STORY_CAP_BYTES` (20 MB estimated by
+  `storySizeEstimate`) year tallies become one per fluffy for life. Big
+  events are never merged or dropped. A bad saved book starts fresh
+  (`_storyBookOk`).
+- **Text** (`storyEventText`) is plain English for the debug view; Phase 1
+  writes the real chapters.
+- **Story debug** (`StoryDebug.js`, J, screen "storyDebug" layer 23): tabs
+  Fluffy (every event it's in, newest first, tallies greyed), Family and Book
+  (size against the cap, counts by kind); ◀ ▶ step through your fluffies;
+  "Compact now". The side column shows the room, its crowding, and
+  placeholders for room climate (phase 3) and titles (phase 4). J picks the
+  fluffy in the magnifying glass (and closes it), otherwise your first.
+- Tests: `tests/storybook.test.js`.

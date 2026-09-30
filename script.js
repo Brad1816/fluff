@@ -2135,6 +2135,15 @@ window.addEventListener("keydown", (e) => {
     else if (!isAnyScreenOpen()) openRecords();
     return;
   }
+  // J: the story debug view (StoryDebug.js) - from the magnifying glass, for that fluffy
+  if (e.code === "KeyJ" && typeof isStoryDebugOpen === "function") {
+    if (isStoryDebugOpen()) closeStoryDebug();
+    else if (typeof inspectedFluffy !== "undefined" && inspectedFluffy) {
+      openStoryDebug();
+      inspectedFluffy = null;
+    } else if (!isAnyScreenOpen()) openStoryDebug();
+    return;
+  }
   // O: the household overview (Household.js)
   if (e.code === "KeyO" && typeof isHouseholdOpen === "function") {
     if (isHouseholdOpen()) closeHousehold();

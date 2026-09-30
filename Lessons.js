@@ -176,9 +176,11 @@ function giveLesson(f, key) {
     f.expressionOverride = "GOOD_UPSIES";
     f.expressionOverrideTimer = 2;
     const cured = lesson.teach(f);
+  if (typeof recordStory === "function") recordStory("lesson", f);
     _lsSay(f, smarty ? "SMARTY_LISTENS" : key.toUpperCase());
     if (cured) {
       if (lesson.doneMsg && typeof addUIMessage === "function") addUIMessage(lesson.doneMsg(_trName(f)));
+      if (key !== "smarty") if (typeof recordStory === "function") recordStory("lesson_done", f, { x: { colours: "stopped caring about colours", alicorns: "stopped fearing alicorns", litter: "became litter trained", brave: "stopped being scared" }[key] });
       return "done";
     }
     return "learnt";
@@ -202,6 +204,7 @@ function reformSmarty(f) {
   const list = Array.isArray(f.personalities) ? f.personalities : [];
   f.personalities = list.filter((p) => p !== "smarty");
   f.smartyReform = 1;
+  if (!f.smartyReformed && typeof recordStory === "function") recordStory("reformed", f);
   f.smartyReformed = true;
 }
 

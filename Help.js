@@ -433,6 +433,8 @@ const HELP_TOPICS = [
       "- N: name tags    H: herd markers    B: bed labels",
       "- R: turn the fence piece you're holding",
       "- 0-9: toolbar slots",
+      "- J: story debug (what the story book has recorded about the",
+      "  fluffy in the magnifying glass, its family, and the whole book)",
       "- Esc: close a window / put down a tool",
     ],
   },

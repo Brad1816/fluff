@@ -239,6 +239,7 @@ function _formHerd(members) {
   herdState.list.push(h);
   _herdChanged();
   _say(leader, ["HERD", "NEW_HERD"]);
+  if (typeof recordStory === "function") recordStory("herd_formed", members.map((m) => m.id).sort((a, b) => (a === leader.id ? -1 : b === leader.id ? 1 : 0)), { x: getHerdName(h) });
   _tellPlayer(h, `A new herd formed: the ${getHerdName(h)}, led by ${getHerdLeaderName(h)} (${members.length})`);
   // Morning report (DayReport.js)
   if (typeof noteDayEvent === "function" && (leader.scene === "PARK" || members.some((f) => f.adopted)))

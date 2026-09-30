@@ -41,6 +41,7 @@ function setupAbandoned(f) {
     } else setSpawnAge(f);
   }
   f.missingOwner = 0.7 + Math.random() * 0.3;
+  if (typeof recordStory === "function") recordStory("abandoned", f);
   // Used to people: not scared of them, but not sure of them either
   f.playerTrust = 0.45;
   f.playerFear = 0.05;

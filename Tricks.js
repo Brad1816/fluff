@@ -130,6 +130,7 @@ function _trLearn(f, key, amount) {
   f.tricks[key] = Math.round(after * 1000) / 1000;
   if (before < TRICK_KNOWN && after >= TRICK_KNOWN && f.adopted && typeof addUIMessage === "function") {
     addUIMessage(`${_trName(f)} knows "${getTrick(key).name}" now! ✓`);
+    if (typeof recordStory === "function") recordStory("trick", f, { x: getTrick(key).name });
   }
   return after - before;
 }

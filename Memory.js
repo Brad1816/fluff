@@ -52,6 +52,9 @@ const MEMORY_TEXT = {
   taken_from_mum: "Taken from its mum",
 };
 
+// Memories of harm from you (for the story book, StoryBook.js)
+const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "took_family", "taken_away", "taken_from_mum"]);
+
 function ensurePlayerMemory(f) {
   if (typeof f.playerTrust !== "number") f.playerTrust = f.adopted ? TRUST_START : TRUST_START_FERAL;
   if (typeof f.playerFear !== "number") f.playerFear = 0;
@@ -68,6 +71,8 @@ function _traitVal(f, key) {
 
 function rememberPlayerEvent(f, type) {
   ensurePlayerMemory(f);
+  // Harm goes in the story book (the kind things are tallied by Affection.js)
+  if (MEMORY_HARM_TYPES.has(type) && typeof recordStory === "function") recordStory("harmed", f, { x: MEMORY_TEXT[type] || type });
   const now = _memNow();
   // The same thing again within a minute just refreshes the time
   const last = f.playerMemories[0];

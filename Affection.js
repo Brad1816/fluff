@@ -125,6 +125,7 @@ function giveAffection(f, type, scale = 1) {
   if (!f || !f.isAlive) return 0;
   const act = AFFECTION_ACTS[type];
   if (!act) return 0;
+  if (type !== "named" && typeof recordStory === "function") recordStory(type, f); // (a tally, StoryBook.js)
   ensurePlayerMemory(f);
   const now = _affNow();
   const day = _affDay();

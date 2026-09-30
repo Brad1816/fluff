@@ -348,6 +348,7 @@ class FeedBot {
     const name = f ? (typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy") : "Something";
     if (f) {
       f.feedBotTips = (f.feedBotTips || 0) + 1;
+      if (typeof recordStory === "function") recordStory("feedbot_tip", f);
       f.expressionOverride = "ANGRY_PUFFED";
       f.expressionOverrideTimer = 1.5;
       _fbSay(f, "TIP");

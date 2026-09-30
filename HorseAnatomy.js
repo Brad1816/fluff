@@ -143,6 +143,7 @@ class HorseAnatomy {
     if (typeof fluffySound === "function") fluffySound(this.horse, "death"); // FluffySounds.js
     this.horse.currentStateKey = "IDLE";
     this.horse.deathWeapon = weaponType;
+    if (cause !== "Born non-viable") if (typeof recordStory === "function") recordStory("died", this.horse, { x: cause || (weaponType ? `killed with the ${weaponType}` : "") });
     this.horse.bloodTolerance = 1;
     if (typeof notifyViolence !== "undefined" && weaponType) {
       notifyViolence(this.horse, true, weaponType);
@@ -610,6 +611,8 @@ class HorseAnatomy {
       }
     }
 
+    // The story book (StoryBook.js): born, to whom
+    if (typeof recordStory === "function") recordStory(isViable ? "born" : "stillborn", [baby.id, this.horse.id, this.horse.babyDaddyId]);
     if (!isViable) {
       baby.anatomy.die(null, "Born non-viable");
       baby.bloodTolerance = 1;

@@ -256,6 +256,7 @@ function saveNamingPopup() {
     if (n) {
       const first = !fluffyNames[id];
       fluffyNames[id] = n;
+      if (typeof recordStory === "function") recordStory("named", id, { x: n });
       // A name from you (Affection.js)
       const f = first && typeof giveAffection === "function" ? fluffies.find((x) => x.id === id) : null;
       if (f) giveAffection(f, "named");

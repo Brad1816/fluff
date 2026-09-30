@@ -411,6 +411,7 @@ function runShow() {
     }
     if (!Array.isArray(f.ribbons)) f.ribbons = [];
     f.ribbons.push({ place: yours.place, show: theme.name, day: show.day });
+    if (typeof recordStory === "function") recordStory("show", f, { x: ["", "first", "second", "third"][yours.place] || `number ${yours.place}` });
     if (typeof noteGoalEvent === "function") noteGoalEvent("showPlace", { place: yours.place });
   }
   showState.last = result;

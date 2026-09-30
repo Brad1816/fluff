@@ -60,6 +60,8 @@ function recordFluffy(f) {
     const mum = f.motherId !== null && f.motherId !== undefined ? fluffies.find((x) => x.id === f.motherId) : null;
     rec.bred = !!(f.adopted && f.growth < 0.25 && mum && mum.adopted);
     fluffyRecords[f.id] = rec;
+    // A fluffy that came to you rather than being born here (StoryBook.js)
+    if (f.adopted && !rec.bred && !(f.growth < 0.25 && mum) && typeof recordStory === "function") recordStory("arrived", f, { x: "you" });
   }
   rec.age = f.age || 0;
   rec.name = (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || rec.name || null;
@@ -147,6 +149,7 @@ function syncFamilyRecords() {
 // Called where a fluffy leaves the game for a known reason (sold, taken).
 // price: what you got for it, if it was sold.
 function noteFluffyLeft(f, reason, price = null) {
+  if (f) if (typeof recordStory === "function") recordStory("sold", f, { x: reason });
   if (!f || !shouldRecordFluffy(f)) return;
   const rec = recordFluffy(f);
   rec.status = reason;
