@@ -141,7 +141,7 @@ module.exports = [
     },
   },
   {
-    name: "shelter: boarding your own is a daily bill; the room draws with its kennels",
+    name: "shelter: boarding your own is a daily bill; the room draws with its kennels, and the front with its signs",
     run: async (page) => {
       const r = await page.evaluate(() => {
         const saved = dayCareFluffies;
@@ -161,11 +161,29 @@ module.exports = [
         } catch (e) {
           err = String(e);
         }
-        return { boarding: bill.boarding, text, err };
+        // The front of the building in Shelter Alley
+        const was = currentScene;
+        currentScene = "ALLEY_DAY_CARE";
+        const r0 = makeShelterResident();
+        r0.timesUpDay = getDayNumber();
+        const keep = shelter.residents;
+        shelter.residents = [r0];
+        let frontErr = null;
+        try {
+          drawShelterFront(ctx);
+        } catch (e) {
+          frontErr = String(e);
+        }
+        const lastDay = shelterLastDayNames();
+        shelter.residents = keep;
+        currentScene = was;
+        return { boarding: bill.boarding, text, err, frontErr, lastDay, name0: r0.name };
       });
       checkEqual(r.boarding, 60, "two boarders a day");
       check(/boarding \$60/.test(r.text), r.text);
       checkEqual(r.err, null, "draws");
+      checkEqual(r.frontErr, null, "the shelter front draws");
+      checkEqual(JSON.stringify(r.lastDay), JSON.stringify([r.name0]), "the notice board lists who's on their last day");
     },
   },
 ];

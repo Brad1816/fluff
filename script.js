@@ -1728,6 +1728,8 @@ function render() {
   drawForegroundBackground(osCtx);
   // Shopping street shop front and store shelves (Store.js)
   if (typeof drawStoreScenery === "function") drawStoreScenery(osCtx);
+  // The shelter's front in Shelter Alley (Shelter.js)
+  if (typeof drawShelterFront === "function") drawShelterFront(osCtx);
   drawDoorBackground(osCtx);
 
   // Filter visible renderables

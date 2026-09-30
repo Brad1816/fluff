@@ -549,6 +549,216 @@ function handleShelterCardClick() {
   return true;
 }
 
+// ---- The front of the building, in Shelter Alley ----
+// A brick front with the big sign beside the door (clear of the top bar's
+// buttons), a sidewalk with paw prints to the door, an "Adopt" A-frame, a
+// notice board that lists who's on their last day, and an after-hours drop
+// box. All drawn behind everything else, like Fluff Mart's front (Store.js).
+
+const SHELTER_FRONT_SCENE = "ALLEY_DAY_CARE";
+
+function _shRound(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
+function _shPaw(c, x, y, s, colour) {
+  c.fillStyle = colour;
+  c.beginPath();
+  c.ellipse(x, y + s * 0.25, s * 0.42, s * 0.34, 0, 0, Math.PI * 2);
+  c.fill();
+  for (const [dx, dy] of [[-0.42, -0.2], [-0.15, -0.45], [0.15, -0.45], [0.42, -0.2]]) {
+    c.beginPath();
+    c.ellipse(x + dx * s, y + dy * s, s * 0.14, s * 0.18, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+}
+
+// Where things stand (also used by the tests)
+function shelterFrontLayout() {
+  const wallH = height * 0.15;
+  const signX = doorRect.x + doorRect.w + 24;
+  const signR = width - 130; // clear of the Household button
+  return {
+    wallH,
+    sign: { x: signX, y: 6, w: Math.max(200, signR - signX), h: wallH - 16 },
+    walk: { y: wallH, h: 64 },
+    aframe: { x: doorRect.x + doorRect.w + 30, y: wallH + 70, w: 120, h: 118 },
+    board: { x: doorRect.x - 250, y: wallH + 18, w: 210, h: 150 },
+    dropBox: { x: width - 250, y: wallH + 40, w: 96, h: 112 },
+  };
+}
+
+function shelterLastDayNames() {
+  return (shelter && Array.isArray(shelter.residents) ? shelter.residents : []).filter((r) => shelterDaysLeft(r) <= 0).map((r) => r.name);
+}
+
+function drawShelterFront(c) {
+  if (currentScene !== SHELTER_FRONT_SCENE) return;
+  const L = shelterFrontLayout();
+  c.save();
+  // Brick front
+  c.fillStyle = "#8c5a44";
+  c.fillRect(0, 0, width, L.wallH);
+  c.strokeStyle = "rgba(0,0,0,0.2)";
+  c.lineWidth = 1;
+  for (let y = 0, row = 0; y < L.wallH; y += 12, row++) {
+    c.beginPath();
+    c.moveTo(0, y);
+    c.lineTo(width, y);
+    c.stroke();
+    for (let x = row % 2 ? 0 : 18; x < width; x += 36) {
+      c.beginPath();
+      c.moveTo(x, y);
+      c.lineTo(x, y + 12);
+      c.stroke();
+    }
+  }
+  // A lit window left of the door (below the top bar's buttons), with
+  // little faces at the glass
+  const winY = L.wallH - 36;
+  for (const wx of [doorRect.x - 120]) {
+    if (wx < 0 || wx + 90 > width) continue;
+    c.fillStyle = "#f3d98b";
+    c.fillRect(wx, winY, 90, 30);
+    c.fillStyle = "rgba(90,70,40,0.45)";
+    for (let i = 0; i < 3; i++) {
+      c.beginPath();
+      c.arc(wx + 18 + i * 27, winY + 26, 9, Math.PI, 0);
+      c.fill();
+    }
+    c.strokeStyle = "#4a3326";
+    c.lineWidth = 3;
+    c.strokeRect(wx, winY, 90, 30);
+    c.beginPath();
+    c.moveTo(wx + 45, winY);
+    c.lineTo(wx + 45, winY + 30);
+    c.stroke();
+  }
+  // The sign
+  const S = L.sign;
+  c.fillStyle = "#2f5d50";
+  _shRound(c, S.x, S.y, S.w, S.h, 10);
+  c.fill();
+  c.strokeStyle = "#f4e3b5";
+  c.lineWidth = 3;
+  c.stroke();
+  _shPaw(c, S.x + 34, S.y + S.h * 0.46, Math.min(34, S.h * 0.5), "#f4e3b5");
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  c.fillStyle = "#f4e3b5";
+  c.font = `bold ${Math.round(Math.min(34, S.h * 0.36))}px Georgia, serif`;
+  c.fillText("FLUFFY SHELTER", S.x + (S.w + 50) / 2, S.y + S.h * 0.36);
+  c.fillStyle = "white";
+  c.font = `${Math.round(Math.min(14, S.h * 0.16))}px Arial`;
+  c.fillText("Adoptions · Boarding · Strays taken in", S.x + (S.w + 50) / 2, S.y + S.h * 0.74);
+
+  // Sidewalk, curb, and paw prints to the door
+  c.fillStyle = "#a9a49a";
+  c.fillRect(0, L.walk.y, width, L.walk.h);
+  c.strokeStyle = "rgba(0,0,0,0.15)";
+  for (let x = 0; x < width; x += 64) {
+    c.beginPath();
+    c.moveTo(x, L.walk.y);
+    c.lineTo(x, L.walk.y + L.walk.h);
+    c.stroke();
+  }
+  c.fillStyle = "#86817a";
+  c.fillRect(0, L.walk.y + L.walk.h, width, 6);
+  for (let i = 0; i < 4; i++) {
+    const px = width / 2 + (i % 2 ? 14 : -14);
+    _shPaw(c, px, L.walk.y + L.walk.h + 60 - i * 26, 12, "rgba(70,60,50,0.35)");
+  }
+
+  // "Adopt" A-frame by the door
+  const A = L.aframe;
+  c.fillStyle = "#5b3b27";
+  c.beginPath();
+  c.moveTo(A.x + 10, A.y + A.h);
+  c.lineTo(A.x + A.w / 2, A.y - 6);
+  c.lineTo(A.x + A.w - 10, A.y + A.h);
+  c.lineWidth = 5;
+  c.strokeStyle = "#5b3b27";
+  c.stroke();
+  c.fillStyle = "#26302b";
+  _shRound(c, A.x, A.y, A.w, A.h - 22, 6);
+  c.fill();
+  c.strokeStyle = "#5b3b27";
+  c.lineWidth = 4;
+  c.stroke();
+  c.fillStyle = "white";
+  c.font = "bold 17px Arial";
+  c.fillText("ADOPT", A.x + A.w / 2, A.y + 20);
+  c.fillText("A FLUFFY!", A.x + A.w / 2, A.y + 40);
+  c.fillStyle = "#f7d774";
+  c.font = "12px Arial";
+  c.fillText(`from $${SHELTER_ADOPT_FEE}`, A.x + A.w / 2, A.y + 60);
+  c.fillStyle = "#ff9d8a";
+  c.fillText("last day: half price", A.x + A.w / 2, A.y + 78);
+
+  // Notice board on posts
+  const B = L.board;
+  if (B.x > 10) {
+    c.fillStyle = "#6b4a2f";
+    c.fillRect(B.x + 16, B.y + B.h, 8, 40);
+    c.fillRect(B.x + B.w - 24, B.y + B.h, 8, 40);
+    c.fillStyle = "#c49a64";
+    c.fillRect(B.x, B.y, B.w, B.h);
+    c.strokeStyle = "#6b4a2f";
+    c.lineWidth = 5;
+    c.strokeRect(B.x, B.y, B.w, B.h);
+    c.fillStyle = "#3a2a1a";
+    c.font = "bold 13px Arial";
+    c.fillText("NOTICES", B.x + B.w / 2, B.y + 14);
+    // Pinned notes: who's on their last day, and a couple of others
+    const last = shelterLastDayNames();
+    const notes = [
+      { t: last.length ? ["LAST DAY TODAY:", ...last.slice(0, 3)] : ["No one's time", "is up today"], bg: last.length ? "#ffe0dc" : "#f5f1e6", x: B.x + 8, y: B.y + 26, w: 104, h: 62 },
+      { t: ["Found a stray?", "Bring it in."], bg: "#fff6c8", x: B.x + 118, y: B.y + 30, w: 84, h: 44 },
+      { t: ["Adopt, don't", "breed!"], bg: "#dff0ff", x: B.x + 20, y: B.y + 96, w: 84, h: 44 },
+      { t: [`${shelter && shelter.residents ? shelter.residents.length : 0} waiting`, "for a home"], bg: "#e3f5dc", x: B.x + 116, y: B.y + 88, w: 84, h: 44 },
+    ];
+    for (const n of notes) {
+      c.fillStyle = n.bg;
+      c.fillRect(n.x, n.y, n.w, n.h);
+      c.fillStyle = "#c0392b";
+      c.beginPath();
+      c.arc(n.x + n.w / 2, n.y + 4, 3, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = "#2a2118";
+      c.font = "11px Arial";
+      n.t.forEach((line, i) => c.fillText(fitText(c, line, n.w - 6), n.x + n.w / 2, n.y + 16 + i * 13));
+    }
+  }
+
+  // After-hours drop box
+  const D = L.dropBox;
+  if (D.x > L.aframe.x + L.aframe.w + 20) {
+    c.fillStyle = "#44535e";
+    c.fillRect(D.x, D.y, D.w, D.h);
+    c.fillStyle = "#1c2328";
+    c.fillRect(D.x + 14, D.y + 16, D.w - 28, 12); // the slot
+    c.strokeStyle = "#2a343b";
+    c.lineWidth = 3;
+    c.strokeRect(D.x, D.y, D.w, D.h);
+    c.fillStyle = "white";
+    c.font = "bold 11px Arial";
+    c.fillText("AFTER-HOURS", D.x + D.w / 2, D.y + 50);
+    c.fillText("DROP BOX", D.x + D.w / 2, D.y + 64);
+    c.font = "10px Arial";
+    c.fillStyle = "#c9d3d9";
+    c.fillText("No questions", D.x + D.w / 2, D.y + 84);
+    c.fillText("asked", D.x + D.w / 2, D.y + 97);
+  }
+  c.textBaseline = "alphabetic";
+  c.restore();
+}
+
 registerScreen({
   name: "shelterCard",
   layer: 14,

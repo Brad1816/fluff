@@ -2367,6 +2367,14 @@ Through the door in Shelter Alley (the scene is still `DAY_CARE`, the alley
   family book notes `boughtFrom: "the Fluffy Shelter"`, and the story book
   says it "came to you from the shelter" (`f.arrivedFrom`,
   FamilyTree.recordFluffy). Take it home yourself.
+- **The front** (`drawShelterFront`, drawn behind everything in Shelter
+  Alley from script.js next to `drawStoreScenery`; `shelterFrontLayout`): a
+  brick front with the green "FLUFFY SHELTER" sign and paw logo right of the
+  door (clear of the top bar's buttons), a lit window with little faces left
+  of it, a sidewalk with paw prints to the door, an "Adopt a fluffy!" A-frame
+  (fee, last-day half price), a notice board (who's on their last day -
+  `shelterLastDayNames` - how many are waiting, "Found a stray? Bring it
+  in.") and an after-hours drop box. Scenery only; nothing to click.
 - Tests: `tests/shelter.test.js`.
 
 ### The story book (Phase 0, stage 3)
