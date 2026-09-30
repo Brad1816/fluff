@@ -25,6 +25,7 @@
 // feeding time and bored mischief.)
 function canBeMovedExternally(f) {
   if (!f || !f.isAlive || f.isDragging || f.placedOn || f.currentCage) return false;
+  if (f._bolt) return false; // making for the door (Runaways.js)
   if (f.sitWith || (typeof inTimeOut === "function" && inTimeOut(f))) return false;
   if (f.matingState && f.matingState.isMating) return false;
   if (f.currentStateKey === "SLEEPING") return false;

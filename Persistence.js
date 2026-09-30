@@ -99,6 +99,11 @@ const saveManager = new SaveManager();
 // (The things with their own saving code - fluffies, objects, gibs, tools,
 // puddles, world settings - are handled separately in saveGame/loadGame.)
 // ---------------------------------------------------------------------------
+// What the save list shows (menu.js): just this, not the whole save kept in memory
+function savePreviewOf(data) {
+  return data ? { timePlayed: data.timePlayed, saveDate: data.saveDate, money: data.money } : null;
+}
+
 const SAVED_GAME_STATE = [
   { name: "money", get: () => money, set: (v) => (money = v), fresh: () => STARTING_MONEY },
   {
@@ -246,6 +251,7 @@ function resetTemporaryGameState() {
   if (typeof _loreGreetAt !== "undefined") for (const k of Object.keys(_loreGreetAt)) delete _loreGreetAt[k];
   // Family ties worked out for the last game (Kinship.js)
   if (typeof _kinCache !== "undefined") _kinCache = new Map();
+  if (typeof _tidyDay !== "undefined") _tidyDay = null; // (FamilyTree.js)
   // Pictures and hint cards from the last game
   if (typeof _photoImages !== "undefined") for (const k of Object.keys(_photoImages)) delete _photoImages[k];
   if (typeof currentHint !== "undefined") currentHint = null;
@@ -751,7 +757,7 @@ async function saveGame(slotName) {
       img = new Image();
       img.src = screenshot;
     }
-    savePreviewCache.set(slotName, { data: saveData, image: img });
+    savePreviewCache.set(slotName, { data: savePreviewOf(saveData), image: img });
   }
 
   console.log("Game saved successfully!");

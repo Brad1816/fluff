@@ -646,7 +646,7 @@ async function selectSave(saveName) {
       img.src = data.screenshot;
     }
     if (typeof savePreviewCache !== "undefined" && savePreviewCache) {
-      savePreviewCache.set(saveName, { data: data, image: img });
+      savePreviewCache.set(saveName, { data: typeof savePreviewOf === "function" ? savePreviewOf(data) : data, image: img });
     }
     if (selectedSaveName === saveName) {
       selectedSaveData = data;
@@ -762,7 +762,7 @@ function importSave() {
           img = new Image();
           img.src = data.screenshot;
         }
-        savePreviewCache.set(saveName, { data: data, image: img });
+        savePreviewCache.set(saveName, { data: typeof savePreviewOf === "function" ? savePreviewOf(data) : data, image: img });
       }
 
       selectedSaveName = saveName;

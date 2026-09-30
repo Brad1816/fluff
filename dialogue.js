@@ -453,6 +453,8 @@ const DIALOGUE = {
     LET_GO_FREE: ["<Speaker> fwee!", "Bye bye scawy housie!", "*wuns off*"],
     MEET_HAPPY: ["Mistah! Mistah! <Speaker> 'membew yu!", "Mistah come fow <speaker>?!", "Yay! Mistah!"],
     MEET_SCARED: ["*SCREEE* Mistah fin' <speaker>!", "Nu! Nu take back!", "Wun! Wun!"],
+    BOLT: ["<Speaker> nu stay hewe nu mowe!", "Gotta wun... gotta wun...", "Bye bye housie!", "*sneaks to doow*"],
+    STAYED: ["...<speaker> stay. Fow nao.", "*sniff* ...otay mistah...", "Mistah nu wet <speaker> go?"],
   },
   // Care actions (Care.js): "mistah" becomes what it calls you
   CARE: {

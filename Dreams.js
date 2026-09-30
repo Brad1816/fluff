@@ -33,6 +33,7 @@ const BAD_DREAMS_PER_DAY = 0.05; // happiness
 function _dNow() {
   return typeof timePlayed === "number" ? timePlayed : 0;
 }
+// Counted from 08:00 on purpose: one night's dreams stay in one count even though the night crosses midnight
 function _dDay() {
   return Math.floor(_dNow() / DAY_LENGTH);
 }
@@ -51,9 +52,17 @@ function dreamMaterial(f) {
   let taken = 0;
   let granted = 0;
   const story = typeof storyOf === "function" ? storyOf(f) : [];
+  // Harm fades from its dreams: half as strong after a year (12 game days),
+  // and what it only saw counts a third (Personality.js WITNESS_WEIGHT)
+  const nowT = typeof timePlayed === "number" ? timePlayed : 0;
+  const yearT = 12 * (typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200);
   for (const e of story) {
     if (e.k === "tally") for (const [k, v] of Object.entries(e.c)) tally[k] = (tally[k] || 0) + v;
-    else if (e.k === "harmed" && e.w[0] === f.id) harms += e.n || 1;
+    else if (e.k === "harmed" && e.w[0] === f.id) {
+      const seen = typeof isWitnessHarm === "function" && isWitnessHarm(e) ? WITNESS_WEIGHT : 1;
+      const fade = Math.pow(0.5, Math.max(0, nowT - (e.t || 0)) / yearT);
+      harms += (e.n || 1) * seen * fade;
+    }
     else if (e.k === "scarred" && e.w[0] === f.id) taken++;
     else if (e.k === "wish_granted" && e.w[0] === f.id) granted++;
   }
@@ -82,7 +91,7 @@ function dreamMaterial(f) {
   // The bad
   const frights = tally.fright || 0;
   const comforted = tally.comforted || 0;
-  if (harms) add(false, Math.min(8, harms * 2), null, "Nu owwies! Nu huwt!", { harm: true });
+  if (harms >= 0.3) add(false, Math.min(8, harms * 2), null, "Nu owwies! Nu huwt!", { harm: true });
   if (frights) add(false, Math.min(5, frights), null, "Scawy... scawy...", { fright: true, comfortShare: Math.min(0.8, comforted / (frights + 1)) });
   if (tally.attacked) add(false, Math.min(4, tally.attacked), null, "Nu hit! Pwease nu hit!");
   if (losses) add(false, 3 * losses, null, "Whewe mummah...?");

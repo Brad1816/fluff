@@ -331,7 +331,7 @@ function _tiDaily(f) {
 function _tiRecentTally(f, days) {
   const out = { yesterday: {} };
   if (typeof storyOf !== "function") return out;
-  const day = Math.floor(_tiNow() / DAY_LENGTH);
+  const day = _tiDay() - 1; // same days as the story book
   for (const e of storyOf(f)) {
     if (e.k !== "tally" || e.w[0] !== f.id || day - e.d >= days) continue;
     for (const [k, v] of Object.entries(e.c)) out[k] = (out[k] || 0) + v;

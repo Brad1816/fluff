@@ -21,6 +21,7 @@
 
 const TRUST_START = 0.5; // a fluffy that grew up with you
 const TRUST_START_FERAL = 0.35; // one from outside
+const PASSIVE_TRUST = 0.6; // as far as meals from you and your company go (the rest takes care)
 const FEAR_FADE_PER_MIN = 0.03; // how fast fear fades (per game minute)
 const FEAR_FADE_DELAY = 60; // no fading for this long after being hurt (s)
 const MEMORY_KEEP = 5;
@@ -210,12 +211,16 @@ function updatePlayerMemory(f, dt) {
   }
 
   if (!f.adopted || f.playerFear >= 0.45) return;
-  // Being fed at home
-  if (f.currentStateKey === "EATING" && getSceneConfig(f.scene).insidePlayerQuarters) {
+  // Just being looked after takes it as far as liking you (PASSIVE_TRUST);
+  // more than that takes real care: brushing, play, cuddles... (Affection.js)
+  if (f.playerTrust >= PASSIVE_TRUST) return;
+  const passive = (amount) => changePlayerTrust(f, Math.min(amount, Math.max(0, PASSIVE_TRUST - f.playerTrust)));
+  // Being fed at home - by you, not the Feed-Bot
+  if (f.currentStateKey === "EATING" && getSceneConfig(f.scene).insidePlayerQuarters && f._mealFromYou !== false) {
     // Only if it likes what it's eating (Diet.js: last meal's taste)
     const meal = Array.isArray(f.recentMeals) && f.recentMeals[0];
     const taste = meal && typeof tasteFor === "function" ? tasteFor(f, meal) : 0;
-    if (taste > -0.3) changePlayerTrust(f, 0.004 * dt);
+    if (taste > -0.3) passive(0.004 * dt);
   }
   // Spending happy time with you around
   if (
@@ -223,7 +228,7 @@ function updatePlayerMemory(f, dt) {
     f.happiness > HAPPINESS_HAPPY_THRESHOLD &&
     f.currentStateKey !== "SLEEPING"
   ) {
-    changePlayerTrust(f, 0.00005 * dt); // (about 0.06 a day - Affection.js does the rest)
+    passive(0.00005 * dt); // (about 0.06 a day - Affection.js does the rest)
   }
 }
 

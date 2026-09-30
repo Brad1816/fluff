@@ -253,7 +253,10 @@ class FeedBot {
     }
     if (job.kind === "feeder") {
       const n = Math.min(this.formula, t.maxFood - (t.foodType === "formula" ? t.food : 0));
-      if (n > 0 && t.fill(n, "formula")) this.formula -= n;
+      if (n > 0 && t.fill(n, "formula")) {
+        this.formula -= n;
+        t.byYou = false; // (the Feed-Bot's meals aren't you feeding them)
+      }
       return;
     }
     // A bowl or trough: fill it to what this mode wants
@@ -261,6 +264,7 @@ class FeedBot {
     for (let guard = 0; guard < 4 && t.food < target && this.portions() > 0; guard++) {
       const got = this._take(target - t.food);
       if (!got || !t.fill(got.n, got.type)) break;
+      t.byYou = false; // (the Feed-Bot's meals aren't you feeding them)
     }
     this._afterServing(t);
   }

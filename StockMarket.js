@@ -273,6 +273,7 @@ function buyStockListing(listingId) {
     return null;
   }
   if (!free) money -= l.price;
+  if (typeof noteSpending === "function") noteSpending(l.price); // (Economy.js: net takings)
   stockMarket.listings.splice(idx, 1);
   stockMarket.bought = (stockMarket.bought || 0) + 1;
 

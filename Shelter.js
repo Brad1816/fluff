@@ -338,6 +338,7 @@ function adoptShelterResident(id) {
     return null;
   }
   if (!free) money -= fee;
+  if (typeof noteSpending === "function") noteSpending(fee); // (Economy.js: net takings)
   shelter.residents.splice(idx, 1);
   shelter.adopted = (shelter.adopted || 0) + 1;
 

@@ -89,7 +89,9 @@ function todayItems() {
     if (typeof breakLimitOf === "function" && typeof titleOf === "function") {
       const t = titleOf(f);
       if (t !== "Broken" && (f.strain || 0) >= breakLimitOf(f) * (t === "Rebel" ? REBEL_BREAK : 0.75)) add("urgent", `${n} is close to breaking.`, f);
-      if (t === "Rebel") add("urgent", `${n} is a Rebel and may run away.`, f);
+      if (typeof isBolting === "function" && isBolting(f)) add("urgent", `${n} is making for the door! Pick it up or comfort it.`, f);
+      else if (t === "Rebel") add("urgent", `${n} is a Rebel and may run away.`, f);
+      else if (typeof runAwayChance === "function" && runAwayChance(f) > 0) add("urgent", `${n} is miserable and frightened of you: it may run away.`, f);
     }
   }
   if (typeof shelter !== "undefined" && shelter && Array.isArray(shelter.residents) && typeof shelterDaysLeft === "function") {
@@ -260,7 +262,8 @@ function handleTodayClick() {
 // ---- The top-bar button (GameSpeed.js) ----
 function getTodayButtonRect(chatLogRight) {
   const ob = typeof getHouseholdButtonRect === "function" ? getHouseholdButtonRect(chatLogRight) : { x: width - 112, y: 49, h: 32 };
-  return { x: ob.x - 96 - 6, y: ob.y, w: 96, h: ob.h };
+  const w = typeof topBarWidths === "function" ? topBarWidths(chatLogRight).today : 96;
+  return { x: ob.x - w - 6, y: ob.y, w, h: ob.h };
 }
 
 function drawTodayButton(c, chatLogRight) {

@@ -100,7 +100,9 @@ let _storyIndexBook = null;
 function _stNow() {
   return typeof timePlayed === "number" ? Math.round(timePlayed) : 0;
 }
+// Days start at midnight, same as the clock ("Day 3" here is Day 3 on the clock)
 function _stDay() {
+  if (typeof getDayNumber === "function") return getDayNumber() - 1;
   return typeof DAY_LENGTH === "number" ? Math.floor(_stNow() / DAY_LENGTH) : 0;
 }
 
@@ -153,7 +155,7 @@ function recordStory(kind, who, opts = {}) {
   // What happens to it slowly changes who it is (Personality.js)
   if (typeof noteGrowthEvent === "function" && (kind === "comforted" || kind === "harmed" || kind === "played" || kind === "attacked")) {
     const who = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === ids[0]) : null;
-    if (who) noteGrowthEvent(who, kind);
+    if (who) noteGrowthEvent(who, kind, opts);
   }
   // The room's feel (Climate.js)
   if (typeof noteClimateStory === "function") noteClimateStory(kind, ids, opts);
@@ -351,6 +353,19 @@ function compactStory(force = false) {
   }
   if (changed) _storyIndex = null;
   return changed;
+}
+
+// Events older than a game year that are only about fluffies nobody keeps
+// (wild ones long gone: FamilyTree.js tidyFamilyRecords). Returns how many went.
+function pruneOldStory(keepIds) {
+  _storyBookOk();
+  const yearT = (typeof DAYS_PER_YEAR === "number" ? DAYS_PER_YEAR : 12) * (typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200);
+  const cutoff = _stNow() - yearT;
+  const before = storyBook.events.length;
+  storyBook.events = storyBook.events.filter((e) => e.t >= cutoff || !Array.isArray(e.w) || e.w.some((id) => keepIds.has(String(id))));
+  const gone = before - storyBook.events.length;
+  if (gone) _storyIndex = null;
+  return gone;
 }
 
 const storyTicker = new Ticker(60);

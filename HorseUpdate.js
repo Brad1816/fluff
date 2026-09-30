@@ -450,6 +450,8 @@ addHorseMethods({
                 continue;
               }
               if (bowl.eat()) {
+                // Who filled it: you, or the Feed-Bot (Memory.js trust)
+                this._mealFromYou = bowl.byYou !== false;
                 // Cheap food doesn't fill them up as much (Diet.js)
                 this.hunger = typeof foodFill === "function" ? foodFill(foodType) : 1.0;
                 this.initBehavior("EATING");

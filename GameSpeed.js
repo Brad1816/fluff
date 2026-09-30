@@ -63,10 +63,34 @@ function formatGameClock(seconds) {
 
 // ---- The clock and speed buttons (top left, next to "Chat Log") ----
 
+// How squeezed the top bar is: 0 = room for everything, 1 = short labels,
+// 2 = short labels and a narrower clock (small windows)
+const TOP_BAR_WIDTHS = [
+  { clock: 150, goals: 92, records: 76, today: 96, household: 100 },
+  { clock: 150, goals: 58, records: 70, today: 64, household: 90 },
+  { clock: 118, goals: 50, records: 64, today: 58, household: 84 },
+];
+function _topBarEnds(chatLogRight, w) {
+  // left group: clock, 4 speeds, goals, records, help; right group: today, household
+  const left = chatLogRight + 8 + w.clock + 4 + GAME_SPEEDS.length * 37 - 3 + 8 + w.goals + 6 + w.records + 6 + 30;
+  const right = width - 12 - w.household - 6 - w.today;
+  return { left, right };
+}
+function topBarSqueeze(chatLogRight) {
+  for (let i = 0; i < TOP_BAR_WIDTHS.length; i++) {
+    const e = _topBarEnds(chatLogRight, TOP_BAR_WIDTHS[i]);
+    if (e.left + 8 <= e.right) return i;
+  }
+  return TOP_BAR_WIDTHS.length - 1;
+}
+function topBarWidths(chatLogRight) {
+  return TOP_BAR_WIDTHS[topBarSqueeze(chatLogRight)];
+}
+
 function getGameSpeedLayout(chatLogRight) {
   const x = chatLogRight + 8;
   const y = 50;
-  const clockW = 150;
+  const clockW = topBarWidths(chatLogRight).clock;
   const btnW = 34;
   const h = 30;
   const buttons = GAME_SPEEDS.map((s, i) => ({ speed: s, x: x + clockW + 4 + i * (btnW + 3), y, w: btnW, h }));
@@ -85,7 +109,7 @@ function drawGameSpeed(chatLogRight) {
     ctx.fillRect(L.x, L.y, L.clockW, L.h);
   }
   ctx.fillStyle = "white";
-  ctx.font = "bold 14px Arial";
+  ctx.font = L.clockW < 150 ? "bold 12px Arial" : "bold 14px Arial";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   // Day and time of day (WorldTime.js), or the plain game time
@@ -113,7 +137,8 @@ function drawGameSpeed(chatLogRight) {
   // Goals button (Goals.js)
   const gb = getGoalsButtonRect(chatLogRight);
   if (typeof GOALS !== "undefined" && typeof drawGlassButton === "function") {
-    drawGlassButton(gb.x, gb.y, gb.w, gb.h, `Goals ${goalsDoneCount()}/${GOALS.length}`, {
+    const goalsText = `${goalsDoneCount()}/${GOALS.length}`;
+    drawGlassButton(gb.x, gb.y, gb.w, gb.h, topBarSqueeze(chatLogRight) ? goalsText : `Goals ${goalsText}`, {
       fontSize: 13,
       borderRadius: 8,
       normalFill:
@@ -124,7 +149,7 @@ function drawGameSpeed(chatLogRight) {
   const rb = getRecordsButtonRect(chatLogRight);
   if (typeof openRecords === "function" && typeof drawGlassButton === "function") {
     drawGlassButton(rb.x, rb.y, rb.w, rb.h, "Records", {
-      fontSize: 13,
+      fontSize: topBarSqueeze(chatLogRight) > 1 ? 12 : 13,
       borderRadius: 8,
       normalFill: isRecordsOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
     });
@@ -133,7 +158,7 @@ function drawGameSpeed(chatLogRight) {
   const ob = getHouseholdButtonRect(chatLogRight);
   if (typeof openHousehold === "function" && typeof drawGlassButton === "function") {
     drawGlassButton(ob.x, ob.y, ob.w, ob.h, "Household", {
-      fontSize: 13,
+      fontSize: topBarSqueeze(chatLogRight) > 1 ? 12 : 13,
       borderRadius: 8,
       normalFill: isHouseholdOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
     });
@@ -149,14 +174,20 @@ function drawGameSpeed(chatLogRight) {
     });
   }
   // Can't keep up? Say how fast it really is
-  if (gameSpeed > 1 && actualGameSpeed < gameSpeed - 0.5) {
-    const last = L.buttons[L.buttons.length - 1];
+  // (only when there's room before the Today button)
+  const reallyText = `(really ${actualGameSpeed.toFixed(1)}x)`;
+  ctx.save();
+  ctx.font = "12px Arial";
+  const reallyFits =
+    typeof getTodayButtonRect !== "function" || hb.x + hb.w + 6 + ctx.measureText(reallyText).width + 6 <= getTodayButtonRect(chatLogRight).x;
+  ctx.restore();
+  if (gameSpeed > 1 && actualGameSpeed < gameSpeed - 0.5 && reallyFits) {
     ctx.save();
     ctx.fillStyle = "rgba(255, 220, 150, 0.95)";
     ctx.font = "12px Arial";
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(`(really ${actualGameSpeed.toFixed(1)}x)`, hb.x + hb.w + 6, L.y + L.h / 2);
+    ctx.fillText(reallyText, hb.x + hb.w + 6, L.y + L.h / 2);
     ctx.restore();
   }
 }
@@ -165,19 +196,20 @@ function drawGameSpeed(chatLogRight) {
 function getGoalsButtonRect(chatLogRight) {
   const L = getGameSpeedLayout(chatLogRight);
   const last = L.buttons[L.buttons.length - 1];
-  return { x: last.x + last.w + 8, y: L.y, w: 92, h: L.h };
+  return { x: last.x + last.w + 8, y: L.y, w: topBarWidths(chatLogRight).goals, h: L.h };
 }
 
 // The "Records" button, after Goals (BreedingRecords.js)
 function getRecordsButtonRect(chatLogRight) {
   const gb = getGoalsButtonRect(chatLogRight);
-  return { x: gb.x + gb.w + 6, y: gb.y, w: 76, h: gb.h };
+  return { x: gb.x + gb.w + 6, y: gb.y, w: topBarWidths(chatLogRight).records, h: gb.h };
 }
 
 // The "Household" button (Household.js): top right, clear of the front door
 function getHouseholdButtonRect(chatLogRight) {
   const rb = getRecordsButtonRect(chatLogRight);
-  return { x: width - 100 - 12, y: rb.y, w: 100, h: rb.h };
+  const w = topBarWidths(chatLogRight).household;
+  return { x: width - w - 12, y: rb.y, w, h: rb.h };
 }
 
 // The "?" help button, after Records

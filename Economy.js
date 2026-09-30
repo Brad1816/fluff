@@ -71,6 +71,13 @@ function noteIncome(amount) {
   if (!(amount > 0) || _ecFree()) return; // (debug mode: money's locked, nothing really earned)
   _ecOk().today += amount;
 }
+// Money spent buying fluffies (breeders' stock, the shelter) comes off the
+// takings: the landlord goes by what you really made, so buying stock and
+// selling it on doesn't put the rent up
+function noteSpending(amount) {
+  if (!(amount > 0) || _ecFree()) return;
+  _ecOk().today -= amount;
+}
 
 // Last week's takings, and the average day
 function weeklyIncome() {
@@ -84,7 +91,7 @@ function averageDailyIncome() {
 
 // What the landlord would ask, given last week
 function rentTarget() {
-  return Math.round(RENT_BASE + RENT_SHARE * averageDailyIncome());
+  return Math.round(RENT_BASE + RENT_SHARE * Math.max(0, averageDailyIncome()));
 }
 
 function reviewRent() {
@@ -389,7 +396,7 @@ function drawAccounts(c) {
   // Rent
   head("Rent", x1, y);
   y += 24;
-  row("Last week's takings", `$${Math.round(weeklyIncome()).toLocaleString()}`, x1, y);
+  row("Last week's net takings", `$${Math.round(weeklyIncome()).toLocaleString()}`, x1, y);
   y += 22;
   row("So far today", `$${Math.round(e.today).toLocaleString()}`, x1, y);
   y += 22;
@@ -401,7 +408,8 @@ function drawAccounts(c) {
   c.font = "12px Arial";
   c.fillStyle = "rgba(255,255,255,0.55)";
   for (const line of [
-    `Rent is $${RENT_BASE} plus ${Math.round(RENT_SHARE * 100)}% of an average day's takings last week.`,
+    `Rent is $${RENT_BASE} plus ${Math.round(RENT_SHARE * 100)}% of an average day's net takings last week`,
+    "(sales, orders, prizes and items sold, less fluffies you bought).",
     "It rises fast after a good week and falls slowly after a bad one.",
     "Each extra room costs more than the one before; heating in autumn",
     "and winter depends on how many rooms your fluffies are in.",

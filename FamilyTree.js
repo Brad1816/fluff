@@ -79,6 +79,7 @@ function recordFluffy(f) {
     if (rec.motherId === null) rec.motherId = f.motherId;
     else if (f.motherId !== rec.motherId) rec.fosterMotherId = f.motherId;
   }
+  if (f.adopted) rec.mine = true; // (ever yours: kept by tidyFamilyRecords)
   rec.status = f.isAlive ? "alive" : "dead";
   rec.causeOfDeath = f.isAlive ? null : f.causeOfDeath || rec.causeOfDeath || null;
   rec.pottyTraining = f.pottyTraining || 0;
@@ -169,10 +170,90 @@ function _guessBred(rec) {
   rec.bred = !!(mum && !rec.boughtFrom && rec.status !== "breeder" && mum.status !== "breeder" && rec.bornAt > 0);
 }
 
+// ---- Keeping the book (and the save) a sensible size ----
+// Once a game day. Kept for good: every fluffy that was ever yours, its
+// foals, its ancestors (TIDY_ANCESTOR_GENS back) and anyone still around.
+// Dropped: wild fluffies (park foals of foals of your old pets...) that
+// are dead or gone and aren't close family of one of yours. Story events
+// older than a game year about nobody kept go too (StoryBook.js).
+const TIDY_ANCESTOR_GENS = 3;
+
+// Saves from before records knew who was yours: everything already in the
+// book counts as yours (nothing old is lost), except wild fluffies still here
+function _tidyMigrate() {
+  const recs = Object.values(fluffyRecords);
+  if (!recs.length || recs.some((r) => r.mine !== undefined)) return;
+  const here = new Map((typeof fluffies !== "undefined" ? fluffies : []).map((f) => [String(f.id), f]));
+  for (const r of recs) {
+    const f = here.get(String(r.id));
+    r.mine = f ? !!(f.adopted || f.formerPet) : r.status !== "breeder";
+  }
+}
+
+// Ids to keep: yours (ever), their foals and ancestors, and everyone here now
+function familyKeepIds() {
+  const keep = new Set();
+  const add = (id) => id !== null && id !== undefined && keep.add(String(id));
+  const here = typeof fluffies !== "undefined" ? fluffies : [];
+  for (const f of here) {
+    add(f.id);
+    if (f.adopted || f.formerPet) {
+      add(f.motherId);
+      add(f.fatherId);
+    }
+  }
+  for (const d of typeof dayCareFluffies !== "undefined" ? dayCareFluffies : []) add(d.id);
+  const mine = Object.values(fluffyRecords).filter((r) => r.mine || r.bred);
+  for (const r of mine) {
+    add(r.id);
+    // Ancestors
+    let gen = [r];
+    for (let g = 0; g < TIDY_ANCESTOR_GENS && gen.length; g++) {
+      const next = [];
+      for (const x of gen) {
+        for (const pid of [x.motherId, x.fatherId, x.fosterMotherId]) {
+          if (pid === null || pid === undefined) continue;
+          add(pid);
+          if (fluffyRecords[pid]) next.push(fluffyRecords[pid]);
+        }
+      }
+      gen = next;
+    }
+  }
+  // Foals of yours
+  const mineIds = new Set(mine.map((r) => String(r.id)));
+  for (const r of Object.values(fluffyRecords)) {
+    if (mineIds.has(String(r.motherId)) || mineIds.has(String(r.fatherId))) add(r.id);
+  }
+  return keep;
+}
+
+// Returns how many records were dropped
+function tidyFamilyRecords() {
+  _tidyMigrate();
+  const keep = familyKeepIds();
+  let dropped = 0;
+  for (const id of Object.keys(fluffyRecords)) {
+    const r = fluffyRecords[id];
+    if (keep.has(String(id)) || r.status === "alive" || r.status === "day care") continue;
+    delete fluffyRecords[id];
+    dropped++;
+  }
+  if (typeof pruneOldStory === "function") pruneOldStory(keep);
+  return dropped;
+}
+
+let _tidyDay = null;
 // Runs every simulation step (script.js); syncs about once a second
 function updateFamilyRecords(dt) {
   if (familyRecordsTicker.step(dt)) {
     syncFamilyRecords();
+    const day = typeof getDayNumber === "function" ? getDayNumber() : 0;
+    if (_tidyDay !== day) {
+      const first = _tidyDay === null;
+      _tidyDay = day;
+      if (!first) tidyFamilyRecords();
+    }
   }
 }
 

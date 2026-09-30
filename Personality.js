@@ -175,10 +175,15 @@ function _pnAdd(f, key, amount) {
 }
 
 // Called by the hooks (StoryBook tallies and events)
-function noteGrowthEvent(f, kind) {
+// (seeing someone else hurt counts a third as much as being hurt itself)
+const WITNESS_WEIGHT = 1 / 3;
+function isWitnessHarm(opts) {
+  return !!opts && typeof MEMORY_TEXT !== "undefined" && (opts.x === MEMORY_TEXT.witness || opts.x === MEMORY_TEXT.witness_family);
+}
+function noteGrowthEvent(f, kind, opts = {}) {
   if (!f || !f.adopted) return;
   if (kind === "comforted") _pnAdd(f, "comforted", 1);
-  else if (kind === "harmed") _pnAdd(f, "harmed", 1);
+  else if (kind === "harmed") _pnAdd(f, "harmed", isWitnessHarm(opts) ? WITNESS_WEIGHT : 1);
   else if (kind === "played") _pnAdd(f, "played", 1);
   else if (kind === "attacked") _pnAdd(f, "pickedOn", 1);
 }

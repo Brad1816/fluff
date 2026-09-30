@@ -75,6 +75,7 @@ class FoodBag {
         }
 
         if (filled) {
+          bowl.byYou = true; // (a meal from this bowl is from you - Memory.js)
           // Everyone watching sees who brings the food (Affection.js)
           if (typeof onBowlFilledByYou === "function") onBowlFilledByYou(bowl, this.type);
           return true;

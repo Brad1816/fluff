@@ -121,7 +121,7 @@ const HINTS = [
     key: "runaway",
     topic: "Fluffy Park",
     when: () => typeof weekStats !== "undefined" && weekStats && (weekStats.ranAway || 0) > 0,
-    text: () => "A fluffy ran away. Unhappy fluffies and Rebels slip out when you're not looking; you may meet it again in the park.",
+    text: () => "A fluffy ran away. Miserable fluffies and Rebels make for the door: pick them up or comfort them in time and they stay. You may meet it again in the park.",
   },
   {
     key: "rent",

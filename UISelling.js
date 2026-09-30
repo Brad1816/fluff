@@ -173,7 +173,9 @@ function sellModeClick() {
     if (bestType !== "fluffy" && bestEntry) {
       // Items: price and any clean-up come from ItemRegistry.js
       if (bestItem.isDragging) isGlobalDragging = false;
-      money += getItemSellValue(bestItem, bestEntry);
+      const itemValue = getItemSellValue(bestItem, bestEntry);
+      money += itemValue;
+      if (typeof noteIncome === "function") noteIncome(itemValue); // (Economy.js: net takings)
       if (bestEntry.onSell) bestEntry.onSell(bestItem);
       poofs.push(new Poof(bestItem.x, bestItem.y - 20, bestItem.scene));
     } else if (bestType === "fluffy") {
