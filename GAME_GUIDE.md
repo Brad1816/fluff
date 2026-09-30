@@ -2096,3 +2096,27 @@ or the O key (script.js). Screen "household", layer 22.
 - Also: the Alicorns lesson now only shows below 0.99 comfort (the slow
   forgetting in AlicornAcceptance.js could leave 0.9999).
 - Tests: `tests/household.test.js`.
+
+### Check-up (lessons, upbringing, fears, household)
+Long simulations with everything on: a breeding household with a caring bot
+that also gives three lessons a day and opens the Household screen daily
+(8 game days), and the park (3 days). No JS errors; every new value
+(colour views, alicorn comfort, litter training, Smarty progress, fears)
+stayed in 0..1; no frights stuck on; never more than 3 lessons a day; the
+Household screen took at most ~20 ms to build with 14 fluffies. Found:
+- **Fussy eaters lived on poop** (Diet.js): a fluffy only gave in and ate food
+  it dislikes below `FOOD_DESPERATE` 0.25 hunger, but at 0.3 hungry fluffies
+  already start eating mess off the floor - so one that hates Kibble in a
+  Kibble-only house ate poop instead, stayed at ~30% hunger, got dirty and
+  sick, and if something else made it despair ("wan die", happiness 0) it
+  stopped eating and starved beside a full bowl. Now `FOOD_DESPERATE` is 0.35,
+  and a miserable fluffy (happiness < `FOOD_TOO_SAD_TO_FUSS`, 0.2) eats what
+  it's given. Test in `tests/diet.test.js`.
+- Happiness losses in the household, by source: fears ~0.1 a day and Fluff-Bot
+  bumps ~0.1-0.5 a day across the whole house - small next to corpses
+  (stillbirths), fear of aggressive fluffies, lost foals and mating, which are
+  what push fluffies in a crowded, inbred breeding home into despair (as
+  before).
+- Starvation in the park is no worse than before these features.
+- Left as designed: orphaned newborns starve unless you bottle-feed them, and a
+  fluffy in despair (happiness 0) stops eating.

@@ -70,6 +70,18 @@ module.exports = [
         __setTrait(p, "appetite", TRAIT_GENES_EACH);
         const greedy = tasteFor(p, "value_kibble");
         out.pickyGreedy = [picky, greedy];
+        // A fussy one gives in before it would eat mess off the floor (0.3), or when it's miserable
+        const fussy = __mk(700);
+        fussy.tastes = { kibble: -1 };
+        fussy.happiness = 0.8;
+        fussy.hunger = 0.5;
+        const at50 = refusesFood(fussy, "kibble");
+        fussy.hunger = 0.32;
+        const at32 = refusesFood(fussy, "kibble");
+        fussy.hunger = 0.8;
+        fussy.happiness = 0.1;
+        const miserable = refusesFood(fussy, "kibble");
+        out.fussy = [at50, at32, miserable];
         return out;
       }, SETUP);
       checkEqual(
@@ -84,6 +96,7 @@ module.exports = [
       );
       check(r.premLiked >= 36, `premium: nearly all like it (${r.premLiked}/40)`);
       check(r.kibLikes >= 5 && r.kibDislikes >= 5, `plain kibble: some like (${r.kibLikes}), some don't (${r.kibDislikes})`);
+      checkEqual(JSON.stringify(r.fussy), JSON.stringify([true, false, false]), "a fussy eater gives in when hungry (before eating mess) or miserable");
       check(r.scrapRefused >= 25, `Scrapz: most won't eat it unless starving (${r.scrapRefused}/40)`);
       check(r.stable, "a fluffy's taste stays the same");
       check(r.favs >= 2, `favourite foods differ (${r.favs} kinds)`);

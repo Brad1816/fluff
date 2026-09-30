@@ -23,7 +23,10 @@
 //   - Fluffies go for the food they like most (foodPriorityFor, used by
 //     HorsePositioning.scoutForHunger).
 //   - They won't touch food they really dislike (below FOOD_REFUSE) unless
-//     they're starving (hunger < FOOD_DESPERATE), and grumble about it.
+//     they're starving (hunger < FOOD_DESPERATE) or miserable
+//     (happiness < FOOD_TOO_SAD_TO_FUSS), and grumble about it. (It used to be
+//     0.25, below the 0.3 where fluffies start eating mess, so a fussy one
+//     lived on poop next to a full bowl.)
 //   - Eating: happier the more they like it; a favourite (favouriteFood, the
 //     best-liked everyday food - not sketties) is extra nice.
 //
@@ -93,7 +96,8 @@ const FAVOURITE_FOODS = ["premium_kibble", "kibble", "value_kibble", "scrap_kibb
 const DIET_START = 0.6;
 const DIET_LEARN = 0.12; // each meal moves the diet this much of the way
 const FOOD_REFUSE = -0.45;
-const FOOD_DESPERATE = 0.25;
+const FOOD_DESPERATE = 0.35; // (above 0.3, where hungry fluffies start eating mess off the floor - HorseBrain EatDesire)
+const FOOD_TOO_SAD_TO_FUSS = 0.2; // this unhappy, it eats what it's given
 const WEIGHT_CHUBBY = 0.45;
 const WEIGHT_FAT = 0.75;
 const WEIGHT_TREAT = 0.015;
@@ -155,6 +159,7 @@ function foodPriorityFor(f, type) {
 function refusesFood(f, type) {
   if (type === "rat_poison" || type === "formula") return false;
   if ((f.hunger ?? 1) < FOOD_DESPERATE) return false;
+  if ((f.happiness ?? 1) < FOOD_TOO_SAD_TO_FUSS) return false;
   return tasteFor(f, type) < FOOD_REFUSE;
 }
 
