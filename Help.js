@@ -30,10 +30,13 @@ const HELP_TOPICS = [
       "  the TV...) are delivered: they're waiting in your living room.",
       "- The magnifying glass shows everything about a fluffy. Household",
       "  (button at the top, or O) lists all your fluffies and what each",
-      "  needs - click one to go to it.",
+      "  needs - click one to go to it. Today (or T) lists what needs you.",
       "- The family tree and Gene Lab help you plan litters. Breeding",
       "  records (Records button, or L) show every litter you've bred,",
       "  what each foal sold for, and which parents earn the most.",
+      "- The first time something new happens, a hint card pops up at the",
+      "  top right; Read more opens the page about it here. Switch them",
+      "  off with the Hints button (top right of this screen).",
     ],
   },
   {
@@ -471,6 +474,193 @@ const HELP_TOPICS = [
     ],
   },
   {
+    title: "Today & Household",
+    lines: [
+      "Two lists keep you on top of things.",
+      "",
+      "# Today (button at the top, or T)",
+      "- Urgent (red): money owed, the inspector's visit, a fluffy starving,",
+      "  frightened, bleeding or ill, one close to breaking, a Rebel.",
+      "- Chances (gold): a wish you could grant, a reason for a party, a",
+      "  title about to change, a sad fluffy you could sit with.",
+      "- The house (blue): rooms that feel tense, fearful or grieving,",
+      "  crowded rooms, the Feed-Bot, anniversaries.",
+      "- The badge on the button counts what's urgent (or the chances).",
+      "  Click a row to go to that fluffy.",
+      "",
+      "# Household (button at the top, or O)",
+      "- Every fluffy you own, its room, hearts and what it needs.",
+      "- Your name with families and with the dark market is at the top.",
+      "- The Memories book button is at the bottom.",
+    ],
+  },
+  {
+    title: "Stories & memories",
+    lines: [
+      "Every fluffy's life is written down as it happens.",
+      "",
+      "# The Story tab (magnifying glass)",
+      "- Its life in chapters: before you, as a foal, young, grown, old.",
+      "- Turning points: first steps, first words, a name, a new title.",
+      "- Big moments you share, notes from new owners, photos.",
+      "",
+      "# The Memories book (Household, Memories book)",
+      "- Moments: storms, births, deaths, fights, show wins and parties that",
+      "  several fluffies went through together. Rename them if you like.",
+      "- Lives: when one of yours dies, its story closes with an epilogue.",
+      "  Click Read to go through it again.",
+      "- Photos: right-click a fluffy, Take a photo. Click a caption to",
+      "  change it.",
+      "- A year on, a sad memory makes its room grieve again; a happy one",
+      "  cheers everyone who was there.",
+    ],
+  },
+  {
+    title: "Wishes & dreams",
+    lines: [
+      "Each fluffy wants something now and then.",
+      "",
+      "- A wish shows in the magnifying glass and in Today: a toy of its",
+      "  own, a trick, a friend, a trip to the park, a hat, foals...",
+      "- Make it come true and it's overjoyed, then content for a while.",
+      "- Ignore it and it aches, then gives up. Take away what it wished",
+      "  for and it remembers.",
+      "- Right-click, Promise wish: it tries harder at tricks and lessons,",
+      "  but breaking the promise costs a lot of trust.",
+      "",
+      "# Dreams",
+      "- Sleeping fluffies dream about their own lives: good dreams heal a",
+      "  little, bad ones can wake them frightened. Cuddle them.",
+    ],
+  },
+  {
+    title: "How a room feels",
+    lines: [
+      "Each room gets a feel from what happens in it over a few days.",
+      "",
+      "- Shown next to the room's name: Warm, Calm, Uneasy, Tense,",
+      "  Fearful or Grieving, with an arrow. Hover it to see why.",
+      "- Warm: brushing, play, treats, praise, lessons, parties.",
+      "- Tense: fights, crowding, scolding, strict training.",
+      "- Fearful: hurting fluffies, frights. Grieving: a death, family gone.",
+      "- It nudges happiness, how well they learn, and how much they play.",
+      "- At the door: loving ones run to you in a warm room; scared ones",
+      "  scatter. Fluffies that fear you flinch when your hand comes near.",
+      "",
+      "# Gossip",
+      "- Fluffies tell each other about you. One that saw you hurt someone",
+      "  makes its friends wary; one that loves you settles newcomers in.",
+      "- Sleeping next to a friend wakes them happier.",
+    ],
+  },
+  {
+    title: "Care & training",
+    lines: [
+      "Right-click one of your fluffies for tricks, lessons and more.",
+      "",
+      "# Other",
+      "- Sit with: only when it's sad, grieving or frightened. It cheers",
+      "  up, grieves less and trusts you more.",
+      "- Praise: free affection, 3 a day. Party: only on real occasions.",
+      "- Scold: stops a fight, mischief or a mess at once, and teaches a",
+      "  little. It costs trust, and scolding for nothing costs double.",
+      "- Time-out: a minute in a corner; it sulks and remembers.",
+      "",
+      "# Kind or strict training (the switch above the tricks)",
+      "- Strict: it tries even if scared. Punish a wrong try (Scold or",
+      "  Smack). It takes about half as long again, costs trust and",
+      "  happiness, and makes the room tense.",
+      "- Tricks drilled with fear are done instantly and never refused,",
+      "  but joylessly - show judges mark them down.",
+    ],
+  },
+  {
+    title: "Titles & breaking",
+    lines: [
+      "How you treat a fluffy over time can earn it a title.",
+      "",
+      "- Cherished: loved for 5 days running. Braver, calms its room,",
+      "  worth more. Hurt out of the blue, it becomes Wary.",
+      "- Survivor: came through harm and trusts you again. Startles easily",
+      "  but is very loyal.",
+      "- Broken: pushed past its breaking point. Numb, obeys anything, calls",
+      "  you owna, dies sooner. Long patient care (Sit with, praise,",
+      "  brushing, days without harm) heals it into a Survivor.",
+      "- Rebel: a strong-willed one pushed too far. Won't obey, stirs the",
+      "  others up, may run away. Win it round and it's a Guardian.",
+      "- Guardian: stands up for others in fights. Spoiled: all treats, no",
+      "  lessons - fussy and demanding until lessons fix it.",
+      "- Each fluffy's breaking point is its own; strain fades with time.",
+    ],
+  },
+  {
+    title: "Reputation & buyers",
+    lines: [
+      "You have two names: one with families, one with the dark market.",
+      "",
+      "- New owners write a day or so after a sale: praise for a clever,",
+      "  loving fluffy, complaints if it bites, hides or cries all night.",
+      "  Good notes bring more families, and they pay a bit more.",
+      "- The shady dealer turns up now and then and pays well for Broken,",
+      "  drilled or stick-conditioned fluffies - and little for happy ones.",
+      "  Selling to him grows your dark name, and families hear of it.",
+      "- Sell the lot: right-click one in a sell cage to sell the whole",
+      "  cage to the pet-shop van at about half price, once a day.",
+    ],
+  },
+  {
+    title: "Runaways & the park",
+    lines: [
+      "Fluffies you lose touch with carry your story into the park.",
+      "",
+      "- A Rebel, or a fluffy that's terrified and miserable, may slip away",
+      "  to the park (never from the room you're looking at).",
+      "- In the park, right-click one of yours: Let it go.",
+      "- Either way it tells the wild ones about you. Herds that hear",
+      "  you're kind warm to you; herds that hear you hurt fluffies don't.",
+      "  The magnifying glass shows what a herd has heard.",
+      "- Spot an old fluffy of yours in the park and it runs to you or",
+      "  bolts. Bring it home through the adoption room to keep it again.",
+    ],
+  },
+  {
+    title: "Family lines",
+    lines: [
+      "Families build a name over the generations.",
+      "",
+      "- A line is everyone descended from the same first mother. With 3",
+      "  or more of them with you, it earns a name: famously gentle,",
+      "  clever, brave, known for its tempers... (magnifying glass, Line).",
+      "- Traditions: if a mare and her mother both know a trick, her foals",
+      "  learn it from her while they're little.",
+      "- Echoes: a foal that grows the same fear as its grandmother gets",
+      "  a line in its story.",
+      "- Growing up with a Guardian makes foals braver; with a Broken",
+      "  parent, more timid.",
+    ],
+  },
+  {
+    title: "Money trouble",
+    lines: [
+      "Rent and bills are paid every morning. Falling behind has a cost.",
+      "",
+      "- Day 1 in debt: a final notice. Day 3: the power's cut off and the",
+      "  heaters stop. Day 5: the bailiffs take your most valuable grown",
+      "  fluffy. Pay it off and everything goes back to normal.",
+      "- Slow days bring half as many buyers; busy days more.",
+      "- Can't afford the vet? Click Treat again to pay later (+25%).",
+      "",
+      "# The welfare inspector",
+      "- A letter first, then a visit the next morning. More likely with a",
+      "  poor name with families or a strong one with the dark market.",
+      "- They check the living room, the rooms beside it and the backyard",
+      "  (not back rooms or cages): fines, and the worst-off fluffies can",
+      "  be taken to the shelter.",
+      "- The shelter sometimes has broken fluffies rescued from dealers.",
+      "  Heal one and families hear of it.",
+    ],
+  },
+  {
     title: "Keys",
     lines: [
       "- WASD or arrow keys: move between areas, carrying what you hold.",
@@ -479,22 +669,30 @@ const HELP_TOPICS = [
       "  In the park they look around instead.",
       "- F: fast forward (1x / 2x / 4x / 8x)",
       "- G: goals        L: breeding records        F1: this help",
+      "- T: today (what needs you)        O: household",
       "- N: name tags    H: herd markers    B: bed labels",
       "- R: turn the fence piece you're holding",
       "- 0-9: toolbar slots",
       "- J: story debug (what the story book has recorded about the",
       "  fluffy in the magnifying glass, its family, and the whole book)",
       "- Esc: close a window / put down a tool",
+      "- In this help: up/down arrows pick a topic, left/right turn pages;",
+      "  the mouse wheel scrolls the list or turns the page.",
     ],
   },
 ];
 
 let helpOpen = false;
 let helpTopic = 0;
+let helpTopicScroll = 0; // first topic shown in the list
+let helpPage = 0; // page of the current topic's text
+
+const HELP_ROW_H = 30;
+const HELP_LINE_H = 22;
 
 function openHelp(topic = helpTopic) {
   helpOpen = true;
-  helpTopic = Math.max(0, Math.min(HELP_TOPICS.length - 1, topic));
+  setHelpTopic(topic);
 }
 function closeHelp() {
   helpOpen = false;
@@ -502,14 +700,106 @@ function closeHelp() {
 function isHelpOpen() {
   return helpOpen;
 }
+// Open help on a topic by its title ("How a room feels"); used by Hints.js
+function openHelpAt(title) {
+  const i = HELP_TOPICS.findIndex((t) => t.title === title);
+  openHelp(i >= 0 ? i : helpTopic);
+}
+function setHelpTopic(i) {
+  helpTopic = Math.max(0, Math.min(HELP_TOPICS.length - 1, i));
+  helpPage = 0;
+  // Keep it in view in the list
+  const n = helpVisibleTopics();
+  if (helpTopic < helpTopicScroll) helpTopicScroll = helpTopic;
+  if (helpTopic >= helpTopicScroll + n) helpTopicScroll = helpTopic - n + 1;
+  helpTopicScroll = Math.max(0, Math.min(Math.max(0, HELP_TOPICS.length - n), helpTopicScroll));
+}
 
-function getHelpLayout() {
+function _helpBox() {
   const w = Math.min(900, width - 40);
   const h = Math.min(580, height - 40);
-  const x = Math.round(width / 2 - w / 2);
-  const y = Math.round(height / 2 - h / 2);
-  const tabs = HELP_TOPICS.map((t, i) => ({ x: x + 20, y: y + 62 + i * 31, w: 200, h: 27 }));
-  return { x, y, w, h, tabs, close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 } };
+  return { x: Math.round(width / 2 - w / 2), y: Math.round(height / 2 - h / 2), w, h };
+}
+// How many topics fit in the list at once
+function helpVisibleTopics() {
+  const { h } = _helpBox();
+  return Math.max(3, Math.floor((h - 62 - 66) / HELP_ROW_H));
+}
+// How tall a line is drawn
+function _helpLineH(line) {
+  return line === "" ? 10 : line.startsWith("# ") ? HELP_LINE_H + 4 : HELP_LINE_H;
+}
+// A topic's lines split into pages that fit (breaking before a heading or
+// after a blank line where it can)
+function helpPages(topic, maxH) {
+  const pages = [];
+  let cur = [];
+  let used = 0;
+  let lastBreak = -1; // index in cur where a new page could start nicely
+  for (const line of topic.lines) {
+    if (!cur.length && line === "") continue; // no blank line at the top of a page
+    const lh = _helpLineH(line);
+    if (used + lh > maxH && cur.length) {
+      let carry = [];
+      const upToBreak = lastBreak > 2 ? cur.slice(0, lastBreak).reduce((sum, l) => sum + _helpLineH(l), 0) : 0;
+      if (upToBreak >= maxH * 0.6) {
+        carry = cur.slice(lastBreak);
+        cur = cur.slice(0, lastBreak);
+      }
+      while (cur.length && cur[cur.length - 1] === "") cur.pop();
+      pages.push(cur);
+      cur = carry.filter((l, i) => !(i === 0 && l === ""));
+      used = cur.reduce((sum, l) => sum + _helpLineH(l), 0);
+      lastBreak = -1;
+      if (!cur.length && line === "") continue;
+    }
+    if (line.startsWith("# ") && cur.length) lastBreak = cur.length;
+    else if (line === "" && cur.length) lastBreak = cur.length + 1;
+    cur.push(line);
+    used += lh;
+  }
+  while (cur.length && cur[cur.length - 1] === "") cur.pop();
+  if (cur.length || !pages.length) pages.push(cur);
+  return pages;
+}
+function helpTextHeight() {
+  return _helpBox().h - 100 - 62;
+}
+function currentHelpPages() {
+  return helpPages(HELP_TOPICS[helpTopic], helpTextHeight());
+}
+
+function getHelpLayout() {
+  const { x, y, w, h } = _helpBox();
+  const n = helpVisibleTopics();
+  const tabs = HELP_TOPICS.map((t, i) => {
+    const row = i - helpTopicScroll;
+    if (row < 0 || row >= n) return null;
+    return { x: x + 20, y: y + 62 + row * HELP_ROW_H, w: 200, h: HELP_ROW_H - 4 };
+  });
+  const listBottom = y + 62 + n * HELP_ROW_H;
+  const more = HELP_TOPICS.length > n;
+  const tx = x + 250;
+  return {
+    x,
+    y,
+    w,
+    h,
+    tabs,
+    list: { x: x + 20, y: y + 62, w: 200, h: n * HELP_ROW_H },
+    up: more ? { x: x + 20, y: listBottom + 2, w: 96, h: 28 } : null,
+    down: more ? { x: x + 124, y: listBottom + 2, w: 96, h: 28 } : null,
+    text: { x: tx, y: y + 80, w: w - 270, h: helpTextHeight() + 20 },
+    prev: { x: tx, y: y + h - 54, w: 110, h: 36 },
+    next: { x: tx + 250, y: y + h - 54, w: 110, h: 36 },
+    hints: { x: x + w - 170, y: y + 18, w: 150, h: 30 },
+    close: { x: x + w - 150, y: y + h - 54, w: 130, h: 36 },
+  };
+}
+
+function _helpButton(r, label, opts = {}) {
+  if (!r || typeof drawGlassButton !== "function") return;
+  drawGlassButton(r.x, r.y, r.w, r.h, label, { fontSize: 15, borderRadius: 9, ...opts });
 }
 
 function drawHelp(c) {
@@ -525,24 +815,32 @@ function drawHelp(c) {
   c.font = "bold 24px Arial";
   c.fillText("How it works", L.x + 24, L.y + 42);
 
-  // Topics
+  // Topics (the list scrolls when they don't all fit)
   L.tabs.forEach((t, i) => {
+    if (!t) return;
     const on = i === helpTopic;
     c.fillStyle = on ? "rgba(255, 170, 220, 0.25)" : "rgba(255,255,255,0.05)";
     fillRoundRect(c, t.x, t.y, t.w, t.h, 8);
     c.fillStyle = on ? "white" : "rgba(255,255,255,0.75)";
     c.font = on ? "bold 15px Arial" : "15px Arial";
-    c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 20);
+    c.fillText(HELP_TOPICS[i].title, t.x + 12, t.y + 18);
   });
+  if (L.up) {
+    const n = helpVisibleTopics();
+    _helpButton(L.up, "\u25B2", { disabled: helpTopicScroll <= 0 });
+    _helpButton(L.down, "\u25BC", { disabled: helpTopicScroll >= HELP_TOPICS.length - n });
+  }
 
-  // Text
+  // Text, a page at a time
   const topic = HELP_TOPICS[helpTopic];
-  const tx = L.x + 250;
+  const pages = currentHelpPages();
+  const page = Math.max(0, Math.min(pages.length - 1, helpPage));
+  const tx = L.text.x;
   let y = L.y + 100;
   c.font = "bold 20px Arial";
   c.fillStyle = "#ffd6f0";
   c.fillText(topic.title, tx, L.y + 70);
-  for (const line of topic.lines) {
+  for (const line of pages[page]) {
     if (line === "") {
       y += 10;
       continue;
@@ -557,26 +855,77 @@ function drawHelp(c) {
       c.fillStyle = "rgba(255,255,255,0.9)";
       c.fillText(line, tx, y);
     }
-    y += 22;
+    y += HELP_LINE_H;
+  }
+  if (pages.length > 1) {
+    _helpButton(L.prev, "\u25C0 Back", { disabled: page === 0 });
+    _helpButton(L.next, "More \u25B6", { disabled: page === pages.length - 1 });
+    c.font = "14px Arial";
+    c.fillStyle = "rgba(255,255,255,0.7)";
+    c.textAlign = "center";
+    c.fillText(`Page ${page + 1} of ${pages.length}`, (L.prev.x + L.prev.w + L.next.x) / 2, L.prev.y + 23);
+    c.textAlign = "left";
   }
 
-  if (typeof drawGlassButton === "function")
-    drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 16, borderRadius: 10 });
+  // First-time hints on or off (Hints.js)
+  if (typeof hintsOn === "function") _helpButton(L.hints, hintsOn() ? "Hints: on" : "Hints: off", { fontSize: 14 });
+  _helpButton(L.close, "Close", { fontSize: 16, borderRadius: 10 });
   c.restore();
+}
+
+function helpNextPage(d) {
+  const pages = currentHelpPages();
+  helpPage = Math.max(0, Math.min(pages.length - 1, helpPage + d));
+}
+function helpScrollTopics(d) {
+  const n = helpVisibleTopics();
+  helpTopicScroll = Math.max(0, Math.min(Math.max(0, HELP_TOPICS.length - n), helpTopicScroll + d));
 }
 
 // Mouse down (screen positions); swallows clicks while open
 function handleHelpClick() {
   if (!helpOpen) return false;
   const L = getHelpLayout();
-  const hit = (r) => isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
+  const hit = (r) => r && isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
   if (hit(L.close) || !isPointInRect(mouse.x, mouse.y, L.x, L.y, L.w, L.h)) {
     closeHelp();
     return true;
   }
+  if (hit(L.hints) && typeof setHintsOn === "function") {
+    setHintsOn(!hintsOn());
+    return true;
+  }
+  if (hit(L.up)) return helpScrollTopics(-3), true;
+  if (hit(L.down)) return helpScrollTopics(3), true;
+  if (currentHelpPages().length > 1) {
+    if (hit(L.prev)) return helpNextPage(-1), true;
+    if (hit(L.next)) return helpNextPage(1), true;
+  }
   L.tabs.forEach((t, i) => {
-    if (hit(t)) helpTopic = i;
+    if (hit(t)) setHelpTopic(i);
   });
+  return true;
+}
+
+// Mouse wheel (globals.js): over the list it scrolls the topics, over the
+// text it turns the page
+function handleHelpScroll(dy) {
+  if (!helpOpen || !dy) return false;
+  const L = getHelpLayout();
+  const d = dy > 0 ? 1 : -1;
+  if (isPointInRect(mouse.x, mouse.y, L.list.x, L.list.y - 10, L.list.w, L.list.h + 50)) helpScrollTopics(d);
+  else helpNextPage(d);
+  return true;
+}
+
+// Keys while it's open (script.js): up/down pick a topic, left/right turn pages
+function handleHelpKey(code) {
+  if (!helpOpen) return false;
+  if (code === "ArrowUp") setHelpTopic(helpTopic - 1);
+  else if (code === "ArrowDown") setHelpTopic(helpTopic + 1);
+  else if (code === "ArrowLeft" || code === "PageUp") helpNextPage(-1);
+  else if (code === "ArrowRight" || code === "PageDown") helpNextPage(1);
+  else return false;
   return true;
 }
 
@@ -588,4 +937,10 @@ registerScreen({
   close: () => closeHelp(),
   draw: (c) => drawHelp(c),
   click: () => handleHelpClick(),
+  reset: () => {
+    helpOpen = false;
+    helpTopic = 0;
+    helpTopicScroll = 0;
+    helpPage = 0;
+  },
 });

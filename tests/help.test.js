@@ -30,6 +30,78 @@ module.exports = [
     },
   },
   {
+    name: "help: every topic is reachable in the list, long ones are paged, nothing overflows",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        openHelp(0);
+        const out = { topics: HELP_TOPICS.length, reached: new Set(), overflow: [], lost: [], pages: {} };
+        // Scroll the list with the arrows until the end, clicking every visible tab
+        for (let guard = 0; guard < 40; guard++) {
+          const L = getHelpLayout();
+          L.tabs.forEach((t, i) => {
+            if (!t) return;
+            mouse.x = t.x + 10;
+            mouse.y = t.y + 8;
+            handleHelpClick();
+            if (helpTopic === i) out.reached.add(i);
+          });
+          if (!L.down) break;
+          const before = helpTopicScroll;
+          mouse.x = L.down.x + 5;
+          mouse.y = L.down.y + 5;
+          handleHelpClick();
+          if (helpTopicScroll === before) break;
+        }
+        out.reached = out.reached.size;
+        // Pages: each fits, and together they hold every line
+        const maxH = helpTextHeight();
+        for (const t of HELP_TOPICS) {
+          const pages = helpPages(t, maxH);
+          out.pages[t.title] = pages.length;
+          for (const p of pages) {
+            const h = p.reduce((s, l) => s + (l === "" ? 10 : l.startsWith("# ") ? 26 : 22), 0);
+            if (h > maxH) out.overflow.push(`${t.title}: ${h}`);
+          }
+          const kept = pages.flat().filter((l) => l !== "");
+          const all = t.lines.filter((l) => l !== "");
+          if (kept.join("|") !== all.join("|")) out.lost.push(t.title);
+        }
+        // More / Back buttons and the keys
+        openHelp(HELP_TOPICS.findIndex((t) => t.title === "Temperament & price"));
+        const L = getHelpLayout();
+        mouse.x = L.next.x + 5;
+        mouse.y = L.next.y + 5;
+        handleHelpClick();
+        out.afterNext = helpPage;
+        handleHelpKey("ArrowRight");
+        out.afterKey = helpPage;
+        handleHelpKey("ArrowLeft");
+        mouse.x = L.prev.x + 5;
+        mouse.y = L.prev.y + 5;
+        handleHelpClick();
+        out.back = helpPage;
+        handleHelpKey("ArrowDown");
+        out.nextTopic = [HELP_TOPICS[helpTopic].title, helpPage];
+        // Opening a topic by name scrolls it into view
+        openHelpAt("Money trouble");
+        const i = helpTopic;
+        out.named = [HELP_TOPICS[i].title, !!getHelpLayout().tabs[i]];
+        closeHelp();
+        return out;
+      });
+      checkEqual(r.reached, r.topics, "topics reachable by scrolling the list");
+      check(r.topics >= 26, `topics: ${r.topics}`);
+      check(!r.overflow.length, `pages too tall: ${r.overflow}`);
+      check(!r.lost.length, `lines lost in paging: ${r.lost}`);
+      check(r.pages["Temperament & price"] >= 4, `pages: ${JSON.stringify(r.pages)}`);
+      checkEqual(r.afterNext, 1, "More turns the page");
+      checkEqual(r.afterKey, 2, "right arrow turns the page");
+      checkEqual(r.back, 0, "left arrow and Back go back");
+      checkEqual(JSON.stringify(r.nextTopic), JSON.stringify(["Fluffy Park", 0]), "down arrow goes to the next topic, first page");
+      checkEqual(JSON.stringify(r.named), JSON.stringify(["Money trouble", true]), "opened by name, in view");
+    },
+  },
+  {
     name: "settling in: a wild fluffy brought home shows progress and settles with good care",
     run: async (page) => {
       const r = await page.evaluate(() => {

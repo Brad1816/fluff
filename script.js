@@ -2055,6 +2055,12 @@ window.addEventListener("keydown", (e) => {
   if (gameState !== "PLAYING") return;
   if (!document.hasFocus()) return;
 
+  // Arrow keys in the help pages (Help.js)
+  if (typeof handleHelpKey === "function" && handleHelpKey(e.code)) {
+    e.preventDefault();
+    return;
+  }
+
   let requestedDir = null;
   // In the park WASD looks around instead (Park.js)
   const inPark = typeof isCameraScene === "function" && isCameraScene(currentScene);

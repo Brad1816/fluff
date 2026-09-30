@@ -81,6 +81,8 @@ async function installHelpers(page) {
     // No naming pop-ups for the fluffies tests make (tests/names.test.js
     // and help.test.js turn them on)
     if (typeof namingPopupsEnabled !== "undefined") namingPopupsEnabled = false;
+    // No first-time hint cards in the way (tests/hints.test.js turns them on)
+    if (typeof hintsActive !== "undefined") hintsActive = false;
     window.__clearScene = (scene = "INDOORS") => {
       for (let i = objects.length - 1; i >= 0; i--) {
         if (objects[i].scene === scene) objects.splice(i, 1);
@@ -200,6 +202,7 @@ async function resetPage(opened) {
     // fresh load (installHelpers turns them off again after)
     if (typeof parkLife !== "undefined") parkLife.enabled = true;
     if (typeof namingPopupsEnabled !== "undefined") namingPopupsEnabled = true;
+    if (typeof hintsActive !== "undefined") hintsActive = true;
     // Back to the title screen, nothing open
     if (typeof resetScreens === "function") resetScreens();
     showSaveList = false;

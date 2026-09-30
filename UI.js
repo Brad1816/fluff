@@ -528,6 +528,7 @@ function drawUI(ctx) {
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   // Every pop-up screen, bottom layer first (Screens.js)
   drawScreens(ctx);
+  if (typeof drawHints === "function") drawHints(ctx); // first-time hints (Hints.js)
   if (typeof drawPhotoFlash === "function") drawPhotoFlash(ctx); // Snap! (Lives.js)
 }
 
@@ -712,6 +713,10 @@ canvas.addEventListener("mousedown", (e) => {
 
   // Pop-up screens, top one first (Screens.js)
   if (clickScreens()) {
+    return;
+  }
+  // A first-time hint card (Hints.js)
+  if (typeof hintClick === "function" && hintClick()) {
     return;
   }
 

@@ -242,6 +242,7 @@ window.addEventListener(
     if (showSaveList && typeof handleSaveListScroll === "function") {
       handleSaveListScroll(e.deltaY);
     }
+    if (typeof handleHelpScroll === "function") handleHelpScroll(e.deltaY);
   },
   // Needed for preventDefault to work (browsers make wheel listeners
   // "passive" otherwise, and log an error on every scroll)
