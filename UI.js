@@ -546,6 +546,7 @@ function drawUI(ctx) {
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
   // Every pop-up screen, bottom layer first (Screens.js)
   drawScreens(ctx);
+  if (typeof drawOutingBanner === "function") drawOutingBanner(ctx); // (ParkOutings.js)
   if (typeof drawHints === "function") drawHints(ctx); // first-time hints (Hints.js)
   if (typeof drawPhotoFlash === "function") drawPhotoFlash(ctx); // Snap! (Lives.js)
 }
@@ -741,6 +742,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof moneyClick === "function" && moneyClick()) {
     return;
   }
+  // "Home time" on a park outing (ParkOutings.js)
+  if (typeof outingBannerClick === "function" && outingBannerClick()) {
+    return;
+  }
 
   // The buyer at the door: Sell / Ask more / No thanks (Buyers.js)
   if (typeof sellRequestClick === "function" && sellRequestClick()) {
@@ -822,6 +827,11 @@ canvas.addEventListener("mousedown", (e) => {
     }
     // Right-clicking one of your fluffies: train a trick (Tricks.js)
     if (typeof trickRightClick === "function" && trickRightClick()) {
+      mouse.rightDown = false;
+      return;
+    }
+    // ...or one you lost, in the park: bring it home (ParkOutings.js)
+    if (typeof formerPetRightClick === "function" && formerPetRightClick()) {
       mouse.rightDown = false;
       return;
     }

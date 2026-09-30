@@ -220,6 +220,7 @@ const SAVED_GAME_STATE = [
   { name: "roomClimate", get: () => roomClimate, set: (v) => { roomClimate = v && typeof v === "object" ? v : freshRoomClimate(); _climateCache = null; }, fresh: () => freshRoomClimate() }, // Climate.js
   { name: "sharedMemories", get: () => sharedMemories, set: (v) => (sharedMemories = v && typeof v === "object" ? v : freshSharedMemories()), fresh: () => freshSharedMemories() }, // SharedMemories.js
   { name: "inspector", get: () => inspector, set: (v) => (inspector = v && typeof v === "object" ? v : freshInspector()), fresh: () => freshInspector() }, // Inspector.js
+  { name: "outings", get: () => outings, set: (v) => (outings = v && typeof v === "object" ? v : freshOutings()), fresh: () => freshOutings() }, // ParkOutings.js
   { name: "economy", get: () => economy, set: (v) => (economy = v && typeof v === "object" ? v : freshEconomy()), fresh: () => freshEconomy() }, // Economy.js
   { name: "pressure", get: () => pressure, set: (v) => (pressure = v && typeof v === "object" ? v : freshPressure()), fresh: () => freshPressure() }, // Pressure.js
   { name: "weekStats", get: () => weekStats, set: (v) => (weekStats = v && typeof v === "object" ? v : freshWeekStats()), fresh: () => freshWeekStats() }, // WeekSummary.js
@@ -234,6 +235,8 @@ const SAVED_GAME_STATE = [
 // a game is started or loaded (open windows, cars, the current sell offer...)
 function resetTemporaryGameState() {
   currentSellRequest = null;
+  // A raid on the backyard doesn't carry over (ParkOutings.js)
+  if (typeof _raid !== "undefined") _raid = null;
   // Party bunting and confetti (HouseLife.js)
   if (typeof partyDecor !== "undefined") partyDecor = {};
   if (typeof _confetti !== "undefined") _confetti = [];

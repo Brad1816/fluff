@@ -441,6 +441,13 @@ const DIALOGUE = {
   },
   // Frights (Fears.js)
   // Runaways and letting go (Runaways.js): "mistah" becomes what it calls you
+  // Park outings (ParkOutings.js): "mistah" becomes what it calls you
+  PARK: {
+    OUTING: ["Pawk! Pawk! Mistah take us to pawk!", "Gwassies! Su many gwassies!", "Bestest day! Pway time!"],
+    REUNION: ["<Target>! <Target> hewe! 'Membew <speaker>?", "Fwen! Fwen come back!", "Missed yu su much, <target>!"],
+    WARM: ["Hewwo nice pewson!", "Hewd mistah am nice! Huggies?", "Fwens say yu gud! Pway wif us?"],
+    WARY: ["Munstah pewson! Wun!", "Nu come cwose! Hewd 'bout yu!", "Stay 'way fwom hewd!"],
+  },
   RUNAWAY: {
     LET_GO_SAD: ["Mistah? Mistah nu weave <speaker>...", "Wai mistah go? Huu...", "*sniff* <Speaker> be gud, mistah come back?"],
     LET_GO_FREE: ["<Speaker> fwee!", "Bye bye scawy housie!", "*wuns off*"],

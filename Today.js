@@ -74,6 +74,8 @@ function todayItems() {
     const bt = dailyBills().total;
     if (bt > money) add("urgent", `Tomorrow morning's bill ($${bt.toLocaleString()}) is more than you have.`, null, accounts);
   }
+  // Raiders in the backyard (ParkOutings.js)
+  if (typeof isRaiding === "function" && isRaiding()) add("urgent", "Raiders from the park are in the backyard: go out there and they'll scatter.");
   if (typeof inspector !== "undefined" && inspector && inspector.warned !== null && inspector.warned !== undefined) {
     add("urgent", "The welfare inspector is coming tomorrow morning. (They don't look in back rooms or cages.)");
   }
