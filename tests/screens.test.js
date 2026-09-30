@@ -42,7 +42,7 @@ module.exports = [
         out.duplicate = threw;
         return out;
       });
-      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "shelterCard", "memoriesBook", "goals", "help", "records", "vet", "showResults", "dayReport", "naming"])
+      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "shelterCard", "memoriesBook", "today", "goals", "help", "records", "vet", "showResults", "dayReport", "naming"])
         check(r.names.includes(n), `${n} on the list: ${r.names}`);
       checkEqual(r.none, false, "none open at the start");
       checkEqual(JSON.stringify(r.bothOpen), JSON.stringify([true, true, true]), "both open");

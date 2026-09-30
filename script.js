@@ -2131,6 +2131,12 @@ window.addEventListener("keydown", (e) => {
     } else if (!isAnyScreenOpen()) openStoryDebug();
     return;
   }
+  // T: what needs you today (Today.js)
+  if (e.code === "KeyT" && typeof isTodayOpen === "function") {
+    if (isTodayOpen()) closeToday();
+    else if (!isAnyScreenOpen()) openToday();
+    return;
+  }
   // O: the household overview (Household.js)
   if (e.code === "KeyO" && typeof isHouseholdOpen === "function") {
     if (isHouseholdOpen()) closeHousehold();

@@ -138,6 +138,8 @@ function drawGameSpeed(chatLogRight) {
       normalFill: isHouseholdOpen() ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.1)",
     });
   }
+  // Today: what needs you (Today.js)
+  if (typeof drawTodayButton === "function" && typeof drawGlassButton === "function") drawTodayButton(ctx, chatLogRight);
   const hb = getHelpButtonRect(chatLogRight);
   if (typeof openHelp === "function" && typeof drawGlassButton === "function") {
     drawGlassButton(hb.x, hb.y, hb.w, hb.h, "?", {
@@ -192,6 +194,7 @@ function gameSpeedClick(chatLogRight) {
     else openHelp();
     return true;
   }
+  if (typeof todayButtonClick === "function" && todayButtonClick(chatLogRight)) return true; // (Today.js)
   const ob = getHouseholdButtonRect(chatLogRight);
   if (typeof openHousehold === "function" && isPointInRect(mouse.x, mouse.y, ob.x, ob.y, ob.w, ob.h)) {
     if (isHouseholdOpen()) closeHousehold();
