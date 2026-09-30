@@ -112,11 +112,9 @@ addHorseMethods({
     this.speak(getDialogue("PROPOSE_FRIEND", this));
 
     if (
-      worldSettings.colorism &&
       other.canSee() &&
-      other.genetics &&
       this.genetics &&
-      other.coloristDegree > this.genetics.calculateColorismPerception()
+      Math.random() < colourShunChance(other, this)
     ) {
       other.speak(getDialogue(["REJECT_FRIEND_COLOR"], other));
       other.expressionOverride = "ANGRY_PUFFED";

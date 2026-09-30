@@ -64,19 +64,21 @@ function describeInspectionPottyTraining(f) {
   return [`Learning (uses box ${pct}% of the time)`, pct >= 50 ? "ok" : "bad"];
 }
 
-// calculateColorismPerception() is how far the coat is from the "poopie"
-// colours (POOPIE_ANCHORS in globals.js: poopie brown, drab green).
-// 0 = poopie coloured, 1 = nowhere near.
+// calculateColorismPerception() is how nice other fluffies think the coat
+// is (judgeCoatColour in globals.js): brown is poopie, greys, black,
+// pastels and muddy colours are drab, vivid colours are lovely.
 function describeInspectionCoat(f) {
   const colorName = f.getColorName ? f.getColorName() : "?";
   const p = f.genetics ? f.genetics.calculateColorismPerception() : 1;
-  if (p < 0.5) return [`${colorName} - poopie colours!`, "bad"];
-  if (p < 0.9) return [`${colorName} - a bit drab`, "ok"];
+  if (p < COAT_POOPIE_LINE) return [`${colorName} - poopie colours!`, "bad"];
+  if (p < COAT_DRAB_LINE) return [`${colorName} - a bit drab`, "ok"];
+  if (p >= COAT_NICE_LINE) return [`${colorName} - bright, lovely colours`, "good"];
   return [`${colorName} - nice colours`, "good"];
 }
 
-// coloristDegree: how harshly this fluffy judges poopie-coloured fluffies
-// (mums may reject foals, special friend offers may be refused).
+// coloristDegree: how harshly this fluffy judges coats (mums reject poopie
+// foals; friendship and special friend offers from poopie or drab
+// fluffies may be refused).
 function describeInspectionColorism(f) {
   const d = f.coloristDegree || 0;
   if (d < 0.2) return ["Doesn't care about colours", "good"];

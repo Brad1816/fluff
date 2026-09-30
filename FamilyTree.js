@@ -270,12 +270,7 @@ function describeRecordCoat(rec) {
   const g = rec && rec.genes;
   if (!Array.isArray(g)) return { name: "?", quality: "", tone: "" };
   const rgb = [0, 8, 16].map((i) => Math.floor(_geneSum(g, i, 8) * 31.875));
-  let minD = Infinity;
-  for (const a of POOPIE_ANCHORS) {
-    const d = Math.sqrt((rgb[0] - a[0]) ** 2 + (rgb[1] - a[1]) ** 2 + (rgb[2] - a[2]) ** 2);
-    if (d < minD) minD = d;
-  }
-  const p = Math.max(0, Math.min(1, (minD - 7.5) / 100));
+  const p = judgeCoatColour(rgb).p;
   // Same colour names as HorseGenetics.getColorName ("bwown", "gween"...)
   let name = "";
   try {
@@ -285,8 +280,9 @@ function describeRecordCoat(rec) {
   } catch (e) {
     name = "";
   }
-  if (p < 0.5) return { name, quality: "poopie colours!", tone: "bad" };
-  if (p < 0.9) return { name, quality: "a bit drab", tone: "ok" };
+  if (p < COAT_POOPIE_LINE) return { name, quality: "poopie colours!", tone: "bad" };
+  if (p < COAT_DRAB_LINE) return { name, quality: "a bit drab", tone: "ok" };
+  if (p >= COAT_NICE_LINE) return { name, quality: "bright, lovely colours", tone: "good" };
   return { name, quality: "nice colours", tone: "good" };
 }
 

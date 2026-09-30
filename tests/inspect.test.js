@@ -30,7 +30,7 @@ module.exports = [
       check(/Litter trained: Not trained/.test(r.poopie), "untrained not shown:\n" + r.poopie);
       check(/Coat: .*poopie colours/.test(r.poopie), "poopie coat not shown:\n" + r.poopie);
       check(/Litter trained: Fully trained/.test(r.nice), "trained not shown:\n" + r.nice);
-      check(/Coat: .*nice colours/.test(r.nice), "nice coat not shown:\n" + r.nice);
+      check(/Coat: .*(nice|lovely) colours/.test(r.nice), "nice coat not shown:\n" + r.nice);
       check(/Personality: Smarty/.test(r.nice), "smarty not shown:\n" + r.nice);
       check(/Age: Foal, 40% grown/.test(r.nice), "foal age wrong:\n" + r.nice);
 

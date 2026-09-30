@@ -1270,11 +1270,70 @@ const FULL_SPEECH_THRESHOLD = 0.35;
 const WALKY_THRESHOLD = 0.3;
 const CHIRPY_THRESHOLD = 0.15;
 
-// Color Valuation Anchors
+// Poopie colours: the browns. Random "bad" coats are made near these
+// (generateRandomGenes); judging a coat is judgeCoatColour below.
 const POOPIE_ANCHORS = [
-  [63, 31, 0], // Poopie Brown
-  [31, 63, 0], // Drab Green
+  [63, 31, 0], // Poopie brown
+  [127, 63, 31], // Mud brown
+  [159, 127, 95], // Tan
 ];
+
+// How fluffies judge a coat colour (colourism). Only brown and
+// brown-adjacent coats (rust, tan, dark olive) are "poopie": a colourist
+// mum rejects and attacks a poopie foal. Every other colour is tolerated,
+// but drab or faded ones (greys, black, pastels, muddy mid-tones) get
+// shunned more by colourists than bright, vivid ones.
+// Returns { p, brown, vivid }: p is the old "perception" score, 0 = as
+// poopie as it gets, 1 = bright and lovely. Bands: p < COAT_POOPIE_LINE
+// poopie; < COAT_DRAB_LINE drab; >= COAT_NICE_LINE bright.
+const COAT_POOPIE_LINE = 0.45;
+const COAT_DRAB_LINE = 0.7;
+const COAT_NICE_LINE = 0.85;
+function judgeCoatColour(rgb) {
+  const ramp = (x, a, b) => Math.max(0, Math.min(1, (x - a) / (b - a)));
+  const r = rgb[0] / 255,
+    g = rgb[1] / 255,
+    b = rgb[2] / 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b),
+    d = max - min;
+  let h = 0;
+  if (d > 0) {
+    if (max === r) h = ((g - b) / d + 6) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  const s = max > 0 ? d / max : 0;
+  const v = max;
+  // Brown: an orange-to-yellow hue that isn't bright, grey or near-black
+  const hueW = h <= 45 ? ramp(h, 4, 16) : 1 - ramp(h, 45, 68);
+  const brown = hueW * (1 - ramp(v, 0.62, 0.9)) * ramp(v, 0.1, 0.2) * ramp(s, 0.12, 0.3);
+  // Vivid: saturated and not dark (greys, black and pastels are drab)
+  const vivid = Math.min(1, s * 1.1) * ramp(v, 0.2, 0.7);
+  const nice = 1 - 0.4 * (1 - vivid);
+  return { p: (1 - brown) * nice + brown * 0.05, brown, vivid };
+}
+
+// How likely a colourist fluffy is to shun another for its coat (turn down
+// friendship or special huggies): always for poopie, more for drab, never
+// for the brightest. 0 when World Colorism is off.
+function colourShunChance(judge, other) {
+  if (typeof worldSettings !== "undefined" && !worldSettings.colorism) return 0;
+  if (!judge || !other || !other.genetics) return 0;
+  const p = other.genetics.calculateColorismPerception();
+  const degree = Math.max(0, Math.min(1, judge.coloristDegree || 0));
+  return degree * (p < COAT_POOPIE_LINE ? 1 : Math.min(1, 1.5 * (1 - p)));
+}
+
+// Would this mum reject her foal for its colour (and attack it)? Only
+// poopie (brown) foals, and only if she's colourist enough.
+function mumRejectsFoalColour(mum, foal) {
+  if (typeof worldSettings !== "undefined" && !worldSettings.colorism) return false;
+  if (!mum || !foal || !foal.genetics) return false;
+  const p = foal.genetics.calculateColorismPerception();
+  return p < COAT_POOPIE_LINE && (mum.coloristDegree || 0) > p;
+}
 
 const MAX_COLOR_DIST = Math.sqrt(255 ** 2 + 255 ** 2 + 255 ** 2);
 

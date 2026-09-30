@@ -602,10 +602,10 @@ personality (Smarty in red), parents, special friend, number of friends.
 **Health & care** (values colour-coded): happiness, hunger, health, sleep,
 **litter training** (`pottyTraining` 0-1, which is also the chance it
 looks for a litterbox), **coat** (colour name plus "poopie colours" /
-"a bit drab" / "nice colours", from `calculateColorismPerception()`, which
-measures distance from `POOPIE_ANCHORS`), **colour views** (`coloristDegree`,
-how mean it is to poopie fluffies; hidden when colorism is off in world
-settings), spayed/pregnant, missing parts, conditions (poisoned,
+"a bit drab" / "nice colours" / "bright, lovely colours", from
+`calculateColorismPerception()` = `judgeCoatColour` - see "Coat colours and
+colourism" in section 9), **colour views** (`coloristDegree`, how mean it is
+to poopie fluffies; hidden when colorism is off in world settings), spayed/pregnant, missing parts, conditions (poisoned,
 toxoplasmosis, diarrhea, blindfolded, castration band, vaccinated...), and
 what it would sell for. Dead fluffies show cause of death instead of needs.
 
@@ -2231,6 +2231,38 @@ steady sink.
   66; no mares lost in childbirth); the park held 25-39 with about 40% fewer
   fights and half the non-viable births.
 - Tests: `tests/population.test.js`.
+
+### Coat colours and colourism (`judgeCoatColour`, globals.js)
+Only **brown and brown-adjacent** coats (browns, rust, tan, dark olive) are
+"poopie". Everything else is tolerated, but drab or faded coats (greys,
+black, pastels, muddy mid-tones) are shunned more than bright ones.
+- `judgeCoatColour(rgb)` gives `{ p, brown, vivid }`. `brown` = an orange to
+  yellow hue (about 16-45°, fading out by 4° and 68°), not bright (value under
+  0.62, gone by 0.9), not near-black and not grey. `vivid` = saturation x
+  brightness. `p` = (1 - brown) x (1 - 0.4 x (1 - vivid)) + brown x 0.05, so a
+  non-brown coat never scores below 0.6. Bands: `COAT_POOPIE_LINE` 0.45
+  (29 of the 729 coat colours; about 7% of random coats), `COAT_DRAB_LINE`
+  0.7 (about 31%), `COAT_NICE_LINE` 0.85 "bright, lovely".
+- `calculateColorismPerception()` is `p` for the body colour; a fluffy's own
+  `coloristDegree` starts at its own `p` (bright fluffies are the snobs).
+- **Mums** (`mumRejectsFoalColour`): only a poopie foal (p under 0.45) whose
+  mum's `coloristDegree` is above its `p` is rejected - estranged at birth
+  (Horse.js), no milk and attacked at feeding (HorseFamily.js), and attacked
+  when near (`_updateColoristMum`). Drab foals are fed and kept.
+- **Shunning** (`colourShunChance(judge, other)`): the chance a colourist
+  turns down friendship (HorseSocial.proposeFriendship) or special huggies
+  (HorseActionHandler): `coloristDegree` x (1 for poopie, else 1.5 x (1 - p)),
+  so about 0.6 for grey, 0.2 for a nice coat, 0 for the brightest.
+- **Price**: coat multiplier 0.3 + 6.1 x p² (poopie x0.3, drab about x2.5,
+  bright up to x6.4; the same average over random coats as the old
+  distance-from-anchors formula); spots/stripes/gradient 0.6 + 2.45 x p.
+- Orders for "nice coat colours" want p of at least 0.7 (not poopie or drab).
+- `POOPIE_ANCHORS` (three browns and a tan) are now only used to make random
+  "bad" coats.
+- Why: the old rule (distance from a brown and a drab green; a mum attacked
+  any foal less perfect than her own coat) had bright mums attacking nearly
+  every foal - in 8-day household sims up to 16 of 22 foals were killed.
+- Tests: `tests/colours.test.js`.
 
 ### The story book (Phase 0, stage 3)
 The foundation for life stories (design doc Phase 1): one shared record,

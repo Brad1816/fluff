@@ -105,7 +105,7 @@ const ORDER_REQUIREMENTS = {
     matches: (r, f) =>
       r.colour
         ? f.getColorName && f.getColorName() === r.colour
-        : f.genetics && f.genetics.calculateColorismPerception() >= 0.9,
+        : f.genetics && f.genetics.calculateColorismPerception() >= COAT_DRAB_LINE,
   },
   pattern: {
     minLevel: 2,

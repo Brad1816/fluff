@@ -1211,7 +1211,7 @@ addHorseMethods({
         ) {
           const dist = Math.sqrt((this.x - child.x) ** 2 + (this.y - child.y) ** 2);
           if (dist < 100) {
-            if (child.genetics && this.coloristDegree > child.genetics.calculateColorismPerception()) {
+            if (mumRejectsFoalColour(this, child)) {
               this.performAttack(child, "COLOR");
               this.speak(getDialogue(["ATTACK", "COLOR"], this));
               relationships[this.id][child.id] = "estranged_child";

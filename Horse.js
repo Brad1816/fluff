@@ -489,9 +489,8 @@ class Horse {
           relType = "estranged_child";
         }
         if (
-          worldSettings.colorism &&
           mom &&
-          mom.coloristDegree > this.genetics.calculateColorismPerception()
+          mumRejectsFoalColour(mom, this)
         ) {
           relType = "estranged_child";
         }

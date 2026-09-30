@@ -32,11 +32,9 @@ addHorseMethods({
       if (mare.happiness <= WAN_DIE_THRESHOLD) {
         key2 = "DEFAULT";
       } else if (
-        worldSettings.colorism &&
         canSee &&
         mare.genetics &&
-        this.genetics &&
-        Math.random() * mare.coloristDegree > this.genetics.calculateColorismPerception()
+        mumRejectsFoalColour(mare, this)
       ) {
         // Colorism rejection!
         key1 = "ATTACK";

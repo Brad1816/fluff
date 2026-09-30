@@ -395,19 +395,10 @@ class HorseGenetics {
     const bRGB = [getRGB(0), getRGB(8), getRGB(16)];
     const mRGB = [getRGB(24), getRGB(32), getRGB(40)];
 
-    // 1. Anchor-Based (Distance from Poopie)
-    let minBDist = Infinity;
-    for (const a of POOPIE_ANCHORS) {
-      const d = Math.sqrt(
-        (bRGB[0] - a[0]) ** 2 + (bRGB[1] - a[1]) ** 2 + (bRGB[2] - a[2]) ** 2,
-      );
-      if (d < minBDist) minBDist = d;
-    }
-
-    // Multiplier is proportional to distance from poopie anchors
-    // We'll normalize so that a "neutral" distance gives ~1.0x
-    // MAX_COLOR_DIST is ~441. Let's say 50 is neutral.
-    let anchorMult = Math.max(0.01, minBDist / 50);
+    // 1. How nice the coat is (judgeCoatColour, globals.js): poopie brown
+    // x0.3, drab about x2.5, bright up to x6.4 (the same average as before)
+    const coatP = judgeCoatColour(bRGB).p;
+    let anchorMult = 0.3 + 6.1 * coatP * coatP;
 
     // 2. Greyscale Bonus (Saturation near zero)
     const isGreyscale = (rgb) => {
@@ -437,16 +428,7 @@ class HorseGenetics {
       const m = colorStr.match(/\d+/g);
       return m ? m.map(Number) : [255, 255, 255];
     };
-    const getPatternMult = (rgb) => {
-      let minDist = Infinity;
-      for (const a of POOPIE_ANCHORS) {
-        const d = Math.sqrt(
-          (rgb[0] - a[0]) ** 2 + (rgb[1] - a[1]) ** 2 + (rgb[2] - a[2]) ** 2,
-        );
-        if (d < minDist) minDist = d;
-      }
-      return 0.5 + 4.5 * (minDist / MAX_COLOR_DIST);
-    };
+    const getPatternMult = (rgb) => 0.6 + 2.45 * judgeCoatColour(rgb).p;
 
     if (this.horse.hasSpots) {
       secondaryMult *= getPatternMult(parseRGB(this.horse.colors.spots));
@@ -463,25 +445,15 @@ class HorseGenetics {
     return anchorMult * greyscaleMult * harmonyMult * secondaryMult;
   }
 
+  // How nice other fluffies think its coat is (colourism): 0 = poopie
+  // brown, 1 = bright and lovely (judgeCoatColour in globals.js)
   calculateColorismPerception() {
     const getRGB = (startIdx) => {
       let sum = 0;
       for (let i = 0; i < 8; i++) sum += this.horse.genes[startIdx + i];
       return Math.floor(sum * 31.875);
     };
-
-    const bRGB = [getRGB(0), getRGB(8), getRGB(16)];
-
-    let minBDist = Infinity;
-    for (const a of POOPIE_ANCHORS) {
-      const d = Math.sqrt(
-        (bRGB[0] - a[0]) ** 2 + (bRGB[1] - a[1]) ** 2 + (bRGB[2] - a[2]) ** 2,
-      );
-      if (d < minBDist) minBDist = d;
-    }
-
-    let perception = (minBDist - 7.5) / 100;
-    return Math.max(0, Math.min(1, perception));
+    return judgeCoatColour([getRGB(0), getRGB(8), getRGB(16)]).p;
   }
 
   combineGenes(otherGenes) {

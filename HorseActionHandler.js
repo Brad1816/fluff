@@ -473,12 +473,8 @@ class HorseActionHandler {
       )
         continue;
 
-      const proposedPerception = f.genetics.calculateColorismPerception();
-      if (
-        worldSettings.colorism &&
-        Math.random() * this.horse.coloristDegree > proposedPerception
-      )
-        continue;
+      // Colourists shun poopie and drab coats (globals.js colourShunChance)
+      if (Math.random() < colourShunChance(this.horse, f)) continue;
 
       if (
         f !== this.horse &&
