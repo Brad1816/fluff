@@ -115,7 +115,13 @@ function _fSay(f, key) {
 function startFright(f, key) {
   if (!f || !f.isAlive || f.isDragging) return false;
   // (a Fearful room makes it worse, Climate.js)
-  const fear = Math.min(1, fearOf(f, key) * (typeof climateFrightMultiplier === "function" ? climateFrightMultiplier(f) : 1));
+  // (...and so does remembering the last storm, SharedMemories.js)
+  const fear = Math.min(
+    1,
+    fearOf(f, key) *
+      (typeof climateFrightMultiplier === "function" ? climateFrightMultiplier(f) : 1) *
+      (typeof sharedMemoryFrightMultiplier === "function" ? sharedMemoryFrightMultiplier(f, key) : 1),
+  );
   if (fear < FEAR_MIN) return false;
   const now = _fNow();
   const seconds = (FRIGHT_TIME[key] || 15) * (0.5 + fear);
@@ -130,6 +136,7 @@ function startFright(f, key) {
   }
   f.fright = { key, until: now + seconds, start: now };
   if (typeof recordStory === "function") recordStory("fright", f);
+  if (key === "thunder" && typeof noteStormFright === "function") noteStormFright(f); // a storm they'll remember (SharedMemories.js)
   if (f.currentStateKey === "SLEEPING" && typeof f.initBehavior === "function") f.initBehavior("IDLE"); // wakes up
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 2.5;
@@ -171,6 +178,7 @@ function onComfortedByYou(f, how = "held") {
   _fSay(f, "COMFORTED");
   if (typeof recordStory === "function") recordStory("comforted", f);
   f._frightsComforted = (f._frightsComforted || 0) + 1;
+  if (key === "thunder" && typeof noteSharedComfort === "function") noteSharedComfort(f);
   return true;
 }
 

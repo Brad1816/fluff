@@ -77,6 +77,7 @@ addHorseMethods({
     target.wasAttackedBy(this);
     // Grudges, and buddies jumping in (Bonds.js)
     if (typeof noteFluffyAttack === "function") noteFluffyAttack(this, target, intent);
+    if (typeof noteSharedFight === "function") noteSharedFight(this, target); // a big fight they'll remember (SharedMemories.js)
     if (intent === "BULLY") {
       // A Smarty's shove (SmartyMood.js): stings, never kills
       target.health = Math.min(target.health, Math.max(SMARTY_BULLY_FLOOR, target.health - SMARTY_BULLY_DAMAGE));

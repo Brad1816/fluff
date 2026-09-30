@@ -437,6 +437,12 @@ const DIALOGUE = {
     BELL: ["Ding-ding! Nummy time!", "Wobot say nummies!", "Nummies! Nummies!"],
   },
   // Frights (Fears.js)
+  // Shared memories and parties (SharedMemories.js)
+  SHARED: {
+    ANNIV_SAD: ["<Speaker> 'membew... dis was de bad day...", "*sniff* Nu fowget...", "Sad pwace... <speaker> sad hewe.", "Hewe it happen... huu..."],
+    ANNIV_HAPPY: ["<Speaker> 'membew! Bestest day!", "Wike de happy day!", "Yay! 'Membew dis?"],
+    PARTY: ["Pawty! Pawty fow <target>!", "Yay! Speshuw nummies!", "Bestest day evew!", "Hats! An' tweats! Yay!", "<Target> am so happy!"],
+  },
   // Gossip (Gossip.js): passing on what it knows about you
   GOSSIP: {
     HARM: ["<Target>, be cawefuw! Mistah huwt fwuffies!", "Nu make mistah angwy... mistah gib huwties.", "<Speaker> saw bad fings... mistah am scawy.", "Shh! Mistah can heaw!"],

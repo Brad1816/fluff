@@ -69,6 +69,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "hatWishGrantedAt", fallback: undefined },
   { name: "scars", fallback: undefined, clone: true }, // Scars.js
   { name: "gossip", fallback: undefined, clone: true }, // Gossip.js
+  { name: "partiesHad", fallback: undefined, clone: true }, // SharedMemories.js
+  { name: "_frightsComforted", fallback: undefined },
+  { name: "_stormComfortDay", fallback: undefined },
   { name: "diet", fallback: null }, // Diet.js
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },

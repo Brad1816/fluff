@@ -148,6 +148,14 @@ function noteClimateStory(kind, ids, opts = {}) {
   _climateCache = null;
 }
 
+// Straight onto a room's feel (SharedMemories.js: parties, anniversaries): { w, t, f, g }
+function addRoomClimate(scene, add) {
+  if (!scene || typeof scene !== "string" || !add) return;
+  const r = _clRoom(scene, true);
+  for (const k of ["w", "t", "f", "g"]) if (add[k]) r[k] = Math.max(0, Math.min(CLIMATE_CAP, r[k] + add[k]));
+  _climateCache = null;
+}
+
 function _clHouseNeighbours(scene) {
   if (scene === "INDOORS") return ["INDOORSL1", "INDOORSR1"];
   const m = typeof scene === "string" && scene.match(/^INDOORS([LR])(\d+)$/);

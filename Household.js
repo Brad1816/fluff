@@ -162,6 +162,8 @@ function getHouseholdLayout(data = computeHousehold()) {
     close: { x: x + w - 150, y: y + h - 46, w: 130, h: 32 },
     // What fluffies who love you call you (Identity.js)
     keeper: { x: x + w - 370, y: y + h - 46, w: 210, h: 32 },
+    // The Memories book (SharedMemories.js)
+    memories: { x: x + w - 530, y: y + h - 46, w: 150, h: 32 },
   };
 }
 
@@ -347,6 +349,7 @@ function drawHousehold(c) {
     const word = keeperWord === "mummah" ? "Mummah" : "Daddeh";
     drawGlassButton(L.keeper.x, L.keeper.y, L.keeper.w, L.keeper.h, `Loved ones call you: ${word}`, { fontSize: 13, borderRadius: 8 });
   }
+  if (typeof openMemoriesBook === "function") drawGlassButton(L.memories.x, L.memories.y, L.memories.w, L.memories.h, "Memories book", { fontSize: 13, borderRadius: 8 });
   c.restore();
 }
 
@@ -375,6 +378,11 @@ function handleHouseholdClick() {
       householdPage = 0;
       return true;
     }
+  }
+  if (typeof openMemoriesBook === "function" && hit(L.memories)) {
+    closeHousehold();
+    openMemoriesBook();
+    return true;
   }
   if (typeof toggleKeeperWord === "function" && hit(L.keeper)) {
     toggleKeeperWord();

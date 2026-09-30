@@ -61,6 +61,7 @@ const STORY_KINDS = {
   wish_denied: { big: true, text: (e) => `${e.x}` },
   nightmare: { big: false },
   // Phase 3 (Gossip.js, Scars.js)
+  shared: { big: true, text: (e, n) => { const m = typeof sharedMemoryById === "function" ? sharedMemoryById(e.x) : null; return `${n} was there for ${m ? m.name : "a moment they all remember"}.`; } },
   scar: { big: true, text: (e, n) => `${n} was left with a ${e.x || "scar"}.` },
   gossip: { big: true, text: (e, n) => `${n}: ${String(e.x || "").replace(/\{obj\}/g, "it").replace(/\{poss\}/g, "its")}` },
   dream: { big: false },
@@ -152,6 +153,8 @@ function recordStory(kind, who, opts = {}) {
   }
   // The room's feel (Climate.js)
   if (typeof noteClimateStory === "function") noteClimateStory(kind, ids, opts);
+  // Big moments they went through together (SharedMemories.js)
+  if (typeof noteSharedStory === "function" && (kind === "born" || kind === "show" || kind === "died")) noteSharedStory(kind, ids, opts);
   if (!def.big) return _tally(ids[0], kind);
   // Harm from you, again soon: add to the last one
   if (kind === "harmed") {

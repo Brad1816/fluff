@@ -196,6 +196,13 @@ function storyLine(e, f, fam = null) {
       return e.x || null;
     case "ill":
       return `${p.Sub} caught ${e.x || "something"} ${day}.`;
+    case "shared": { // (SharedMemories.js)
+      const m = typeof sharedMemoryById === "function" ? sharedMemoryById(e.x) : null;
+      if (!m) return null;
+      const view = m.view[me];
+      const how = m.kind === "storm" ? (view === "good" ? ", and got through it with you" : ", and it was terrifying") : "";
+      return `${p.Sub} was there for ${m.name}${how}.`;
+    }
     case "scar": // (Scars.js)
       return e.x ? `${p.Sub} was left with a ${e.x}.` : null;
     case "gossip": // (Gossip.js)

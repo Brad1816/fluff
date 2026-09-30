@@ -176,6 +176,11 @@ function onGossipChat(a, b) {
   if (_gossipPairs.size > 2000) _gossipPairs.clear();
   passGossip(a, b);
   passGossip(b, a);
+  // ...and the moments one was there for and the other wasn't (SharedMemories.js)
+  if (typeof shareLegend === "function") {
+    shareLegend(a, b);
+    shareLegend(b, a);
+  }
 }
 let _gossipPairs = null;
 

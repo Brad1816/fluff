@@ -232,7 +232,8 @@ function loadTests(filter, files = null) {
     if (files && !files.includes(file.replace(".test.js", ""))) continue;
     for (const t of require(path.join(__dirname, file))) {
       const fullName = `${file.replace(".test.js", "")}: ${t.name}`;
-      if (!filter || fullName.toLowerCase().includes(filter.toLowerCase())) {
+      const want = Array.isArray(filter) ? filter : filter ? [filter] : null; // (several: any of them)
+      if (!want || want.some((f) => fullName.toLowerCase().includes(f.toLowerCase()))) {
         tests.push({ ...t, fullName });
       }
     }
@@ -257,7 +258,8 @@ function loadTests(filter, files = null) {
     }
     if (args.includes("--why")) process.exit(0);
   } else {
-    filter = args.find((a) => !a.startsWith("--")) || null;
+    const words = args.filter((a) => !a.startsWith("--"));
+    filter = words.length ? words : null;
   }
   const tests = loadTests(filter, files);
   const server = await startServer();

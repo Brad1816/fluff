@@ -42,7 +42,7 @@ module.exports = [
         out.duplicate = threw;
         return out;
       });
-      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "shelterCard", "goals", "help", "records", "vet", "showResults", "dayReport", "naming"])
+      for (const n of ["inspection", "familyTree", "geneLab", "orders", "dayCare", "shelterCard", "memoriesBook", "goals", "help", "records", "vet", "showResults", "dayReport", "naming"])
         check(r.names.includes(n), `${n} on the list: ${r.names}`);
       checkEqual(r.none, false, "none open at the start");
       checkEqual(JSON.stringify(r.bothOpen), JSON.stringify([true, true, true]), "both open");
@@ -61,7 +61,7 @@ module.exports = [
       const want = [
         "familyRecords", "storyBook", "identity", "personality", "wishes", "bonds", "herds", "territory", "worldTime", "separation", "naming", "settling", "goals",
         "dayReport", "nightEvents", "alicornAcceptance", "aging", "abandoned", "illness", "corpses", "orders",
-        "stockMarket", "shelter", "shows", "pregnancy", "upbringing", "fears", "population", "climate", "sleepPiles", "affection", "tricks", "diet", "play", "warmth", "bath",
+        "stockMarket", "shelter", "shows", "pregnancy", "upbringing", "fears", "population", "climate", "sleepPiles", "sharedMemories", "affection", "tricks", "diet", "play", "warmth", "bath",
       ];
       const names = r.map((x) => x[0]);
       for (const n of want) check(names.includes(n), `${n} is registered: ${names}`);

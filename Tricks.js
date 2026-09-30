@@ -427,6 +427,7 @@ function rightClickActions(f) {
   const out = [];
   if (typeof careActions === "function") out.push(...careActions(f));
   if (typeof wishActions === "function") out.push(...wishActions(f));
+  if (typeof partyActions === "function") out.push(...partyActions(f)); // SharedMemories.js
   return out;
 }
 
