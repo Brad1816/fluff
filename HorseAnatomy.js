@@ -576,6 +576,8 @@ class HorseAnatomy {
   }
 
   spawnBaby(isViable = true) {
+    // She rests before another litter (Population.js)
+    this.horse.lastBirthAt = typeof timePlayed === "number" ? timePlayed : 0;
     if (!this.horse.fatherGenes) return;
 
     // Spawn baby

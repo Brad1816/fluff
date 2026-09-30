@@ -87,7 +87,7 @@ addHorseMethods({
     if (!target.tooYoungToSpeak()) {
       if (intent === "SMARTY_VIOLENCE") {
         target.speak(getDialogue(["HURT", "SMARTY"], target));
-      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY") {
+      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY" || intent === "CROWDED") {
         target.speak(getDialogue(["HURT"], this));
       } else {
         target.speak(getDialogue(["HURT", "ALICORN_BABY"], target));

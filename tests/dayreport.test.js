@@ -142,7 +142,8 @@ module.exports = [
       check(r.noReportYet, "report shown before morning");
       check(r.report, "no report in the morning");
       checkEqual(r.report.dayNumber, 1, "report day number");
-      checkEqual(r.report.moneyEnd - r.report.moneyStart, 1020, "money change");
+      checkEqual(r.report.moneyEnd - r.report.moneyStart, 1020 - r.report.bills.total, "money change (less the morning's rent and bills)");
+      check(r.report.bills.total > 0, "rent and bills were paid");
       checkEqual(JSON.stringify(r.report.born), JSON.stringify(["Pip"]), "born");
       check(r.report.died.length === 1 && r.report.died[0].startsWith("Grandma"), `died: ${r.report.died}`);
       checkEqual(r.report.sold.count, 1, "sold");

@@ -198,6 +198,8 @@ addHorseMethods({
   triggerPregnancy(father) {
     // Elderly mares don't get pregnant any more (Aging.js)
     if (typeof tooOldToBreed === "function" && tooOldToBreed(this)) return;
+    // Resting after a litter, or a hungry park (Population.js)
+    if (typeof canConceiveNow === "function" && !canConceiveNow(this)) return;
     this.anatomy.triggerPregnancy(father);
   },
 

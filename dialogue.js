@@ -425,6 +425,11 @@ const DIALOGUE = {
     PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "Nummy tweat! Tank yu!"],
     SHOW_OFF: ["Wook daddeh! Wook what <speaker> can do!", "Watch <speaker>!", "Daddeh wook!"],
   },
+  // Crowded rooms (Population.js)
+  CROWDED: {
+    GRUMBLE: ["Too many fwuffies! Nu woom!", "Squishy! Nu can move!", "<Speaker> wan own space...", "Evewybody too cwose!"],
+    SHOVE: ["Move! Dis <speaker> spot!", "Go 'way! Too cwowded!", "Nu push <speaker>!"],
+  },
   // The Feed-Bot (FeedBot.js)
   FEEDBOT: {
     FOND: ["Nummy-wobot! Tank yu!", "Wobot bwing nummies!", "Yay! Nummy-wobot hewe!", "Bestest wobot!"],

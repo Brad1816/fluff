@@ -38,6 +38,7 @@ function freshDayStats() {
     wildBorn: 0,
     wildDied: 0,
     nightEvents: [], // { good, text } (NightEvents.js)
+    bills: null, // rent and bills paid this morning (Bills.js)
     known: [], // ids of your living fluffies
   };
 }
@@ -117,6 +118,7 @@ function _finishDay() {
     wildBorn: s.wildBorn || 0,
     wildDied: s.wildDied,
     nightEvents: (s.nightEvents || []).map((e) => ({ ...e })),
+    bills: s.bills ? { ...s.bills } : null,
     season: typeof getSeason === "function" ? getSeason() : "",
   };
 }
@@ -163,6 +165,8 @@ function updateDayReport(dt) {
 
   // Morning: show yesterday, start today
   if (index > dayStats.day) {
+    // Rent and bills for the day (Bills.js)
+    if (typeof chargeDailyBills === "function") dayStats.bills = chargeDailyBills();
     dayReportShown = _finishDay();
     if (typeof setGameSpeed === "function") setGameSpeed(1);
     _startDay(index);
@@ -234,6 +238,7 @@ function drawDayReport(c) {
       `${_money(delta)}  (now $${Math.round(r.moneyEnd).toLocaleString()})`,
       delta >= 0 ? "#9fe0a8" : "#ff8a80",
     ],
+    ["Rent & bills", (typeof describeBills === "function" && describeBills(r.bills)) || "none", r.bills && r.bills.owed > 0 ? "#ff8a80" : null],
     ["Sold", r.sold.count ? `${r.sold.count} fluffies for $${r.sold.money.toLocaleString()}` : "none", null],
     ["Orders filled", r.orders.count ? `${r.orders.count} for $${r.orders.money.toLocaleString()}` : "none", null],
     ["Born", _listText(r.born), r.born.length ? "#9fe0a8" : null],

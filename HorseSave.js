@@ -54,6 +54,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "fears", fallback: null, clone: true }, // Fears.js
   { name: "bellLearn", fallback: 0 }, // FeedBot.js
   { name: "feedBotTips", fallback: 0 },
+  { name: "lastBirthAt", fallback: null }, // Population.js
   { name: "diet", fallback: null }, // Diet.js
   { name: "weight", fallback: 0 },
   { name: "tastes", fallback: null, clone: true },

@@ -110,6 +110,7 @@ const SAVED_GAME_STATE = [
   },
   { name: "nextFluffyId", get: () => nextFluffyId, set: (v) => (nextFluffyId = v), fresh: () => 0 },
   { name: "nextObjectId", get: () => nextObjectId, set: (v) => (nextObjectId = v), fresh: () => 0 },
+  { name: "billsOwed", get: () => billsOwed, set: (v) => (billsOwed = v || 0), fresh: () => 0 }, // Bills.js
   { name: "unlockedRoomsL", get: () => unlockedRoomsL, set: (v) => (unlockedRoomsL = v), fresh: () => 0 },
   { name: "unlockedRoomsR", get: () => unlockedRoomsR, set: (v) => (unlockedRoomsR = v), fresh: () => 0 },
   { name: "roomsPurchased", get: () => roomsPurchased, set: (v) => (roomsPurchased = v), fresh: () => 0 },

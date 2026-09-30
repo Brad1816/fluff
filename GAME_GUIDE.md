@@ -99,6 +99,8 @@ and it runs. About 55,000 lines across ~120 files.
 | `Fears.js` | **Fears**: thunder, the dark and the Fluff-Bot; frights, comforting, the Night Light item. See section 9 (Fears). |
 | `Household.js` | **Household** overview screen (button at the top right, or O): every fluffy you own and what it needs. See section 9 (Household). |
 | `FeedBot.js` | **The Feed-Bot** (Fluff Mart, $300): fills bowls, feeders and orphans from a hopper you pour bags into; modes; tipping over, spills (`FoodSpill`), the Repair Kit. See section 9 (The Feed-Bot). |
+| `Population.js` | **Population limits**: crowded rooms (unhappiness, scuffles), mares resting after a litter, park births following food. See section 9 (Population and bills). |
+| `Bills.js` | **Rent and bills** charged every morning with the day report; unpaid bills are owed. See section 9 (Population and bills). |
 | `Roomba.js` | **The Fluff-Bot** robot vacuum (Fluff Mart, $250, delivered): cleans mess in its room, docks, startles fluffies. See section 9 (The Fluff-Bot). |
 | `FluffySounds.js` | **Fluffy voices**: happy/angry/sad/scree/death/mating/pooping/newborn clips, foal versions, cooldowns. See section 9 (Fluffy sounds). |
 | `Screens.js` | **The list of pop-up screens** (`registerScreen`): drawing, clicks, Esc and closing all come from it. |
@@ -2193,3 +2195,37 @@ unchanged.
   run side by side; the park holds 28-47 fluffies with fewer starving but more
   fights. Stage 2 (population limits, mares resting between litters) targets
   both.
+
+### Population and bills (Phase 0, stage 2)
+With 5-7 year lives, houses and the park needed limits, and money needed a
+steady sink.
+- **Crowding** (`Population.js`, system "population", order 142, every 2s):
+  `roomSpace` = `ROOM_SPACE` (house rooms 10, backyard 16; none elsewhere);
+  `roomLoad` counts a foal as half. Over it, `crowding` = how far over (0.5 =
+  half as many again). Everyone there loses `CROWD_UNHAPPY` (0.04) x crowding
+  happiness a game hour and grumbles (`CROWDED.GRUMBLE`); grumpy grown-ups
+  (temper > 0) shove and attack a neighbour within 80px with chance
+  `CROWD_SCUFFLE` x crowding x (1 + temper) a second (`performAttack` intent
+  "CROWDED"). The house room label turns red ("· crowded 15/10",
+  `UIScenes.drawHouseNav`) and the Household screen lists crowded rooms
+  (`crowdedRoomLines`).
+- **Mares rest** after a litter: `HorseAnatomy.spawnBaby` sets `lastBirthAt`
+  (saved); `restingAfterBirth` blocks conception for `MARE_REST_DAYS` (2, about
+  2 months). Shown as "Breeding: Resting after her litter (...)" in the
+  magnifying glass.
+- **Park births follow food:** `canConceiveNow` (called from
+  `HorseMating.triggerPregnancy`) gives a wild park mare `parkBirthFactor()` =
+  park food (grass tufts' growth + berries) per wild fluffy over
+  `PARK_FOOD_PER_FLUFFY` (1.5), x0.3 when the park is over `PARK_WILD_MAX`,
+  never below 0.1.
+- **Rent and bills** (`Bills.js`): every morning, before the day report card is
+  made, `chargeDailyBills` takes `BILL_RENT` ($20) + `BILL_PER_ROOM` ($15) per
+  bought room + `BILL_PER_FLUFFY` ($5) per fluffy of yours (foals half), plus
+  anything owed. What you can't pay becomes `billsOwed` (saved game state) and
+  a message; the report shows a "Rent & bills" row. No penalties yet (phase 6).
+  Free with the debug menu open.
+- **Simulations** (same set-up as stage 1): the 8-day breeding household now
+  survives (12 fluffies at the end instead of 1; 6 non-viable foals instead of
+  66; no mares lost in childbirth); the park held 25-39 with about 40% fewer
+  fights and half the non-viable births.
+- Tests: `tests/population.test.js`.

@@ -227,6 +227,11 @@ function getFluffyInspectionInfo(f) {
     const [cText, cTone] = describeInspectionColorism(f);
     care.push({ label: "Colour views", value: cText, tone: cTone });
   }
+  // Resting after a litter (Population.js)
+  if (f.isAlive && typeof describeBreedingRest === "function") {
+    const rest = describeBreedingRest(f);
+    if (rest) care.push({ label: "Breeding", value: rest[0], tone: rest[1] });
+  }
   // Fears (Fears.js)
   if (f.isAlive && typeof describeFears === "function") {
     const [fText, fTone] = describeFears(f);
@@ -340,7 +345,7 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Spayed"] },
+      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Breeding", "Spayed"] },
       { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Settling in", "Sells for"] },
     ],
   },

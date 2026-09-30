@@ -588,7 +588,13 @@ function drawHouseNav(c) {
   c.textAlign = "right";
   c.textBaseline = "middle";
   c.fillStyle = "rgba(255,255,255,0.75)";
-  c.fillText(houseRoomName(currentScene), first.x - 10, first.y + first.h / 2);
+  let roomLabel = houseRoomName(currentScene);
+  // Too many fluffies in here (Population.js)
+  if (typeof crowding === "function" && crowding(currentScene) > 0) {
+    roomLabel += ` · crowded ${Math.round(roomLoad(currentScene))}/${roomSpace(currentScene)}`;
+    c.fillStyle = "#ff8a80";
+  }
+  c.fillText(roomLabel, first.x - 10, first.y + first.h / 2);
   for (const chip of chips) {
     const hover = isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h);
     const p = chip.portal;

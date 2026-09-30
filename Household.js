@@ -276,7 +276,7 @@ function drawHousehold(c) {
   c.fillStyle = "rgba(255,255,255,0.55)";
   c.fillText("Click a fluffy to go to it and open its magnifying glass.", L.x + 370, L.y + 81);
   // Helpers that need you (FeedBot.js)
-  const bots = typeof feedBotStatusLines === "function" ? feedBotStatusLines() : [];
+  const bots = (typeof crowdedRoomLines === "function" ? crowdedRoomLines() : []).concat(typeof feedBotStatusLines === "function" ? feedBotStatusLines() : []);
   if (bots.length) {
     c.textAlign = "right";
     c.font = "bold 12px Arial";
