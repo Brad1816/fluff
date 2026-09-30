@@ -4,6 +4,7 @@
   "description": "Automated checks for Fluffy Industries. Run with: npm test",
   "scripts": {
     "test": "node run-tests.js",
+    "test:changed": "node run-tests.js --changed",
     "setup": "npm install && npx playwright install chromium"
   },
   "devDependencies": {

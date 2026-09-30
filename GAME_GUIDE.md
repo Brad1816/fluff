@@ -53,6 +53,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `UISelling.js` | Selling: the buyer at the door (sell request card) and shift + click selling (`sellModeClick`). |
 | `UIDebug.js` | Debug mode: debug actions on fluffies, the watcher panel and the debug menu. |
 | `UIInspection.js` | The magnifying glass panel (`getFluffyInspectionInfo`, `drawInspectionModal`) and renaming. |
+| `tests/select-tests.js` | Picks the tests that what you changed could affect (`npm run test:changed`). |
 | `UIDayCare.js` | The shelter's boarding window (the desk; was the day care). |
 | `Shelter.js` | **The Fluffy Shelter**: kennels of fluffies to adopt from their plaques alone, time's-up days, adoption; the `ShelterKennels` object and the plaque card. See section 9 (The shelter). |
 | `UIChatLog.js` | The chat log panel. |
@@ -505,6 +506,20 @@ them turns it back on itself (e.g. `names.test.js` sets
 `namingPopupsEnabled = true`). `__seedRandom(n)` makes random choices
 repeatable, `__fastForward(seconds)` runs the game quickly, and
 `__clearScene()` empties an area.
+
+**Only what changed** (`npm run test:changed`, `tests/select-tests.js`):
+from `git diff` it finds the declarations whose code changed (functions,
+classes, top-level constants, 2-space-indented methods such as the Horse
+methods; comment-only edits don't count), adds their callers two levels out
+(`CALLER_DEPTH`) except through names with more than `HUB_LIMIT` (20)
+callers (getDialogue, SPAWN_ACTIONS...), and picks the test files that
+mention any of those names, are named after a changed file, or changed
+themselves; `smoke`, `screens` and `savefields` always run. Changes to the
+test machinery, or to `index.html` beyond new `<script>` tags, run
+everything. `node select-tests.js A..B` shows what a past commit would have
+run. Replaying the last dozen commits, small ones picked 4-13 of 57 test
+files and wide ones about 45, and every test that actually failed on those
+commits was picked. The full suite still runs before each check-in.
 
 **Running 4 at a time.** Tests run `TEST_WORKERS` at once (default 4; set
 `TEST_WORKERS=1` in the terminal to run them one by one, e.g. to read the

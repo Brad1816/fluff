@@ -8,6 +8,11 @@
 //   First time only:   npm run setup
 //   Every time:        npm test
 //   Only some tests:   npm test -- fence      (runs tests whose name has "fence")
+//   Only what changed: npm run test:changed   (node run-tests.js --changed)
+//                      tests that could be affected by what you've changed
+//                      since the last commit (select-tests.js explains how);
+//                      --changed HEAD~2 compares with an older commit, and
+//                      --why lists the choice without running anything
 //
 // Tests run TEST_WORKERS at a time (default 4; set TEST_WORKERS=1 to run
 // one by one). Each worker has its own browser context, so saves and
@@ -102,10 +107,11 @@ async function openGame(context, port) {
   return { page, errors };
 }
 
-function loadTests(filter) {
+function loadTests(filter, files = null) {
   const tests = [];
   for (const file of fs.readdirSync(__dirname).sort()) {
     if (!file.endsWith(".test.js")) continue;
+    if (files && !files.includes(file.replace(".test.js", ""))) continue;
     for (const t of require(path.join(__dirname, file))) {
       const fullName = `${file.replace(".test.js", "")}: ${t.name}`;
       if (!filter || fullName.toLowerCase().includes(filter.toLowerCase())) {
@@ -117,8 +123,25 @@ function loadTests(filter) {
 }
 
 (async () => {
-  const filter = process.argv[2];
-  const tests = loadTests(filter);
+  const args = process.argv.slice(2);
+  let files = null;
+  let filter = null;
+  const ci = args.indexOf("--changed");
+  if (ci >= 0) {
+    const ref = args[ci + 1] && !args[ci + 1].startsWith("--") ? args[ci + 1] : "HEAD";
+    const pick = require("./select-tests.js").selectTests(ref);
+    if (pick.all) console.log(`Changed since ${ref}: ${pick.why} - running everything.`);
+    else {
+      files = pick.tests;
+      console.log(`Changed since ${ref}: ${pick.files.join(", ") || "(nothing)"}`);
+      for (const t of pick.tests) console.log(`  ${t}: ${pick.reasons.get(t)[0]}`);
+      console.log(`${pick.tests.length} of ${pick.total} test files.\n`);
+    }
+    if (args.includes("--why")) process.exit(0);
+  } else {
+    filter = args.find((a) => !a.startsWith("--")) || null;
+  }
+  const tests = loadTests(filter, files);
   const server = await startServer();
   const port = server.address().port;
   const browser = await chromium.launch();

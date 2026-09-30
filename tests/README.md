@@ -22,7 +22,7 @@ In a terminal in the `tests` folder:
 ```
 npm test
 ```
-It takes about 2 minutes and ends with e.g. `13 passed, 0 failed`.
+It takes about 5 minutes and ends with e.g. `222 passed, 0 failed`.
 A failure says which test failed and why, e.g.
 `Grinder: sold for $50, expected $1250`.
 
@@ -30,6 +30,20 @@ To run only some tests, add part of their name:
 ```
 npm test -- fence
 ```
+
+To run only the tests that what you've changed could affect (usually well
+under a minute):
+```
+npm run test:changed
+```
+It compares with the last commit (or `node run-tests.js --changed HEAD~2`
+for an older one), works out which functions you changed and what calls
+them, and runs the test files that use any of them, plus `smoke`, `screens`
+and `savefields` every time. It prints why each test file was picked. Add
+`--why` to see the list without running anything. Changing the test
+machinery (`run-tests.js`, `helpers.js`, `select-tests.js`) or anything in
+`index.html` other than adding a script runs everything. It's a good guess,
+not a proof, so run the full `npm test` now and then too.
 
 ## The files
 
