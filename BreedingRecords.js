@@ -51,7 +51,7 @@ function describeFoalOutcome(rec) {
     const cause = rec.causeOfDeath === "Old age" ? "old age" : rec.causeOfDeath ? rec.causeOfDeath.toLowerCase() : "died";
     return [`died (${cause})`, "bad"];
   }
-  if (s === "day care") return ["at day care", ""];
+  if (s === "day care") return ["boarding at the shelter", ""];
   if (s === "taken") return ["taken by dogs", "bad"];
   return [s || "gone", ""];
 }

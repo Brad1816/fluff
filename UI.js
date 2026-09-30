@@ -490,7 +490,7 @@ function drawUI(ctx) {
       if (
         isPointInRect(mouse.x, mouse.y, desk.x - bw / 2, desk.y - bh, bw, bh)
       ) {
-        const tooltipText = "Day Care Desk (Click to Manage)";
+        const tooltipText = "Shelter desk: board your fluffies (click)";
         ctx.font = "bold 14px Arial";
         const padding = 10;
         const tw = ctx.measureText(tooltipText).width + padding * 2;
@@ -1005,6 +1005,16 @@ canvas.addEventListener("mousedown", (e) => {
         }
         return;
       }
+    }
+
+    // The shelter's kennels: read a plaque (Shelter.js)
+    if (typeof ShelterKennels !== "undefined" && obj instanceof ShelterKennels) {
+      const cage = obj.cageAt(mouse.x, mouse.y);
+      if (cage >= 0) {
+        openShelterCard(cage);
+        return;
+      }
+      continue;
     }
 
     if (typeof DayCareDesk !== "undefined" && obj instanceof DayCareDesk) {

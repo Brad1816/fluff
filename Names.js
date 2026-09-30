@@ -502,6 +502,7 @@ function namedBy(f) {
   const n = fluffyNames[f.id];
   if (previousOwnerNames && previousOwnerNames[f.id] === n) return "its old owner";
   if (typeof stockMarket !== "undefined" && stockMarket.named && stockMarket.named[f.id] === n) return "its breeder";
+  if (typeof shelter !== "undefined" && shelter.named && shelter.named[f.id] === n) return "the shelter";
   return "you";
 }
 

@@ -1,0 +1,562 @@
+// ---------------------------------------------------------------------------
+// The Fluffy Shelter (was the day care). Through the door in Shelter Alley.
+//
+//   - Boarding: the desk still boards your own fluffies (UIDayCare.js,
+//     dayCareFluffies; the boarding fee is a daily bill, Bills.js).
+//   - Adoption: SHELTER_CAGES kennels (ShelterKennels, three either side of
+//     the desk) hold strays and fluffies their owners gave up. You can see
+//     each one through the bars, but all you can read about it is the plaque
+//     under its cage: its name, what it is, roughly how old, where it came
+//     from, a line or two from the staff, and its time's-up day. No
+//     magnifying glass - adopting is a gamble.
+//   - Mostly poopie or drab coats (judgeCoatColour, globals.js) and poor
+//     temperaments (grumpy, wary of people, not litter trained, the odd
+//     Smarty); now and then a gem (bright coat, gentle nature, or hidden wing
+//     or horn genes).
+//   - Staff notes are kind about the truth ("Spirited!" for a grumpy one),
+//     and now and then just wrong (SHELTER_NOTE_WRONG).
+//   - Every morning, fluffies past their time's-up day are gone (news in the
+//     day report) and SHELTER_ARRIVALS new ones come in. On its last day a
+//     fluffy is half price.
+//   - Adopted fluffies come out by the desk as yours, with the name the
+//     shelter (or their old owner) gave them; take them home yourself.
+// Saved: shelter (SAVED_GAME_STATE). Fees are placeholders for the balance
+// pass.
+// ---------------------------------------------------------------------------
+
+const SHELTER_SCENE = "DAY_CARE";
+const SHELTER_CAGES = 6;
+const SHELTER_ARRIVALS = [1, 2]; // new fluffies each morning
+const SHELTER_START = 4; // cages filled when you first visit
+const SHELTER_STAY_DAYS = [3, 5]; // days until time's up
+const SHELTER_ADOPT_FEE = 60; // placeholder
+const SHELTER_LAST_DAY_DISCOUNT = 0.5;
+const SHELTER_NICE_COAT_CHANCE = 0.12;
+const SHELTER_GOOD_NATURE_CHANCE = 0.12;
+const SHELTER_HIDDEN_GENES_CHANCE = 0.08;
+const SHELTER_SMARTY_CHANCE = 0.08;
+const SHELTER_NOTE_WRONG = 0.15;
+
+const SHELTER_NAMES = [
+  "Mudpie", "Scruffy", "Patches", "Nugget", "Pickle", "Dusty", "Muffin", "Bean", "Tater", "Pudding",
+  "Twig", "Nibbles", "Scraps", "Moss", "Chip", "Smudge", "Crumb", "Tuffet", "Wobble", "Pip",
+  "Freckles", "Doodle", "Mopsy", "Sniffles", "Button", "Clover", "Noodle", "Sock", "Gravy", "Pogo",
+];
+
+function freshShelter() {
+  return { day: null, residents: [], adopted: 0, lost: 0, stocked: false };
+}
+let shelter = freshShelter();
+const shelterTicker = new Ticker(1);
+let _shelterPortraits = {};
+let shelterCardIndex = null; // the cage whose plaque is open
+
+const _shRand = (range) => range[0] + Math.random() * (range[1] - range[0]);
+const _shPick = (list) => list[Math.floor(Math.random() * list.length)];
+
+// ---- Making a resident ----
+
+function _shSetBits(genes, from, count, on) {
+  const bits = Array.from({ length: count }, (_, i) => (i < on ? 1 : 0)).sort(() => Math.random() - 0.5);
+  for (let i = 0; i < count; i++) genes[from + i] = bits[i];
+}
+
+function _shCoatP(genes) {
+  const c = (i) => {
+    let s = 0;
+    for (let k = 0; k < 8; k++) s += genes[i + k];
+    return Math.floor(s * 31.875);
+  };
+  return judgeCoatColour([c(0), c(8), c(16)]).p;
+}
+
+function _shGenes(kind) {
+  const g = new HorseGenetics({ genes: null });
+  let genes;
+  if (kind.niceCoat) {
+    // A gem: keep rolling for a bright coat
+    for (let i = 0; i < 40; i++) {
+      genes = g.generateRandomGenes(null, null);
+      if (_shCoatP(genes) >= COAT_NICE_LINE) break;
+    }
+  } else if (Math.random() < 0.65) {
+    genes = g.generateRandomGenes(Math.random() * 0.35, Math.random() * 0.6); // near the browns
+  } else {
+    // Random - usually drab or plain; rolled again if it came out bright
+    genes = g.generateRandomGenes(null, null);
+    if (_shCoatP(genes) >= COAT_NICE_LINE) genes = g.generateRandomGenes(Math.random() * 0.4, null);
+  }
+  // Mostly earthies; the odd unicorn or pegasus; now and then an earthy that
+  // carries wing or horn genes it doesn't show
+  const r = Math.random();
+  _shSetBits(genes, 53, 5, r < 0.1 ? 4 + Math.round(Math.random()) : Math.floor(Math.random() * 3));
+  _shSetBits(genes, 58, 5, r >= 0.1 && r < 0.2 ? 4 + Math.round(Math.random()) : Math.floor(Math.random() * 3));
+  if (kind.hiddenGenes) _shSetBits(genes, Math.random() < 0.5 ? 53 : 58, 5, 3);
+  // Temperament genes (Traits.js): usually grumpy and timid; a gem is gentle and social
+  if (typeof TRAITS !== "undefined" && typeof TRAIT_GENE_START !== "undefined") {
+    const setTrait = (key, on) => {
+      const i = TRAITS.findIndex((t) => t.key === key);
+      if (i >= 0) _shSetBits(genes, TRAIT_GENE_START + i * TRAIT_GENES_EACH, TRAIT_GENES_EACH, Math.max(0, Math.min(TRAIT_GENES_EACH, on)));
+    };
+    const n = TRAIT_GENES_EACH;
+    if (kind.goodNature) {
+      setTrait("temper", Math.floor(Math.random() * 0.3 * n));
+      setTrait("social", Math.ceil(n * (0.65 + Math.random() * 0.35)));
+    } else {
+      setTrait("temper", Math.ceil(n * (0.55 + Math.random() * 0.45)));
+      setTrait("bravery", Math.floor(n * Math.random() * 0.6));
+    }
+  }
+  return genes;
+}
+
+function _shAge(f) {
+  const days = typeof ageDays === "function" ? ageDays(f) : (f.age || 0) / DAY_LENGTH;
+  if (days < 1) return "a few weeks old";
+  const months = Math.round(days);
+  if (months < DAYS_PER_YEAR) return months <= 1 ? "about a month old" : `about ${months} months old`;
+  const y = Math.round(days / DAYS_PER_YEAR);
+  return y <= 1 ? "about a year old" : `about ${y} years old`;
+}
+
+function _shTrait(f, key) {
+  return typeof traitValue === "function" ? traitValue(f, key) : 0;
+}
+
+// The staff's notes: kind about the truth, and sometimes just wrong
+const SHELTER_NOTES = {
+  grumpy: ["Spirited!", "Has a big personality", "Needs an experienced owner"],
+  gentle: ["Sweet and gentle", "Loves a cuddle"],
+  timid: ["A little shy", "Takes time to warm up"],
+  brave: ["Bold and curious"],
+  loner: ["Enjoys its own company"],
+  social: ["Gets on with everyone"],
+  messy: ["Still learning the litterbox"],
+  tidy: ["Litter trained!"],
+  smarty: ["Very confident!", "Knows what it wants"],
+  wary: ["Nervous around people"],
+  any: ["Looking for a forever home!", "A real character!", "Staff favourite!", "Ready for a fresh start"],
+};
+
+function _shNotes(f) {
+  const truth = [];
+  const temper = _shTrait(f, "temper");
+  if (f.isSmarty && f.isSmarty()) truth.push("smarty");
+  if (temper > 0.3) truth.push("grumpy");
+  else if (temper < -0.3) truth.push("gentle");
+  const brave = _shTrait(f, "bravery");
+  if (brave < -0.3) truth.push("timid");
+  else if (brave > 0.4) truth.push("brave");
+  const social = _shTrait(f, "social");
+  if (social < -0.4) truth.push("loner");
+  else if (social > 0.4) truth.push("social");
+  if ((f.playerFear || 0) > 0.25 || (f.playerTrust || 0) < 0.2) truth.push("wary");
+  if ((f.pottyTraining || 0) < 0.25) truth.push("messy");
+  else if ((f.pottyTraining || 0) > 0.7) truth.push("tidy");
+  const notes = [];
+  const kinds = truth.sort(() => Math.random() - 0.5);
+  for (let i = 0; i < 2; i++) {
+    let kind;
+    if (Math.random() < SHELTER_NOTE_WRONG) kind = _shPick(["gentle", "social", "tidy", "brave"]);
+    else kind = kinds[i] || "any";
+    const text = _shPick(SHELTER_NOTES[kind]);
+    if (!notes.includes(text)) notes.push(text);
+  }
+  return notes;
+}
+
+function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? getDayNumber() : 1) {
+  const kind = {
+    niceCoat: Math.random() < SHELTER_NICE_COAT_CHANCE,
+    goodNature: Math.random() < SHELTER_GOOD_NATURE_CHANCE,
+    hiddenGenes: Math.random() < SHELTER_HIDDEN_GENES_CHANCE,
+  };
+  const origin = _shPick(["stray", "stray", "surrendered", "surrendered", "born"]);
+  const gender = Math.random() < 0.5 ? "female" : "male";
+  const growth = origin === "born" ? 0.35 + Math.random() * 0.4 : Math.random() < 0.85 ? 1 : 0.6 + Math.random() * 0.35;
+  const h = new Horse(growth, null, SHELTER_SCENE, "earthy", _shGenes(kind), null, null, gender);
+  if (typeof relationships !== "undefined") delete relationships[h.id];
+  // Old, young, anything in between (days: a game day is about a month)
+  if (typeof setSpawnAge === "function") setSpawnAge(h, 3, origin === "surrendered" ? 60 : 36);
+  // How it's been treated
+  h.personalities = (h.personalities || []).filter((p) => p !== "smarty");
+  if (!kind.goodNature && growth >= 1 && Math.random() < SHELTER_SMARTY_CHANCE) h.personalities.push("smarty");
+  h.hunger = 0.7 + Math.random() * 0.3;
+  h.happiness = kind.goodNature ? 0.55 + Math.random() * 0.2 : 0.3 + Math.random() * 0.25;
+  h.playerTrust = kind.goodNature ? 0.4 + Math.random() * 0.2 : 0.08 + Math.random() * 0.25;
+  h.playerFear = kind.goodNature ? 0 : Math.random() < 0.5 ? Math.random() * 0.4 : 0;
+  h.pottyTraining = origin === "surrendered" ? Math.random() * 0.8 : Math.random() * 0.3;
+  h.sensitiveBaby = false;
+  // A name: the shelter's, or its old owner's
+  const used = new Set([
+    ...Object.values(typeof fluffyNames !== "undefined" ? fluffyNames : {}),
+    ...shelter.residents.map((r) => r.name),
+  ]);
+  const pool =
+    origin === "surrendered" && typeof OWNER_NAMES !== "undefined"
+      ? [...(OWNER_NAMES[gender] || []), ...OWNER_NAMES.any]
+      : SHELTER_NAMES;
+  const fresh = pool.filter((n) => !used.has(n));
+  const name = _shPick(fresh.length ? fresh : pool);
+  const data = h.serialize();
+  data.type = h.type;
+  return {
+    id: h.id,
+    data,
+    name,
+    origin,
+    notes: _shNotes(h),
+    arrivedDay: dayNumber,
+    timesUpDay: dayNumber + Math.round(_shRand(SHELTER_STAY_DAYS)),
+    type: h.type,
+    gender,
+    grown: growth >= 1,
+    ageText: _shAge(h),
+  };
+}
+
+// ---- Every morning: time's up, new arrivals ----
+
+function shelterDaysLeft(r) {
+  const today = typeof getDayNumber === "function" ? getDayNumber() : 1;
+  return r.timesUpDay - today;
+}
+
+function shelterFee(r) {
+  const fee = SHELTER_ADOPT_FEE * (shelterDaysLeft(r) <= 0 ? SHELTER_LAST_DAY_DISCOUNT : 1);
+  return Math.round(fee);
+}
+
+function shelterNewDay() {
+  const today = typeof getDayNumber === "function" ? getDayNumber() : 1;
+  // Time's up
+  for (let i = shelter.residents.length - 1; i >= 0; i--) {
+    const r = shelter.residents[i];
+    if (r.timesUpDay >= today) continue;
+    shelter.residents.splice(i, 1);
+    shelter.lost = (shelter.lost || 0) + 1;
+    if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `Time ran out for ${r.name} at the shelter.` });
+  }
+  // New arrivals
+  const want = shelter.stocked ? Math.round(_shRand(SHELTER_ARRIVALS)) : SHELTER_START;
+  shelter.stocked = true;
+  for (let i = 0; i < want && shelter.residents.length < SHELTER_CAGES; i++) {
+    shelter.residents.push(makeShelterResident(today));
+  }
+  _shelterPortraits = {};
+}
+
+// Runs every simulation step (Systems.js); works once a second
+function updateShelter(dt) {
+  if (!shelter || typeof shelter !== "object") shelter = freshShelter();
+  for (const [k, v] of Object.entries(freshShelter())) if (shelter[k] === undefined) shelter[k] = v;
+  if (!Array.isArray(shelter.residents)) shelter.residents = [];
+  if (!shelterTicker.step(dt)) return;
+  const day = typeof reportDayIndex === "function" ? reportDayIndex() : 0;
+  if (shelter.day !== day) {
+    shelter.day = day;
+    shelterNewDay();
+  }
+  // They grow up and get older while they wait
+  for (const r of shelter.residents) {
+    r.data.age = (r.data.age || 0) + 1;
+    if (r.data.growth < 1) r.data.growth = Math.min(1, r.data.growth + 1 / GROW_UP_TIME);
+  }
+}
+
+// ---- Adopting ----
+
+// Returns the new fluffy, or null (can't afford / not there)
+function adoptShelterResident(id) {
+  const idx = shelter.residents.findIndex((r) => r.id === id);
+  if (idx < 0) return null;
+  const r = shelter.residents[idx];
+  const fee = shelterFee(r);
+  const free = typeof showDebugMenu !== "undefined" && showDebugMenu;
+  if (!free && money < fee) {
+    if (typeof addUIMessage === "function") addUIMessage(`You need $${fee.toLocaleString()} to adopt ${r.name}.`);
+    return null;
+  }
+  if (!free) money -= fee;
+  shelter.residents.splice(idx, 1);
+  shelter.adopted = (shelter.adopted || 0) + 1;
+
+  const data = JSON.parse(JSON.stringify(r.data));
+  data.scene = SHELTER_SCENE;
+  const desk = objects.find((o) => typeof DayCareDesk !== "undefined" && o instanceof DayCareDesk && o.scene === SHELTER_SCENE);
+  data.x = width / 2 + (Math.random() * 120 - 60);
+  data.y = desk ? desk.y + 60 + Math.random() * 40 : height * 0.55;
+  const f = Horse.deserialize(data);
+  f.scene = SHELTER_SCENE;
+  f.adopted = true;
+  f.arrivedFrom = "the shelter"; // (StoryBook: "came to you from the shelter")
+  // (its relationships entry was dropped while it sat in a kennel)
+  if (typeof relationships !== "undefined" && !relationships[f.id]) relationships[f.id] = {};
+  fluffies.push(f);
+  fluffyNames[f.id] = r.name;
+  if (r.origin === "surrendered" && typeof previousOwnerNames !== "undefined") previousOwnerNames[f.id] = r.name;
+  else {
+    if (!shelter.named || typeof shelter.named !== "object") shelter.named = {};
+    shelter.named[f.id] = r.name;
+  }
+  if (typeof recordFluffy === "function") {
+    const rec = recordFluffy(f);
+    if (rec) rec.boughtFrom = "the Fluffy Shelter";
+  }
+  if (typeof poofs !== "undefined" && typeof Poof !== "undefined") poofs.push(new Poof(f.x, f.y, f.scene));
+  if (typeof addUIMessage === "function") addUIMessage(`You adopted ${r.name} ($${fee}). Take ${f.gender === "female" ? "her" : "him"} home!`);
+  if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `You adopted ${r.name} from the shelter.` });
+  _shelterPortraits = {};
+  return f;
+}
+
+// ---- The kennels (an object in the shelter room, like the desk) ----
+
+function shelterCageRects() {
+  const deskHalf = 170;
+  const margin = 30;
+  const gap = 12;
+  const side = width / 2 - deskHalf - margin;
+  const w = Math.min(130, Math.floor((side - gap * 2) / 3));
+  const h = Math.round(w * 0.85);
+  const y = Math.round(height * 0.15) + 60;
+  const rects = [];
+  for (let i = 0; i < 3; i++) rects.push({ x: margin + i * (w + gap), y, w, h });
+  for (let i = 0; i < 3; i++) rects.push({ x: width - margin - (3 - i) * w - (2 - i) * gap, y, w, h });
+  return rects;
+}
+
+function _shPortrait(r, size) {
+  const key = r.id + ":" + size + ":" + (r.data.growth >= 1 ? 1 : Math.round(r.data.growth * 10));
+  if (_shelterPortraits[key] === undefined) {
+    let canvasOut = null;
+    try {
+      const h = new Horse(r.data.growth, null, SHELTER_SCENE, "earthy", r.data.genes.slice(), null, null, r.gender);
+      if (typeof relationships !== "undefined") delete relationships[h.id];
+      canvasOut = typeof drawFluffyPortraitCanvas === "function" ? drawFluffyPortraitCanvas(h, size) : null;
+    } catch (e) {
+      canvasOut = null;
+    }
+    _shelterPortraits[key] = canvasOut;
+  }
+  return _shelterPortraits[key];
+}
+
+class ShelterKennels {
+  constructor(scene = SHELTER_SCENE) {
+    this.id = nextObjectId++;
+    this.scene = scene;
+    this.isDragging = false;
+    this.dragOffset = { x: 0, y: 0 };
+    this.currentCage = null;
+    this.updatePosition();
+  }
+  updatePosition() {
+    const rects = shelterCageRects();
+    this.x = width / 2;
+    this.y = rects[0].y + rects[0].h + 22; // bottom of the plaques
+  }
+  update() {
+    this.updatePosition();
+  }
+  onDrop() {}
+  setPosition() {
+    this.updatePosition();
+  }
+  getBottomY() {
+    return this.y;
+  }
+  // Which cage (0-5) is at this point, or -1 (the plaque counts)
+  cageAt(px, py) {
+    const rects = shelterCageRects();
+    for (let i = 0; i < rects.length; i++) {
+      const c = rects[i];
+      if (isPointInRect(px, py, c.x, c.y, c.w, c.h + 24)) return i;
+    }
+    return -1;
+  }
+  hitTest(px, py) {
+    return this.cageAt(px, py) >= 0;
+  }
+  serialize() {
+    return { classType: "ShelterKennels", id: this.id, x: this.x, y: this.y, scene: this.scene, currentCageId: null };
+  }
+  deserialize() {}
+  draw(ctx) {
+    const rects = shelterCageRects();
+    ctx.save();
+    for (let i = 0; i < rects.length; i++) {
+      const c = rects[i];
+      const r = shelter.residents[i] || null;
+      // Back of the kennel
+      ctx.fillStyle = "#3b3530";
+      ctx.fillRect(c.x, c.y, c.w, c.h);
+      ctx.fillStyle = "#5a4f45";
+      ctx.fillRect(c.x, c.y + c.h - 12, c.w, 12); // the floor of it
+      if (r) {
+        const size = Math.round(c.h * 0.95);
+        const p = _shPortrait(r, size);
+        if (p) ctx.drawImage(p, c.x + (c.w - size) / 2, c.y + c.h - size + 4);
+      } else {
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.font = "italic 12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("Empty", c.x + c.w / 2, c.y + c.h / 2);
+      }
+      // Bars
+      ctx.strokeStyle = "#9aa3a8";
+      ctx.lineWidth = 3;
+      for (let bx = c.x + 8; bx < c.x + c.w - 4; bx += 14) {
+        ctx.beginPath();
+        ctx.moveTo(bx, c.y + 2);
+        ctx.lineTo(bx, c.y + c.h - 2);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#6e777c";
+      ctx.strokeRect(c.x, c.y, c.w, c.h);
+      // The plaque
+      const py = c.y + c.h + 2;
+      ctx.fillStyle = r && shelterDaysLeft(r) <= 0 ? "#b0413e" : "#c9a84c";
+      ctx.fillRect(c.x + 8, py, c.w - 16, 20);
+      ctx.strokeStyle = "#5c4a1c";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(c.x + 8, py, c.w - 16, 20);
+      ctx.fillStyle = "#1e1a10";
+      ctx.font = "bold 12px Arial";
+      ctx.textAlign = "center";
+      const label = r ? (shelterDaysLeft(r) <= 0 ? `${r.name} · last day` : r.name) : "—";
+      ctx.fillText(typeof fitText === "function" ? fitText(ctx, label, c.w - 20) : label, c.x + c.w / 2, py + 14);
+    }
+    ctx.restore();
+  }
+  drawOffScreen(ctx) {
+    this.draw(ctx);
+  }
+}
+
+// ---- The plaque card (click a kennel) ----
+
+function openShelterCard(i) {
+  if (!shelter.residents[i]) return false;
+  shelterCardIndex = i;
+  return true;
+}
+function closeShelterCard() {
+  shelterCardIndex = null;
+}
+function isShelterCardOpen() {
+  return shelterCardIndex !== null && !!shelter.residents[shelterCardIndex];
+}
+
+function shelterCardLayout() {
+  const w = Math.min(560, width - 40);
+  const h = 420;
+  const x = Math.round(width / 2 - w / 2);
+  const y = Math.round(height / 2 - h / 2);
+  return {
+    x,
+    y,
+    w,
+    h,
+    adopt: { x: x + w - 330, y: y + h - 58, w: 180, h: 40 },
+    close: { x: x + w - 140, y: y + h - 58, w: 116, h: 40 },
+  };
+}
+
+// The plaque, as lines of plain English
+function shelterPlaqueLines(r) {
+  const what = `${r.gender === "female" ? (r.grown ? "Mare" : "Filly") : r.grown ? "Stallion" : "Colt"}, ${r.type}, ${r.ageText}`;
+  const origin = { stray: "Found as a stray", surrendered: "Given up by its owner", born: "Born here at the shelter" }[r.origin] || "";
+  const left = shelterDaysLeft(r);
+  const timesUp = left <= 0 ? `Time's up: today (Day ${r.timesUpDay}) - half price` : `Time's up: Day ${r.timesUpDay} (${left} day${left === 1 ? "" : "s"} left)`;
+  return { what, origin, notes: r.notes.map((n) => `"${n}"`), timesUp };
+}
+
+function drawShelterCard(c) {
+  if (!isShelterCardOpen()) return;
+  if (typeof ctx !== "undefined" && c !== ctx) return;
+  const r = shelter.residents[shelterCardIndex];
+  const L = shelterCardLayout();
+  c.save();
+  drawScreenPanel(c, L, { theme: "pink" });
+  // Portrait in its kennel
+  const px = L.x + 24,
+    py = L.y + 24,
+    ps = 170;
+  c.fillStyle = "#3b3530";
+  c.fillRect(px, py, ps, ps);
+  const p = _shPortrait(r, ps);
+  if (p) c.drawImage(p, px, py);
+  c.strokeStyle = "#9aa3a8";
+  c.lineWidth = 3;
+  for (let bx = px + 10; bx < px + ps - 4; bx += 18) {
+    c.beginPath();
+    c.moveTo(bx, py);
+    c.lineTo(bx, py + ps);
+    c.stroke();
+  }
+  // The plaque
+  const lines = shelterPlaqueLines(r);
+  const tx = px + ps + 24;
+  const tw = L.x + L.w - 24 - tx;
+  c.fillStyle = "#c9a84c";
+  c.fillRect(tx - 10, py - 4, tw + 20, 250);
+  c.strokeStyle = "#5c4a1c";
+  c.lineWidth = 2;
+  c.strokeRect(tx - 10, py - 4, tw + 20, 250);
+  c.fillStyle = "#1e1a10";
+  c.textAlign = "left";
+  c.textBaseline = "alphabetic";
+  c.font = "bold 24px Georgia, serif";
+  c.fillText(fitText(c, r.name, tw), tx, py + 26);
+  c.font = "15px Georgia, serif";
+  let yy = py + 54;
+  for (const line of [lines.what, lines.origin]) {
+    c.fillText(fitText(c, line, tw), tx, yy);
+    yy += 22;
+  }
+  c.font = "italic 15px Georgia, serif";
+  yy += 6;
+  for (const n of lines.notes) {
+    c.fillText(fitText(c, n, tw), tx, yy);
+    yy += 22;
+  }
+  c.font = "bold 14px Georgia, serif";
+  c.fillStyle = shelterDaysLeft(r) <= 0 ? "#8a1c16" : "#1e1a10";
+  c.fillText(fitText(c, lines.timesUp, tw), tx, py + 232);
+  // What you can't know
+  c.fillStyle = "rgba(255,255,255,0.7)";
+  c.font = "13px Arial";
+  c.fillText("The plaque is all you get to read. What it's really like, you'll find out at home.", L.x + 24, L.y + L.h - 78);
+  const fee = shelterFee(r);
+  const afford = (typeof showDebugMenu !== "undefined" && showDebugMenu) || money >= fee;
+  drawGlassButton(L.adopt.x, L.adopt.y, L.adopt.w, L.adopt.h, `Adopt ($${fee})`, { fontSize: 15, borderRadius: 10, disabled: !afford });
+  drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 15, borderRadius: 10 });
+  c.restore();
+}
+
+function handleShelterCardClick() {
+  if (!isShelterCardOpen()) return false;
+  const L = shelterCardLayout();
+  const hit = (b) => isPointInRect(mouse.x, mouse.y, b.x, b.y, b.w, b.h);
+  if (hit(L.adopt)) {
+    const r = shelter.residents[shelterCardIndex];
+    if (adoptShelterResident(r.id)) closeShelterCard();
+    return true;
+  }
+  if (hit(L.close) || !hit(L)) closeShelterCard();
+  return true;
+}
+
+registerScreen({
+  name: "shelterCard",
+  layer: 14,
+  isOpen: () => isShelterCardOpen(),
+  close: () => closeShelterCard(),
+  draw: (c) => drawShelterCard(c),
+  click: () => handleShelterCardClick(),
+  reset: () => closeShelterCard(),
+});
+
+registerSystem("shelter", updateShelter, 182);

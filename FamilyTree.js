@@ -36,7 +36,7 @@ const FAMILY_STATUS_TEXT = {
   alive: "Alive",
   dead: "Died",
   sold: "Sold",
-  "day care": "At day care",
+  "day care": "Boarding at the shelter",
   taken: "Taken by dogs",
   gone: "Gone",
   breeder: "With its breeder", // parents of bought stock (StockMarket.js)
@@ -61,7 +61,7 @@ function recordFluffy(f) {
     rec.bred = !!(f.adopted && f.growth < 0.25 && mum && mum.adopted);
     fluffyRecords[f.id] = rec;
     // A fluffy that came to you rather than being born here (StoryBook.js)
-    if (f.adopted && !rec.bred && !(f.growth < 0.25 && mum) && typeof recordStory === "function") recordStory("arrived", f, { x: "you" });
+    if (f.adopted && !rec.bred && !(f.growth < 0.25 && mum) && typeof recordStory === "function") recordStory("arrived", f, { x: f.arrivedFrom ? `you from ${f.arrivedFrom}` : "you" });
   }
   rec.age = f.age || 0;
   rec.name = (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || rec.name || null;

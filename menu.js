@@ -542,6 +542,7 @@ function handleWorldSettingsClick() {
 
     if (typeof DayCareDesk !== "undefined") {
       objects.push(new DayCareDesk("DAY_CARE"));
+      if (typeof ShelterKennels !== "undefined") objects.push(new ShelterKennels("DAY_CARE"));
     }
 
     // Spawn 100 grasses in each grassy scene

@@ -53,7 +53,8 @@ and it runs. About 55,000 lines across ~120 files.
 | `UISelling.js` | Selling: the buyer at the door (sell request card) and shift + click selling (`sellModeClick`). |
 | `UIDebug.js` | Debug mode: debug actions on fluffies, the watcher panel and the debug menu. |
 | `UIInspection.js` | The magnifying glass panel (`getFluffyInspectionInfo`, `drawInspectionModal`) and renaming. |
-| `UIDayCare.js` | The day care window. |
+| `UIDayCare.js` | The shelter's boarding window (the desk; was the day care). |
+| `Shelter.js` | **The Fluffy Shelter**: kennels of fluffies to adopt from their plaques alone, time's-up days, adoption; the `ShelterKennels` object and the plaque card. See section 9 (The shelter). |
 | `UIChatLog.js` | The chat log panel. |
 | `UIScenes.js` | **Scene portals/map** (`getScenePortals`: arrows and doors between areas) and drawing each area's background, road, fences and doors. |
 | `menu.js` | Title screen, pause menu, save/load list, "Headcanon" new-game settings. **Starting a new game** happens in `handleWorldSettingsClick` (it resets everything in `SAVED_GAME_STATE`). |
@@ -113,7 +114,7 @@ and it runs. About 55,000 lines across ~120 files.
 | `Corpses.js` | **Rotting**: corpses darken, get flies, fade and disappear with game time. See section 9 (Corpses). |
 | `GameSpeed.js` | **Fast forward**: the game clock and 1x/2x/4x/8x buttons next to "Chat Log" (F cycles). See section 9 (Fast forward). |
 | `ParkLife.js` | **Life in the park**: meadows, berry bushes and wild fluffies wandering in. See section 9 (Life in the park). |
-| `Park.js` | **Fluffy Park**: the big area bigger than the screen (Day Care Alley → right arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
+| `Park.js` | **Fluffy Park**: the big area bigger than the screen (Shelter Alley → right arrow), its camera, scrolling controls, map, scenery, and the screen-vs-world mouse switching. See section 9. |
 | `ItemRegistry.js` | **One description per item and tool**: its click area, sell price, right-click action, shop icon, whether it fits in cages, how the shop creates it, how saves re-create it, and for tools their names, pictures and toolbar slot. See section 6. |
 | `Persistence.js` | Saving and loading (`saveGame`, `loadGame`, `loadObject`). Saves live in the **browser's IndexedDB**, not in files. They belong to that browser and that address, so saves made from `file://` won't show when the game is served another way. `saveFormatVersion` + migrations handle old saves. |
 | `state_config.js` | Fluffy animation poses (`ANIMATION_STATES`) and the behaviour state rules (`BEHAVIOR_RULES`: how long each state lasts and what comes next). |
@@ -152,7 +153,7 @@ Several things are now one line to add, in the file of the feature itself:
   click })` at the end of its file (`Screens.js`). Drawing, "is a screen
   open?", clicks (top screen first), Esc and closing on new game/load all
   come from the list. Layers: 5 magnifying glass, 6 trick menu, 10 family tree, 11 Gene
-  Lab, 12 orders, 13 day care, 20 goals, 21 help, 22 records, 23 vet, 29
+  Lab, 12 orders, 13 shelter boarding, 14 shelter plaque, 20 goals, 21 help, 22 records, 23 vet, 29
   show results, 30 morning report, 31 naming pop-up.
 - **Something that updates every step**: `registerSystem(name, update,
   order)` at the end of its file (`Systems.js`); script.js
@@ -826,12 +827,12 @@ memberIds, colorIndex, formedAt }`. `updateHerds` runs every 3 seconds:
   spatial grid for the "who's near whom" checks.
 
 ### Fluffy Park and the camera (`Park.js`)
-The park (`PARK`, from the Day Care Alley's right arrow) is 3 screens wide and 2.4
+The park (`PARK`, from the Shelter Alley's right arrow) is 3 screens wide and 2.4
 screens tall (`PARK_W`, `PARK_H`). You look around by dragging the grass,
 the mouse wheel / trackpad, WASD or the arrow keys (in the park WASD looks
 around instead of travelling), clicking or dragging on the map in the
 corner, or carrying something to the screen edge. The exit arrow on the
-left goes back to Day Care Alley; clicking it while carrying something takes
+left goes back to Shelter Alley; clicking it while carrying something takes
 you *and* it (anywhere else that would throw it through on its own).
 - **The camera** (`camera.x/y`) only matters in the park. Everything there
   has world positions; `render()` in `script.js` draws the world through
@@ -1050,7 +1051,7 @@ times to 5.
   glass shows them in a "Trauma" row.
 
 ### Park location
-The park is now reached from the Day Care Alley's right arrow (it used to be
+The park is now reached from the Shelter Alley's right arrow (it used to be
 the River's left arrow, which meant fluffies carried out of the park landed
 in the river). Its exit is the left arrow back to the alley, and you arrive
 on the park's left side.
@@ -2318,6 +2319,55 @@ three stallions in three hours.
   mares 0-2 (only when no other mare was free); no grown fluffy starved or
   was killed by the Smarty (before: 2-3 starved, 3-8 killed).
 - Tests: `tests/smarty.test.js`.
+
+### The shelter (`Shelter.js`, was the day care)
+Through the door in Shelter Alley (the scene is still `DAY_CARE`, the alley
+`ALLEY_DAY_CARE`, so old saves and links keep working).
+- **Boarding** (the desk, `UIDayCare.js`, `dayCareFluffies`): as before, but
+  `DAY_CARE_MOVE_COST` is $100 to drop off or pick up and boarding is
+  `DAY_CARE_RECURRING_FEE_PER_FLUFFY` ($30) a day each, charged each morning
+  with the bills (`dailyBills().boarding`, Bills.js) instead of $50 a minute.
+  Both are placeholders for the balance pass.
+- **Kennels** (`ShelterKennels`, an object like the desk; made on a new game
+  and on load): `SHELTER_CAGES` (6) cages, three each side of the desk
+  (`shelterCageRects`), each with a portrait through the bars and a name
+  plate (red on its last day). Clicking one opens the plaque card
+  (screen "shelterCard", layer 14): name; "Mare/Filly/Stallion/Colt, type,
+  about N months/years old"; where it came from (stray, given up by its
+  owner, born at the shelter); one or two staff notes; the time's-up day; and
+  Adopt / Close. Residents aren't in `fluffies`, so there's no magnifying
+  glass on them - the plaque is all you get.
+- **Residents** (`shelter.residents`, saved): `makeShelterResident` makes a
+  real fluffy and keeps it serialized. Coat: `SHELTER_NICE_COAT_CHANCE`
+  (12%) rolled for a bright coat; otherwise 65% near the browns
+  (`generateRandomGenes` with a low body quality), else random but re-rolled
+  if bright. Type: mostly earthy, 10% unicorn, 10% pegasus;
+  `SHELTER_HIDDEN_GENES_CHANCE` (8%) carries 3 of 5 wing or horn genes it
+  doesn't show. Nature: `SHELTER_GOOD_NATURE_CHANCE` (12%) gentle and social
+  (trust 0.4-0.6); otherwise grumpy (temper genes 55-100% on), often timid,
+  trust 0.08-0.33, sometimes afraid of people, poorly litter trained,
+  `SHELTER_SMARTY_CHANCE` (8%) of grown ones a Smarty. Age via `setSpawnAge`
+  (3 to 36 days; given-up ones up to 60). Names from `SHELTER_NAMES`, or an
+  owner's name (`OWNER_NAMES`) for given-up ones.
+- **Staff notes** (`_shNotes`): picked from what's true (`SHELTER_NOTES`:
+  grumpy = "Spirited!", "Needs an experienced owner"; timid, loner, wary,
+  messy, Smarty = "Very confident!"...), filler ("Looking for a forever
+  home!") when there's nothing to say, and with `SHELTER_NOTE_WRONG` (15%)
+  a flattering note that isn't true.
+- **Mornings** (`updateShelter`, system "shelter" order 182; `shelterNewDay`
+  when `reportDayIndex` changes): residents past `timesUpDay` are gone
+  ("Time ran out for X at the shelter." in the day report news,
+  `shelter.lost`); then `SHELTER_ARRIVALS` (1-2) come in, up to 6
+  (`SHELTER_START` 4 the first time). Stays last `SHELTER_STAY_DAYS` (3-5
+  days). Residents age and grow while they wait.
+- **Adopting** (`adoptShelterResident`): `SHELTER_ADOPT_FEE` ($60,
+  placeholder), half on the time's-up day (`shelterFee`). The fluffy comes out
+  by the desk as yours (`adopted`), named: `shelter.named` ("Named by: the
+  shelter") or `previousOwnerNames` for given-up ones ("its old owner"). The
+  family book notes `boughtFrom: "the Fluffy Shelter"`, and the story book
+  says it "came to you from the shelter" (`f.arrivedFrom`,
+  FamilyTree.recordFluffy). Take it home yourself.
+- Tests: `tests/shelter.test.js`.
 
 ### The story book (Phase 0, stage 3)
 The foundation for life stories (design doc Phase 1): one shared record,

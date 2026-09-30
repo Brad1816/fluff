@@ -6,6 +6,8 @@
 // before (dailyBills):
 //   rent      BILL_RENT, plus BILL_PER_ROOM for each extra room you've bought
 //   upkeep    BILL_PER_FLUFFY for each of your fluffies (a foal is half)
+//   boarding  DAY_CARE_RECURRING_FEE_PER_FLUFFY for each one boarding at the
+//             shelter (Shelter.js)
 // Anything you can't pay is owed (billsOwed, saved) and taken first from
 // the next mornings' money. The day report shows the bill, and what you owe.
 // Nothing bad happens yet when you owe money; that's for phase 6.
@@ -30,12 +32,19 @@ function _billsFluffies() {
   return n;
 }
 
-// { rent, rooms, fluffies, total }
+// { rent, rooms, fluffies, boarding?, total }
 function dailyBills() {
   const rent = BILL_RENT;
   const rooms = BILL_PER_ROOM * _billsRooms();
   const pets = Math.round(BILL_PER_FLUFFY * _billsFluffies());
-  return { rent, rooms, fluffies: pets, total: rent + rooms + pets };
+  const bill = { rent, rooms, fluffies: pets, total: rent + rooms + pets };
+  // Fluffies boarding at the shelter (UIDayCare.js)
+  const boarders = typeof dayCareFluffies !== "undefined" && Array.isArray(dayCareFluffies) ? dayCareFluffies.length : 0;
+  if (boarders > 0) {
+    bill.boarding = boarders * DAY_CARE_RECURRING_FEE_PER_FLUFFY;
+    bill.total += bill.boarding;
+  }
+  return bill;
 }
 
 // Every morning (DayReport.js, before the day's card is made).
@@ -60,6 +69,7 @@ function describeBills(b) {
   const parts = [`rent $${b.rent}`];
   if (b.rooms) parts.push(`rooms $${b.rooms}`);
   if (b.fluffies) parts.push(`fluffies $${b.fluffies}`);
+  if (b.boarding) parts.push(`boarding $${b.boarding}`);
   let t = `-$${b.total.toLocaleString()} (${parts.join(", ")})`;
   if (b.owed > 0) t += ` · you owe $${b.owed.toLocaleString()}`;
   return t;

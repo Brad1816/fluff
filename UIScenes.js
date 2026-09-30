@@ -10,7 +10,7 @@ function playerQuartersAndNotBackyard(scene) {
 function getScenePortals(scene) {
   const portals = [];
 
-  // Fluffy Park (Park.js): its only exit is back to the day care alley
+  // Fluffy Park (Park.js): its only exit is back to the shelter alley
   if (typeof isCameraScene === "function" && isCameraScene(scene)) {
     return [
       {
@@ -20,7 +20,7 @@ function getScenePortals(scene) {
         w: 60,
         h: 80,
         target: "ALLEY_DAY_CARE",
-        label: "Back to Day Care Alley",
+        label: "Back to Shelter Alley",
       },
     ];
   }
@@ -204,10 +204,10 @@ function getScenePortals(scene) {
       w: 60,
       h: 80,
       target: "ALLEY_DAY_CARE",
-      label: "To Day Care Alley",
+      label: "To Shelter Alley",
     });
   } else if (scene === "ALLEY_DAY_CARE") {
-    // Main Door to Day Care
+    // Main door to the shelter (Shelter.js; the scene is still "DAY_CARE")
     portals.push({
       type: "door",
       x: doorRect.x,
@@ -215,7 +215,7 @@ function getScenePortals(scene) {
       w: doorRect.w,
       h: doorRect.h,
       target: "DAY_CARE",
-      label: "Enter day care",
+      label: "Enter the shelter",
     });
     // Left Arrow -> ALLEY
     portals.push({

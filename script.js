@@ -1393,25 +1393,7 @@ function updateDayCare(dt) {
     }
   }
 
-  // 2. Recurring cost: 50 money per fluffy every minute
-  if (dayCareFluffies.length > 0) {
-    dayCareFeeTimer -= dt;
-    if (dayCareFeeTimer <= 0) {
-      dayCareFeeTimer = DAY_CARE_FEE_INTERVAL;
-      const totalFee =
-        dayCareFluffies.length * DAY_CARE_RECURRING_FEE_PER_FLUFFY;
-      if (!showDebugMenu) {
-        money = Math.max(0, money - totalFee);
-      }
-      if (typeof addUIMessage !== "undefined") {
-        addUIMessage(
-          `Day Care Fee: Paid $${totalFee.toLocaleString()} ($${DAY_CARE_RECURRING_FEE_PER_FLUFFY}/fluffy)`,
-        );
-      }
-    }
-  } else {
-    dayCareFeeTimer = DAY_CARE_FEE_INTERVAL;
-  }
+  // (the boarding fee is charged each morning with the bills, Bills.js)
 }
 
 function updateSimulation(dt) {

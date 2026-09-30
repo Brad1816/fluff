@@ -346,13 +346,13 @@ let itemMenuPage = 0;
 let relCheat = false;
 
 let dayCareFluffies = [];
-let dayCareFeeTimer = 60.0;
 let dayCareModalOpen = false;
 let dayCareBroughtPage = 0;
 let dayCareStoredPage = 0;
-const DAY_CARE_MOVE_COST = 5000;
-const DAY_CARE_RECURRING_FEE_PER_FLUFFY = 50;
-const DAY_CARE_FEE_INTERVAL = 60.0;
+// Shelter boarding (placeholders for the balance pass): to drop off or pick
+// up, and a day for each boarder (charged with the bills, Bills.js)
+const DAY_CARE_MOVE_COST = 100;
+const DAY_CARE_RECURRING_FEE_PER_FLUFFY = 30;
 
 let gameState = "TITLE";
 let titleImageKey = Math.random() < 0.1 ? "title_2" : "title_1";

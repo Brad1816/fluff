@@ -739,6 +739,7 @@ const SAVED_CLASSES = {
   Syringe: (d) => new Syringe(d.scene),
   CattleProd: (d) => new CattleProd(d.scene),
   DayCareDesk: (d) => new DayCareDesk(d.scene),
+  ShelterKennels: (d) => new ShelterKennels(d.scene), // Shelter.js
 };
 
 // ---------------------------------------------------------------------------

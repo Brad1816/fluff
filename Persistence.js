@@ -216,7 +216,7 @@ const SAVED_GAME_STATE = [
   { name: "nextHerdId", get: () => nextHerdId, set: (v) => (nextHerdId = v), fresh: () => 1 },
   { name: "alleyBoxSpawnTimer", get: () => alleyBoxSpawnTimer, set: (v) => (alleyBoxSpawnTimer = v), fresh: () => 60.0 },
   { name: "dayCareFluffies", get: () => dayCareFluffies, set: (v) => (dayCareFluffies = v), fresh: () => [] },
-  { name: "dayCareFeeTimer", get: () => dayCareFeeTimer, set: (v) => (dayCareFeeTimer = v), fresh: () => 60.0 },
+  { name: "shelter", get: () => shelter, set: (v) => { shelter = v && typeof v === "object" ? v : freshShelter(); _shelterPortraits = {}; }, fresh: () => freshShelter() }, // Shelter.js
 ];
 
 // Things that are NOT saved but belong to one game, so they're cleared when
@@ -645,7 +645,11 @@ async function loadGame(slotName) {
     if (!hasDesk) {
       objects.push(new DayCareDesk("DAY_CARE"));
     }
+  }  // ...and the shelter's kennels (Shelter.js)
+  if (typeof ShelterKennels !== "undefined" && !objects.some((o) => o instanceof ShelterKennels)) {
+    objects.push(new ShelterKennels("DAY_CARE"));
   }
+
 
   // Undo the automatic names from one earlier build (Names.js)
   if (typeof cleanUpAutoNames === "function") cleanUpAutoNames();

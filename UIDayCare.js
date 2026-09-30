@@ -1,5 +1,6 @@
 // ---------------------------------------------------------------------------
-// The day care window. Split out of UI.js.
+// The shelter's boarding window (the desk; was the day care). Split out of
+// UI.js. Adopting from the kennels is Shelter.js.
 // ---------------------------------------------------------------------------
 
 function drawDayCareModal(ctx) {
@@ -28,7 +29,7 @@ function drawDayCareModal(ctx) {
   }
 
   // Title
-  const titleText = "Fluffy Day Care";
+  const titleText = "Shelter Boarding";
   ctx.fillStyle = "white";
   ctx.font = "bold 28px Arial";
   ctx.textAlign = "center";
@@ -41,7 +42,7 @@ function drawDayCareModal(ctx) {
   // Subtitle info
   ctx.font = "bold 13px Arial";
   ctx.textAlign = "center";
-  const subText = `Deposit / Withdraw: $${DAY_CARE_MOVE_COST.toLocaleString()} | Boarding: $${DAY_CARE_RECURRING_FEE_PER_FLUFFY}/min per fluffy | Money: $${money.toLocaleString()}`;
+  const subText = `Drop off / pick up: $${DAY_CARE_MOVE_COST.toLocaleString()} | Boarding: $${DAY_CARE_RECURRING_FEE_PER_FLUFFY} a day each (with the bills) | Money: $${money.toLocaleString()}`;
   ctx.fillStyle = "#ffdd55";
   ctx.strokeStyle = "black";
   ctx.lineWidth = 2;
@@ -80,13 +81,13 @@ function drawDayCareModal(ctx) {
   ctx.fillStyle = "#ffffff";
   ctx.strokeStyle = "black";
   ctx.lineWidth = 2;
-  const col1Title = `Brought Fluffies (${broughtFluffies.length})`;
+  const col1Title = `Your fluffies here (${broughtFluffies.length})`;
   ctx.strokeText(col1Title, col1X, colY + 14);
   ctx.fillText(col1Title, col1X, colY + 14);
 
   ctx.font = "12px Arial";
   ctx.fillStyle = "#aaaaaa";
-  ctx.fillText("Adopted fluffies present in room", col1X, colY + 30);
+  ctx.fillText("Yours, in this room: click to board", col1X, colY + 30);
 
   const listStartY = colY + 40;
   const itemH = 50;
@@ -97,7 +98,7 @@ function drawDayCareModal(ctx) {
     ctx.fillStyle = "#888888";
     ctx.textAlign = "center";
     ctx.fillText(
-      "No adopted fluffies brought here.",
+      "Bring your fluffies in to board them.",
       col1X + colW / 2,
       listStartY + 55,
     );
@@ -184,8 +185,8 @@ function drawDayCareModal(ctx) {
       ctx.textAlign = "right";
       ctx.font = "bold 12px Arial";
       ctx.fillStyle = canAfford ? "#88ff88" : "#ff8888";
-      ctx.strokeText("Deposit →", col1X + colW - 10, itemY + 20);
-      ctx.fillText("Deposit →", col1X + colW - 10, itemY + 20);
+      ctx.strokeText("Board →", col1X + colW - 10, itemY + 20);
+      ctx.fillText("Board →", col1X + colW - 10, itemY + 20);
 
       ctx.font = "11px Arial";
       ctx.fillStyle = "#888888";
@@ -199,13 +200,13 @@ function drawDayCareModal(ctx) {
   ctx.fillStyle = "#ffffff";
   ctx.strokeStyle = "black";
   ctx.lineWidth = 2;
-  const col2Title = `Day Care Fluffies (${dayCareFluffies.length})`;
+  const col2Title = `Boarding (${dayCareFluffies.length})`;
   ctx.strokeText(col2Title, col2X, colY + 14);
   ctx.fillText(col2Title, col2X, colY + 14);
 
   ctx.font = "12px Arial";
   ctx.fillStyle = "#aaaaaa";
-  ctx.fillText("Fluffies boarded in day care", col2X, colY + 30);
+  ctx.fillText("Click to pick one up", col2X, colY + 30);
 
   if (dayCareFluffies.length === 0) {
     ctx.font = "italic 14px Arial";
@@ -296,8 +297,8 @@ function drawDayCareModal(ctx) {
       ctx.textAlign = "right";
       ctx.font = "bold 12px Arial";
       ctx.fillStyle = canAfford ? "#88ccff" : "#ff8888";
-      ctx.strokeText("← Withdraw", col2X + colW - 10, itemY + 20);
-      ctx.fillText("← Withdraw", col2X + colW - 10, itemY + 20);
+      ctx.strokeText("← Pick up", col2X + colW - 10, itemY + 20);
+      ctx.fillText("← Pick up", col2X + colW - 10, itemY + 20);
 
       ctx.font = "11px Arial";
       ctx.fillStyle = "#888888";
@@ -486,7 +487,7 @@ function handleDayCareModalClick() {
       const f = broughtFluffies[idx];
       if (!f.adopted) {
         if (typeof addUIMessage !== "undefined") {
-          addUIMessage("Only adopted fluffies can be placed in day care!");
+          addUIMessage("Only your own fluffies can be boarded!");
         }
         return true;
       }
@@ -525,7 +526,7 @@ function handleDayCareModalClick() {
 
       if (typeof addUIMessage !== "undefined") {
         addUIMessage(
-          `Placed ${data.name} into Day Care (-$${DAY_CARE_MOVE_COST.toLocaleString()})`,
+          `${data.name || "Your fluffy"} is boarding at the shelter (-$${DAY_CARE_MOVE_COST.toLocaleString()})`,
         );
       }
       return true;
@@ -586,7 +587,7 @@ function handleDayCareModalClick() {
           : "Fluffy";
       if (typeof addUIMessage !== "undefined") {
         addUIMessage(
-          `Retrieved ${hName} from Day Care (-$${DAY_CARE_MOVE_COST.toLocaleString()})`,
+          `Picked up ${hName} from boarding (-$${DAY_CARE_MOVE_COST.toLocaleString()})`,
         );
       }
       return true;
