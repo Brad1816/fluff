@@ -1206,6 +1206,8 @@ const CARDBOARD_BOX_SLEEP_OFFSET = -20;
 
 // Happiness Constants
 const WAN_DIE_THRESHOLD = 0.0;
+const CAGE_EAT_REACH = 110; // px side to side: close enough to eat from a bowl in the same cage (HorseUpdate.js)
+const HUNGER_CAGE_FLOOR = 0.2; // hunger and cages alone don't push happiness below this (HorseUpdate.js)
 const HAPPINESS_MISERABLE_THRESHOLD = 0.25;
 const HAPPINESS_SAD_THRESHOLD = 0.4;
 const HAPPINESS_HAPPY_THRESHOLD = 0.7;

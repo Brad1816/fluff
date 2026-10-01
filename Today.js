@@ -22,6 +22,7 @@
 const TODAY_W = 820;
 const TODAY_ROW_H = 44;
 const TODAY_CACHE_MS = 500;
+const GIVING_UP_SOON = 0.15; // happiness: close to "wan die"
 
 let todayOpen = false;
 let todayPage = 0;
@@ -83,6 +84,9 @@ function todayItems() {
   for (const f of own) {
     const n = _tdName(f);
     if (f.hunger < 0.25) add("urgent", `${n} is starving.`, f);
+    // "Wan die": it's given up and won't eat (for good); close to it
+    if (f.happiness <= WAN_DIE_THRESHOLD) add("urgent", `${n} has given up ("wan die") and won't eat.`, f);
+    else if (f.happiness < GIVING_UP_SOON) add("urgent", `${n} is close to giving up - cheer it up before it stops eating.`, f);
     if (typeof isFrightened === "function" && isFrightened(f)) add("urgent", `${n} is frightened - pick it up or sit with it.`, f);
     if (f.bleedingTimer > 0) add("urgent", `${n} is bleeding.`, f);
     const ill = typeof vetProblems === "function" ? vetProblems(f).map((p) => p[0]) : [];

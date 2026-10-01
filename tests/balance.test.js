@@ -403,4 +403,74 @@ module.exports = [
       checkEqual(JSON.stringify(r), JSON.stringify({ mum: "PARK", baby: "INDOORS", hungry: "INDOORS" }), "who went");
     },
   },
+  {
+    name: "balance: hunger and a cage wear happiness down to a fifth, not to the edge of giving up; Today warns before and after",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const cage = new Cage("INDOORS");
+        cage.x = 600;
+        cage.y = 450;
+        objects.push(cage);
+        cage.update(0);
+        const f = __bl(600);
+        f.y = cage.bounds.bottom - 40;
+        f.currentCage = cage;
+        f.brain.think = () => {};
+        f.happiness = 0.3;
+        for (let i = 0; i < 600; i++) {
+          f.hunger = 0.3;
+          f.update(1);
+        }
+        const out = { worn: +f.happiness.toFixed(3) };
+        objects.splice(objects.indexOf(cage), 1);
+        f.currentCage = null;
+        fluffyNames[f.id] = "Moth";
+        f.happiness = 0.1;
+        _todayCache = null;
+        out.close = todayItems().some((i) => /Moth is close to giving up/.test(i.text));
+        f.happiness = 0;
+        _todayCache = null;
+        out.gone = todayItems().some((i) => /Moth has given up/.test(i.text));
+        return out;
+      }, SETUP);
+      check(r.worn >= 0.199 && r.worn < 0.35, `worn down to about a fifth: ${r.worn}`);
+      check(r.close, "close to giving up: warned");
+      check(r.gone, "given up: warned");
+    },
+  },
+  {
+    name: "balance: a hungry fluffy in a cage eats from a bowl set by the bars",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const cage = new Cage("INDOORS");
+        cage.x = 600;
+        cage.y = 450;
+        objects.push(cage);
+        cage.update(0);
+        const bowl = new Bowl("bowl", "INDOORS");
+        bowl.x = cage.bounds.right - 5;
+        bowl.y = cage.bounds.bottom - 20;
+        bowl.currentCage = cage;
+        objects.push(bowl);
+        bowl.update && bowl.update(0.01);
+        bowl.fill(5, "kibble");
+        const f = __bl(cage.x - 60);
+        f.y = cage.bounds.bottom - 40;
+        f.currentCage = cage;
+        f.hunger = 0.15;
+        let ate = false;
+        for (let i = 0; i < 60 * 90 && !ate; i++) {
+          updateSimulation(1 / 60);
+          if (f.hunger > 0.5) ate = true;
+        }
+        const out = { ate, food: bowl.food, gap: Math.round(Math.abs(f.x - bowl.x)) };
+        objects.splice(objects.indexOf(bowl), 1);
+        objects.splice(objects.indexOf(cage), 1);
+        return out;
+      }, SETUP);
+      check(r.ate, `it ate (bowl ${r.food}, ${r.gap}px apart)`);
+    },
+  },
 ];

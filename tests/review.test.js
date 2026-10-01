@@ -202,7 +202,11 @@ module.exports = [
         const mum = __rv("INDOORS", 300);
         const baby = __rv("INDOORS", 350, "male", 0.05);
         baby.motherId = mum.id;
+        // (whether mum would turn it away depends on its random coat: not what's tested here)
+        const realWont = window.mumWontFeed;
+        window.mumWontFeed = () => false;
         startOuting("INDOORS");
+        window.mumWontFeed = realWont;
         out.babyCame = baby.scene === "PARK";
         endOuting("home");
         changeScene("INDOORS");

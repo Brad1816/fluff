@@ -442,7 +442,11 @@ addHorseMethods({
             if (typeof fenceCanReachThing === "function" && !fenceCanReachThing(this, bowl)) continue;
 
             const dist = Math.sqrt((this.x - bowl.x) ** 2 + (this.y - bowl.y) ** 2);
-            if (dist < 50) {
+            // In a cage both sit on the floor, and a big fluffy can't squeeze
+            // up to a bowl by the bars: side by side is close enough (caged
+            // fluffies starved beside full bowls in the long test games)
+            const reach = this.currentCage && this.currentCage === bowl.currentCage ? Math.abs(this.x - bowl.x) < CAGE_EAT_REACH : dist < 50;
+            if (reach) {
               // Won't touch food it really dislikes unless starving (Diet.js)
               const foodType = typeof foodTypeOf === "function" ? foodTypeOf(bowl) : bowl.foodType;
               if (typeof refusesFood === "function" && refusesFood(this, foodType)) {
@@ -1122,16 +1126,19 @@ addHorseMethods({
         this.sleepDeprivation = Math.min(1.0, this.sleepDeprivation + (dt / 120) * tireRate); // Takes 5 mins to get fully tired
       }
 
-      // Hunger penalty: < 0.4 hunger -> -0.2 happiness per minute (not below WAN_DIE_THRESHOLD)
-      if (this.hunger < 0.4 && this.happiness > WAN_DIE_THRESHOLD + 0.05) {
+      // Hunger penalty: < 0.4 hunger -> -0.2 happiness per minute (not below
+      // HUNGER_CAGE_FLOOR: hunger and cages wear a fluffy down, but leave room
+      // for a bad moment without tipping it into "wan die" - at 0.05 the next
+      // knock, like one forced mating, did, and a caged mill starved in a day)
+      if (this.hunger < 0.4 && this.happiness > HUNGER_CAGE_FLOOR) {
         const decrease = (0.2 / 60) * dt;
-        this.changeHappiness(-decrease);
+        this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR));
       }
 
-      // Cage penalty: -0.1 per minute (not below WAN_DIE_THRESHOLD)
-      if ((this.currentCage || this.placedOn instanceof LitterpalBox) && this.happiness > WAN_DIE_THRESHOLD + 0.05) {
+      // Cage penalty: -0.1 per minute (not below HUNGER_CAGE_FLOOR)
+      if ((this.currentCage || this.placedOn instanceof LitterpalBox) && this.happiness > HUNGER_CAGE_FLOOR) {
         const decrease = (0.1 / 60) * dt;
-        this.changeHappiness(-decrease);
+        this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR));
       }
       this.changeHappiness(0); // Clamp and trigger rule logic if needed
 
