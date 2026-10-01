@@ -1770,6 +1770,15 @@ function render() {
     ...visibleCars,
   ];
 
+  const _bottomY = new Map();
+  const _bottomYOf = (o) => {
+    let y = _bottomY.get(o);
+    if (y === undefined) {
+      y = o.getBottomY();
+      _bottomY.set(o, y);
+    }
+    return y;
+  };
   renderables.sort((a, b) => {
     // If Y is equal, check for cage containment
     if (typeof Cage !== "undefined") {
@@ -1825,9 +1834,10 @@ function render() {
     if (a.isDragging && !b.isDragging) return 1;
     if (b.isDragging && !a.isDragging) return -1;
 
-    // Y-Sorting
-    const ay = a.getBottomY();
-    const by = b.getBottomY();
+    // Y-Sorting (each one's bottom worked out once per frame, not on every
+    // comparison: a fluffy's is costly)
+    const ay = _bottomYOf(a);
+    const by = _bottomYOf(b);
 
     return ay - by;
   });

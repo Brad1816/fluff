@@ -49,7 +49,8 @@ addHorseMethods({
   _updateMovementAndMums(dt) {
     if (this.isAlive) {
       // Mother chasing grabbed baby logic
-      if (!this.isDragging && !this.placedOn && !this.tooYoungToWalk() && this.canSee()) {
+      // (only while something's being carried: it searched everyone, every step)
+      if ((typeof isGlobalDragging === "undefined" || isGlobalDragging) && !this.isDragging && !this.placedOn && !this.tooYoungToWalk() && this.canSee()) {
         const rels = relationships[this.id];
 
         if (rels) {
@@ -1238,8 +1239,12 @@ addHorseMethods({
   },
 
   // Colourist mums attacking foals they think are poopie
-  _updateColoristMum() {
-    // Proactive colorist mom attack logic
+  _updateColoristMum(dt = 1 / 60) {
+    // Proactive colorist mom attack logic (looked at 4 times a second: it
+    // searched every fluffy for every mare on every step)
+    this._coloristT = (this._coloristT ?? 0) - dt;
+    if (this._coloristT > 0) return;
+    this._coloristT = 0.2 + Math.random() * 0.1; // (spread out)
     if (
       worldSettings.colorism &&
       this.isAlive &&

@@ -74,6 +74,9 @@ function notifyViolence(
   }
 }
 
+const THINK_EVERY_HERE = 0.05; // seconds between a fluffy's decisions where you're looking
+const THINK_EVERY_AWAY = 0.1; // ...and elsewhere
+
 class Horse {
   get layout() {
     return this.renderer.layout;
@@ -1157,6 +1160,8 @@ class Horse {
     ) {
       this.currentCage = null;
     }
+    // (working out the body's extents is costly: only when it's in a cage)
+    if (!this.currentCage) return;
 
     const extents = this.positioning.getExtentsForCage();
     const localLeft = extents.left - this.x;
@@ -1328,7 +1333,7 @@ class Horse {
     }
 
     // Colourist mums attacking foals they think are poopie
-    this._updateColoristMum();
+    this._updateColoristMum(dt);
 
     this.physics.updateTablePhysics(dt);
 
@@ -1436,17 +1441,15 @@ class Horse {
 
       this.isFrantic = this.calculateIsFrantic();
 
-      // Let the brain decide on desires. Fluffies in the area you're looking
-      // at think every frame; elsewhere 10 times a second is plenty (keeps
-      // a busy park from slowing the game down)
-      if (this.scene === currentScene) {
+      // Let the brain decide on desires: 20 times a second in the area
+      // you're looking at (quicker than you can see; every step used to be
+      // most of a crowded room's cost), 10 elsewhere. Spread out so they
+      // don't all think on the same step.
+      const thinkEvery = this.scene === currentScene ? THINK_EVERY_HERE : THINK_EVERY_AWAY;
+      this._thinkTimer = Math.min(thinkEvery, (this._thinkTimer ?? Math.random() * thinkEvery) - dt);
+      if (this._thinkTimer <= 0) {
+        this._thinkTimer += thinkEvery;
         this.brain.think(dt);
-      } else {
-        this._thinkTimer = (this._thinkTimer ?? Math.random() * 0.1) - dt;
-        if (this._thinkTimer <= 0) {
-          this._thinkTimer += 0.1;
-          this.brain.think(dt);
-        }
       }
 
       // Update physical state based on hunger
@@ -1568,9 +1571,11 @@ class Horse {
     // Smoke rising from a smoking fluffy
     this._updateSmoke(dt);
 
-    // Body layout for drawing. Unseen fluffies skip it: anything that needs
-    // their size (getExtentsForCage) works it out when it asks.
-    if (seen) this.updateLayout();
+    // Body layout for drawing: worked out when it's next drawn (once a
+    // frame, not on every step - at 8x that was most of a crowded room's
+    // cost). Anything that needs its size (getExtentsForCage) works it out
+    // when it asks.
+    if (seen) this._layoutDirty = true;
   }
 
   nextStateGivenIdle(dt) {
@@ -1756,6 +1761,10 @@ class Horse {
   }
 
   draw(ctx, clip = null) {
+    if (this._layoutDirty || !this.layout) {
+      this._layoutDirty = false;
+      this.updateLayout();
+    }
     if (!clip && this.drowningTimer > 0) {
       clip = { top: 1.0 - this.drowningTimer / 5 };
     }

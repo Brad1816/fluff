@@ -19,6 +19,7 @@ const GAME_SPEEDS = [1, 2, 4, 8];
 let gameSpeed = 1;
 let actualGameSpeed = 1; // what we managed last frame (shown when it's behind)
 const FAST_FORWARD_BUDGET_MS = 25; // at most this much work per frame
+const FAST_FORWARD_STEP = 1 / 30; // game seconds per step at 2x and up
 
 function setGameSpeed(s) {
   if (GAME_SPEEDS.includes(s)) gameSpeed = s;
@@ -39,7 +40,9 @@ function runFastForward(realElapsed, fixedStep) {
   const want = extra;
   const deadline = performance.now() + FAST_FORWARD_BUDGET_MS;
   while (extra > 1e-9 && performance.now() < deadline && gameState === "PLAYING") {
-    const dt = Math.min(extra, fixedStep);
+    // (bigger steps when going fast: half the work for the same game time;
+    // the long test games ran on these for 40 days without trouble)
+    const dt = Math.min(extra, Math.max(fixedStep, FAST_FORWARD_STEP));
     updateSimulation(dt);
     extra -= dt;
   }

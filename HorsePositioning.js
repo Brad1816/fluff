@@ -1524,10 +1524,10 @@ class HorsePositioning {
     let minDist = Infinity;
     for (const f of fluffies) {
       if (
+        f.chaseTarget === this.horse && // (the cheap test first)
         f.isAlive &&
         f.scene === this.horse.scene &&
-        (f.isSmarty() || f.isUnderAphrodisiac()) &&
-        f.chaseTarget === this.horse
+        (f.isSmarty() || f.isUnderAphrodisiac())
       ) {
         const d = Math.sqrt(
           (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
