@@ -15,6 +15,9 @@
 // Chips at the top switch each kind on and off. Hover a fluffy to light up
 // its lines; click it to see everything about its friends and enemies on
 // the right, and "Show me" to go to it.
+// Zoom: the mouse wheel over the map (about the pointer), or the + / - / Fit
+// buttons in its corner; drag the map to move about when zoomed in
+// (relMapView, REL_ZOOM_MAX).
 // ---------------------------------------------------------------------------
 
 const REL_LOVE = 0.5; // liking for a love line
@@ -39,10 +42,15 @@ let relMapFilters = { love: true, family: true, grudge: true, fear: true, gossip
 let _relCache = null; // { at, people, groups, edges }
 let _relPortraits = {}; // id:size -> canvas
 let _relPortraitAt = 0;
+let relMapView = { zoom: 1, x: 0, y: 0 }; // zoom, and how far it's moved (px)
+let _relPan = null; // dragging the map: { sx, sy, x, y }
+const REL_ZOOM_MAX = 4;
+const REL_ZOOM_STEP = 1.25; // each wheel notch or button press
 
 function openRelationshipMap(focus = null) {
   relMapOpen = true;
   relMapSel = focus && focus.id !== undefined ? focus.id : null;
+  relMapView = { zoom: 1, x: 0, y: 0 };
   _relCache = null;
   _relPortraits = {};
 }
@@ -231,7 +239,26 @@ function getRelMapLayout() {
   const pane = { x: paneX, y: y + 60, w: side, h: h - 60 - 62 };
   const data = relMapData();
   const nodes = _relNodePositions(data, graph);
+  // Zoomed in: everything moved and scaled about the middle of the map
+  const view = _relViewOf(graph);
+  if (view.z !== 1 || relMapView.x || relMapView.y) {
+    for (const n of nodes.values()) {
+      const p = view.at(n.x, n.y);
+      n.x = p.x;
+      n.y = p.y;
+      n.r *= view.z;
+    }
+  }
+  const youAt = view.at(graph.x + graph.w / 2, graph.y + graph.h / 2);
+  const zb = 30;
+  const zoomBtns = [
+    { id: "in", label: "+", x: graph.x + graph.w - 3 * (zb + 6) - 4, y: graph.y + 8, w: zb, h: zb },
+    { id: "out", label: "\u2212", x: graph.x + graph.w - 2 * (zb + 6) - 4, y: graph.y + 8, w: zb, h: zb },
+    { id: "fit", label: "Fit", x: graph.x + graph.w - (zb + 6) - 4, y: graph.y + 8, w: zb + 6, h: zb },
+  ];
   return {
+    view,
+    zoomBtns,
     x,
     y,
     w,
@@ -240,10 +267,77 @@ function getRelMapLayout() {
     pane,
     chips,
     nodes,
-    you: relMapFilters.you ? { x: graph.x + graph.w / 2, y: graph.y + graph.h / 2, r: 24 } : null,
+    you: relMapFilters.you ? { x: youAt.x, y: youAt.y, r: 24 * view.z } : null,
     showMe: relMapSel !== null ? { x: pane.x + 14, y: pane.y + pane.h - 44, w: 120, h: 34 } : null,
     close: { x: x + w - 150, y: y + h - 50, w: 130, h: 36 },
   };
+}
+
+// The zoom: { z, at(x, y) } turning a spot on the unzoomed map into where it
+// is on screen now
+function _relViewOf(G) {
+  const cx = G.x + G.w / 2;
+  const cy = G.y + G.h / 2;
+  const z = relMapView.zoom;
+  return { z, at: (x, y) => ({ x: cx + (x - cx) * z + relMapView.x, y: cy + (y - cy) * z + relMapView.y }) };
+}
+
+// Zoom by `factor`, keeping the spot at (px, py) where it is
+function relMapZoom(factor, px, py) {
+  const L = getRelMapLayout();
+  const G = L.graph;
+  const cx = G.x + G.w / 2;
+  const cy = G.y + G.h / 2;
+  if (px === undefined) {
+    px = cx;
+    py = cy;
+  }
+  const z = relMapView.zoom;
+  const z2 = Math.max(1, Math.min(REL_ZOOM_MAX, z * factor));
+  relMapView.x = px - cx - ((px - cx - relMapView.x) * z2) / z;
+  relMapView.y = py - cy - ((py - cy - relMapView.y) * z2) / z;
+  relMapView.zoom = z2;
+  _relClampView(G);
+}
+
+// Keep the map from being moved off the edge
+function _relClampView(G) {
+  const z = relMapView.zoom;
+  const mx = ((z - 1) * G.w) / 2;
+  const my = ((z - 1) * G.h) / 2;
+  relMapView.x = Math.max(-mx, Math.min(mx, relMapView.x));
+  relMapView.y = Math.max(-my, Math.min(my, relMapView.y));
+  if (z <= 1) relMapView.x = relMapView.y = 0;
+}
+
+function relMapFit() {
+  relMapView = { zoom: 1, x: 0, y: 0 };
+}
+
+// The mouse wheel (globals.js): over the map, zoom about the pointer
+function handleRelMapWheel(deltaY) {
+  if (!relMapOpen || !deltaY) return false;
+  const G = getRelMapLayout().graph;
+  if (!isPointInRect(mouse.x, mouse.y, G.x, G.y, G.w, G.h)) return false;
+  relMapZoom(deltaY < 0 ? REL_ZOOM_STEP : 1 / REL_ZOOM_STEP, mouse.x, mouse.y);
+  return true;
+}
+
+// Dragging the map about (when zoomed in)
+if (typeof window !== "undefined" && window.addEventListener) {
+  window.addEventListener("mousemove", () => {
+    if (!_relPan || !relMapOpen) return;
+    if (!mouse.down) {
+      _relPan = null;
+      return;
+    }
+    relMapView.x = _relPan.x + (mouse.x - _relPan.sx);
+    relMapView.y = _relPan.y + (mouse.y - _relPan.sy);
+    _relClampView(getRelMapLayout().graph);
+  });
+  window.addEventListener("mouseup", () => {
+    _relPan = null;
+  });
 }
 
 // Where each fluffy goes: groups round an oval, members in a ring
@@ -315,6 +409,8 @@ function _relPortrait(f, size) {
 
 // Which fluffy is under the mouse (id or null)
 function _relHover(L) {
+  const G = L.graph;
+  if (!isPointInRect(mouse.x, mouse.y, G.x, G.y, G.w, G.h)) return null; // (zoomed in, some are off the map)
   for (const [id, n] of L.nodes) if (Math.hypot(mouse.x - n.x, mouse.y - n.y) <= n.r + 3) return id;
   return null;
 }
@@ -408,21 +504,23 @@ function drawRelationshipMap(c) {
   c.rect(G.x, G.y, G.w, G.h);
   c.clip();
   // Group rings and names
+  const z = L.view.z;
   for (const grp of data.groups) {
     if (grp.cx === undefined) continue;
+    const gp = L.view.at(grp.cx, grp.cy);
     c.strokeStyle = grp.colour;
     c.globalAlpha = 0.35;
     c.lineWidth = 2;
     c.setLineDash([4, 6]);
     c.beginPath();
-    c.arc(grp.cx, grp.cy, grp.r + 34, 0, Math.PI * 2);
+    c.arc(gp.x, gp.y, (grp.r + 34) * z, 0, Math.PI * 2);
     c.stroke();
     c.setLineDash([]);
     c.globalAlpha = 0.9;
     c.fillStyle = grp.colour;
-    c.font = "bold 13px Arial";
+    c.font = `bold ${Math.round(13 * Math.min(1.6, z))}px Arial`;
     c.textAlign = "center";
-    c.fillText(grp.label, grp.cx, grp.cy - grp.r - 40);
+    c.fillText(grp.label, gp.x, gp.y - (grp.r + 40) * z);
     c.globalAlpha = 1;
   }
   // Lines (fear of an alicorn only for the one you're looking at: with
@@ -490,13 +588,13 @@ function drawRelationshipMap(c) {
     c.beginPath();
     c.arc(n.x, n.y, n.r, 0, Math.PI * 2);
     c.fill();
-    const p = _relPortrait(n.f, Math.round(n.r * 2.2));
+    const p = _relPortrait(n.f, Math.round((n.r * 2.2) / 8) * 8); // (sizes in steps, so zooming doesn't redraw every frame)
     if (p) {
       c.save();
       c.beginPath();
       c.arc(n.x, n.y, n.r, 0, Math.PI * 2);
       c.clip();
-      c.drawImage(p, n.x - n.r * 1.1, n.y - n.r * 1.15);
+      c.drawImage(p, n.x - n.r * 1.1, n.y - n.r * 1.15, n.r * 2.2, (p.height * n.r * 2.2) / (p.width || 1));
       c.restore();
     }
     c.strokeStyle = sel ? "#ffd24d" : n.group.colour;
@@ -504,22 +602,31 @@ function drawRelationshipMap(c) {
     c.beginPath();
     c.arc(n.x, n.y, n.r, 0, Math.PI * 2);
     c.stroke();
-    c.font = "bold 11px Arial";
+    const fz = Math.min(1.6, z);
+    c.font = `bold ${Math.round(11 * fz)}px Arial`;
     c.textAlign = "center";
     c.lineWidth = 3;
     c.strokeStyle = "rgba(20,10,25,0.9)";
     const name = _relName(n.f);
-    c.strokeText(name, n.x, n.y + n.r + 13);
+    c.strokeText(name, n.x, n.y + n.r + 13 * fz);
     c.fillStyle = "white";
-    c.fillText(name, n.x, n.y + n.r + 13);
+    c.fillText(name, n.x, n.y + n.r + 13 * fz);
     if (typeof titleOf === "function" && titleOf(n.f)) {
-      c.font = "10px Arial";
+      c.font = `${Math.round(10 * fz)}px Arial`;
       c.fillStyle = "#f7d774";
-      c.fillText(titleOf(n.f), n.x, n.y + n.r + 25);
+      c.fillText(titleOf(n.f), n.x, n.y + n.r + 25 * fz);
     }
   }
   c.globalAlpha = 1;
   c.restore();
+  // Zoom buttons, and how to move about
+  if (data.people.length >= 2) {
+    for (const b of L.zoomBtns) drawGlassButton(b.x, b.y, b.w, b.h, b.label, { fontSize: b.id === "fit" ? 12 : 18, borderRadius: 8 });
+    c.font = "12px Arial";
+    c.textAlign = "left";
+    c.fillStyle = "rgba(255,255,255,0.45)";
+    c.fillText(z > 1 ? `Zoom x${z.toFixed(1)} \u00b7 drag to move about` : "Scroll to zoom in", G.x + 10, G.y + G.h - 10);
+  }
 
   _drawRelPane(c, L, data, focus);
   if (L.showMe) drawGlassButton(L.showMe.x, L.showMe.y, L.showMe.w, L.showMe.h, "Show me", { fontSize: 15, borderRadius: 9 });
@@ -659,6 +766,13 @@ function handleRelationshipMapClick() {
       return true;
     }
   }
+  for (const b of L.zoomBtns) {
+    if (hit(b)) {
+      if (b.id === "fit") relMapFit();
+      else relMapZoom(b.id === "in" ? REL_ZOOM_STEP : 1 / REL_ZOOM_STEP);
+      return true;
+    }
+  }
   if (hit(L.showMe)) {
     const f = relMapPeople().find((x) => x.id === relMapSel);
     closeRelationshipMap();
@@ -667,7 +781,11 @@ function handleRelationshipMapClick() {
   }
   const id = _relHover(L);
   if (id !== null) relMapSel = relMapSel === id ? null : id;
-  else if (hit(L.graph)) relMapSel = null;
+  else if (hit(L.graph)) {
+    relMapSel = null;
+    // ...and a drag from here moves the map about
+    if (relMapView.zoom > 1) _relPan = { sx: mouse.x, sy: mouse.y, x: relMapView.x, y: relMapView.y };
+  }
   return true;
 }
 

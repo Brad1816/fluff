@@ -125,7 +125,9 @@ function drawGameSpeed(chatLogRight) {
     // rather than running into the room's name (UIScenes.js houseLabelLeft)
     const limit = typeof houseLabelLeft === "number" ? houseLabelLeft - 8 : Infinity;
     const cx = L.x + L.clockW / 2;
-    const full = describeWeather();
+    // (a menu holding time still says so here: Screens.js)
+    const paused = gameState === "PLAYING" && typeof screenPausesGame === "function" && screenPausesGame();
+    const full = paused ? "Paused" : describeWeather();
     const parts = full.split(" · ");
     let text = full;
     for (const t of [full, parts.slice(1).join(" · "), parts[1] || ""]) {

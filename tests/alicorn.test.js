@@ -65,14 +65,14 @@ module.exports = [
         };
       }, SETUP);
       checkEqual(r.start.c, 0, "starts afraid");
-      checkEqual(r.start.row, "Afraid", "row at start");
+      checkEqual(r.start.row, "Afraid (0% accepting)", "row at start");
       check(r.early < 0.1, `hardly any change after 10 minutes: ${r.early}`);
       check(r.mid.c > 0.15 && r.mid.c < 0.4, `comfort after 50 minutes ${r.mid.c}`);
       check(r.mid.range < r.start.range, `fear range shrinks ${r.start.range} -> ${r.mid.range}`);
       check(/Getting used to them \(\d+%\)/.test(r.mid.row), r.mid.row);
       check(r.tolerant, "should accept alicorns in the end");
       check(r.t >= 8000 && r.t <= 25000, `took ${r.t} seconds (about 10 game days of seeing it)`);
-      checkEqual(r.row, "Accepts them", "row at the end");
+      checkEqual(r.row, "Accepts them (100%)", "row at the end");
       check(r.msg, "should tell you");
       checkEqual(r.far, 0, "too far away to learn");
       checkEqual(r.aliRow, null, "no row for the alicorn itself");

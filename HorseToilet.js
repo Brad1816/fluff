@@ -5,7 +5,51 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+// Picking a fluffy up and setting it down in a litterbox teaches it that's
+// the place to go (best with foals): LITTER_PLACE_LEARN, twice that if it
+// needs to go (it goes there and then), a quarter for a smarty, half for a
+// grown fluffy. Once an hour each (LITTER_PLACE_REST) so it can't be spammed.
+const LITTER_PLACE_LEARN = 0.04;
+const LITTER_PLACE_REST = HOUR_LENGTH;
+
 addHorseMethods({
+  // The litterbox it was just dropped in, if any (not a full one)
+  litterboxDroppedIn() {
+    if (typeof objects === "undefined" || typeof Litterbox === "undefined") return null;
+    for (const o of objects) {
+      if (!(o instanceof Litterbox) || o.scene !== this.scene) continue;
+      if (o.currentCage !== this.currentCage) continue;
+      const e = o.getExtents();
+      const pad = 15;
+      if (this.x >= e.left - pad && this.x <= e.right + pad && this.y >= e.top - pad && this.y <= e.bottom + pad + 30) return o;
+    }
+    return null;
+  },
+
+  // Returns how much it learned (0 if it's had its lesson this hour)
+  placedInLitterbox(lb) {
+    if ((this.pottyTraining || 0) >= 1) return 0;
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
+    if (this._litterPlacedAt !== undefined && now - this._litterPlacedAt >= 0 && now - this._litterPlacedAt < LITTER_PLACE_REST) return 0;
+    this._litterPlacedAt = now;
+    const needs = Math.max(this.poopStorage || 0, this.peeStorage || 0) > 0.3 && !(lb.isFull && lb.isFull());
+    let gain = LITTER_PLACE_LEARN;
+    if (this.growth >= 0.8) gain *= 0.5;
+    if (this.isSmarty && this.isSmarty()) gain *= 0.25;
+    if (needs) gain *= 2;
+    this.pottyTraining = Math.min(1, (this.pottyTraining || 0) + gain);
+    // Sit it right in the box, and it goes if it needs to
+    this.x = lb.x;
+    this.y = Math.max(this.y, lb.y - 20);
+    if (needs) {
+      this.excrete();
+    } else if (!this.speech || !this.speech.text) {
+      const who = this.tooYoungToSpeak() ? "CHIRPY" : this.isSmarty && this.isSmarty() ? "SMARTY" : "DEFAULT";
+      this.speak(getDialogue(["POOP", "PLACED", who], this));
+    }
+    return gain;
+  },
+
   consumePuddlesIfNeeded(dt) {
     if (this.currentStateKey === "EATING") {
       let consumed = false;

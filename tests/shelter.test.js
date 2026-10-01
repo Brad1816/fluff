@@ -33,7 +33,7 @@ module.exports = [
         out.notInWorld = shelter.residents.every((s) => !fluffies.some((f) => f.id === s.id));
         return out;
       });
-      checkEqual(r.first, 4, "the first morning fills 4 cages");
+      checkEqual(r.first, 5, "the first morning fills 5 cages");
       check(r.second > r.first && r.second <= r.first + 2, `a morning brings 1-2 more (${r.first} -> ${r.second})`);
       check(r.cap, "never more than 6");
       check(r.poorCoat > 0.6, `mostly poopie or drab coats (${r.poorCoat})`);

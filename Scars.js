@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Scars (design doc Phase 3): serious injuries leave lasting marks.
 //
-// f.scars = [{ kind, how, day }] (saved; at most SCAR_MAX). Where from:
+// f.scars = [{ kind, how, day, where }] (saved; at most SCAR_MAX). Where from:
 //   - a fight that draws blood (HorseSocial.performAttack): half the time
 //     (SCAR_FIGHT_CHANCE) a bite leaves a torn ear or a scarred flank, a
 //     stomp a crooked tail or a scarred flank: "Bitten by Snowball in a
@@ -10,7 +10,8 @@
 //     (SCAR_WEAPON_CHANCE), the prod, stick and tack now and then
 // Kinds: torn ear, scarred flank, bald patch, crooked tail, nicked muzzle.
 // They never fade. They're drawn on the body (drawScars, HorseRenderer),
-// listed in the magnifying glass (Looks, "Scars": hover for how), go in its
+// listed in the magnifying glass (Looks, "Scars": hover for how and where;
+// one nobody saw gets a likely story, describeScarOrigin), go in its
 // story, make it an "owie" to the others (Identity.js), and cost it at
 // shows (SCAR_SHOW_PENALTY each) and in price (SCAR_PRICE each, at most
 // SCAR_PRICE_MAX).
@@ -66,11 +67,42 @@ function addScar(f, kind, how) {
   if (f.scars.length >= SCAR_MAX) return null;
   // (a tail it hasn't got can't be crooked)
   if (kind === "tail" && f.limbs && f.limbs.tail === false) kind = "flank";
-  const scar = { kind, how: String(how || "Hurt"), day: _scDay() };
+  const scar = { kind, how: String(how || "Hurt"), day: _scDay(), where: _scPlace(f.scene) };
   f.scars.push(scar);
   const name = SCAR_KINDS[kind].name;
   if (typeof recordStory === "function") recordStory("scar", f, { x: `${name}: ${scar.how.charAt(0).toLowerCase()}${scar.how.slice(1)}` });
   return scar;
+}
+
+// Where it happened, in words ("in the living room", "in the park")
+function _scPlace(scene) {
+  if (!scene) return null;
+  if (typeof houseRoomName === "function" && houseRoomName(scene)) return `in the ${houseRoomName(scene).toLowerCase()}`;
+  if (scene === "BACKYARD") return "in the backyard";
+  if (typeof PARK_SCENE !== "undefined" && scene === PARK_SCENE) return "in the park";
+  if (/ALLEY/.test(scene)) return "in Shelter Alley";
+  return "outside";
+}
+
+// A likely story for a scar nobody saw happen (from before it was yours,
+// or an old save): the same one every time for the same scar
+const SCAR_GUESSES = {
+  ear: ["Torn in a scrap with a stray, before it was yours", "Caught on a wire fence, long ago", "Bitten by a jealous herd-mate in the park"],
+  flank: ["Raked by a cat's claws, before it was yours", "Grazed on a broken fence, long ago", "A dog's bite, from its life outside"],
+  bald: ["Fur rubbed away in a too-small box, before it was yours", "A burn from something hot, long ago", "Pulled out in a fight over food"],
+  tail: ["Shut in a door, before it was yours", "Stepped on in a crowded pen, long ago", "Bent in a fall, from its life outside"],
+  muzzle: ["Nipped by its mum as a foal", "Cut on a sharp tin can, before it was yours", "A scratch from a cornered rat, long ago"],
+};
+function _scGuess(f, scar, i) {
+  const list = SCAR_GUESSES[scar.kind] || ["Hurt, before it was yours"];
+  const seed = Math.abs(((f && f.id) || 0) * 31 + i * 7 + (scar.kind || "").length);
+  return list[seed % list.length];
+}
+
+// "Bitten by Snowball in a fight on day 14, in the living room"
+function describeScarOrigin(f, scar, i = 0) {
+  if (!scar.how || scar.how === "Hurt") return _scGuess(f, scar, i);
+  return scar.where ? `${scar.how}, ${scar.where}` : scar.how;
 }
 
 function _scPick(list) {
@@ -109,7 +141,7 @@ function describeScars(f) {
   if (!s.length) return null;
   const names = s.map((x) => (SCAR_KINDS[x.kind] || { name: x.kind }).name);
   const text = names.join(", ");
-  return [text.charAt(0).toUpperCase() + text.slice(1), "", s.map((x) => { const n = (SCAR_KINDS[x.kind] || { name: x.kind }).name; return `${n.charAt(0).toUpperCase() + n.slice(1)}: ${x.how}`; })];
+  return [`${text.charAt(0).toUpperCase() + text.slice(1)} (hover for how)`, "", s.map((x, i) => { const n = (SCAR_KINDS[x.kind] || { name: x.kind }).name; return `${n.charAt(0).toUpperCase() + n.slice(1)}: ${describeScarOrigin(f, x, i)}`; })];
 }
 
 // ---- Drawing (HorseRenderer: after the torso, the head and the tail) ----

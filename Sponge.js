@@ -180,6 +180,13 @@ class Sponge {
     ctx.save();
     ctx.translate(this.x, this.y);
 
+    // In your hand: centred on the pointer (where it scrubs)
+    if (this.isDragging) {
+      drawHeldTool(ctx, img, "sponge", _toolBump(this.whackTimer) * 0.4);
+      ctx.restore();
+      return;
+    }
+
     if (this.whackTimer > 0) {
       const t = (0.2 - this.whackTimer) / 0.2;
       const angle = (Math.sin(t * Math.PI) * (30 * Math.PI)) / 180;

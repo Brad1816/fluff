@@ -258,6 +258,8 @@ class AlicornFearDesire extends Desire {
 
     const target = horse.positioning.findScaryAlicorn();
     if (target) {
+      // A brave one that's already seen it off leaves it be (AlicornAcceptance.js)
+      if (typeof alicornStance === "function" && alicornStance(horse, target) === "ignore") return 0;
       this.fearTarget = target;
       return 100;
     }

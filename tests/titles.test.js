@@ -75,7 +75,7 @@ module.exports = [
         out.healedStory = storyOf(f).some((e) => e.k === "turning" && /Broken no more/.test(e.x));
         return out;
       }, SETUP);
-      check(r.limit >= 5 && r.limit <= 12, `its own limit ${r.limit}`);
+      check(r.limit >= 5 && r.limit <= 20, `its own limit ${r.limit}`); // (10, +-5 bravery, +3 temper, +-2 luck)
       checkEqual(r.title, "Broken", "broke");
       checkEqual(r.numb, 0.35, "no joy");
       checkEqual(r.floor, 0.12, "but never gives up");

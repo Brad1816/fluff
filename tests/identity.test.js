@@ -108,6 +108,10 @@ module.exports = [
         out.alicorn = tolerant ? "munstah" : fluffyCallsOther(a, ali);
         // A foal
         const foal = __mk(700, "female", 0.4);
+        // (a plain earthy, whatever its random genes)
+        foal.genetics.setGenesFromType("earthy");
+        foal.processGenes();
+        foal.limbs.horn = foal.limbs.leftWing = foal.limbs.rightWing = false;
         coat(foal, [255, 95, 191]);
         foal.hasSpots = foal.hasStripes = false;
         out.foal = fluffyCallsOther(a, foal);

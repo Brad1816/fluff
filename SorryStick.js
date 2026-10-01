@@ -103,6 +103,13 @@ class SorryStick {
     ctx.save();
     ctx.translate(this.x, this.y);
 
+    // In your hand: the tip on the pointer, swinging from the handle
+    if (this.isDragging) {
+      drawHeldTool(ctx, img, "sorry_stick", -_toolBump(this.whackTimer) * 0.5);
+      ctx.restore();
+      return;
+    }
+
     if (this.whackTimer > 0) {
       // Animation: 0.2s duration.
       // 60 degrees back and forth

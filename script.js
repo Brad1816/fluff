@@ -67,6 +67,26 @@ function updateMoneyAndRequests(dt) {
   }
 }
 
+// A held tool that missed (no fluffy under the pointer) stays in your hand:
+// it used to fall on the floor, so a near miss kept putting it down. A
+// thumbtack or IV bag is put down (that's how you set one), and so is
+// anything that isn't a tool. Esc, or the tool's
+// toolbar slot, puts a tool away.
+let _toolMissTold = false;
+function missWithTool(obj) {
+  const tool = typeof isToolObject === "function" && isToolObject(obj);
+  const placeable = typeof isPlaceableWorldTool === "function" && isPlaceableWorldTool(obj); // (thumbtack, IV bag)
+  if (!tool || placeable || (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack)) {
+    obj.onDrop();
+    return;
+  }
+  if (typeof toolbox !== "undefined" && !toolbox.includes(obj)) toolbox.push(obj); // (so putting it away keeps it)
+  if (!_toolMissTold && typeof addUIMessage === "function") {
+    _toolMissTold = true;
+    addUIMessage("Missed! It's still in your hand - Esc, or its toolbar slot, puts it away.");
+  }
+}
+
 function attemptDrop() {
   if (!isGlobalDragging || mouse.rightDown) return false;
 
@@ -214,8 +234,8 @@ function attemptDrop() {
                   ) {
                     poofs.push(
                       new Poof(
-                        mouse.x,
-                        mouse.y - images.spray_bottle.height,
+                        mouse.x - 8, // (just out of the nozzle)
+                        mouse.y,
                         obj.scene,
                         "#b4cbff",
                       ),
@@ -305,13 +325,16 @@ function attemptDrop() {
                 getDialogue([isSpray ? "SPRAY_BOTTLE" : "SORRY_STICK", key], f),
               );
               playSound(isSpray ? "spray_bottle" : "sorry_stick");
-              f.initBehavior("FLUFFY_KNOCKED_DOWN");
-              f.stateTimer = 0.5;
+              // A squirt of water startles it (a flinch, a third of the
+              // upset); the stick knocks it down
+              if (!isSpray) {
+                f.initBehavior("FLUFFY_KNOCKED_DOWN");
+                f.stateTimer = 0.5;
+              }
 
-              f.changeHappiness(HAPPINESS_PENALTY_STICK_WHACK);
+              f.changeHappiness(HAPPINESS_PENALTY_STICK_WHACK * (isSpray ? 0.35 : 1));
               f.expressionOverride = "CRYING_SHOCKED";
-              f.expressionOverrideTimer = 10.0;
-              f.expressionOverrideTimer = 3.0;
+              f.expressionOverrideTimer = isSpray ? 1.5 : 3.0;
 
               if (isSpray) {
                 obj.sprayTimer = 0.2;
@@ -322,8 +345,8 @@ function attemptDrop() {
                 ) {
                   poofs.push(
                     new Poof(
-                      mouse.x,
-                      mouse.y - images.spray_bottle.height,
+                      mouse.x - 8, // (just out of the nozzle)
+                      mouse.y,
                       obj.scene,
                       "#b4cbff",
                     ),
@@ -333,17 +356,20 @@ function attemptDrop() {
                 obj.whackTimer = 0.2;
               }
 
-              notifyViolence(f, false, "stick", key === "TRAINING");
+              notifyViolence(f, false, isSpray ? "spray" : "stick", key === "TRAINING");
             }
 
-            f.excrete("poop");
-            f.excrete("pee");
+            // (scared stiff: it wets itself - not for a squirt of water)
+            if (!isSpray) {
+              f.excrete("poop");
+              f.excrete("pee");
+            }
 
             hitFluffy = true;
             break;
           }
         }
-        if (!hitFluffy) obj.onDrop();
+        if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (typeof Syringe !== "undefined" && obj instanceof Syringe) {
         let hitFluffy = false;
@@ -371,7 +397,7 @@ function attemptDrop() {
             break;
           }
         }
-        if (!hitFluffy) obj.onDrop();
+        if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (typeof CattleProd !== "undefined" && obj instanceof CattleProd) {
         let hitFluffy = false;
@@ -401,7 +427,7 @@ function attemptDrop() {
             break;
           }
         }
-        if (!hitFluffy) obj.onDrop();
+        if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (obj instanceof Brush) {
         let hitFluffy = false;
@@ -480,7 +506,7 @@ function attemptDrop() {
             break;
           }
         }
-        if (!hitFluffy) obj.onDrop();
+        if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (obj instanceof Knife) {
         let knife = obj;
@@ -823,7 +849,7 @@ function attemptDrop() {
             break;
           }
         }
-        if (!hitFluffy) obj.onDrop();
+        if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (obj instanceof MagnifyingGlass) {
         let hitFluffy = false;
@@ -835,7 +861,7 @@ function attemptDrop() {
             break;
           }
         }
-        if (!hitFluffy) obj.onDrop();
+        if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (obj instanceof SutureKit) {
         let kit = obj;
@@ -873,7 +899,7 @@ function attemptDrop() {
             }
           }
         }
-        if (!hitFluffy) kit.onDrop();
+        if (!hitFluffy) missWithTool(kit);
         return true;
       } else if (typeof TrashBag !== "undefined" && obj instanceof TrashBag) {
         if (typeof objects !== "undefined" && obj.fillAmount > 0) {
@@ -900,7 +926,7 @@ function attemptDrop() {
         return true;
       }
 
-      obj.onDrop();
+      missWithTool(obj); // (the sponge stays in your hand; other things are put down)
       return true;
     }
   }
@@ -919,8 +945,31 @@ function randomFeralQuality() {
 }
 // Feral Spawning
 let feralTimer = 0; // Start by spawning a feral
+const RIVER_SPAWN_WEIGHT = 3; // the river's share of new strays, against 1 for each other place
+const RIVER_MIN_FERALS = 4; // fewer than this there: the next ones go to the river
 let feralDespawnTimer = 30;
-function spawnFeralGroup(targetScene, forcedScenario = null) {
+// opts.walkIn: you're there, so they come in from the right-hand edge and
+// walk on in (rather than popping up in the middle)
+function spawnFeralGroup(targetScene, forcedScenario = null, opts = {}) {
+  const before = fluffies.length;
+  _spawnFeralGroup(targetScene, forcedScenario);
+  if (opts.walkIn) {
+    for (let i = before; i < fluffies.length; i++) {
+      const h = fluffies[i];
+      const tx = h.x;
+      h.x = width - 25 - Math.random() * 20;
+      if (h.tooYoungToWalk && h.tooYoungToWalk()) {
+        h.x = Math.max(h.x - 40, tx); // (carried in: a foal starts near its mum)
+        continue;
+      }
+      h.initBehavior("MOVING");
+      h.setTargetPosition(Math.min(tx, width - 200), h.y);
+    }
+  }
+  return fluffies.length - before;
+}
+
+function _spawnFeralGroup(targetScene, forcedScenario = null) {
   let scenario = forcedScenario;
   if (!scenario) {
     const r = Math.random();
@@ -1071,7 +1120,7 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
       personalities.includes("mill_baby")
     ) {
       const r = Math.random();
-      if (r < 0.01) return "alicorn"; // alicorns are extremely rare
+      if (r < 0.003) return "alicorn"; // alicorns are extremely rare
       if (r < 0.4) return "unicorn";
       if (r < 0.7) return "pegasus";
     }
@@ -1134,7 +1183,7 @@ function spawnFeralGroup(targetScene, forcedScenario = null) {
     spawnFeral(
       0.0,
       ["abandoned_baby"],
-      Math.random() < 0.01 ? "alicorn" : "earthy", // alicorns are extremely rare
+      Math.random() < 0.003 ? "alicorn" : "earthy", // alicorns are extremely rare
     );
   } else if (scenario === "single_mom") {
     const p = getRandomPersonality(false, true);
@@ -1208,11 +1257,28 @@ function updateFerals(dt) {
       }
     }
 
+    // The river is where strays gather: it gets RIVER_SPAWN_WEIGHT times
+    // the share of new arrivals, and always some when it's nearly empty
+    const riverHere = fluffies.filter((f) => f.scene === "RIVER" && f.isAlive && !f.adopted).length;
     if (validScenes.length > 0) {
-      const targetScene =
-        validScenes[Math.floor(Math.random() * validScenes.length)];
+      let targetScene = null;
+      if (riverHere < RIVER_MIN_FERALS && validScenes.includes("RIVER")) targetScene = "RIVER";
+      else {
+        const w = validScenes.map((s) => (s === "RIVER" ? RIVER_SPAWN_WEIGHT : 1));
+        let pick = Math.random() * w.reduce((a, b) => a + b, 0);
+        for (let i = 0; i < validScenes.length; i++) {
+          pick -= w[i];
+          if (pick <= 0) {
+            targetScene = validScenes[i];
+            break;
+          }
+        }
+        targetScene = targetScene || validScenes[validScenes.length - 1];
+      }
       spawnFeralGroup(targetScene);
     }
+    // You're at the river and it's quiet: now and then some wander in
+    if (currentScene === "RIVER" && riverHere < RIVER_MIN_FERALS && Math.random() < 0.5) spawnFeralGroup("RIVER", null, { walkIn: true });
     feralTimer = 15 + Math.random() * 45;
   }
 
@@ -1311,10 +1377,12 @@ function animate(timestamp) {
   if (typeof mouseToWorld === "function") mouseToWorld();
 
   const fixedStep = 0.016; // ~60fps steps for physics stability
-  const realElapsed = elapsed; // for fast forward (GameSpeed.js)
+  // An open menu (Today, Household, the vet...) holds time still (Screens.js)
+  const menuPause = gameState === "PLAYING" && typeof screenPausesGame === "function" && screenPausesGame();
+  const realElapsed = menuPause ? 0 : elapsed; // for fast forward (GameSpeed.js)
   while (elapsed > 0) {
     const dt = Math.min(elapsed, fixedStep);
-    if (gameState === "PLAYING") {
+    if (gameState === "PLAYING" && !menuPause) {
       updateSimulation(dt);
     } else if (gameState === "TITLE") {
       titleBGTimer += dt;

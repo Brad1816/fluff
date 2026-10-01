@@ -39,6 +39,8 @@ const CLIMATE_FLINCH_FEAR = 0.4;
 const CLIMATE_FLINCH_RANGE = 90;
 const CLIMATE_FLINCH_REST = 6; // game seconds
 const CLIMATE_GREET_RUNNERS = 6;
+const CLIMATE_WITNESS_MAX = 0.6; // witnesses of one bit of harm, all together (in "harmed"s)
+const CLIMATE_WITNESS_WINDOW = 10; // game seconds: what counts as one bit of harm
 
 // What each story event adds: [warm, tense, fear, grief]
 const CLIMATE_WEIGHTS = {
@@ -58,10 +60,10 @@ const CLIMATE_WEIGHTS = {
   named: [0.5, 0, 0, 0],
   attacked: [0, 1.2, 0.2, 0],
   lesson: [0.2, 0, 0, 0], // (a kind lesson; strict ones are "drilled")
-  scolded: [0, 0.5, 0.2, 0],
-  drilled: [0, 0.4, 0.2, 0],
+  scolded: [0, 0.25, 0.05, 0], // (also a squirt of the spray bottle; a telling-off is a small thing)
+  drilled: [0, 0.2, 0.05, 0],
   wish_denied: [0, 0.8, 0, 0.3],
-  harmed: [0, 0.6, 1.2, 0], // (only a fifth for those who just saw it)
+  harmed: [0, 0.6, 1.2, 0], // (only a fifth for those who just saw it; half for the stick as a lesson)
   fright: [0, 0, 0.2, 0],
   nightmare: [0, 0, 0.3, 0],
   scarred: [0, 0.5, 3, 0],
@@ -146,7 +148,21 @@ function noteClimateStory(kind, ids, opts = {}) {
   // behind there (none: nobody grieves), and less for a grown one moving on
   // than a foal taken (a breeder's house was Grieving most days)
   if (kind === "sold" && main) seen = _saleGrief(main, scene);
+  // The stick for a reason (potty training): a lesson, not a beating
+  if (kind === "harmed" && typeof MEMORY_TEXT !== "undefined" && opts.x === MEMORY_TEXT.training) seen *= 0.5;
   if (!(seen > 0)) return;
+  // Everyone watching one beating: together they count for at most
+  // CLIMATE_WITNESS_MAX (a full room used to make it Fearful in one go)
+  if (kind === "harmed" && seen < 1) {
+    const now = _clNow();
+    if (!(now - (r.wAt || -1e9) < CLIMATE_WITNESS_WINDOW)) {
+      r.wAt = now;
+      r.wSum = 0;
+    }
+    if (r.wSum >= CLIMATE_WITNESS_MAX) return;
+    seen = Math.min(seen, CLIMATE_WITNESS_MAX - r.wSum);
+    r.wSum += seen;
+  }
   r.w = Math.min(CLIMATE_CAP, r.w + w[0] * seen);
   r.t = Math.min(CLIMATE_CAP, r.t + w[1] * seen);
   r.f = Math.max(0, Math.min(CLIMATE_CAP, r.f + w[2] * seen));

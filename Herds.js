@@ -499,7 +499,9 @@ class FollowHerdDesire extends Desire {
       clamp(t.x + Math.cos(angle) * r, 40, sceneW(horse.scene) - 40),
       t.y + Math.sin(angle) * r * 0.5,
     );
-    if (Math.random() < 0.15) _say(horse, ["HERD", "FOLLOW"], getHerdLeader(herdOf(horse)));
+    // ("Hewd go dat way!" only out in the park, not across one room)
+    const outdoors = typeof isCameraScene === "function" && isCameraScene(horse.scene);
+    if (Math.random() < 0.15) _say(horse, ["HERD", outdoors ? "FOLLOW" : "FOLLOW_NEAR"], getHerdLeader(herdOf(horse)));
     return true;
   }
 }

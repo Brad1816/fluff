@@ -1345,6 +1345,33 @@ class HorsePositioning {
       return;
     }
 
+    // A brave one goes for it, or (seen it off already) leaves it be
+    // (AlicornAcceptance.alicornStance)
+    const stance = typeof alicornStance === "function" ? alicornStance(this.horse, alicorn) : "flee";
+    if (stance === "ignore") {
+      this.horse.isScared = false;
+      return;
+    }
+    if (stance === "attack") {
+      const h = this.horse;
+      const d = Math.hypot(h.x - alicorn.x, h.y - alicorn.y);
+      h.isScared = false;
+      if (h.speech.nextTime <= 0 && !h.tooYoungToSpeak()) {
+        h.speak(getDialogue(["FEAR", "ALICORN_BRAVE"], h));
+        h.speech.nextTime = 3 + Math.random() * 2;
+      }
+      if (d < 50) {
+        if (h.attackCooldown <= 0) {
+          h.performAttack(alicorn, "ALICORN");
+          noteAlicornBlow(h, alicorn);
+        }
+      } else {
+        h.setTargetPosition(alicorn.x, alicorn.y);
+        if (!h.isMovingOrRunning()) h.initBehavior("RUNNING");
+      }
+      return;
+    }
+
     if (!oldScared) {
       this.horse.speech.nextTime = 0;
       this.horse.setShock(3.0);

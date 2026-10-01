@@ -689,6 +689,7 @@ function drawTrickUI(c) {
 
 registerScreen({
   name: "tricks",
+  pauses: false, // (it happens in the room, live)
   layer: 6,
   // (while waiting for Come/Fetch you can still play - only the label shows)
   isOpen: () => !!trickUI && trickUI.phase !== "waiting",

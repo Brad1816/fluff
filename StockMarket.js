@@ -32,7 +32,7 @@
 
 const STOCK_MARKUP = 2.2;
 const STOCK_PEDIGREE_FEE = 150;
-const STOCK_ALICORN_CHANCE = 0.12; // per morning, from level 4
+const STOCK_ALICORN_CHANCE = 0.05; // per morning, from level 4 (about one a fortnight)
 const STOCK_ARRIVE_SCENE = "INDOORS";
 
 const STOCK_BREEDERS = [

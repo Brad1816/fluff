@@ -101,6 +101,13 @@ class Knife {
     ctx.save();
     ctx.translate(this.x, this.y);
 
+    // In your hand: the tip of the blade on the pointer
+    if (this.isDragging) {
+      drawHeldTool(ctx, img, "knife", -_toolBump(this.whackTimer) * 0.35);
+      ctx.restore();
+      return;
+    }
+
     if (this.whackTimer > 0) {
       // Animation: 0.2s duration.
       const t = (0.2 - this.whackTimer) / 0.2;

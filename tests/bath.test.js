@@ -98,11 +98,28 @@ module.exports = [
         const sponge = new Sponge("INDOORS");
         objects.push(sponge);
         const aim = (f) => {
-          for (let dy = -120; dy <= 0; dy += 6) for (let dx = -40; dx <= 40; dx += 6) if (f.hitTestAsSeen(f.x + dx, f.y + dy)) return { x: f.x + dx, y: f.y + dy };
-          return null;
+          // The middle of the body, so a rub stays on it
+          const hits = [];
+          for (let dy = -120; dy <= 0; dy += 6) for (let dx = -40; dx <= 40; dx += 6) if (f.hitTestAsSeen(f.x + dx, f.y + dy)) hits.push({ x: f.x + dx, y: f.y + dy });
+          if (!hits.length) return null;
+          const cx = hits.reduce((a, h) => a + h.x, 0) / hits.length;
+          const cy = hits.reduce((a, h) => a + h.y, 0) / hits.length;
+          return hits.reduce((b, h) => (Math.hypot(h.x - cx, h.y - cy) < Math.hypot(b.x - cx, b.y - cy) ? h : b));
         };
         const bathe = (f, rubs) => {
           const p = aim(f);
+          sponge._scrub = null;
+          // Rub it back and forth first (a real scrub, not a swipe)
+          // (between two spots that are both on its body)
+          const q = [[12, 0], [-12, 0], [0, 12], [0, -12], [6, 0], [-6, 0], [0, 6], [0, -6]]
+            .map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy }))
+            .find((o) => f.hitTestAsSeen(o.x, o.y));
+          for (let i = 0; i < 24; i++) {
+            const o = i % 2 ? q : p;
+            sponge.x = o.x;
+            sponge.y = o.y;
+            sponge.attemptClean();
+          }
           sponge.x = p.x;
           sponge.y = p.y;
           for (let i = 0; i < rubs; i++) sponge.attemptClean();
@@ -139,6 +156,38 @@ module.exports = [
       check(r.haterLater[0] >= 0, `after a dozen baths it doesn't mind ${r.haterLater}`);
       checkEqual(r.haterLater[2], "GOOD_UPSIES", "and even enjoys it");
       check(r.floor, "the sponge still cleans the floor");
+    },
+  },
+  {
+    name: "bath: a sponge swept straight past a fluffy doesn't start a bath - only rubbing back and forth does",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const f = __mk(500);
+        f.bathLike = -0.9;
+        f.dirt = 0.9;
+        const sponge = new Sponge("INDOORS");
+        let p = null;
+        for (let dy = -120; dy <= 0 && !p; dy += 6) if (f.hitTestAsSeen(f.x, f.y + dy)) p = { x: f.x, y: f.y + dy };
+        // One straight swipe across it, left to right
+        for (let dx = -30; dx <= 30; dx += 10) {
+          sponge.x = p.x + dx;
+          sponge.y = p.y;
+          sponge.attemptClean();
+        }
+        const out = { swipeDirt: f.dirt, swipeFear: f.playerFear, swipeBath: f._bathAt };
+        // Now a proper scrub
+        for (let i = 0; i < 8; i++) {
+          sponge.x = p.x + (i % 2 ? 25 : -25);
+          sponge.attemptClean();
+        }
+        out.scrubDirt = f.dirt;
+        return out;
+      }, SETUP);
+      checkEqual(r.swipeDirt, 0.9, "a swipe past doesn't wash it");
+      checkEqual(r.swipeFear, 0, "or frighten it");
+      check(r.swipeBath === undefined, "no bath started");
+      check(r.scrubDirt < 0.9, `rubbing back and forth does ${JSON.stringify(r)}`);
     },
   },
   {

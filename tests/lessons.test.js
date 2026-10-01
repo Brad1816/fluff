@@ -22,6 +22,7 @@ const SETUP = `() => {
     h.playerFear = 0;
     h.pottyTraining = 1;
     h.coloristDegree = 0;
+    h.fears = { thunder: 0, dark: 0, bot: 0 }; // (no fears it was born with: only the lessons each test sets up)
     h.alicornComfort = 1;
     h.currentStateKey = "IDLE";
     fluffies.push(h);

@@ -95,6 +95,13 @@ class SprayBottle {
     ctx.save();
     ctx.translate(this.x, this.y);
 
+    // In your hand: the nozzle on the pointer, with a little squeeze
+    if (this.isDragging) {
+      drawHeldTool(ctx, img, "spray_bottle", 0, _toolBump(this.sprayTimer) * 4);
+      ctx.restore();
+      return;
+    }
+
     let yOffset = 0;
     if (this.sprayTimer > 0) {
       // Animation: 0.2s duration.

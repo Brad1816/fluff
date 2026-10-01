@@ -25,8 +25,11 @@
 // Much slower for smarties (x0.1), and for hungry or miserable ones (x0.5).
 // Setbacks: an alicorn attacking it (-0.5) or one it can see (-0.2).
 //
-// As comfort grows the fear range shrinks a little (alicornFearRange: 300px
-// when afraid, 180px just before accepting).
+// They run as soon as they see one (alicornFearRange: ALICORN_FEAR_RANGE
+// when afraid, 60% of that just before accepting) - except the brave:
+// a grown fluffy that's Brave enough (ALICORN_BRAVE_AT) goes for it instead,
+// ALICORN_BRAVE_BLOWS blows to see it off, then leaves it be for
+// ALICORN_BRAVE_REST (alicornStance).
 // The magnifying glass shows "Alicorns: Afraid / Getting used to them (40%) /
 // Accepts them".
 // ---------------------------------------------------------------------------
@@ -37,6 +40,10 @@ const ALICORN_INTRO_TIME = 1800; // seconds held close by a trusted hand, 0 -> 1
 const ALICORN_INTRO_TRUST = 0.7; // how much it must trust you for introductions
 const ALICORN_FORGET_TIME = 6000; // seconds apart to lose it all again (5 game days)
 const ALICORN_TICK = 1;
+const ALICORN_FEAR_RANGE = 450; // they run from one this close (about as far as they see)
+const ALICORN_BRAVE_AT = 0.35; // bravery (traitValue) to go for one instead
+const ALICORN_BRAVE_BLOWS = 3; // ...this many blows to see it off
+const ALICORN_BRAVE_REST = 600; // ...then leaves it alone this long (half a game day)
 
 const alicornTicker = new Ticker(ALICORN_TICK);
 
@@ -56,15 +63,39 @@ function getAlicornComfort(f) {
 
 // How close an alicorn has to be before this fluffy runs (HorsePositioning.findScaryAlicorn)
 function alicornFearRange(f) {
-  return 300 * (1 - 0.4 * getAlicornComfort(f));
+  return ALICORN_FEAR_RANGE * (1 - 0.4 * getAlicornComfort(f));
+}
+
+// What a scared fluffy does about alicorn a: "flee", "attack" (a brave
+// grown one that can get at it) or "ignore" (a brave one that has already
+// seen it off lately)
+function alicornStance(f, a) {
+  if (!f || !a) return "flee";
+  const brave = typeof traitValue === "function" ? traitValue(f, "bravery") : 0;
+  if (brave < ALICORN_BRAVE_AT || f.growth < 1 || f.health < 50) return "flee";
+  if (f.happiness <= WAN_DIE_THRESHOLD + 0.1 || (f.babiesToBirth > 0 && f.pregnancyTimer <= 0)) return "flee";
+  if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(f, a)) return "ignore"; // (behind bars: just glares)
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  const b = f._alicornBlows;
+  if (b && b.id === a.id && now - b.at < ALICORN_BRAVE_REST) return b.n >= ALICORN_BRAVE_BLOWS ? "ignore" : "attack";
+  return "attack";
+}
+
+// A brave one landed a blow on alicorn a
+function noteAlicornBlow(f, a) {
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  const b = f._alicornBlows;
+  if (b && b.id === a.id && now - b.at < ALICORN_BRAVE_REST) b.n++;
+  else f._alicornBlows = { id: a.id, n: 1, at: now };
 }
 
 // Magnifying glass row: [text, tone], or null if it doesn't apply
 function describeAlicornFeeling(f) {
   if (!_alicornIntoleranceOn() || !f || f.type === "alicorn") return null;
-  if (f.tolerantOfAlicorns()) return ["Accepts them", "good"];
+  // (always with a %, so you can watch it move)
+  if (f.tolerantOfAlicorns()) return ["Accepts them (100%)", "good"];
   const c = getAlicornComfort(f);
-  if (c < 0.05) return ["Afraid", "bad"];
+  if (c < 0.05) return [`Afraid (${Math.round(c * 100)}% accepting)`, "bad"];
   return [`Getting used to them (${Math.round(c * 100)}%)`, "ok"];
 }
 

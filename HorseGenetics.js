@@ -1,7 +1,63 @@
 // Share of random wing+horn fluffies allowed to stay alicorns (see
 // generateRandomGenes). Bred foals aren't affected: breeding for alicorns
 // still works.
-const ALICORN_RANDOM_KEEP = 0.03;
+const ALICORN_RANDOM_KEEP = 0.01; // (about 1 in 3,000 random fluffies)
+
+// Random coat colours: hue families and how often each comes up. Plain
+// random colour genes put a third of all coats in the purple-pink-magenta
+// part of the colour wheel (any coat with less green than red and blue),
+// so purple looked far more common than anything else. A random coat keeps
+// its random brightness and strength of colour, but its hue is drawn from
+// these instead (_evenHue). [from, to] in degrees, weight.
+const COAT_HUES = [
+  [345, 375, 0.14], // red
+  [16, 40, 0.14], // orange
+  [46, 66, 0.12], // yellow
+  [80, 150, 0.16], // green
+  [165, 195, 0.08], // teal
+  [200, 245, 0.16], // blue
+  [262, 300, 0.1], // purple
+  [318, 338, 0.1], // pink
+];
+
+// rgb (0..255 each) with its hue redrawn from COAT_HUES
+function _evenHue(rgb) {
+  const [r, g, b] = rgb.map((v) => Math.max(0, Math.min(255, v)) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d < 1e-6) return rgb;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let pick = Math.random();
+  let fam = COAT_HUES[COAT_HUES.length - 1];
+  for (const f of COAT_HUES) {
+    if (pick < f[2]) {
+      fam = f;
+      break;
+    }
+    pick -= f[2];
+  }
+  const h = ((fam[0] + Math.random() * (fam[1] - fam[0])) % 360) / 360;
+  // HSL back to RGB
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const ch = (t) => {
+    t = (t + 1) % 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  return [ch(h + 1 / 3) * 255, ch(h) * 255, ch(h - 1 / 3) * 255];
+}
+
+// A random channel as plain random colour genes give it (0..255, mostly mid)
+function _randomChannel() {
+  let n = 0;
+  for (let i = 0; i < 8; i++) if (Math.random() < 0.5) n++;
+  return n * 31.875;
+}
 
 class HorseGenetics {
   constructor(horse) {
@@ -24,11 +80,11 @@ class HorseGenetics {
     if (bodyQuality !== null) {
       const anchor =
         POOPIE_ANCHORS[Math.floor(Math.random() * POOPIE_ANCHORS.length)];
-      const randomBody = [
+      const randomBody = _evenHue([
         Math.random() * 255,
         Math.random() * 255,
         Math.random() * 255,
-      ];
+      ]);
       bodyTarget = [
         lerp(anchor[0], randomBody[0], bodyQuality),
         lerp(anchor[1], randomBody[1], bodyQuality),
@@ -39,11 +95,11 @@ class HorseGenetics {
     if (maneQuality !== null) {
       const anchor =
         POOPIE_ANCHORS[Math.floor(Math.random() * POOPIE_ANCHORS.length)];
-      const randomMane = [
+      const randomMane = _evenHue([
         Math.random() * 255,
         Math.random() * 255,
         Math.random() * 255,
-      ];
+      ]);
       maneTarget = [
         lerp(anchor[0], randomMane[0], maneQuality),
         lerp(anchor[1], randomMane[1], maneQuality),
@@ -70,24 +126,9 @@ class HorseGenetics {
       return [...fillGenes(rSum), ...fillGenes(gSum), ...fillGenes(bSum)];
     };
 
-    let colorGenes = [];
-    if (bodyTarget || maneTarget) {
-      const bt = bodyTarget || [
-        Math.random() * 255,
-        Math.random() * 255,
-        Math.random() * 255,
-      ];
-      const mt = maneTarget || [
-        Math.random() * 255,
-        Math.random() * 255,
-        Math.random() * 255,
-      ];
-      colorGenes = [...setGenesForColor(bt), ...setGenesForColor(mt)];
-    } else {
-      for (let i = 0; i < 48; i++) {
-        colorGenes.push(Math.random() < 0.5 ? 0 : 1);
-      }
-    }
+    // (no quality given: as random colour genes would be, hue evened out)
+    const plain = () => _evenHue([_randomChannel(), _randomChannel(), _randomChannel()]);
+    const colorGenes = [...setGenesForColor(bodyTarget || plain()), ...setGenesForColor(maneTarget || plain())];
 
     for (let i = 0; i < 103; i++) {
       if (i < 48) {
@@ -118,7 +159,7 @@ class HorseGenetics {
     // at 50/50, about 1 in 30 random fluffies would come out with both. So
     // when a random fluffy gets both, usually one of them is knocked down to
     // 3 of 5 genes: hidden (it can still be passed on to foals), not shown.
-    // Leaves about 1 in 1,000 random fluffies an alicorn.
+    // Leaves about 1 in 3,000 random fluffies an alicorn.
     const count = (from) => genes.slice(from, from + 5).reduce((s, g) => s + g, 0);
     if (count(53) >= 4 && count(58) >= 4 && Math.random() > ALICORN_RANDOM_KEEP) {
       const start = Math.random() < 0.5 ? 53 : 58; // lose the wings or the horn
@@ -281,6 +322,18 @@ class HorseGenetics {
     if (type === "unicorn" || type === "alicorn") {
       // Force horn: bits 58-62 to 1
       for (let i = 58; i <= 62; i++) this.horse.genes[i] = 1;
+    }
+    // A pegasus or unicorn shouldn't come out an alicorn: its other random
+    // genes (horn for a pegasus, wings for a unicorn) used to show about 1 in
+    // 5 times. At most 3 of 5 now: carried (foals can still get it), not shown.
+    const other = type === "pegasus" ? 58 : type === "unicorn" ? 53 : -1;
+    if (other >= 0) {
+      let have = 0;
+      for (let i = other; i < other + 5; i++) have += this.horse.genes[i] ? 1 : 0;
+      if (have >= 4) {
+        const bits = [1, 1, 1, 0, 0].sort(() => Math.random() - 0.5);
+        for (let i = 0; i < 5; i++) this.horse.genes[other + i] = bits[i];
+      }
     }
     if (type === "earthy") {
       for (let i = 53; i <= 62; i++) this.horse.genes[i] = 0;

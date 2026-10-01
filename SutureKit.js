@@ -105,6 +105,8 @@ class SutureKit {
 
     ctx.save();
     ctx.translate(this.x, this.y);
+    // In your hand: centred on the pointer
+    if (this.isDragging) ctx.translate(0, img.height / 2);
 
     if (this.whackTimer > 0) {
       // Animation: 0.2s duration.

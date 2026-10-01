@@ -5,6 +5,47 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+// Foals call for their mums (updateFoalCalls): when in distress (every
+// FOAL_CALL_REST seconds while it lasts), and now and then when they've been
+// on their own a while (FOAL_LONELY_AFTER seconds more than FOAL_MUM_NEAR
+// away). A mum comes running only for a call she hears or a foal in
+// distress she can see (tooFarFromBaby).
+const FOAL_MUM_NEAR = 150; // px: close enough already
+const FOAL_CALL_HEARD = 8; // game seconds a call brings her
+const FOAL_CALL_REST = 10; // between calls in distress
+const FOAL_LONELY_AFTER = 90; // on its own this long before it calls
+const FOAL_LONELY_CHANCE = 0.03; // ...then a call this often a second
+const FOAL_HUNGRY_CALL = 0.35;
+const foalCallTicker = new Ticker(1);
+
+function updateFoalCalls(dt) {
+  const step = foalCallTicker.step(dt);
+  if (!step || typeof fluffies === "undefined") return;
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  for (const f of fluffies) {
+    if (!f.isAlive || !f.tooYoungToWalk() || f.motherId === null || f.motherId === undefined) continue;
+    if (f.currentStateKey === "SLEEPING") continue;
+    const mum = fluffies.find((m) => m.id === f.motherId);
+    if (!mum || !mum.isAlive || mum.scene !== f.scene || relationships[mum.id]?.[f.id] !== "baby_child") {
+      f._aloneSince = undefined;
+      continue;
+    }
+    const far = Math.hypot(mum.x - f.x, mum.y - f.y) > FOAL_MUM_NEAR;
+    if (!far) {
+      f._aloneSince = undefined;
+      continue;
+    }
+    if (f._aloneSince === undefined || f._aloneSince > now) f._aloneSince = now;
+    if (f.foalCallingMum() || (f._mumCallAt !== undefined && now - f._mumCallAt >= 0 && now - f._mumCallAt < FOAL_CALL_REST)) continue;
+    const distress = f.foalInDistress();
+    const lonely = now - f._aloneSince >= FOAL_LONELY_AFTER && Math.random() < FOAL_LONELY_CHANCE * step;
+    if (!distress && !lonely) continue;
+    f._mumCallAt = now;
+    if (!f.speech || !f.speech.text) f.speak(getDialogue(["FOAL_CALL", f.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], f));
+  }
+}
+registerSystem("foalCalls", updateFoalCalls, 60);
+
 addHorseMethods({
   attemptFeedFromMare(mare) {
     if (
@@ -393,19 +434,38 @@ addHorseMethods({
     );
   },
 
+  // A foal of hers that needs her and isn't by her side: one in distress she
+  // can see, or one calling for her she can hear (it used to be any foal
+  // more than 400px away, so mums were always running about)
   tooFarFromBaby() {
     const rels = relationships[this.id];
     if (!rels) return null;
 
     for (const [otherId, relation] of Object.entries(rels)) {
+      if (relation !== "baby_child") continue;
       const other = fluffies.find((f) => f.id == otherId);
-      if (!other || !other.isAlive || other.scene !== this.scene) continue;
-
-      if (relation === "baby_child" && other.tooYoungToWalk() && (this.canSee() || this.canHear())) {
-        const dist = Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
-        if (dist > 400) return other;
-      }
+      if (!other || !other.isAlive || other.scene !== this.scene || !other.tooYoungToWalk()) continue;
+      const dist = Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
+      if (dist <= FOAL_MUM_NEAR) continue;
+      if ((other.foalCallingMum() && this.canHear()) || (other.foalInDistress() && this.canSee())) return other;
     }
     return null;
+  },
+
+  // A foal in trouble: scared, crying, hungry, hurt, attacked, or picked up
+  // by a hand it's afraid of
+  foalInDistress() {
+    if (!this.isAlive) return false;
+    if (this.isScared || this.bleedingTimer > 0 || this.health < 60 || this.lastAttackTimer > 0) return true;
+    if (this.hunger < FOAL_HUNGRY_CALL) return true;
+    if (this.expressionOverrideTimer > 0 && (this.expressionOverride === "CRYING_SHOCKED" || this.expressionOverride === "MISERABLE")) return true;
+    if (this.isDragging && ((this.playerFear || 0) >= 0.3 || (this.playerTrust ?? 0.5) < 0.3)) return true;
+    return false;
+  },
+
+  // Has it called for its mum just now? (updateFoalCalls)
+  foalCallingMum() {
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
+    return this._mumCallAt !== undefined && now - this._mumCallAt >= 0 && now - this._mumCallAt < FOAL_CALL_HEARD;
   },
 });

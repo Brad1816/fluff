@@ -3,21 +3,10 @@
 // and renaming a fluffy. Split out of UI.js.
 // ---------------------------------------------------------------------------
 
+// "Change name": the naming pop-up (Names.js), with its dice button
 function openNameModal(fluffy) {
-  let newName = prompt("Enter new name:", fluffyNames[fluffy.id] || "");
-  if (newName !== null) {
-    let name = newName.trim().replace(/[^a-zA-Z0-9-]/g, "");
-    if (name.length > 0) {
-      name = name.charAt(0).toUpperCase() + name.slice(1);
-      const first = !fluffyNames[fluffy.id];
-      fluffyNames[fluffy.id] = name;
-      if (typeof recordStory === "function") recordStory("named", fluffy, { x: name });
-      if (first && typeof giveAffection === "function") giveAffection(fluffy, "named");
-      if (first && typeof noteTurningPoint === "function") noteTurningPoint(fluffy, `${name} has a name now.`, { record: false });
-      const key = fluffy.tooYoungToSpeak() ? ["NAME", "CHIRPY"] : ["NAME"];
-      fluffy.speak(getDialogue(key, fluffy));
-    }
-  }
+  if (!fluffy) return;
+  namingPopup = { ids: [fluffy.id], kind: "rename", names: [fluffyNames[fluffy.id] || ""], focus: 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +59,9 @@ function describeInspectionPottyTraining(f) {
 // is (judgeCoatColour in globals.js): brown is poopie, greys, black,
 // pastels and muddy colours are drab, vivid colours are lovely.
 function describeInspectionCoat(f) {
-  const colorName = f.getColorName ? f.getColorName() : "?";
+  const key = f.getColorName ? f.getColorName() : "?";
+  const word = typeof COLOUR_WORDS !== "undefined" ? COLOUR_WORDS[key] || key : key;
+  const colorName = word.charAt(0).toUpperCase() + word.slice(1);
   const p = f.genetics ? f.genetics.calculateColorismPerception() : 1;
   if (p < COAT_POOPIE_LINE) return [`${colorName} - poopie colours!`, "bad"];
   if (p < COAT_DRAB_LINE) return [`${colorName} - a bit drab`, "ok"];
@@ -717,6 +708,7 @@ function handleInspectionModalClick() {
 // Pop-up screen list (Screens.js)
 registerScreen({
   name: "inspection",
+  pauses: false, // (it happens in the room, live)
   layer: 5,
   isOpen: () => typeof inspectedFluffy !== "undefined" && inspectedFluffy !== null,
   close: () => (inspectedFluffy = null),

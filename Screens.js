@@ -14,6 +14,8 @@
 //                                      // return true if it used the click
 //     escape: true,              // Esc closes it (default true)
 //     reset: () => ...,          // on new game / load (default: close)
+//     pauses: false,             // the game keeps running while it's open
+//                                // (default: it pauses - menus stop time)
 //   });
 //
 // and the game uses the list for:
@@ -56,6 +58,11 @@ function drawScreens(c) {
 
 function anyScreenOpen() {
   return SCREENS.some(_screenOpen);
+}
+
+// Is an open menu holding time still? (script.js animate, GameSpeed.js)
+function screenPausesGame() {
+  return SCREENS.some((s) => s.pauses !== false && _screenOpen(s));
 }
 
 // Top screen first; true if one used the click

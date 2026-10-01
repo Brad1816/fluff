@@ -79,6 +79,31 @@ const GENERAL_NAMES = [
   "Tootsie",
 ];
 
+// The dice button in the naming pop-up picks from these. (Kept apart from
+// the old automatic names above, so cleanUpAutoNames never mistakes a
+// house full of dice names for that old build.)
+const RANDOM_NAMES = [
+  "Acorn Pie", "Bramble", "Biscotti", "Blimp", "Bobbin", "Buttercream", "Cashew", "Chickpea", "Chutney", "Cinder",
+  "Clementina", "Cobble", "Crumpet", "Custer", "Dandy", "Dewdrop", "Dimple", "Dottie", "Ember", "Fable",
+  "Fiddle", "Flan", "Flapjack", "Flopsy", "Fluff Nugget", "Fondue", "Freckles", "Gherkin", "Glimmer", "Goober",
+  "Gravy", "Guppy", "Hazelnut", "Hiccup", "Huckle", "Jitterbug", "Juniper", "Kettle", "Kipper", "Knuckles",
+  "Ladle", "Lentil", "Lollipop", "Macaron", "Maple", "Marbles", "Meatball", "Mochi", "Moonpie", "Mumble",
+  "Muppet", "Nacho", "Nimbus", "Nutter", "Oatcake", "Paddy", "Pancake", "Pebbles", "Pickles", "Pinto",
+  "Pippa", "Plinky", "Pockets", "Pom Pom", "Porridge", "Potato", "Puddleduck", "Quokka", "Radley", "Ravioli",
+  "Ribbon", "Rolo", "Rumble", "Sausage", "Scampi", "Scone", "Shortbread", "Skittle", "Smudge", "Snickers",
+  "Snoot", "Sorbet", "Soup", "Sparrow", "Spud", "Squeaky", "Sundae", "Taffeta", "Tapioca", "Teacup",
+  "Thimble", "Tiptoe", "Toast", "Truffle", "Tumble", "Turnip", "Twiglet", "Waffle Jr", "Whisper", "Ziti",
+];
+
+// A name nobody living in the house has (the dice button)
+function randomFluffyName(taken = []) {
+  const used = new Set(taken.filter(Boolean));
+  if (typeof fluffies !== "undefined" && typeof fluffyNames !== "undefined") for (const f of fluffies) if (f.isAlive && fluffyNames[f.id]) used.add(fluffyNames[f.id]);
+  const free = RANDOM_NAMES.filter((n) => !used.has(n));
+  const pool = free.length ? free : RANDOM_NAMES;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function _isAutoName(n) {
   if (typeof n !== "string") return false;
   const base = n.replace(/ (II|III|IV|V|VI|VII|VIII|IX|X|\d+)$/, "");
@@ -262,6 +287,9 @@ function saveNamingPopup() {
       if (f) giveAffection(f, "named");
       // A name is a fluffy's pride (Identity.js)
       if (f && typeof noteTurningPoint === "function") noteTurningPoint(f, `${n} has a name now.`, { record: false });
+      // It hears its (new) name
+      const g = fluffies.find((x) => x.id === id);
+      if (namingPopup.kind === "rename" && g && typeof getDialogue === "function") g.speak(getDialogue(g.tooYoungToSpeak() ? ["NAME", "CHIRPY"] : ["NAME"], g));
     }
   });
   namingPopup = null;
@@ -284,7 +312,8 @@ function getNamingLayout() {
   const rows = [];
   for (let i = 0; i < n; i++) {
     const ry = y + 96 + i * rowH;
-    rows.push({ y: ry, box: { x: x + 250, y: ry + (rowH >= 64 ? 12 : Math.max(2, Math.round((rowH - 36) / 2))), w: 300, h: Math.min(36, rowH - 4) } });
+    const box = { x: x + 250, y: ry + (rowH >= 64 ? 12 : Math.max(2, Math.round((rowH - 36) / 2))), w: 254, h: Math.min(36, rowH - 4) };
+    rows.push({ y: ry, box, dice: { x: box.x + box.w + 8, y: box.y, w: 38, h: box.h } });
   }
   const by = y + h - 56;
   return {
@@ -321,15 +350,18 @@ function drawNamingPopup(c) {
   c.fillStyle = "#ffd6f0";
   c.font = "bold 22px Arial";
   const mum = p.mumId !== undefined ? fluffies.find((f) => f.id === p.mumId) : null;
+  const one = fluffies.find((x) => x.id === p.ids[0]);
   const title =
     p.kind === "litter"
       ? `${mum ? fluffyDisplayName(mum) : "Your fluffy"} had ${p.ids.length} foals!`
-      : "A new fluffy is yours!";
+      : p.kind === "rename"
+        ? `A new name for ${one ? fluffyDisplayName(one) : "your fluffy"}`
+        : "A new fluffy is yours!";
   c.fillText(title.length > 44 ? title.slice(0, 43) + "…" : title, L.x + L.w / 2, L.y + 40);
   c.fillStyle = "rgba(255,255,255,0.7)";
   c.font = "14px Arial";
   c.fillText(
-    p.kind === "litter" ? 'Give them names, or leave them as "Fluffy".' : 'Give it a name, or leave it as "Fluffy".',
+    p.kind === "litter" ? 'Give them names, or leave them as "Fluffy".' : p.kind === "rename" ? "Type a name, or roll the dice." : 'Give it a name, or leave it as "Fluffy".',
     L.x + L.w / 2,
     L.y + 66,
   );
@@ -377,10 +409,12 @@ function drawNamingPopup(c) {
       c.fillRect(b.x + 11 + tw, b.y + 9, 2, b.h - 18);
     }
     c.textBaseline = "alphabetic";
+    // Dice: a random name
+    if (typeof drawGlassButton === "function") drawGlassButton(row.dice.x, row.dice.y, row.dice.w, row.dice.h, "\u{1F3B2}", { fontSize: 17, borderRadius: 8 });
   });
 
   if (typeof drawGlassButton === "function") {
-    drawGlassButton(L.skip.x, L.skip.y, L.skip.w, L.skip.h, 'Leave as "Fluffy"', { fontSize: 15, borderRadius: 10 });
+    drawGlassButton(L.skip.x, L.skip.y, L.skip.w, L.skip.h, p.kind === "rename" ? "Cancel" : 'Leave as "Fluffy"', { fontSize: 15, borderRadius: 10 });
     drawGlassButton(L.save.x, L.save.y, L.save.w, L.save.h, p.kind === "litter" ? "Save names" : "Save name", {
       fontSize: 15,
       borderRadius: 10,
@@ -400,6 +434,11 @@ function handleNamingClick() {
   else {
     L.rows.forEach((row, i) => {
       if (hit(row.box)) namingPopup.focus = i;
+      // Dice: a random name nobody else has
+      if (row.dice && hit(row.dice)) {
+        namingPopup.focus = i;
+        namingPopup.names[i] = randomFluffyName(namingPopup.names.filter((_, j) => j !== i));
+      }
     });
   }
   return true;

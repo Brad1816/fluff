@@ -10,7 +10,9 @@
 //
 // PART 2: the family tree screen
 //   Opened with the "Family tree" button in the magnifying glass panel.
-//   Shows grandparents, parents, brothers and sisters, and foals. Click any
+//   Shows grandparents, parents, brothers and sisters, its special friend
+//   (beside it, joined by a heart; dashed once they're not together), and
+//   foals. Click any
 //   fluffy to move the tree onto it. The panel on the right shows the
 //   genetics of whoever the mouse is over (or the fluffy in the middle).
 // ---------------------------------------------------------------------------
@@ -27,6 +29,8 @@
 //   bred                      true if you bred it (born at home to your mare)
 //   age                       its age (game seconds) when last seen
 //   soldFor                   money you got when it was sold
+//   partnerIds                its special friends, oldest first (the last
+//                             is the newest; shown beside it on the tree)
 // (bred / age / soldFor feed the breeding records screen, BreedingRecords.js)
 // }
 let fluffyRecords = {};
@@ -84,7 +88,38 @@ function recordFluffy(f) {
   rec.causeOfDeath = f.isAlive ? null : f.causeOfDeath || rec.causeOfDeath || null;
   rec.pottyTraining = f.pottyTraining || 0;
   rec.personalities = f.personalities ? [...f.personalities] : [];
+  _ftNotePartners(f, rec);
   return rec;
+}
+
+// Special friends go in the book too (and the friend gets a record)
+function _ftNotePartners(f, rec) {
+  const rels = typeof relationships !== "undefined" && relationships ? relationships[f.id] : null;
+  if (!rels) return;
+  for (const oid in rels) {
+    if (rels[oid] !== "special_friend") continue;
+    const other = typeof fluffies !== "undefined" ? fluffies.find((x) => String(x.id) === oid) : null;
+    const pid = other ? other.id : isNaN(Number(oid)) ? oid : Number(oid);
+    if (!rec.partnerIds) rec.partnerIds = [];
+    const at = rec.partnerIds.findIndex((x) => String(x) === oid);
+    if (at < 0 || at !== rec.partnerIds.length - 1) {
+      if (at >= 0) rec.partnerIds.splice(at, 1);
+      rec.partnerIds.push(pid); // (newest last)
+    }
+    if (other && !fluffyRecords[other.id]) recordFluffy(other);
+  }
+}
+
+// Its newest special friend's record (null if none), and whether they're
+// still together
+function getFamilyPartner(id) {
+  const rec = getFamilyRecord(id);
+  if (!rec || !rec.partnerIds || !rec.partnerIds.length) return null;
+  const pid = rec.partnerIds[rec.partnerIds.length - 1];
+  const p = getFamilyRecord(pid);
+  if (!p) return null;
+  const together = typeof areSpecialFriends === "function" && typeof relationships !== "undefined" && areSpecialFriends(rec.id, pid);
+  return { rec: p, together, count: rec.partnerIds.length };
 }
 
 // Should this fluffy be in the book? Yours, already known (a parent of one
@@ -201,12 +236,14 @@ function familyKeepIds() {
     if (f.adopted || f.formerPet) {
       add(f.motherId);
       add(f.fatherId);
+      for (const pid of fluffyRecords[f.id]?.partnerIds || []) add(pid);
     }
   }
   for (const d of typeof dayCareFluffies !== "undefined" ? dayCareFluffies : []) add(d.id);
   const mine = Object.values(fluffyRecords).filter((r) => r.mine || r.bred);
   for (const r of mine) {
     add(r.id);
+    for (const pid of r.partnerIds || []) add(pid); // special friends
     // Ancestors
     let gen = [r];
     for (let g = 0; g < TIDY_ANCESTOR_GENS && gen.length; g++) {
@@ -580,12 +617,26 @@ function _buildFamilyTreeLayout(focusId) {
   elbow(momNode, meNode);
   elbow(dadNode, meNode);
 
-  // Brothers and sisters either side
+  // Its special friend, just to the right
+  const partner = getFamilyPartner(focusId);
+  if (partner) {
+    const n = card(partner.rec, FT_TREE_W / 2 + 160, rowMe + 6, bigW, bigH, partner.together ? "Special friend" : "Ex special friend");
+    n.partner = true;
+    n.together = partner.together;
+  }
+
+  // Brothers and sisters either side (not in the special friend's spot)
   const sibs = getFamilySiblings(focusId);
-  const shownSibs = sibs.slice(0, 6);
-  shownSibs.forEach((s, i) => {
+  const slots = [];
+  for (let i = 0; slots.length < 6; i++) {
     const side = i % 2 === 0 ? -1 : 1;
     const step = Math.floor(i / 2) + 1;
+    if (partner && side === 1 && step === 1) continue;
+    slots.push({ side, step });
+  }
+  const shownSibs = sibs.slice(0, partner ? 5 : 6);
+  shownSibs.forEach((s, i) => {
+    const { side, step } = slots[i];
     const x = FT_TREE_W / 2 + side * (70 + step * 98);
     const n = card(s.rec, x, rowMe + 20, smallW, smallH, s.full ? "Sibling" : "Half-sibling");
     n.sibling = true;
@@ -656,6 +707,12 @@ function _drawFamilyCard(c, n, focusId) {
   c.font = "11px Arial";
   const statusColor = { alive: "#9fe0a8", dead: "#ff8a80", sold: "#f7d774" }[rec.status] || "#cfcfcf";
   c.fillStyle = statusColor;
+  if (n.partner) {
+    // (too long with the status too: "Special friend", or how it ended)
+    c.fillStyle = rec.status === "alive" ? "#ff9ccc" : statusColor;
+    c.fillText(rec.status === "alive" ? n.role : FAMILY_STATUS_TEXT[rec.status] || rec.status, n.x + n.w / 2, n.y + n.h - 9);
+    return;
+  }
   const role = isFocus ? "" : n.role + " · ";
   c.fillText(role + (FAMILY_STATUS_TEXT[rec.status] || rec.status), n.x + n.w / 2, n.y + n.h - 9);
 }
@@ -691,6 +748,29 @@ function _renderFamilyTreeCanvas(focusId) {
       c.lineTo(n.x + n.w / 2, n.y);
     }
     c.stroke();
+  }
+
+  // The special friend: a pink line with a heart (dashed if they've split)
+  const pn = layout.nodes.find((n) => n.partner);
+  const meN = layout.nodes.find((n) => n.role === "focus");
+  if (pn && meN) {
+    const y = pn.y + pn.h / 2;
+    c.save();
+    c.strokeStyle = pn.together ? "#ff7eb6" : "rgba(255,126,182,0.5)";
+    c.lineWidth = 3;
+    if (!pn.together) c.setLineDash([6, 5]);
+    c.beginPath();
+    c.moveTo(meN.x + meN.w, y);
+    c.lineTo(pn.x, y);
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle = pn.together ? "#ff7eb6" : "rgba(255,126,182,0.6)";
+    c.font = "bold 20px Arial";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(pn.together ? "\u2665" : "\u2661", (meN.x + meN.w + pn.x) / 2, y - 1);
+    c.textBaseline = "alphabetic";
+    c.restore();
   }
 
   for (const n of layout.nodes) _drawFamilyCard(c, n, focusId);

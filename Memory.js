@@ -29,7 +29,8 @@ const MEMORY_KEEP = 5;
 
 // How scary each way of being hurt is (victim's fear goes up by this)
 const FEAR_FROM_WEAPON = {
-  stick: 0.12, // sorry stick and spray bottle
+  stick: 0.12, // sorry stick
+  spray: 0.04, // a squirt from the spray bottle: startling, not painful
   thumbtack: 0.2, // thumbtack and syringe
   cattle_prod: 0.25,
   knife: 0.3,
@@ -39,6 +40,7 @@ const FEAR_FROM_WEAPON = {
 
 const MEMORY_TEXT = {
   stick: "Hit with the stick",
+  spray: "Squirted with the spray bottle",
   thumbtack: "Poked with a tack",
   cattle_prod: "Shocked with the prod",
   knife: "Cut with a knife",
@@ -75,8 +77,10 @@ function _traitVal(f, key) {
 
 function rememberPlayerEvent(f, type) {
   ensurePlayerMemory(f);
-  // Harm goes in the story book (the kind things are tallied by Affection.js)
+  // Harm goes in the story book (the kind things are tallied by Affection.js);
+  // a squirt of water is only a telling-off
   if (MEMORY_HARM_TYPES.has(type) && typeof recordStory === "function") recordStory("harmed", f, { x: MEMORY_TEXT[type] || type });
+  else if (type === "spray" && typeof recordStory === "function") recordStory("scolded", f);
   const now = _memNow();
   // The same thing again within a minute just refreshes the time
   const last = f.playerMemories[0];
@@ -133,13 +137,16 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
     if (isDead || !victim.isAlive) victim.killedByPlayer = true;
   }
   if (!isDead && victim.isAlive) {
-    if (weaponType === "stick" && typeof noteConditionStick === "function") noteConditionStick(victim); // (Care.js)
+    if ((weaponType === "stick" || weaponType === "spray") && typeof noteConditionStick === "function") noteConditionStick(victim); // (Care.js)
     changePlayerFear(victim, fear);
     rememberPlayerEvent(victim, isTraining ? "training" : weaponType);
     // It may carry the mark for good (Scars.js)
     if (!isTraining && !isAmputation && typeof scarFromYou === "function") scarFromYou(victim, weaponType);
   }
-  // Everyone who saw or heard it gets scared of you too
+  // Everyone who saw or heard it gets scared of you too (hardly at all for a
+  // squirt of water or a lesson: they saw a telling-off, not cruelty, so
+  // they don't remember it as harm either)
+  const mild = weaponType === "spray" || isTraining;
   for (const other of fluffies) {
     if (
       other === victim ||
@@ -151,9 +158,9 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
       continue;
     const rel = relationships[other.id] && relationships[other.id][victim.id];
     const close = rel && rel !== "friend";
-    let amount = (close ? 0.08 : 0.03) * (isDead ? 2 : 1) * (isTraining ? 0.3 : 1);
+    let amount = (close ? 0.08 : 0.03) * (isDead ? 2 : 1) * (isTraining ? 0.3 : 1) * (weaponType === "spray" ? 0.1 : 1);
     changePlayerFear(other, amount);
-    rememberPlayerEvent(other, close ? "witness_family" : "witness");
+    if (!mild) rememberPlayerEvent(other, close ? "witness_family" : "witness");
   }
 }
 

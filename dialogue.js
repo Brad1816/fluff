@@ -129,6 +129,12 @@ const DIALOGUE = {
       "Hewd go dat way!",
       "<Target>! Wait!",
     ],
+    // (in one room: nowhere to "go dat way" to)
+    FOLLOW_NEAR: [
+      "Wait fow <speaker>!",
+      "<Target>! Wait!",
+      "Stay cwose, fwens!",
+    ],
     STRANGER: [
       "Nu am <speaker>'s hewd! Go 'way!",
       "Who dat? Nu pawt ob hewd!",
@@ -838,6 +844,11 @@ const DIALOGUE = {
   },
 
   // Milk drinking
+  // A foal calling for its mum (HorseFamily updateFoalCalls)
+  FOAL_CALL: {
+    DEFAULT: ["Mummah? Mummah!", "MUMMAH! <Speaker> nee' mummah!", "Wan' mummah!", "Mummah, whewe am yu?"],
+    CHIRPY: ["*cheep cheep* MUMMAH!", "*loud peeping*", "*chirp* *CHIRP*!", "*peep?* *PEEEP!*"],
+  },
   MUMMAH_COMIN: [
     "Mummah comin' <target>!",
     "Nu cwy anymowe <target>! Mummah comin'!!",
@@ -1017,6 +1028,17 @@ const DIALOGUE = {
         "Ahh... maek poopies!",
       ],
       CHIRPY: ["*satisfied peeping*", "Peep cheep!", "Cheep cheep!"],
+    },
+    // Set down in the litterbox by you (HorseToilet placedInLitterbox)
+    PLACED: {
+      DEFAULT: [
+        "Dis am... poopie pwace?",
+        "<Speaker> make poopies hewe?",
+        "Speshuw poopie pwace!",
+        "*sniff sniff* Smeww wike poopie pwace...",
+      ],
+      CHIRPY: ["*sniff sniff* Peep?", "*curious cheeping*", "Cheep?"],
+      SMARTY: ["SMAWTY NU NEED DUMMEH POOPIE PWACE!", "SMAWTY MAKE POOPIES WHEWEVA SMAWTY WAN'!"],
     },
     BAD: {
       DEFAULT: [
@@ -1382,6 +1404,14 @@ const DIALOGUE = {
       "H-HAB WINGIES AN' HOWN??? SCAWDIES!!!",
       "HUU HUU HUUU... NU NUM <SPEAKER>!!",
       "MUNSTAH GON NUM <SPEAKER>!! WUN WAY!! WUN WAY!!",
+    ],
+    // A brave one goes for it instead (AlicornAcceptance alicornStance)
+    ALICORN_BRAVE: [
+      "BAD MUNSTAH!! GU 'WAY!!",
+      "<SPEAKER> NU SCAWED OB MUNSTAH!!",
+      "WEAB FWENS AWONE, MUNSTAH!!",
+      "<SPEAKER> GIB MUNSTAH HUWTIES!!",
+      "NU WAN MUNSTAH HEWE!! SHOO!!",
     ],
     CANNIBALISM: [
       "NUUUUU!!! NU AM NUMMIES!!!",

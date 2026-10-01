@@ -19,6 +19,9 @@
 //   - filthy: slowly unhappier, grumbles, and the others say it smells
 //
 // Bath time: rub the SPONGE on a fluffy (Sponge.js calls spongeFluffy).
+// It has to be a real scrub, not a swipe going past: the sponge must rub
+// back and forth over the same fluffy (SCRUB_TO_START px of rubbing with at
+// least one turn back) before the bath starts (_scrubReady).
 // Each rub takes off BATH_SCRUB and makes bubbles. How it takes it depends on
 // f.bathLike (-1..1, made the first time, saved; gentle and playful fluffies
 // like baths more, grumpy and timid ones less):
@@ -37,6 +40,7 @@ const DIRT_FROM_ACCIDENT = 0.006; // pooping on the floor (a third of that for p
 const DIRT_PER_DAY = 0.08; // just living
 const DIRT_OUTSIDE_PER_HOUR = 0.01;
 const DIRT_MUD_PER_HOUR = 0.12; // out in full rain
+const SCRUB_TO_START = 80; // px of rubbing over one fluffy before the bath begins
 const BATH_SCRUB = 0.08; // per rub (the sponge rubs 4 times a second)
 const BATH_SESSION = 12; // seconds: one reaction per bath
 const BATH_GET_USED = 0.08;
@@ -125,9 +129,38 @@ function spongeFluffy(sponge) {
       x.hitTestAsSeen &&
       x.hitTestAsSeen(sponge.x, sponge.y),
   );
-  if (!f) return false;
+  if (!f) {
+    sponge._scrub = null;
+    return false;
+  }
+  if (!_scrubReady(sponge, f)) return false;
   scrubFluffy(f);
   return true;
+}
+
+// Has the sponge been rubbed back and forth over this fluffy (not just
+// swept past it)? Tracks the rubbing on the sponge itself.
+function _scrubReady(sponge, f) {
+  let s = sponge._scrub;
+  if (!s || s.id !== f.id) {
+    sponge._scrub = { id: f.id, x: sponge.x, y: sponge.y, dist: 0, turns: 0, sx: 0, sy: 0, ready: false };
+    return false;
+  }
+  if (s.ready) return true;
+  const dx = sponge.x - s.x;
+  const dy = sponge.y - s.y;
+  s.x = sponge.x;
+  s.y = sponge.y;
+  s.dist += Math.hypot(dx, dy);
+  // A turn back: the rub changes direction (sideways or up and down)
+  const sx = Math.abs(dx) > 2 ? Math.sign(dx) : 0;
+  const sy = Math.abs(dy) > 2 ? Math.sign(dy) : 0;
+  if (sx && s.sx && sx !== s.sx) s.turns++;
+  else if (sy && s.sy && sy !== s.sy) s.turns++;
+  if (sx) s.sx = sx;
+  if (sy) s.sy = sy;
+  if (s.dist >= SCRUB_TO_START && s.turns >= 1) s.ready = true;
+  return s.ready;
 }
 
 function scrubFluffy(f) {

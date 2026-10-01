@@ -39,8 +39,10 @@ function notifyViolence(
     const key1 = "WITNESS_VIOLENCE";
     let key2, key3;
     const rel = relationships[other.id]?.[victim.id];
-    // Witnessing potty training (Sorry Stick)
-    if (isTraining && weaponType === "stick") {
+    // A squirt of water: they look round, that's all
+    if (weaponType === "spray" && !isTraining) continue;
+    // Witnessing potty training (Sorry Stick, spray bottle)
+    if (isTraining && (weaponType === "stick" || weaponType === "spray")) {
       // Smarties don't learn from watching (this was the wrong way round:
       // only smarties learned; the brush's witnesses work this way too)
       if (other.isSmarty()) continue;
@@ -1276,6 +1278,16 @@ class Horse {
       }
     }
     this.placedOn = null;
+
+    // Set down in a litterbox: a litter-training lesson (HorseToilet)
+    if (this.isAlive && typeof this.litterboxDroppedIn === "function") {
+      const lb = this.litterboxDroppedIn();
+      if (lb) {
+        this.placedInLitterbox(lb);
+        this.initBehavior("IDLE");
+        return;
+      }
+    }
 
     if (typeof objects !== "undefined") {
       const grinders = objects.filter((o) => o instanceof Grinder);

@@ -190,7 +190,7 @@ module.exports = [
         check(run.n >= 6 && run.n <= 8, `5-7 rivals plus yours: ${run.n}`);
       }
       check(r.popup && r.anyOpen && r.closed, "results pop up and close");
-      check(Math.abs(r.afterWin.price / r.priceBefore - 1.15) < 0.01, `one win: +15% price (${r.priceBefore} -> ${r.afterWin.price})`);
+      check(Math.abs(r.afterWin.price - r.priceBefore * 1.15) <= 1, `one win: +15% price (${r.priceBefore} -> ${r.afterWin.price})`); // (prices are whole dollars)
       checkEqual(r.afterWin.row, "1 win", "ribbons row");
       checkEqual(r.afterWin.champ, false, "not a champion after one win");
       checkEqual(r.afterWin.goal, 1, "counted for goals");

@@ -243,6 +243,7 @@ window.addEventListener(
       handleSaveListScroll(e.deltaY);
     }
     if (typeof handleHelpScroll === "function") handleHelpScroll(e.deltaY);
+    if (typeof handleRelMapWheel === "function") handleRelMapWheel(e.deltaY); // (RelationshipMap.js)
   },
   // Needed for preventDefault to work (browsers make wheel listeners
   // "passive" otherwise, and log an error on every scroll)
@@ -1926,6 +1927,46 @@ function isPunishmentTool(o) {
 function isPlaceableWorldTool(obj) {
   const entry = getToolEntry(obj);
   return !!(entry && entry.tool.placeableInWorld);
+}
+
+// ---- Held tools: the working end on the pointer ----
+// A tool in your hand acts at the pointer (it hits the fluffy under the
+// mouse), so it's drawn with its working end right there: the stick's and
+// knife's tips, the spray bottle's nozzle, the middle of the magnifying
+// glass's lens, and the sponge, brush and suture kit centred on it.
+//   ax, ay  the working end's spot on the picture (0..1 of its width/height)
+//   turn    how far the picture is turned (degrees; 225 = held from the
+//           top right, tip pointing down to the pointer)
+const TOOL_GRIPS = {
+  sorry_stick: { ax: 0.5, ay: 0.02, turn: 225 },
+  knife: { ax: 0.25, ay: 0, turn: 225 },
+  spray_bottle: { ax: 0.12, ay: 0.15, turn: 0 },
+  magnifying_glass: { ax: 0.5, ay: 0.3, turn: 0 },
+  brush: { ax: 0.5, ay: 0.5, turn: 0 },
+  sponge: { ax: 0.5, ay: 0.5, turn: 0 },
+  suture_kit: { ax: 0.5, ay: 0.5, turn: 0 },
+};
+
+// Draw a held tool's picture (after ctx.translate(tool.x, tool.y)).
+// swing: radians, turning about its far end (a whack); bob: px along it.
+function drawHeldTool(ctx, img, grip, swing = 0, bob = 0) {
+  const g = TOOL_GRIPS[grip];
+  const w = img.width;
+  const h = img.height;
+  ctx.rotate((g.turn * Math.PI) / 180);
+  if (swing) {
+    const fx = (0.5 - g.ax) * w;
+    const fy = (1 - g.ay) * h;
+    ctx.translate(fx, fy);
+    ctx.rotate(swing);
+    ctx.translate(-fx, -fy);
+  }
+  ctx.drawImage(img, -g.ax * w, -g.ay * h + bob);
+}
+
+// The 0..1 whack/spray animation as a 0 -> 1 -> 0 bump
+function _toolBump(timer, len = 0.2) {
+  return timer > 0 ? Math.sin(((len - timer) / len) * Math.PI) : 0;
 }
 
 function isToolObject(obj) {

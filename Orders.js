@@ -101,7 +101,8 @@ const ORDER_REQUIREMENTS = {
       }
       return { nice: true, value: 200 };
     },
-    label: (r) => (r.colour ? `Coat colour: ${r.colour}` : "Nice coat colours (not poopie or drab)"),
+    // (people write these: plain English, not fluffy talk)
+    label: (r) => (r.colour ? `Coat colour: ${typeof COLOUR_WORDS !== "undefined" ? COLOUR_WORDS[r.colour] || r.colour : r.colour}` : "Nice coat colours (not poopie or drab)"),
     matches: (r, f) =>
       r.colour
         ? f.getColorName && f.getColorName() === r.colour

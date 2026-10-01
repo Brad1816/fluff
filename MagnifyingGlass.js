@@ -86,9 +86,14 @@ class MagnifyingGlass {
     ctx.save();
     ctx.translate(this.x, this.y);
 
-    if (!this.isDragging) {
-      ctx.rotate(this.angle);
+    // In your hand: the middle of the lens on the pointer
+    if (this.isDragging) {
+      drawHeldTool(ctx, img, "magnifying_glass");
+      ctx.restore();
+      return;
     }
+
+    ctx.rotate(this.angle);
 
     ctx.drawImage(img, -img.width / 2, -img.height);
     ctx.restore();

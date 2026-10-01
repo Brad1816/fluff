@@ -5,6 +5,44 @@
 // this one, see index.html): UIMessages, UIToolbox, UISelling, UIDebug,
 // UIInspection, UIDayCare, UIChatLog, UIScenes.
 
+// "12 fluffies here (3 foals) · room for 10" - bottom right of the screen
+function roomHeadcountText(scene = currentScene) {
+  if (typeof fluffies === "undefined") return "";
+  const here = fluffies.filter((f) => f.isAlive && f.scene === scene);
+  if (!here.length) return "No fluffies here";
+  const foals = here.filter((f) => f.growth < 1).length;
+  const yours = here.filter((f) => f.adopted).length;
+  let t = `${here.length} ${here.length === 1 ? "fluffy" : "fluffies"} here`;
+  if (foals) t += ` (${foals} ${foals === 1 ? "foal" : "foals"})`;
+  if (yours && yours < here.length) t += ` · ${yours} yours`;
+  const space = typeof roomSpace === "function" ? roomSpace(scene) : 0;
+  if (space && typeof playerQuartersAndNotBackyard === "function" && playerQuartersAndNotBackyard(scene)) t += ` · room for ${space}`;
+  return t;
+}
+
+function drawRoomHeadcount(c) {
+  if (typeof gameState !== "undefined" && gameState !== "PLAYING" && gameState !== "PAUSED") return;
+  const t = roomHeadcountText();
+  if (!t) return;
+  c.save();
+  c.font = "bold 13px Arial";
+  c.textAlign = "right";
+  c.textBaseline = "middle";
+  const w = c.measureText(t).width + 16;
+  const x = width - 10;
+  const y = height - 18;
+  c.fillStyle = "rgba(0, 0, 0, 0.45)";
+  if (c.roundRect) {
+    c.beginPath();
+    c.roundRect(x - w, y - 11, w, 22, 8);
+    c.fill();
+  } else c.fillRect(x - w, y - 11, w, 22);
+  const crowded = typeof crowding === "function" && crowding(currentScene) > 0;
+  c.fillStyle = crowded ? "#ff8a80" : "white";
+  c.fillText(t, x - 8, y + 1);
+  c.restore();
+}
+
 function drawUI(ctx) {
   // Money Top Left
   ctx.fillStyle = "gold";
@@ -94,6 +132,9 @@ function drawUI(ctx) {
   );
   // Game clock and fast-forward buttons (GameSpeed.js)
   if (typeof drawGameSpeed === "function") drawGameSpeed(chatLogBtnX + chatLogBtnW);
+
+  // How many fluffies are in this room (bottom right)
+  drawRoomHeadcount(ctx);
 
   if (showActionButtons && menuAvailable) {
     // Filter Button
@@ -1039,7 +1080,7 @@ canvas.addEventListener("mousedown", (e) => {
 
           const r = Math.random();
           let spawnType = "earthy";
-          if (r < 0.005) spawnType = "alicorn"; // extremely rare (1 in 200)
+          if (r < 0.002) spawnType = "alicorn"; // extremely rare (1 in 500)
           else if (r < 0.35) spawnType = "unicorn";
           else if (r < 0.65) spawnType = "pegasus";
           else spawnType = "earthy";
@@ -1131,7 +1172,8 @@ canvas.addEventListener("mousedown", (e) => {
         obj.dragOffset.y = 0;
       } else if (img) {
         obj.dragOffset.x = 0;
-        obj.dragOffset.y = img ? img.height * 0.2 : 0;
+        // A tool: its working end on the pointer (TOOL_GRIPS, globals.js)
+        obj.dragOffset.y = typeof isToolObject === "function" && isToolObject(obj) ? 0 : img.height * 0.2;
       } else {
         obj.dragOffset.x = obj.x - mouse.x;
         obj.dragOffset.y = obj.y - mouse.y;

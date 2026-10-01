@@ -62,7 +62,9 @@ addHorseMethods({
               !f.isSmarty() &&
               f.gender === "female" &&
               f.scene === this.scene &&
-              (rels[f.id] === "baby_child" || rels[f.id] === "child"),
+              (rels[f.id] === "baby_child" || rels[f.id] === "child") &&
+              // (only if it's upset at being picked up, or calling for her)
+              (f.foalInDistress() || f.foalCallingMum()),
           );
           if (grabbedChild) {
             this.setTargetPosition(grabbedChild.x, grabbedChild.y);

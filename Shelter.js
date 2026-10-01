@@ -3,8 +3,8 @@
 //
 //   - Boarding: the desk still boards your own fluffies (UIDayCare.js,
 //     dayCareFluffies; the boarding fee is a daily bill, Bills.js).
-//   - Adoption: SHELTER_CAGES kennels (ShelterKennels, three either side of
-//     the desk) hold strays and fluffies their owners gave up. You can see
+//   - Adoption: SHELTER_CAGES kennels (ShelterKennels: two rows of four,
+//     stacked two high either side of the desk) hold strays and fluffies their owners gave up. You can see
 //     each one through the bars, but all you can read about it is the plaque
 //     under its cage: its name, what it is, roughly how old, where it came
 //     from, a line or two from the staff, and its time's-up day. No
@@ -25,9 +25,9 @@
 // ---------------------------------------------------------------------------
 
 const SHELTER_SCENE = "DAY_CARE";
-const SHELTER_CAGES = 6;
-const SHELTER_ARRIVALS = [1, 2]; // new fluffies each morning
-const SHELTER_START = 4; // cages filled when you first visit
+const SHELTER_CAGES = 8;
+const SHELTER_ARRIVALS = [1, 3]; // new fluffies each morning
+const SHELTER_START = 5; // cages filled when you first visit
 const SHELTER_STAY_DAYS = [3, 5]; // days until time's up
 const SHELTER_ADOPT_FEE = 60; // placeholder
 const SHELTER_LAST_DAY_DISCOUNT = 0.5;
@@ -492,17 +492,24 @@ function onBoarderPickedUp(horse, data) {
 
 // ---- The kennels (an object in the shelter room, like the desk) ----
 
+// Two rows of four: on each side of the desk, two kennels side by side,
+// stacked two high. Top row first, left to right.
 function shelterCageRects() {
   const deskHalf = 170;
   const margin = 30;
   const gap = 12;
+  const plaque = 30; // room under each kennel for its plaque
   const side = width / 2 - deskHalf - margin;
-  const w = Math.min(130, Math.floor((side - gap * 2) / 3));
-  const h = Math.round(w * 0.85);
-  const y = Math.round(height * 0.15) + 60;
+  const w = Math.min(130, Math.floor((side - gap) / 2));
+  const h = Math.round(w * 0.78);
+  const y0 = Math.round(height * 0.15) + 40;
+  const leftX = margin + Math.max(0, (side - (2 * w + gap)) / 2);
+  const rightX = width - leftX - (2 * w + gap);
   const rects = [];
-  for (let i = 0; i < 3; i++) rects.push({ x: margin + i * (w + gap), y, w, h });
-  for (let i = 0; i < 3; i++) rects.push({ x: width - margin - (3 - i) * w - (2 - i) * gap, y, w, h });
+  for (let row = 0; row < 2; row++) {
+    const y = y0 + row * (h + plaque);
+    for (const sx of [leftX, rightX]) for (let col = 0; col < 2; col++) rects.push({ x: Math.round(sx + col * (w + gap)), y, w, h });
+  }
   return rects;
 }
 
@@ -533,8 +540,9 @@ class ShelterKennels {
   }
   updatePosition() {
     const rects = shelterCageRects();
+    const last = rects[rects.length - 1];
     this.x = width / 2;
-    this.y = rects[0].y + rects[0].h + 22; // bottom of the plaques
+    this.y = last.y + last.h + 22; // bottom of the lowest plaques
   }
   update() {
     this.updatePosition();
@@ -546,7 +554,7 @@ class ShelterKennels {
   getBottomY() {
     return this.y;
   }
-  // Which cage (0-5) is at this point, or -1 (the plaque counts)
+  // Which cage (0-7) is at this point, or -1 (the plaque counts)
   cageAt(px, py) {
     const rects = shelterCageRects();
     for (let i = 0; i < rects.length; i++) {
