@@ -26,7 +26,13 @@
 // ---------------------------------------------------------------------------
 
 const RUN_REBEL = 0.25;
-const RUN_MISERABLE = 0.1;
+const RUN_MISERABLE = 0.06;
+// "Miserable": it fears you (RUN_FEAR) and either doesn't trust you at all
+// (RUN_TRUST) or is unhappy (RUN_UNHAPPY). Happiness alone is a poor guide:
+// meals and a bed lift it every day, however it's treated.
+const RUN_FEAR = 0.5;
+const RUN_TRUST = 0.2;
+const RUN_UNHAPPY = 0.3;
 const LORE_KIND = 0.15;
 const LORE_HARM = 0.15;
 
@@ -50,7 +56,7 @@ function runAwayChance(f) {
   const title = typeof titleOf === "function" ? titleOf(f) : null;
   if (title === "Broken") return 0; // (it hasn't the will)
   if (title === "Rebel") return RUN_REBEL;
-  if ((f.playerFear || 0) >= 0.6 && f.happiness < 0.3) return RUN_MISERABLE;
+  if ((f.playerFear || 0) >= RUN_FEAR && ((f.playerTrust || 0) < RUN_TRUST || f.happiness < RUN_UNHAPPY)) return RUN_MISERABLE;
   return 0;
 }
 

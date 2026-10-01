@@ -27,6 +27,7 @@
 // ---------------------------------------------------------------------------
 
 const OUTING_MAX = 12;
+const OUTING_HUNGRY = 0.4; // foals hungrier than this stay home
 const OUTING_JOY = 0.03; // happiness a game minute
 const OUTING_BORED = 0.12; // boredom off a game minute
 const OUTING_STRAY = 700; // px from the middle of the screen before it comes back
@@ -105,6 +106,8 @@ function outingCandidates(scene) {
         !(f.matingState && f.matingState.isMating) &&
         // (not a mare about to give birth)
         !(f.isPregnant && (f.pregnancyTimer || 0) < 60) &&
+        // (a hungry foal stays home by the bowls: some starved in the park)
+        !(f.growth < 1 && f.hunger < OUTING_HUNGRY) &&
         !(typeof f.tooYoungToWalk === "function" && f.tooYoungToWalk()),
     )
     .slice(0, OUTING_MAX);
@@ -114,7 +117,14 @@ function outingCandidates(scene) {
 function _outingBabies(members) {
   if (typeof fluffies === "undefined") return [];
   const mums = new Set(members.map((f) => f.id));
-  return fluffies.filter((f) => f.isAlive && mums.has(f.motherId) && !members.includes(f) && !f.isDragging && !f.currentCage && typeof f.tooYoungToWalk === "function" && f.tooYoungToWalk());
+  return fluffies.filter((f) => {
+    if (!f.isAlive || !mums.has(f.motherId) || members.includes(f) || f.isDragging || f.currentCage) return false;
+    if (typeof f.tooYoungToWalk !== "function" || !f.tooYoungToWalk()) return false;
+    // (not one that's hungry, or whose mum won't feed it: it stays with the Feed-Bot)
+    const mum = members.find((m) => m.id === f.motherId);
+    if (f.hunger < OUTING_HUNGRY || (typeof mumWontFeed === "function" && mumWontFeed(mum, f))) return false;
+    return true;
+  });
 }
 
 // Right-click, at home
@@ -176,9 +186,13 @@ function endOuting(why = "home") {
     if (typeof f.initBehavior === "function") f.initBehavior("IDLE");
     n++;
   }
-  // A day out together, remembered (a good long one)
+  // A day out together, remembered (a good long one) - the first in a
+  // season, not every trip (a daily outing made one a day, each with its
+  // anniversary)
+  const season = typeof getSeason === "function" ? getSeason() : "";
+  const year = typeof DAYS_PER_YEAR === "number" && typeof getDayNumber === "function" ? Math.floor((getDayNumber() - 1) / DAYS_PER_YEAR) + 1 : 0;
   if (who.length >= 2 && minutes >= 2 && typeof makeSharedMemory === "function")
-    makeSharedMemory("party", "A day out at the park", who, { key: `outing:${Math.floor(o.outing.start)}`, good: true, scene: home });
+    makeSharedMemory("party", `A ${season ? season.toLowerCase() + " " : ""}day out at the park`, who, { key: `outing:${year}:${season}`, good: true, scene: home, window: 1e12 });
   o.outing = null;
   if (n) _poSay(why === "left" ? `You walk ${n === 1 ? "your fluffy" : `all ${n}`} home from the park.` : `Home time: ${n === 1 ? "one fluffy" : `${n} fluffies`} back home, tired and happy.`);
   return n;

@@ -86,6 +86,24 @@ function feedBotRowdiness(f) {
   return r;
 }
 
+const FEEDBOT_STARVING = 0.25; // a newborn this hungry gets formula, mum or no mum
+
+// A mum who turns her own foal away from the milk (HorseFamily.attemptFeedFromMare)
+function mumWontFeed(mum, foal) {
+  if (!mum || !foal) return false;
+  if (typeof mumRejectsFoalColour === "function" && mumRejectsFoalColour(mum, foal)) return true;
+  const rel = typeof relationships !== "undefined" && relationships[mum.id] ? relationships[mum.id][foal.id] : null;
+  if (rel === "estranged_child" || rel === "rejected_baby") return true;
+  return !!(
+    typeof worldSettings !== "undefined" &&
+    worldSettings.alicornIntolerance &&
+    typeof foal.typeVisibleToOthers === "function" &&
+    foal.typeVisibleToOthers() === "alicorn" &&
+    typeof mum.tolerantOfAlicorns === "function" &&
+    !mum.tolerantOfAlicorns()
+  );
+}
+
 class FeedBot {
   constructor(scene = "INDOORS") {
     this.id = nextObjectId++;
@@ -190,14 +208,17 @@ class FeedBot {
     return objects.filter((o) => o instanceof Bowl && o.type !== "spill" && o.scene === this.scene && !o.currentCage && !o.isDragging);
   }
 
-  // Newborns too young to walk with no nursing mum in the room
+  // Newborns too young to walk with no nursing mum in the room - or a mum
+  // who won't feed it (its coat colour, it's an alicorn), or one starving
+  // anyway: those starved beside her in the long test games
   _orphans() {
     if (this.formula <= 0 || this.mode === "off") return [];
     return fluffies.filter((f) => {
       if (!f.isAlive || f.scene !== this.scene || !f.tooYoungToWalk() || f.hunger >= 0.5) return false;
       if (f.isDragging || f.placedOn || f.currentCage) return false;
       const mum = fluffies.find((m) => m.id === f.motherId && m.isAlive && m.scene === f.scene && m.lactatingTimer > 0 && m.currentCage === f.currentCage);
-      return !mum;
+      // (and any newborn going really hungry: a big litter can drink mum dry)
+      return !mum || mumWontFeed(mum, f) || f.hunger < FEEDBOT_STARVING;
     });
   }
 

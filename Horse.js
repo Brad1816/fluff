@@ -1320,7 +1320,8 @@ class Horse {
       const settle =
         0.6 +
         (typeof wishHappinessTarget === "function" ? wishHappinessTarget(this) : 0) +
-        (typeof climateHappinessTarget === "function" ? climateHappinessTarget(this) : 0); // the room's feel (Climate.js)
+        (typeof climateHappinessTarget === "function" ? climateHappinessTarget(this) : 0) + // the room's feel (Climate.js)
+        (typeof fearHappinessTarget === "function" ? fearHappinessTarget(this) : 0); // fear of you (Memory.js)
       this.changeHappiness((settle - this.happiness) * (dt / 180));
     } else {
       this.deathTimer += dt;

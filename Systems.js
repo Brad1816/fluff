@@ -55,6 +55,23 @@ function registerSystem(name, update, order = 500) {
   SYSTEMS.sort((a, b) => a.order - b.order);
 }
 
+// One system going wrong mustn't freeze the whole game (an error here would
+// stop the frame loop for good): it's reported (console error, at most once
+// every few seconds for each system) and the others carry on
+const _systemErrorAt = {};
+function _systemFailed(s, e) {
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  if (_systemErrorAt[s.name] !== undefined && now - _systemErrorAt[s.name] < 5000) return;
+  _systemErrorAt[s.name] = now;
+  if (typeof console !== "undefined") console.error(`System "${s.name}" failed: ${e && e.message}`, e && e.stack);
+}
+
 function updateSystems(dt) {
-  for (const s of SYSTEMS) s.update(dt);
+  for (const s of SYSTEMS) {
+    try {
+      s.update(dt);
+    } catch (e) {
+      _systemFailed(s, e);
+    }
+  }
 }

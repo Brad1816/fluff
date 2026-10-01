@@ -141,13 +141,28 @@ function noteClimateStory(kind, ids, opts = {}) {
   if (!scene || typeof scene !== "string") return;
   const r = _clRoom(scene, true);
   // Watching someone else get hurt: it's the one hit, not one per watcher
-  const seen = kind === "harmed" && typeof MEMORY_TEXT !== "undefined" && (opts.x === MEMORY_TEXT.witness || opts.x === MEMORY_TEXT.witness_family) ? 0.2 : 1;
+  let seen = kind === "harmed" && typeof MEMORY_TEXT !== "undefined" && (opts.x === MEMORY_TEXT.witness || opts.x === MEMORY_TEXT.witness_family) ? 0.2 : 1;
+  // A sale: the room grieves as much as the family and friends it leaves
+  // behind there (none: nobody grieves), and less for a grown one moving on
+  // than a foal taken (a breeder's house was Grieving most days)
+  if (kind === "sold" && main) seen = _saleGrief(main, scene);
+  if (!(seen > 0)) return;
   r.w = Math.min(CLIMATE_CAP, r.w + w[0] * seen);
   r.t = Math.min(CLIMATE_CAP, r.t + w[1] * seen);
   r.f = Math.max(0, Math.min(CLIMATE_CAP, r.f + w[2] * seen));
   r.g = Math.min(CLIMATE_CAP, r.g + w[3] * seen);
-  if (seen === 1) r.why[kind] = (r.why[kind] || 0) + 1; // (how many lately, fading)
+  if (seen === 1 || kind === "sold") r.why[kind] = (r.why[kind] || 0) + 1; // (how many lately, fading)
   _climateCache = null;
+}
+
+function _saleGrief(f, scene) {
+  let close = 0;
+  for (const o of fluffies) {
+    if (o === f || !o.isAlive || o.scene !== scene) continue;
+    const liking = typeof getLiking === "function" ? getLiking(o, f) : 0;
+    if (liking >= 0.45) close++;
+  }
+  return Math.min(1, close / 2) * (f.growth >= 1 ? 0.6 : 1);
 }
 
 // Straight onto a room's feel (SharedMemories.js: parties, anniversaries): { w, t, f, g }
@@ -218,7 +233,7 @@ function climateOf(scene) {
   // (a bad feel has to outweigh the good: a loving house shrugs off a storm)
   if (g >= 3 && g >= t && g >= f && g > w * 0.3) label = "Grieving";
   else if (f >= 4 && f >= t && f > w * 0.5) label = "Fearful";
-  else if (t >= 4 && t > w * 0.5) label = "Tense";
+  else if (t >= 4 && t > w * 0.7) label = "Tense"; // (0.5 had a loving house Tense most days in the long test games)
   else if (bad >= 2 && bad > w) label = "Uneasy";
   else if (w >= 4 && w > bad * 1.5) label = "Warm";
   const score = w - bad;

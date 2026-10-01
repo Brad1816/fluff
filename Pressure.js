@@ -9,6 +9,8 @@
 //   day 5+     the bailiffs come: they take your most valuable grown fluffy
 //              and put what it's worth (BAILIFF_SHARE of its price) towards
 //              the debt. Every other day after that while you still owe.
+//              With no fluffies left at all, the landlord writes the debt
+//              off instead (and the rent goes back to the start).
 // Paying it all off ends it (the power comes back).
 //
 // Slow and busy days: each morning the market has a mood (pressure.market):
@@ -88,7 +90,21 @@ function notePressureMorning(owed) {
 function sendBailiffs() {
   if (typeof fluffies === "undefined") return null;
   const grown = fluffies.filter((f) => f.isAlive && f.adopted && f.growth >= 1 && !f.isDragging);
-  if (!grown.length) return null;
+  if (!grown.length) {
+    // Nothing left to take (the long test games: a keeper who'd lost them
+    // all owed more every day, for ever): the landlord writes it off, so
+    // there's a way back (strays from the park, the shelter)
+    if (billsOwed > 0 && !fluffies.some((f) => f.isAlive && f.adopted)) {
+      const owed = billsOwed;
+      billsOwed = 0;
+      _prOk().debtDays = 0;
+      if (typeof economy !== "undefined" && economy && typeof RENT_BASE === "number") economy.rent = RENT_BASE;
+      const t = `The bailiffs found nothing to take. The landlord writes off the $${owed.toLocaleString()} you owed and puts the rent back to $${typeof RENT_BASE === "number" ? RENT_BASE : 20}: a fresh start.`;
+      if (typeof addUIMessage === "function") addUIMessage(t);
+      if (typeof noteDayEvent === "function") noteDayEvent("news", { text: t });
+    }
+    return null;
+  }
   const price = (f) => (typeof f.calculatePrice === "function" ? f.calculatePrice() : 50);
   grown.sort((a, b) => price(b) - price(a));
   // The cheapest one that covers the debt, or the dearest if none does

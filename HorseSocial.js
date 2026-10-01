@@ -4,6 +4,21 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+const MUM_LASH_REST = 12; // seconds between a mum's blows at her own rejected foal
+const FIGHT_NOTE_GAP = 2 * (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
+
+// Is this a new fight (not more blows in the one going on)?
+function _newFight(attacker, target) {
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  if (!attacker._fightsWith || typeof attacker._fightsWith !== "object") attacker._fightsWith = {};
+  const last = attacker._fightsWith[target.id];
+  attacker._fightsWith[target.id] = now;
+  const theirs = target._fightsWith && target._fightsWith[attacker.id];
+  if (typeof last === "number" && now - last >= 0 && now - last < FIGHT_NOTE_GAP) return false;
+  if (typeof theirs === "number" && now - theirs >= 0 && now - theirs < FIGHT_NOTE_GAP) return false; // (they started it, just now)
+  return true;
+}
+
 addHorseMethods({
   wasAttackedBy(attacker) {
     if (!this.isAlive || !attacker || !attacker.isAlive) return;
@@ -47,9 +62,13 @@ addHorseMethods({
     // Can't reach them through a fence
     if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(this, target)) return;
 
-    target.wasAttackedBy(this);
+    // (the target reacts once, below: reacting twice made hitting back far
+    // more likely than the 60% it's meant to be, and fights ran on)
     this._lastAttackAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: scold for fighting)
-    if (typeof recordStory === "function") recordStory("attacked", target);
+    // One fight is one fight: the story (and the room's feel, the victim's
+    // dreams, how timid it grows) hears of it once per attacker and victim
+    // per FIGHT_NOTE_GAP, and hitting back is part of the same fight
+    if (intent !== "RETALIATION" && typeof recordStory === "function" && _newFight(this, target)) recordStory("attacked", target);
     // A Smarty someone starts on is provoked; hitting back doesn't count (SmartyMood.js)
     if (target.isSmarty() && intent !== "RETALIATION" && typeof noteSmartyProvoked === "function") noteSmartyProvoked(target, this);
 
@@ -106,6 +125,10 @@ addHorseMethods({
 
     // Cooldown for the attacker so they don't spam attack
     this.attackCooldown = 1.5;
+    // A mum turning on her own foal (its colour, an alicorn) lashes out now
+    // and then rather than every second and a half: still deadly if nobody
+    // steps in, but there's time to see it (Today warns) and part them
+    if (target.motherId === this.id && (intent === "COLOR" || intent === false)) this.attackCooldown = MUM_LASH_REST;
     if (this.chaseReason !== "MATING" && Math.random() < 0.25) {
       this.chaseTarget = null;
     }

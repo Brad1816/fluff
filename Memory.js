@@ -22,8 +22,9 @@
 const TRUST_START = 0.5; // a fluffy that grew up with you
 const TRUST_START_FERAL = 0.35; // one from outside
 const PASSIVE_TRUST = 0.6; // as far as meals from you and your company go (the rest takes care)
-const FEAR_FADE_PER_MIN = 0.03; // how fast fear fades (per game minute)
-const FEAR_FADE_DELAY = 60; // no fading for this long after being hurt (s)
+const FEAR_FADE_PER_MIN = 0.0125; // how fast fear fades (per 60 game seconds: about a quarter a game day)
+const FEAR_FADE_DELAY = 100; // no fading for this long after being hurt (two game hours)
+const FEAR_MOOD = 0.15; // a fluffy that fears you is never quite content at home (Horse.update)
 const MEMORY_KEEP = 5;
 
 // How scary each way of being hurt is (victim's fear goes up by this)
@@ -111,6 +112,12 @@ function changePlayerFear(f, amount) {
     if (typeof onAffectionChanged === "function") onAffectionChanged(f, before);
   }
   f.playerFear = clamp(f.playerFear + amount, 0, 1);
+}
+
+// How far fear of you pulls down the happiness it settles at (Horse.update)
+function fearHappinessTarget(f) {
+  if (!f || !f.adopted || !(f.playerFear > 0)) return 0;
+  return -FEAR_MOOD * f.playerFear;
 }
 
 // Called at the start of notifyViolence (Horse.js): you hurt `victim`

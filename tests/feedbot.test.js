@@ -144,7 +144,7 @@ module.exports = [
         mum.lactatingTimer = 500;
         const foal = __mk(320, 0.05);
         foal.motherId = mum.id;
-        foal.hunger = 0.2;
+        foal.hunger = 0.35; // (hungry, not starving: a starving one gets formula anyway)
         __run(bot, 30);
         out.mumsFoal = foal.hunger;
         return out;
@@ -156,7 +156,7 @@ module.exports = [
       check(r.formulaLeft < 20, "formula used");
       checkEqual(r.bowl, 5, "and the bowl");
       checkEqual(r.fedToday, 0, "no affection for the Feed-Bot's meals");
-      check(r.mumsFoal < 0.5, `a foal with a nursing mum is left to her (${r.mumsFoal})`);
+      check(r.mumsFoal < 0.4, `a foal with a nursing mum is left to her (${r.mumsFoal})`);
     },
   },
   {

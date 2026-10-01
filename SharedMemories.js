@@ -23,7 +23,10 @@
 //     of a terrifying storm grows a little afraid of thunder itself.
 //   - anniversaries: once a game year (12 days) a sad memory brings grief
 //     back to its room (Climate.js), and those who were there go back to the
-//     spot for a moment; a happy one lifts their spirits.
+//     spot for a moment; a happy one lifts their spirits. At most
+//     SM_ANNIV_PER_DAY a day (deaths first, then the newest), and a room's grief comes back
+//     once a day however many. A newborn lost in its first SM_LITTLE_AGE
+//     isn't a house memory.
 //
 // Parties: a new right-click action ("Throw a party") when there's a reason
 // for one - a birthday or a came-home anniversary (a game year), a new
@@ -40,6 +43,8 @@ const SM_FIGHT_HITS = 6;
 const SM_FIGHT_FLUFFIES = 3;
 const SM_YEAR = typeof DAYS_PER_SEASON === "number" ? DAYS_PER_SEASON * 4 : 12;
 const SM_MAX = 200;
+const SM_LITTLE_AGE = 2 * (typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200); // younger foals' deaths aren't a house memory
+const SM_ANNIV_PER_DAY = 2; // anniversaries told (and felt) in one day at most
 const PARTY_COST = 10;
 const PARTY_JOY = 0.08;
 
@@ -183,6 +188,9 @@ function noteSharedStory(kind, ids, opts = {}) {
   } else if (kind === "died") {
     const f = _shmById(ids[0]);
     if (!f) return;
+    // (a newborn lost in its first days is its mum's grief, not a day the
+    // whole house marks every year: those made most rooms Grieving)
+    if (f.growth < 0.5 && (f.age || 0) < SM_LITTLE_AGE) return;
     const watchers = _shmWatchers(opts.s || f.scene, [f]);
     if (watchers.length < 2) return;
     const n = _shmName(f);
@@ -263,16 +271,24 @@ function shareLegend(from, to) {
 // Once a game year
 function _shmAnniversaries() {
   const day = _shmDay();
-  for (const m of _shmOk().list) {
+  const b = _shmOk();
+  if (!b.anniv || b.anniv.day !== day) b.anniv = { day, n: 0, grief: {} };
+  // (deaths first, then the newest: the ones that matter most)
+  const order = b.list.slice().sort((x, y) => (x.kind === "death" ? 0 : 1) - (y.kind === "death" ? 0 : 1) || y.t - x.t);
+  for (const m of order) {
     const since = day - m.day;
     if (since < SM_YEAR || since % SM_YEAR !== 0 || m.lastAnniv === day) continue;
     m.lastAnniv = day;
+    if (b.anniv.n >= SM_ANNIV_PER_DAY) continue;
     const years = since / SM_YEAR;
     const here = m.who.map(_shmById).filter((f) => f && f.isAlive && f.adopted);
     if (!here.length) continue;
+    b.anniv.n++;
     if (typeof addUIMessage === "function") addUIMessage(`${years === 1 ? "A year" : `${_SHM_NUM[years] || years} years`} ago today: ${m.name}.`);
     if (!m.good) {
-      if (m.s && typeof addRoomClimate === "function") addRoomClimate(m.s, { g: 3 });
+      // (one room's old grief comes back once a day, however many)
+      if (m.s && !b.anniv.grief[m.s] && typeof addRoomClimate === "function") addRoomClimate(m.s, { g: 3 });
+      if (m.s) b.anniv.grief[m.s] = true;
       for (const f of here) {
         f.changeHappiness(-0.03);
         // back to the spot, for a moment

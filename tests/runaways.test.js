@@ -72,7 +72,7 @@ module.exports = [
         out.lead = runawayLeaderBonus(rebel);
         return out;
       }, SETUP);
-      checkEqual(JSON.stringify(r.chances), JSON.stringify([0.25, 0.1, 0, 0]), "who might run");
+      checkEqual(JSON.stringify(r.chances), JSON.stringify([0.25, 0.06, 0, 0]), "who might run");
       checkEqual(r.night, false, "not in the night");
       checkEqual(JSON.stringify(r.bolting), JSON.stringify([true, true, true]), "making for the door, still yours, you're told");
       check(r.today, "on Today");

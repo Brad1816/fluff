@@ -152,7 +152,12 @@ module.exports = [
         timePlayed = t0;
         storyBook.events.push({ i: 103, t: timePlayed - DAY_LENGTH, k: "died", w: [9102] });
         _storyIndex = null;
+        // Relationships: a gone wild fluffy's own list goes, and so do
+        // others' entries about it; family that's still in the book stays
+        relationships[9102] = { [mine.id]: "friend" };
+        relationships[mine.id] = { 9102: "friend", 9003: "mother", [wild.id]: "friend" };
         const dropped = tidyFamilyRecords();
+        out.rels = [!!relationships[9102], Object.keys(relationships[mine.id]).sort().join(), ["9003", String(wild.id)].sort().join()];
         out.dropped = dropped;
         out.kept = [9001, 9002, 9003, 9004, 9100, 9101, 9102, mine.id, wild.id].map((id) => !!fluffyRecords[id]);
         out.story = storyBook.events.map((e) => e.i).filter((i) => i > 100);
@@ -168,6 +173,8 @@ module.exports = [
       }, SETUP);
       checkEqual(r.dropped, 2, "dropped: the far ancestor and the wild grandfoal");
       checkEqual(JSON.stringify(r.kept), JSON.stringify([false, true, true, true, true, true, false, true, true]), "who's kept");
+      checkEqual(r.rels[0], false, "a gone wild fluffy's relationships go");
+      checkEqual(r.rels[1], r.rels[2], "entries about family in the book and fluffies still here stay");
       checkEqual(JSON.stringify(r.story), JSON.stringify([102, 103]), "old wild stories go, recent and yours stay");
       checkEqual(JSON.stringify(r.migrated), JSON.stringify([true, true]), "an old save keeps its book");
       checkEqual(r.preview, "money,saveDate,timePlayed", "preview only");

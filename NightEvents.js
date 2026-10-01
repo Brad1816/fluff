@@ -132,6 +132,7 @@ function _plural(n, one, many = one + "s") {
 }
 
 function _hurt(f, amount, cause) {
+  if (!f) return;
   f.health = Math.max(0, (f.health ?? 100) - amount);
   if (f.health <= 0 && f.isAlive) f.anatomy.die(null, cause);
 }
@@ -526,12 +527,15 @@ class NightPredator {
     const roll = Math.random();
     if (roll < driveOff) {
       const pool = heroes.length ? heroes : helpers;
-      const hero = pool[Math.floor(Math.random() * pool.length)];
-      _hurt(hero, 15, "Killed by a fox");
-      _nightSay(hero, ["PREDATOR", "CHASED_OFF"]);
+      // (nobody stood up to it: the herd's screaming alone put it off)
+      const hero = pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+      if (hero) {
+        _hurt(hero, 15, "Killed by a fox");
+        _nightSay(hero, ["PREDATOR", "CHASED_OFF"]);
+      }
       v.changeHappiness(-0.05);
       this._flee();
-      this._finish(true, `A fox went for ${_nightName(v)}, but ${_nightName(hero)} of ${this.label} drove it off.`);
+      this._finish(true, hero ? `A fox went for ${_nightName(v)}, but ${_nightName(hero)} of ${this.label} drove it off.` : `A fox went for ${_nightName(v)}, but the screaming from ${this.label} put it off.`);
       return;
     }
     if (roll < driveOff + (1 - driveOff) * escape) {

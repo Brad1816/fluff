@@ -23,6 +23,8 @@
 // Once a game day (compactStory):
 //   - day tallies older than a year (12 days) merge into one per fluffy per
 //     year (y: year),
+//   - a fluffy that's gone (dead, sold, ran off): its tallies merge into
+//     one for its whole life (life: true),
 //   - if the book is still over STORY_CAP_BYTES (about 20 MB, estimated),
 //     year tallies merge into one per fluffy for its whole life (life: true).
 // Big events are never merged away or dropped.
@@ -332,6 +334,33 @@ function compactStory(force = false) {
       out.push(e);
     }
     storyBook.events = out;
+  }
+  // Fluffies that are gone (died, sold, ran off): their small things merge
+  // into one tally for their whole life - nobody needs them day by day any
+  // more, and a busy house's book (and save) grew by hundreds of them
+  if (typeof fluffies !== "undefined") {
+    const here = new Set(fluffies.map((f) => f.id));
+    if (typeof dayCareFluffies !== "undefined") for (const d of dayCareFluffies) here.add(d.id);
+    const lives = new Map();
+    const out = [];
+    let merged = false;
+    for (const e of storyBook.events) {
+      if (e.k === "tally" && !here.has(e.w[0]) && (e.y !== undefined || e.life || (e.d !== undefined && day - e.d >= 1))) {
+        let t = lives.get(e.w[0]);
+        if (!t) {
+          t = e.life ? e : { i: e.i, t: e.t, k: "tally", w: [e.w[0]], life: true, c: {} };
+          lives.set(e.w[0], t);
+          out.push(t);
+          if (t === e) continue;
+        }
+        for (const [k, v] of Object.entries(e.c)) t.c[k] = (t.c[k] || 0) + v;
+        merged = true;
+      } else out.push(e);
+    }
+    if (merged) {
+      storyBook.events = out;
+      changed = true;
+    }
   }
   // Still too big: year tallies -> one per fluffy for life
   if (force || storySizeEstimate() > STORY_CAP_BYTES) {

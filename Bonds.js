@@ -30,6 +30,8 @@ const OPINION_DISLIKE = -0.3;
 const OPINION_GRUDGE = -0.6;
 const OPINION_FADE_PER_MIN = 0.01;
 const BOND_NEAR = 130; // px: "spending time together"
+const GRUDGE_FIGHT_CHANCE = 0.01; // a second, while near someone it can't stand
+const GRUDGE_FIGHT_REST = 4 * (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50); // between scuffles with the same one
 
 // Family is strong enough (0.45+) to count as a herd bond from day one
 const RELATIONSHIP_LIKING = {
@@ -234,8 +236,13 @@ function _grudgeNear(a, b, now, step) {
     a.attackCooldown <= 0 &&
     a.canFightBack() &&
     Math.hypot(a.x - b.x, a.y - b.y) < 90 &&
-    Math.random() < 0.03 * step
+    !(a._grudgeFightAt && now - (a._grudgeFightAt[b.id] ?? -1e9) < GRUDGE_FIGHT_REST) &&
+    Math.random() < GRUDGE_FIGHT_CHANCE * step
   ) {
+    // (one scuffle with the same one every few hours at most: in a single
+    // room two that can't stand each other used to feud all day, every day)
+    if (!a._grudgeFightAt || typeof a._grudgeFightAt !== "object") a._grudgeFightAt = {};
+    a._grudgeFightAt[b.id] = now;
     a.performAttack(b, "GRUDGE");
   }
 }

@@ -175,7 +175,8 @@ function _guessBred(rec) {
 // foals, its ancestors (TIDY_ANCESTOR_GENS back) and anyone still around.
 // Dropped: wild fluffies (park foals of foals of your old pets...) that
 // are dead or gone and aren't close family of one of yours. Story events
-// older than a game year about nobody kept go too (StoryBook.js).
+// older than a game year about nobody kept go too (StoryBook.js), and
+// relationships of fluffies that are gone (_tidyRelationships).
 const TIDY_ANCESTOR_GENS = 3;
 
 // Saves from before records knew who was yours: everything already in the
@@ -240,7 +241,33 @@ function tidyFamilyRecords() {
     dropped++;
   }
   if (typeof pruneOldStory === "function") pruneOldStory(keep);
+  _tidyRelationships();
   return dropped;
+}
+
+// Who-is-what-to-whom (relationships) for fluffies long gone: a gone
+// fluffy's own list goes; a living one's entries about a gone fluffy stay
+// only while the record book still knows it (family, yours)
+function _tidyRelationships() {
+  if (typeof relationships === "undefined" || !relationships) return 0;
+  const here = new Set((typeof fluffies !== "undefined" ? fluffies : []).map((f) => String(f.id)));
+  for (const d of typeof dayCareFluffies !== "undefined" ? dayCareFluffies : []) here.add(String(d.id));
+  let n = 0;
+  for (const id of Object.keys(relationships)) {
+    if (!here.has(id)) {
+      delete relationships[id];
+      n++;
+      continue;
+    }
+    const map = relationships[id];
+    if (!map || typeof map !== "object") continue;
+    for (const other of Object.keys(map)) {
+      if (here.has(other) || fluffyRecords[other]) continue;
+      delete map[other];
+      n++;
+    }
+  }
+  return n;
 }
 
 let _tidyDay = null;

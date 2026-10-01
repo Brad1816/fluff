@@ -8,7 +8,8 @@
 //   Urgent   money owed (and when the power goes off or the bailiffs come),
 //            the welfare inspector's visit tomorrow, a fluffy starving,
 //            frightened, bleeding or ill, one close to breaking, a Rebel
-//            that may run away, your old fluffy's last day at the shelter
+//            that may run away (or making for the door), a mum that goes
+//            for her own foal, your old fluffy's last day at the shelter
 //   Chances  a wish you could grant, a reason for a party, a title about to
 //            change (healing from Broken, nearly Cherished), a sad or
 //            grieving fluffy you could sit with
@@ -93,6 +94,23 @@ function todayItems() {
       else if (t === "Rebel") add("urgent", `${n} is a Rebel and may run away.`, f);
       else if (typeof runAwayChance === "function" && runAwayChance(f) > 0) add("urgent", `${n} is miserable and frightened of you: it may run away.`, f);
     }
+  }
+  // Mums that turn on their own foals (the colourism and alicorn world
+  // settings): the commonest way foals die at home in the long test games
+  for (const f of own) {
+    if (!(f.growth < 1) || f.motherId === null || f.motherId === undefined) continue;
+    const mum = fluffies.find((m) => m.id === f.motherId && m.isAlive);
+    if (!mum || mum.scene !== f.scene || mum.currentCage !== f.currentCage) continue;
+    const colour = typeof mumRejectsFoalColour === "function" && mumRejectsFoalColour(mum, f);
+    const alicorn =
+      !colour &&
+      typeof worldSettings !== "undefined" &&
+      worldSettings.alicornIntolerance &&
+      typeof f.typeVisibleToOthers === "function" &&
+      f.typeVisibleToOthers() === "alicorn" &&
+      typeof mum.tolerantOfAlicorns === "function" &&
+      !mum.tolerantOfAlicorns();
+    if (colour || alicorn) add("urgent", `${_tdName(mum)} goes for ${_tdName(f)} over ${colour ? "its coat colour" : "being an alicorn"} - keep them apart.`, f);
   }
   if (typeof shelter !== "undefined" && shelter && Array.isArray(shelter.residents) && typeof shelterDaysLeft === "function") {
     for (const r of shelter.residents) if (r.byYou && shelterDaysLeft(r) <= 0) add("urgent", `It's ${r.name}'s last day at the shelter.`);
