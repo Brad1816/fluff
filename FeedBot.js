@@ -205,7 +205,8 @@ class FeedBot {
 
   _bowls() {
     if (typeof objects === "undefined" || typeof Bowl === "undefined") return [];
-    return objects.filter((o) => o instanceof Bowl && o.type !== "spill" && o.scene === this.scene && !o.currentCage && !o.isDragging);
+    // (bowls in cages too: it reaches through the bars)
+    return objects.filter((o) => o instanceof Bowl && o.type !== "spill" && o.scene === this.scene && !o.isDragging);
   }
 
   // Newborns too young to walk with no nursing mum in the room - or a mum
@@ -215,7 +216,7 @@ class FeedBot {
     if (this.formula <= 0 || this.mode === "off") return [];
     return fluffies.filter((f) => {
       if (!f.isAlive || f.scene !== this.scene || !f.tooYoungToWalk() || f.hunger >= 0.5) return false;
-      if (f.isDragging || f.placedOn || f.currentCage) return false;
+      if (f.isDragging || f.placedOn) return false; // (caged ones too, through the bars)
       const mum = fluffies.find((m) => m.id === f.motherId && m.isAlive && m.scene === f.scene && m.lactatingTimer > 0 && m.currentCage === f.currentCage);
       // (and any newborn going really hungry: a big litter can drink mum dry)
       return !mum || mumWontFeed(mum, f) || f.hunger < FEEDBOT_STARVING;

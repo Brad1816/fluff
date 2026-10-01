@@ -577,8 +577,11 @@ function houseNavChips(scene = currentScene) {
   });
 }
 
+let houseLabelLeft = Infinity; // left edge of the room's name at the top, this frame
+
 function drawHouseNav(c) {
   const chips = houseNavChips();
+  houseLabelLeft = Infinity;
   if (!chips.length) return;
   c.save();
   c.globalAlpha = 1;
@@ -601,6 +604,8 @@ function drawHouseNav(c) {
   c.textAlign = "right";
   c.textBaseline = "middle";
   c.fillText(roomLabel + " ·", right, first.y + first.h / 2);
+  // (where it starts: the weather line under the clock keeps clear, GameSpeed.js)
+  houseLabelLeft = right - c.measureText(roomLabel + " ·").width;
   for (const chip of chips) {
     const hover = isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h);
     const p = chip.portal;

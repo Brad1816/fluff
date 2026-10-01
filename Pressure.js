@@ -9,8 +9,8 @@
 //   day 5+     the bailiffs come: they take your most valuable grown fluffy
 //              and put what it's worth (BAILIFF_SHARE of its price) towards
 //              the debt. Every other day after that while you still owe.
-//              With no fluffies left at all, the landlord writes the debt
-//              off instead (and the rent goes back to the start).
+//              With no grown fluffies left to take, the landlord writes the
+//              debt off instead (and the rent goes back to the start).
 // Paying it all off ends it (the power comes back).
 //
 // Slow and busy days: each morning the market has a mood (pressure.market):
@@ -94,7 +94,8 @@ function sendBailiffs() {
     // Nothing left to take (the long test games: a keeper who'd lost them
     // all owed more every day, for ever): the landlord writes it off, so
     // there's a way back (strays from the park, the shelter)
-    if (billsOwed > 0 && !fluffies.some((f) => f.isAlive && f.adopted)) {
+    // (foals aren't taken, so with only foals left there's nothing either)
+    if (billsOwed > 0) {
       const owed = billsOwed;
       billsOwed = 0;
       _prOk().debtDays = 0;

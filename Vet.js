@@ -493,6 +493,11 @@ function _drawVetAdviceRow(c, r) {
     c.fillStyle = "rgba(255,255,255,0.7)";
     const parts = [a.relation ? a.relation.charAt(0).toUpperCase() + a.relation.slice(1) : "Not related", `${Math.round(a.alive * 100)}% of foals born alive`];
     if (!a.willMate) parts.push(a.why);
+    // Foals mum would turn on (Kinship.js foalRejectRisk)
+    if (a.risk && a.risk.total >= 0.05) {
+      const why = [a.risk.colour >= 0.05 ? "coat" : null, a.risk.alicorn >= 0.05 ? "alicorn" : null].filter(Boolean).join(", ");
+      parts.push(`~${Math.round(a.risk.total * 100)}% rejected by mum (${why})`);
+    }
     c.fillText(fitText(c, parts.join(" \u00B7 "), w - 110), r.x + 450, r.y + 40);
   }
   if (grown) _vetButton(c, r.jab, pick === f ? "Picked" : "Pick", true);

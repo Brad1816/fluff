@@ -187,8 +187,42 @@ function pairAdvice(a, b) {
     verdict = "Good match";
     tone = "good";
   }
-  const score = alive - 2 * r - (willMate ? 0 : 0.3);
-  return { r, relation, alive, willMate, why, verdict, tone, score };
+  // Foals their mum would turn on (the colourism and alicorn world settings)
+  const risk = foalRejectRisk(mom, dad);
+  if (risk.total >= REJECT_NOTE && tone === "good") {
+    verdict = "Fair: some foals at risk from mum";
+    tone = "ok";
+  }
+  const score = alive - 2 * r - (willMate ? 0 : 0.3) - 0.5 * risk.total;
+  return { r, relation, alive, willMate, why, verdict, tone, score, risk };
+}
+
+// Share of a pair's foals the mum would reject: { colour, alicorn, total }
+// (colour-proud mums and dull coats; mums afraid of alicorns and alicorn
+// foals). From the gene lab's litter prediction, remembered per pair.
+const REJECT_NOTE = 0.15; // from this share the advice says so
+let _rejectCache = new Map();
+function foalRejectRisk(mom, dad) {
+  const none = { colour: 0, alicorn: 0, total: 0 };
+  if (!mom || !dad || !Array.isArray(mom.genes) || !Array.isArray(dad.genes) || typeof computeLitterPrediction !== "function") return none;
+  const ws = typeof worldSettings !== "undefined" ? worldSettings : {};
+  const colourProud = !!ws.colorism && (mom.coloristDegree || 0) > 0;
+  const fearsAlicorns = !!ws.alicornIntolerance && typeof mom.tolerantOfAlicorns === "function" && !mom.tolerantOfAlicorns();
+  if (!colourProud && !fearsAlicorns) return none;
+  const key = `${mom.id}:${dad.id}:${colourProud}:${fearsAlicorns}`;
+  if (_rejectCache.has(key)) return _rejectCache.get(key);
+  let out = none;
+  try {
+    const pred = computeLitterPrediction(mom.genes, dad.genes, (mom.id * 31 + dad.id) % 9973 + 1);
+    const colour = colourProud ? pred.pct.poopie || 0 : 0;
+    const alicorn = fearsAlicorns ? pred.pct.alicorn || 0 : 0;
+    out = { colour, alicorn, total: Math.min(1, colour + alicorn) };
+  } catch (e) {
+    out = none;
+  }
+  if (_rejectCache.size > 500) _rejectCache.clear();
+  _rejectCache.set(key, out);
+  return out;
 }
 
 // The best partners for a fluffy among yours: [{ f, advice }]

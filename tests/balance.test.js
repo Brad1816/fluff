@@ -298,7 +298,7 @@ module.exports = [
     },
   },
   {
-    name: "balance: with no fluffies left, the bailiffs write the debt off instead of it growing for ever",
+    name: "balance: with no grown fluffies left, the bailiffs write the debt off instead of it growing for ever",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -309,19 +309,19 @@ module.exports = [
         uiMessages.length = 0;
         sendBailiffs();
         const out = { owed: billsOwed, days: pressure.debtDays, rent: economy.rent, said: uiMessages.some((m) => /writes off the \$120/.test(m.text || m)) };
-        // With a foal still at home: no write-off (it isn't taken either)
+        // With only a foal at home: written off too (foals aren't taken)
         const foal = new Horse(0.4, null, "INDOORS", "earthy");
         foal.adopted = true;
         fluffies.push(foal);
         billsOwed = 50;
         sendBailiffs();
-        out.withFoal = billsOwed;
+        out.withFoal = billsOwed; // (only a foal: written off too)
         billsOwed = 0;
         pressure.debtDays = 0;
         return out;
       }, SETUP);
       checkEqual(JSON.stringify([r.owed, r.days, r.rent, r.said]), JSON.stringify([0, 0, 20, true]), "written off");
-      checkEqual(r.withFoal, 50, "a foal at home: still owed");
+      checkEqual(r.withFoal, 0, "only a foal at home (not taken): written off too");
     },
   },
   {
@@ -531,6 +531,92 @@ module.exports = [
       checkEqual(JSON.stringify(r.bought), JSON.stringify([true, 200, true]), "auto-refill bought one ($200)");
       check(r.quiet, "no warning while auto-refill can pay");
       checkEqual(JSON.stringify(r.saved), JSON.stringify([true, 0]), "saved");
+    },
+  },
+  {
+    name: "balance: the Feed-Bot tends bowls and newborns in cages too",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const cage = new Cage("INDOORS");
+        cage.x = 600;
+        cage.y = 450;
+        objects.push(cage);
+        cage.update(0);
+        const bot = new FeedBot("INDOORS");
+        bot.setPosition(200, 560);
+        bot.load("formula", 10);
+        const bowl = new Bowl("bowl", "INDOORS");
+        bowl.x = cage.x;
+        bowl.y = cage.bounds.bottom - 20;
+        bowl.currentCage = cage;
+        objects.push(bowl);
+        const foal = new Horse(0.02, null, "INDOORS", "earthy", null, 0.6, 0.6, "male");
+        foal.adopted = true;
+        foal.hunger = 0.3;
+        foal.x = cage.x;
+        foal.y = cage.bounds.bottom - 30;
+        foal.currentCage = cage;
+        fluffies.push(foal);
+        const out = { bowl: bot._bowls().includes(bowl), foal: bot._orphans().includes(foal) };
+        objects.splice(objects.indexOf(bowl), 1);
+        objects.splice(objects.indexOf(cage), 1);
+        return out;
+      }, SETUP);
+      checkEqual(JSON.stringify(r), JSON.stringify({ bowl: true, foal: true }), "through the bars");
+    },
+  },
+  {
+    name: "balance: breeding advice warns when mum would turn on some of the foals (coat colour, alicorns)",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const mum = __bl(300, "female");
+        const dad = __bl(500, "male");
+        const realPred = window.computeLitterPrediction;
+        const ws = { ...worldSettings };
+        worldSettings.colorism = true;
+        worldSettings.alicornIntolerance = true;
+        window.computeLitterPrediction = () => ({ pct: { poopie: 0.3, alicorn: 0.1 } });
+        mum.tolerantOfAlicorns = () => false;
+        mum.coloristDegree = 0.8;
+        _rejectCache = new Map();
+        const a = pairAdvice(mum, dad);
+        mum.coloristDegree = 0;
+        mum.tolerantOfAlicorns = () => true;
+        _rejectCache = new Map();
+        const b = pairAdvice(mum, dad);
+        window.computeLitterPrediction = realPred;
+        Object.assign(worldSettings, ws);
+        return { a: [a.risk.colour, a.risk.alicorn, a.verdict], b: [b.risk.total], scores: a.score < b.score };
+      }, SETUP);
+      checkEqual(JSON.stringify(r.a.slice(0, 2)), JSON.stringify([0.3, 0.1]), "coat and alicorn risk");
+      check(r.a[2] !== "Good match", `not a good match: ${r.a[2]}`);
+      checkEqual(r.b[0], 0, "a mum who minds neither: no risk");
+      check(r.scores, "riskier pairs rank lower");
+    },
+  },
+  {
+    name: "balance: on a narrow window the weather line shortens instead of running into the room's name",
+    run: async (page) => {
+      const r = await page.evaluate(() => {
+        const drawn = [];
+        const real = ctx.fillText.bind(ctx);
+        ctx.fillText = (t, x, y) => { drawn.push(String(t)); return real(t, x, y); };
+        const keep = houseLabelLeft;
+        houseLabelLeft = Infinity;
+        drawGameSpeed(100);
+        const wide = drawn.find((t) => t === describeWeather()) || null;
+        drawn.length = 0;
+        houseLabelLeft = 100 + 8 + 150 / 2 + 30; // just past the clock's middle
+        drawGameSpeed(100);
+        const narrow = drawn.filter((t) => / · |Clear|Rain|Snow|Cloud|Storm|Fog|Wind/.test(t) && !/Day \d/.test(t));
+        ctx.fillText = real;
+        houseLabelLeft = keep;
+        return { wide: !!wide, season: getSeason(), narrow };
+      });
+      check(r.wide, "full line when there's room");
+      check(r.narrow.every((t) => !t.includes(r.season)), `no season when squeezed: ${JSON.stringify(r.narrow)}`);
     },
   },
 ];

@@ -251,6 +251,7 @@ function resetTemporaryGameState() {
   if (typeof _loreGreetAt !== "undefined") for (const k of Object.keys(_loreGreetAt)) delete _loreGreetAt[k];
   // Family ties worked out for the last game (Kinship.js)
   if (typeof _kinCache !== "undefined") _kinCache = new Map();
+  if (typeof _rejectCache !== "undefined") _rejectCache = new Map();
   if (typeof _tidyDay !== "undefined") _tidyDay = null; // (FamilyTree.js)
   // Pictures and hint cards from the last game
   if (typeof _photoImages !== "undefined") for (const k of Object.keys(_photoImages)) delete _photoImages[k];

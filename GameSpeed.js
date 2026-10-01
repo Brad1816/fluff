@@ -118,10 +118,23 @@ function drawGameSpeed(chatLogRight) {
   // Season and weather underneath (not while the chat log is open there)
   if (typeof describeWeather === "function" && !(typeof showChatLog !== "undefined" && showChatLog)) {
     ctx.font = "bold 12px Arial";
-    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-    ctx.fillText(describeWeather(), L.x + L.clockW / 2 + 1, L.y + L.h + 12);
-    ctx.fillStyle = "white";
-    ctx.fillText(describeWeather(), L.x + L.clockW / 2, L.y + L.h + 11);
+    // On a narrow window it shortens (no season, then just the weather)
+    // rather than running into the room's name (UIScenes.js houseLabelLeft)
+    const limit = typeof houseLabelLeft === "number" ? houseLabelLeft - 8 : Infinity;
+    const cx = L.x + L.clockW / 2;
+    const full = describeWeather();
+    const parts = full.split(" · ");
+    let text = full;
+    for (const t of [full, parts.slice(1).join(" · "), parts[1] || ""]) {
+      text = t;
+      if (cx + ctx.measureText(t).width / 2 <= limit) break;
+    }
+    if (text && cx + ctx.measureText(text).width / 2 <= limit) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+      ctx.fillText(text, cx + 1, L.y + L.h + 12);
+      ctx.fillStyle = "white";
+      ctx.fillText(text, cx, L.y + L.h + 11);
+    }
   }
   ctx.restore();
 
