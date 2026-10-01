@@ -1720,7 +1720,7 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "IV stand",
-    desc: "Allows administration of various fluids to fluffies. Click the top section with an IV bag, then click the top section to start a connection, then click on a fluffy to complete it.\n\nIV stands will ensure a constant 10 units of a drug are in the fluffy's bloodstream at all times.",
+    desc: "Allows administration of various fluids to fluffies. Click the top section with an IV bag, then click the top section to start a connection, then click on a fluffy to complete it.\n\nIV stands will ensure a constant 10 units of a drug are in the fluffy's bloodstream at all times.\n\nDrop more bags of the same kind on it as spares (up to 3), or right-click the AUTO tag on the pole to have it buy a new bag whenever one runs out.",
     cost: 3000,
     isItem: "iv_stand",
   },

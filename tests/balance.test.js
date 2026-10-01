@@ -473,4 +473,64 @@ module.exports = [
       check(r.ate, `it ate (bowl ${r.food}, ${r.gap}px apart)`);
     },
   },
+  {
+    name: "balance: an IV stand puts up a spare bag, then (AUTO) buys one, so a fluffy that's given up stays on its drip; Today warns before it runs dry",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const out = {};
+        const f = __bl(600);
+        fluffyNames[f.id] = "Wisp";
+        f.happiness = 0;
+        const st = new IVStand("INDOORS");
+        st.x = 640;
+        st.y = 450;
+        objects.push(st);
+        const bag = new IVBag("INDOORS", "tpn");
+        objects.push(bag);
+        bag.attachedTo = st;
+        st.attachedBag = bag;
+        st.connectedFluffy = f;
+        // A spare
+        const spare = new IVBag("INDOORS", "tpn");
+        out.spareKept = st.addSpare(spare);
+        out.otherKind = st.addSpare(new IVBag("INDOORS", "prolactin"));
+        // Nearly dry, no auto: warned
+        bag.charges = 50;
+        st.spares = [];
+        _todayCache = null;
+        out.warned = todayItems().some((i) => /Wisp's TPN drip runs dry/.test(i.text));
+        // Runs dry with a spare waiting: the spare goes up, still connected
+        st.spares = [{ type: "tpn", charges: 1000 }];
+        bag.charges = 0;
+        bag.update(0.01);
+        out.spareUp = [st.attachedBag !== bag && !!st.attachedBag, st.attachedBag && st.attachedBag.charges, st.connectedFluffy === f, st.spares.length];
+        // Runs dry with AUTO on: buys one
+        st.autoRefill = true;
+        const m0 = money = 1000;
+        const b2 = st.attachedBag;
+        b2.charges = 0;
+        b2.update(0.01);
+        out.bought = [st.attachedBag !== b2 && !!st.attachedBag, m0 - money, st.connectedFluffy === f];
+        // AUTO on and money: no warning even when low
+        st.attachedBag.charges = 50;
+        _todayCache = null;
+        out.quiet = !todayItems().some((i) => /Wisp's TPN drip/.test(i.text));
+        // Saved and loaded
+        const data = JSON.parse(JSON.stringify(st.serialize()));
+        const st2 = new IVStand("INDOORS");
+        st2.deserialize(data);
+        out.saved = [st2.autoRefill, st2.spares.length];
+        for (const o of objects.filter((o) => o instanceof IVBag || o instanceof IVStand)) objects.splice(objects.indexOf(o), 1);
+        return out;
+      }, SETUP);
+      checkEqual(r.spareKept, true, "a spare of the same kind");
+      checkEqual(r.otherKind, false, "not another kind");
+      check(r.warned, "warned before it runs dry");
+      checkEqual(JSON.stringify(r.spareUp), JSON.stringify([true, 1000, true, 0]), "the spare went up, still on the line");
+      checkEqual(JSON.stringify(r.bought), JSON.stringify([true, 200, true]), "auto-refill bought one ($200)");
+      check(r.quiet, "no warning while auto-refill can pay");
+      checkEqual(JSON.stringify(r.saved), JSON.stringify([true, 0]), "saved");
+    },
+  },
 ];

@@ -23,6 +23,13 @@ const TODAY_W = 820;
 const TODAY_ROW_H = 44;
 const TODAY_CACHE_MS = 500;
 const GIVING_UP_SOON = 0.15; // happiness: close to "wan die"
+const DRIP_WARN_HOURS = 6; // a TPN drip keeping a fluffy alive: warn this long before it runs dry
+
+// The IV stand dripping TPN into this fluffy, if any (IVStand.js)
+function ivStandFeeding(f) {
+  if (typeof objects === "undefined" || typeof IVStand === "undefined") return null;
+  return objects.find((o) => o instanceof IVStand && o.connectedFluffy === f && o.attachedBag && o.attachedBag.type === "tpn") || null;
+}
 
 let todayOpen = false;
 let todayPage = 0;
@@ -85,7 +92,17 @@ function todayItems() {
     const n = _tdName(f);
     if (f.hunger < 0.25) add("urgent", `${n} is starving.`, f);
     // "Wan die": it's given up and won't eat (for good); close to it
-    if (f.happiness <= WAN_DIE_THRESHOLD) add("urgent", `${n} has given up ("wan die") and won't eat.`, f);
+    const drip = typeof ivStandFeeding === "function" ? ivStandFeeding(f) : null;
+    if (f.happiness <= WAN_DIE_THRESHOLD) {
+      if (!drip) add("urgent", `${n} has given up ("wan die") and won't eat. A TPN drip (IV stand) keeps it alive.`, f);
+      else {
+        // On a drip: is it about to run dry?
+        const hoursLeft = drip.dripSecondsLeft() / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
+        const refills = drip.autoRefill && (typeof showDebugMenu !== "undefined" && showDebugMenu || money >= ivBagPrice("tpn"));
+        if (!refills && hoursLeft < DRIP_WARN_HOURS)
+          add("urgent", hoursLeft <= 0 ? `${n}'s TPN drip is empty - it can't eat by itself.` : `${n}'s TPN drip runs dry in about ${Math.max(1, Math.round(hoursLeft))} game hour${Math.round(hoursLeft) === 1 ? "" : "s"} - it can't eat by itself.${drip.autoRefill ? " (Not enough money for auto-refill.)" : ""}`, f);
+      }
+    }
     else if (f.happiness < GIVING_UP_SOON) add("urgent", `${n} is close to giving up - cheer it up before it stops eating.`, f);
     if (typeof isFrightened === "function" && isFrightened(f)) add("urgent", `${n} is frightened - pick it up or sit with it.`, f);
     if (f.bleedingTimer > 0) add("urgent", `${n} is bleeding.`, f);

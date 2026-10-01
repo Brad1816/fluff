@@ -89,6 +89,16 @@ function attemptDrop() {
             }
             return true;
           }
+          // Another of the same kind: a spare for when this one runs out (IVStand.js)
+          if (typeof other.addSpare === "function" && other.addSpare(obj)) {
+            obj.isDragging = false;
+            isGlobalDragging = false;
+            if (typeof removeToolFromToolbox === "function") removeToolFromToolbox(obj);
+            const i = objects.indexOf(obj);
+            if (i >= 0) objects.splice(i, 1);
+            if (typeof addUIMessage === "function") addUIMessage(`Spare ${obj.type.toUpperCase()} bag on the IV stand (${other.spares.length}). It goes up when this one runs out.`);
+            return true;
+          }
         }
       }
       // Check for Syringe draw

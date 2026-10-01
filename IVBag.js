@@ -23,6 +23,11 @@ class IVBag {
 
     if (this.charges <= 0) {
       this.isDestroyed = true;
+      // A spare, or auto-refill: the next bag goes up and the line stays in
+      if (this.attachedTo && typeof this.attachedTo.replaceEmptyBag === "function" && this.attachedTo.replaceEmptyBag(this)) {
+        this.attachedTo = null;
+        return;
+      }
       if (this.attachedTo) {
         this.attachedTo.attachedBag = null;
         this.attachedTo.connectedFluffy = null;

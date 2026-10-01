@@ -371,8 +371,15 @@ const ITEM_TYPES = [
     is: (o) => o instanceof IVStand,
     inCage: "never",
     sellable: true,
-    // Take the IV bag off the stand and put it back in the toolbox
+    // The AUTO tag on the pole: auto-refill on/off (IVStand.js). Anywhere
+    // else: take the IV bag off the stand and put it back in the toolbox
     onRightClick: (stand) => {
+      if (typeof stand.hitTestAutoTag === "function" && stand.hitTestAutoTag(mouse.x, mouse.y)) {
+        stand.autoRefill = !stand.autoRefill;
+        if (typeof addUIMessage === "function")
+          addUIMessage(stand.autoRefill ? `IV stand auto-refill on: when a bag (and any spares) runs out it buys a new one ($${ivBagPrice(stand.attachedBag ? stand.attachedBag.type : "tpn")} for TPN).` : "IV stand auto-refill off.");
+        return;
+      }
       if (stand.attachedBag) {
         const bag = stand.attachedBag;
         bag.attachedTo = null;
