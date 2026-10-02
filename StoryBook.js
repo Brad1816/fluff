@@ -58,6 +58,7 @@ const STORY_KINDS = {
   trait_shift: { big: true, text: (e) => `${e.x}` },
   boarding: { big: true, text: (e) => `${e.x}` },
   injured: { big: true, text: (e, n) => `${n} lost ${e.x}.` },
+  fostered: { big: true, text: (e, n, o) => `${n} was taken in by ${o || "a wild mare"}.` }, // (Fostering.js)
   // Phase 2 (Wishes.js, Dreams.js)
   wish_granted: { big: true, text: (e) => `${e.x}` },
   wish_denied: { big: true, text: (e) => `${e.x}` },

@@ -15,7 +15,7 @@ module.exports = [
           alicornComfort: 0.3, missingOwner: 0.6, lostPet: true, illness: { type: "flu", t: 50, known: true },
           fluImmuneUntil: 1234, fluVaccinated: true, vetCheckedAt: 77, vetNote: "fine", vetLife: "young",
           ribbons: [{ place: 1, show: "Best Coat", day: 4 }], groomedAt: 321,
-          pregCare: { sum: 3, n: 4 }, miscarriageTimer: 7, prematureGrowth: 0.6, bornEarly: "very", litterSize: 5, litterBorn: 6, birthVigor: 0.9, midwife: true,
+          pregCare: { sum: 3, n: 4 }, miscarriageTimer: 7, prematureGrowth: 0.6, bornEarly: "very", lostFoalAt: 321, fosterMumId: 12, litterSize: 5, litterBorn: 6, birthVigor: 0.9, midwife: true,
           pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true, warmth: 0.4,
           lastKindnessAt: 555, affectionToday: { day: 3, n: { brushed: 2 }, at: { brushed: 500 } },
           tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 }, lessonTries: { day: 3, n: 2 }, smartyReform: 0.3, smartyReformed: true, fearOfOperatingTable: true, tableCourage: 0.5, bestestId: 42, mateRule: { on: true, breaches: 2, strikes: 1, pendingAt: 9 }, met: { 7: 1, 8: 1 }, fears: { thunder: 0.6, dark: 0, bot: 0.2 }, bellLearn: 0.4, feedBotTips: 2, lastBirthAt: 1234,

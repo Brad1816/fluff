@@ -166,29 +166,8 @@ addHorseMethods({
     const babies = fluffies.filter((f) => f.motherId === mare.id && f.isAlive && f.tooYoungToWalk());
     const adoptionChance = 1 + this.adoptionModifier - babies.length * 0.34;
     if (Math.random() < adoptionChance) {
-      // ADOPT!
-      this.motherId = mare.id;
-      this.adopted = mare.adopted;
-
-      setRelationship(mare.id, this.id, "baby_child");
-      setRelationship(this.id, mare.id, "mother");
-
-      // Siblings
-      const otherKids = fluffies.filter((f) => f.motherId === mare.id && f.id !== this.id);
-      for (const sibling of otherKids) {
-        setRelationship(this.id, sibling.id, sibling.gender === "male" ? "brother" : "sister");
-        setRelationship(sibling.id, this.id, this.gender === "male" ? "brother" : "sister");
-      }
-
-      // Special Friend
-      const specialFriendId = Object.keys(rels).find((id) => rels[id] === "special_friend");
-      if (specialFriendId) {
-        const dad = fluffies.find((f) => f.id == specialFriendId);
-        if (dad) {
-          setRelationship(dad.id, this.id, "baby_child");
-          setRelationship(this.id, dad.id, "father");
-        }
-      }
+      // ADOPT! (Fostering.js)
+      takeInFoal(mare, this);
       return true;
     } else {
       setRelationship(mare.id, this.id, "rejected_baby");

@@ -41,6 +41,8 @@ const SAVED_HORSE_FIELDS = [
   { name: "miscarriageTimer", fallback: null }, // HorseMating.beginMiscarriage
   { name: "prematureGrowth", fallback: 1.0 }, // born early: smaller (Premature.js)
   { name: "bornEarly", fallback: null }, // ...and how early
+  { name: "lostFoalAt", fallback: null }, // when she last lost a foal (Fostering.js)
+  { name: "fosterMumId", fallback: null }, // the wild mare who took it in
   { name: "litterSize", fallback: null },
   { name: "litterBorn", fallback: null },
   { name: "birthVigor", fallback: null },

@@ -1892,6 +1892,21 @@ const DIALOGUE = {
   },
 
   // Amputation
+  // A wild mare taking in an orphan (Fostering.js)
+  FOSTER: {
+    SEES: ["Wittwe babbeh aww awone...", "Who babbeh? Whewe babbeh's mummah?", "Babbeh nu hab mummah..."],
+    GRIEVING: [
+      "Mummah wost hew babbeh... nao hab yu, babbeh. Mummah keep yu safe.",
+      "Come hewe, babbeh. Mummah hab miwkies fow yu.",
+      "Yu be mummah's babbeh nao. Nu mowe sad.",
+    ],
+    KIND: [
+      "Come, babbeh! Wots of woom fow one mowe!",
+      "Mummah hab enuff wub fow aww babbehs.",
+      "Yu come wif us, babbeh. Yu famiwy nao.",
+    ],
+    FOAL: ["*happy peep*", "Peep! Peep!", "*snuggles in*"],
+  },
   // Burnt shut with the hot iron (CauteryIron.js)
   CAUTERY: {
     DEFAULT: [

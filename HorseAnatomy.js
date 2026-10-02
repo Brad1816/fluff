@@ -187,6 +187,8 @@ class HorseAnatomy {
         const rel = rels[this.horse.id];
         if (rel === "baby_child" || rel === "child") {
           const mother = fluffies.find((f) => f.id == otherId);
+          // A mum who lost a foal may take in an orphan (Fostering.js)
+          if (rel === "baby_child" && mother && mother.isAlive && mother.gender === "female") mother.lostFoalAt = typeof timePlayed === "number" ? timePlayed : 0;
           if (mother && mother.isAlive) {
             const allChildren = Object.entries(rels).filter(
               ([id, type]) =>
