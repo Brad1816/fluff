@@ -19,7 +19,7 @@
 
 const SCAR_MAX = 5;
 const SCAR_FIGHT_CHANCE = 0.5;
-const SCAR_WEAPON_CHANCE = { knife: 0.6, scalpel: 0.5, cattle_prod: 0.25, stick: 0.12, thumbtack: 0.1 };
+const SCAR_WEAPON_CHANCE = { knife: 0.6, scalpel: 0.5, cattle_prod: 0.25, stick: 0.12, thumbtack: 0.1, throw: 0.15 };
 const SCAR_SHOW_PENALTY = 3;
 const SCAR_PRICE = 0.05;
 const SCAR_PRICE_MAX = 0.2;
@@ -42,6 +42,7 @@ const SCAR_FROM = {
   cattle_prod: ["bald"],
   stick: ["bald", "tail"],
   thumbtack: ["bald"],
+  throw: ["tail", "muzzle", "flank"],
 };
 
 const SCAR_WEAPON_WORDS = {
@@ -50,6 +51,7 @@ const SCAR_WEAPON_WORDS = {
   cattle_prod: "Burnt by the prod",
   stick: "Beaten with the stick",
   thumbtack: "Stabbed with a tack",
+  throw: "Hurt landing when thrown",
 };
 
 function scarsOf(f) {
@@ -148,11 +150,11 @@ function describeScars(f) {
 // In the part's own frame, as drawPart sets it up
 const SCAR_PINK = "rgba(200, 120, 130, 0.85)";
 
-function drawScars(ctx, renderer, part) {
+function drawScars(ctx, renderer, part, layout = renderer && renderer.layout) {
   const f = renderer && renderer.horse;
   const scars = scarsOf(f);
-  if (!scars.length || !renderer.layout) return;
-  const L = renderer.layout;
+  if (!scars.length || !layout) return;
+  const L = layout;
   const rect = L[part];
   if (!rect) return;
   const has = (k) => scars.filter((s) => s.kind === k).length;

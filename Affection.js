@@ -279,7 +279,8 @@ function updateAffection(dt) {
     if (f.hunger < 0.15) lose("hungry", AFFECTION_NEGLECT.hungry);
     if (typeof f.warmth === "number" && f.warmth < 0.3) lose("cold", AFFECTION_NEGLECT.cold);
     // Shut in a cage (not a foal can) for hours on end
-    const caged = f.currentCage && !(typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan);
+    // (an Enclosure is roomy enough not to mind: Enclosure.js)
+    const caged = f.currentCage && !(typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan) && !(f.currentCage instanceof Cage && !f.currentCage.causesUnhappiness());
     if (caged) {
       if (typeof f._cagedSince !== "number") f._cagedSince = now;
       if (now - f._cagedSince > AFFECTION_CAGE_HOURS * (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50)) {

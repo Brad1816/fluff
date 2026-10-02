@@ -30,6 +30,7 @@ const STORE_AISLES = [
       "litterbox",
       "litterpal_box",
       "cage",
+      "enclosure",
       "fence",
       "fence_gate",
       "sprinkler",

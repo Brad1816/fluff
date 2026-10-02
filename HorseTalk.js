@@ -55,7 +55,8 @@ addHorseMethods({
       }
     }
 
-    if (!text && this.currentCage && this.happiness > WAN_DIE_THRESHOLD) {
+    // (an enclosure is comfy: Enclosure.js)
+    if (!text && this.currentCage && (!this.currentCage.causesUnhappiness || this.currentCage.causesUnhappiness()) && this.happiness > WAN_DIE_THRESHOLD) {
       if (this.tooYoungToSpeak()) {
         text = getDialogue(["LOST", "MOTHER", "CHIRPY"], this);
       } else if (this.isSmarty()) {
@@ -258,7 +259,9 @@ addHorseMethods({
     this.speak(text, false, true);
   },
 
-  speak(text, wanDieBypass = false, chirpyBypass = false) {
+  speak(text, wanDieBypass = false, chirpyBypass = false, cullBypass = false) {
+    // Sealed in a culling cage: only its cull lines get out (Cage.js)
+    if (!cullBypass && this.currentCage instanceof Cage && this.currentCage.mutesOccupants()) return;
     if (this.accessories && this.accessories.mouth && this.accessories.mouth.id === "mouthgag") return;
     if (!wanDieBypass) {
       if (this.hunger <= 0.1) return;

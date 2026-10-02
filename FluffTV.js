@@ -11,7 +11,7 @@ const FLUFF_TV_CHANNELS = [
 const channel_images = {
   OFF: ["fluff_tv_off"],
   PLAY_TIME: ["fluff_tv_play_time_1", "fluff_tv_play_time_2"],
-  BABIES: ["fluff_tv_babbehs_1", "fluff_tv_babbehs_2"],
+  BABIES: ["fluff_tv_babbehs_1"],
   POOPIES: ["fluff_tv_poopies_1"],
   ALICORN: ["fluff_tv_alicorn_1"],
   HEAVY_METAL: ["fluff_tv_heavy_metal_1", "fluff_tv_heavy_metal_2"],

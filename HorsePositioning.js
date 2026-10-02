@@ -12,8 +12,8 @@ class HorsePositioning {
 
       // Initialize behavior first (resets target)
       this.horse.initBehavior("MOVING");
-      let x = other.x + (Math.random() - 0.5) * 100;
-      let y = other.y + (Math.random() - 0.5) * 50;
+      let x = other.getWorldPosition().x + (Math.random() - 0.5) * 100;
+      let y = other.getWorldPosition().y + (Math.random() - 0.5) * 50;
 
       const d = Math.sqrt((x - this.horse.x) ** 2 + (y - this.horse.y) ** 2);
 
@@ -63,8 +63,8 @@ class HorsePositioning {
     if (best && best.isAlive && best.scene === this.horse.scene && best.hunger < 0.55 && best.growth < 0.4) hungryFoal = best;
     if (!hungryFoal) return false;
 
-    const x = hungryFoal.x + (Math.random() - 0.5) * 100;
-    const y = hungryFoal.y + (Math.random() - 0.5) * 50;
+    const x = hungryFoal.getWorldPosition().x + (Math.random() - 0.5) * 100;
+    const y = hungryFoal.getWorldPosition().y + (Math.random() - 0.5) * 50;
 
     const d = Math.sqrt(
       (this.horse.targetX - this.horse.x) ** 2 +
@@ -160,7 +160,7 @@ class HorsePositioning {
       if (!this.horse.isMovingOrRunning()) {
         this.horse.initBehavior("MOVING");
       }
-      this.horse.setTargetPosition(nearestCorpse.x, nearestCorpse.y);
+      this.horse.setTargetPosition(nearestCorpse.getWorldPosition().x, nearestCorpse.getWorldPosition().y);
       this.horse.cannibalTarget = nearestCorpse;
       return true;
     }
@@ -191,7 +191,7 @@ class HorsePositioning {
       if (!this.horse.isMovingOrRunning()) {
         this.horse.initBehavior("MOVING");
       }
-      this.horse.setTargetPosition(nearestVictim.x, nearestVictim.y);
+      this.horse.setTargetPosition(nearestVictim.getWorldPosition().x, nearestVictim.getWorldPosition().y);
       this.horse.cannibalTarget = nearestVictim;
       if (!this.horse.isMovingOrRunning()) {
         this.horse.initBehavior("RUNNING");
@@ -257,10 +257,8 @@ class HorsePositioning {
         if (!this.horse.isMovingOrRunning()) {
           this.horse.initBehavior("MOVING");
         }
-        this.horse.setTargetPosition(
-          targetMatingSession.x,
-          targetMatingSession.y,
-        );
+        const sessionPos = targetMatingSession.getWorldPosition();
+        this.horse.setTargetPosition(sessionPos.x, sessionPos.y);
         if (this.horse.speech.timer <= 0) {
           const victim = targetMatingSession.matingState?.matingWith;
           const saveKey =
@@ -415,8 +413,8 @@ class HorsePositioning {
         return true;
       }
 
-      let x = nearestSleeper.x + (Math.random() - 0.5) * 80;
-      let y = nearestSleeper.y + (Math.random() - 0.5) * 40;
+      let x = nearestSleeper.getWorldPosition().x + (Math.random() - 0.5) * 80;
+      let y = nearestSleeper.getWorldPosition().y + (Math.random() - 0.5) * 40;
 
       if (!this.horse.isMovingOrRunning()) {
         this.horse.initBehavior("MOVING");
@@ -742,9 +740,17 @@ class HorsePositioning {
       if (!this.horse.isMovingOrRunning()) {
         this.horse.initBehavior("MOVING");
       }
+
+      let xOffset = 40 * Math.random() - 20;
+      let yOffset = 35 + 10 * Math.random();
+      let targetY = closestTV.y + yOffset;
+      if (this.horse.currentCage != null) {
+        xOffset = -5 + 10 * Math.random();
+        targetY = this.horse.y;
+      }
       this.horse.setTargetPosition(
-        closestTV.x - 20 + 40 * Math.random(),
-        closestTV.y + 40 - 5 + 10 * Math.random(),
+        closestTV.x + xOffset,
+        targetY,
       );
       return true;
     }
@@ -758,7 +764,6 @@ class HorsePositioning {
       this.horse.ballTarget ||
       this.horse.blockTarget ||
       this.horse.blockTowerKnockOverTarget ||
-      this.horse.currentCage ||
       !canRun(this.horse)
     )
       return false;
@@ -767,7 +772,7 @@ class HorsePositioning {
     const stillBall = balls.find(
       (b) =>
         b.scene === this.horse.scene &&
-        !b.currentCage &&
+        b.currentCage === this.horse.currentCage &&
         !(typeof isBallCarried === "function" ? isBallCarried(b) : b.carriedBy) &&
         b.isStill() &&
         !fluffies.some((f) => f.ballTarget && f.targetX === b.x),
@@ -775,7 +780,10 @@ class HorsePositioning {
     if (stillBall) {
       this.horse.ballTarget = true;
       this.horse.initBehavior("MOVING");
-      this.horse.setTargetPosition(stillBall.x, stillBall.y);
+      this.horse.setTargetPosition(
+        stillBall.x,
+        this.horse.currentCage != null ? this.horse.y : stillBall.getCenterY(),
+      );
       return true;
     }
     return false;
@@ -787,7 +795,6 @@ class HorsePositioning {
       this.horse.isDragging ||
       this.horse.blockTarget ||
       this.horse.blockTowerKnockOverTarget ||
-      this.horse.currentCage ||
       this.horse.isStacking ||
       this.horse.blockCooldown > 0 ||
       !this.horse.limbs.legs[1] ||
@@ -800,8 +807,8 @@ class HorsePositioning {
     const sceneBlocks = blocks.filter(
       (b) =>
         b.scene === this.horse.scene &&
-        !b.currentCage &&
-        (!b.heldBy || b.heldBy === this.horse),
+        this.horse.currentCage === b.currentCage &&
+        (b.heldBy === this.horse || (!b.heldBy && this.canReachBlock(b))),
     );
     if (sceneBlocks.length >= 2) {
       if (!this.horse.hasBlockOnBack() && canRun(this.horse)) {
@@ -821,8 +828,9 @@ class HorsePositioning {
           this.horse.blockTarget = true;
           this.horse.initBehavior("MOVING");
           let targetX = targetBlock.x;
-          let targetY = targetBlock.getBottomY() - 50;
+          let targetY = targetBlock.currentCage ? this.horse.y : targetBlock.getBottomY() - 50;
           this.horse.setTargetPosition(targetX, targetY);
+          this.constrainTargetToCage();
           return true;
         }
       }
@@ -1074,10 +1082,11 @@ class HorsePositioning {
           return;
         }
 
-        let targetX = mom.x + (Math.random() - 0.5) * 150;
-        let targetY = mom.y + (Math.random() - 0.5) * 100;
-        targetY = clamp(this.horse.targetY, groundYMin, groundYMax);
-        targetX = clamp(this.horse.targetX, minX, sceneW(this.horse.scene) - margin);
+        const momPos = mom.getWorldPosition();
+        let targetX = momPos.x + (Math.random() - 0.5) * 150;
+        let targetY = momPos.y + (Math.random() - 0.5) * 100;
+        targetY = clamp(targetY, groundYMin, groundYMax);
+        targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
 
         this.horse.setTargetPosition(targetX, targetY);
         return;
@@ -1168,8 +1177,8 @@ class HorsePositioning {
           (f) => f.id == childId && f.isAlive && f.scene === this.horse.scene,
         );
         if (child) {
-          let targetX = child.x + (Math.random() - 0.5) * 250;
-          let targetY = child.y + (Math.random() - 0.5) * 150;
+          let targetX = child.getWorldPosition().x + (Math.random() - 0.5) * 250;
+          let targetY = child.getWorldPosition().y + (Math.random() - 0.5) * 150;
           targetY = clamp(targetY, groundYMin, groundYMax);
           targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
 
@@ -1191,8 +1200,8 @@ class HorsePositioning {
             f.scene === this.horse.scene,
         );
         if (friend) {
-          let targetX = friend.x + (Math.random() - 0.5) * 20;
-          let targetY = friend.y + (Math.random() - 0.5) * 10;
+          let targetX = friend.getWorldPosition().x + (Math.random() - 0.5) * 20;
+          let targetY = friend.getWorldPosition().y + (Math.random() - 0.5) * 10;
           targetY = clamp(targetY, groundYMin, groundYMax);
           targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
           this.horse.setTargetPosition(targetX, targetY);
@@ -1222,8 +1231,8 @@ class HorsePositioning {
         }
       }
       if (closestFriend) {
-        let targetX = closestFriend.x + (Math.random() - 0.5) * 80;
-        let targetY = closestFriend.y + (Math.random() - 0.5) * 40;
+        let targetX = closestFriend.getWorldPosition().x + (Math.random() - 0.5) * 80;
+        let targetY = closestFriend.getWorldPosition().y + (Math.random() - 0.5) * 40;
         targetY = clamp(targetY, groundYMin, groundYMax);
         targetX = clamp(targetX, minX, sceneW(this.horse.scene) - margin);
         this.horse.setTargetPosition(targetX, targetY);
@@ -1300,22 +1309,86 @@ class HorsePositioning {
     }
   }
 
-  constrainTargetToCage() {
-    if (!this.horse.currentCage) return;
+  // Space the horse takes up for cage purposes. Left/right always come from
+  // the standing pose (its widest), so rotating, ragdolling, sitting, etc.
+  // never change how close it can get to the cage walls. Top/bottom follow
+  // the current pose so it still sits on the cage floor correctly.
+  getExtentsForCage() {
+    this.horse.updateLayout();
+    const current = this.getExtentsForLayout(this.horse.layout);
+    const standing = this.getStandingExtents();
+    return {
+      left: standing.left,
+      right: standing.right,
+      top: current.top,
+      bottom: current.bottom,
+    };
+  }
 
+  // Extents of the horse standing still and upright, facing its current way
+  getStandingExtents() {
+    const renderer = this.horse.renderer;
+    renderer.ensureTintedImages();
+    if (!renderer.tinted || !renderer.tinted.torso) {
+      return this.getExtentsForLayout(null);
+    }
+    const layout = renderer.buildLayout({
+      globalRotation: 0,
+      bodyY: 0,
+      bodyAngle: 0,
+      headBobY: 0,
+      headAngle: 0,
+      tailAngle: 0,
+      legAngles: [0, 0, 0, 0],
+      jabXOffset: 0,
+      facingRight: this.horse.facingRight,
+    });
+    return this.getExtentsForLayout(layout);
+  }
+
+  // Where the horse can stand inside its cage: the floor y it's held at, and
+  // an x range that keeps it inside whichever way it ends up facing
+  getCageLimits() {
     const extents = this.getExtentsForCage();
     const localLeft = extents.left - this.horse.x;
     const localRight = extents.right - this.horse.x;
     const localBottom = extents.bottom - this.horse.y;
-
     const b = this.horse.currentCage.bounds;
 
-    this.horse.targetY = b.bottom - localBottom;
-    this.horse.targetX = clamp(
-      this.horse.targetX,
-      b.left - localLeft,
-      b.right - localRight,
+    // Facing the other way mirrors the extents: left becomes -right
+    let minX = b.left - Math.min(localLeft, -localRight);
+    let maxX = b.right - Math.max(localRight, -localLeft);
+    if (minX > maxX) {
+      // Wider than the cage: stay centered
+      minX = maxX = (b.left + b.right) / 2;
+    }
+    return {
+      minX,
+      maxX,
+      y: b.bottom - localBottom - CAGE_FLOOR_OFFSET,
+    };
+  }
+
+  // Whether the horse can get close enough to grab/knock the block. In a cage
+  // it can only stand within the cage limits, so blocks pushed into the
+  // cage's border can be out of reach. Mirrors the pickup check in
+  // HorseActionHandler.checkArrivals.
+  canReachBlock(block) {
+    if (block.currentCage !== this.horse.currentCage) return false;
+    if (!this.horse.currentCage) return true;
+    const limits = this.getCageLimits();
+    const standX = clamp(block.x, limits.minX, limits.maxX);
+    return (
+      Math.hypot(block.x - standX, block.getBottomY() - 50 - limits.y) < 50
     );
+  }
+
+  constrainTargetToCage() {
+    if (!this.horse.currentCage) return;
+
+    const limits = this.getCageLimits();
+    this.horse.targetY = limits.y;
+    this.horse.targetX = clamp(this.horse.targetX, limits.minX, limits.maxX);
   }
 
   attemptAlicornFear(alicorn, oldScared) {
@@ -1339,7 +1412,7 @@ class HorsePositioning {
         }
       } else {
         // Chase it
-        this.horse.setTargetPosition(alicorn.x, alicorn.y);
+        this.horse.setTargetPosition(alicorn.getWorldPosition().x, alicorn.getWorldPosition().y);
         if (!this.horse.isMovingOrRunning()) {
           this.horse.initBehavior("RUNNING");
         }
@@ -1381,7 +1454,7 @@ class HorsePositioning {
     }
     this.horse.isScared = true;
     this.horse.scaredTimer = 2.0;
-    const target = this.getRunawayTarget(alicorn.x, alicorn.y);
+    const target = this.getRunawayTarget(alicorn.getWorldPosition().x, alicorn.getWorldPosition().y);
     if (!this.horse.isMovingOrRunning()) {
       this.horse.initBehavior("MOVING");
     }
@@ -1533,7 +1606,7 @@ class HorsePositioning {
     let minDist = Infinity;
     if (typeof puddles !== "undefined") {
       for (const p of puddles) {
-        if (p.scene === this.horse.scene && p.color === "#8a0303") {
+        if (p.scene === this.horse.scene && p.type === "blood") {
           for (const pt of p.points) {
             const d = Math.sqrt(
               (this.horse.x - pt.x) ** 2 + (this.horse.y - pt.y) ** 2,
@@ -1592,11 +1665,6 @@ class HorsePositioning {
     ty = clamp(ty, groundYMin, groundYMax);
 
     return { x: tx, y: ty };
-  }
-
-  getExtentsForCage() {
-    this.horse.updateLayout();
-    return this.getExtentsForLayout(this.horse.layout);
   }
 
   getSittingExtents() {

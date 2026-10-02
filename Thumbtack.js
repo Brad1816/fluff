@@ -182,7 +182,7 @@ class Thumbtack {
           targetFluffy.scene,
           pX,
           pY,
-          "#8a0303",
+          "blood",
           5 / 200,
           25 / 200,
         );

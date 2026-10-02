@@ -314,6 +314,10 @@ function loadObject(oData) {
     obj.deserialize(oData);
   }
 
+  if (obj instanceof Cage) {
+    obj.updateBounds();
+  }
+
   // Generic cage linking
   if (oData.currentCageId != null) {
     obj.currentCage = objects.find((o) => o.id === oData.currentCageId);
@@ -444,7 +448,7 @@ async function loadGame(slotName) {
   }
 
   puddles.length = 0;
-  puddles.push(...saveData.puddles);
+  puddles.push(...(saveData.puddles || []).map(Puddle.deserialize));
 
   fluffies.length = 0;
   objects.length = 0;
@@ -545,10 +549,27 @@ async function loadGame(slotName) {
     showToolbar = true;
   }
 
+  // Ensure default ThrowTool exists in toolbox if missing and is prepended to other tools
+  if (typeof ThrowTool !== "undefined") {
+    const hasThrowTool = toolbox.some((t) => t instanceof ThrowTool);
+    if (!hasThrowTool) {
+      toolbox.unshift(new ThrowTool());
+    } else {
+      const idx = toolbox.findIndex((t) => t instanceof ThrowTool);
+      if (idx > 0) {
+        const [tt] = toolbox.splice(idx, 1);
+        toolbox.unshift(tt);
+      }
+    }
+  }
+  if (typeof ensureThrowToolPrepended === "function") {
+    ensureThrowToolPrepended();
+  }
+
   saveData.objects.sort((a, b) => {
     const getPriority = (item) => {
       const type = item.classType;
-      if (type === "Cage") return -100;
+      if (type === "Cage" || type === "Enclosure") return -100;
       if (type === "IVStand") return -50;
       if (type === "Block") return getBlockDepth(item.id, saveData.objects);
       return 0;
@@ -721,7 +742,7 @@ async function saveGame(slotName) {
     screenshot: screenshot,
     saveDate: new Date().toLocaleString(),
     worldSettings: worldSettings.serialize(),
-    puddles: puddles,
+    puddles: puddles.map((p) => p.serialize()),
     toolbox: (typeof toolbox !== "undefined" ? toolbox : []).map((t) =>
       typeof t.serialize === "function"
         ? t.serialize()

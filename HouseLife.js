@@ -390,10 +390,10 @@ function updatePartyDecor(dt) {
 }
 
 // A paper cone on its head (HorseRenderer, after the head)
-function drawPartyHat(ctx, renderer) {
+function drawPartyHat(ctx, renderer, layout = renderer && renderer.layout) {
   const f = renderer && renderer.horse;
-  if (!hasPartyHat(f) || !renderer.layout || !renderer.layout.head) return;
-  const rect = renderer.layout.head;
+  if (!hasPartyHat(f) || !layout || !layout.head) return;
+  const rect = layout.head;
   const hat = f.partyHat;
   ctx.save();
   ctx.translate(rect.x, rect.y);

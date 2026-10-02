@@ -57,7 +57,7 @@ addHorseMethods({
         for (const puddle of puddles) {
           if (puddle.scene !== this.scene || puddle.points.length === 0) continue;
           // Only bodily waste (poop, pee, sick, blood) - not water or tears
-          if (typeof isBodilyWaste === "function" && !isBodilyWaste(puddle.color)) continue;
+          if (typeof isBodilyWaste === "function" && !isBodilyWaste(puddle.type)) continue;
 
           for (let j = puddle.points.length - 1; j >= 0; j--) {
             const p = puddle.points[j];
@@ -65,11 +65,7 @@ addHorseMethods({
             const py = p.y;
             const dPt = Math.sqrt((this.x - px) ** 2 + (this.y - py) ** 2);
             if (dPt < 40) {
-              p.scale -= 0.02 * dt;
-              if (p.targetScale) p.targetScale = Math.min(p.targetScale, p.scale);
-              if (p.scale < 0.05) {
-                puddle.points.splice(j, 1);
-              }
+              puddle.shrinkPoint(j, 0.02 * dt, 0.05);
               // (This used to read `color == "#5c4033" || "#8a0303"`, which is
               // always true; the filter above now keeps it to waste.)
               this.hunger = Math.min(1.0, this.hunger + 0.015 * dt);
@@ -85,7 +81,7 @@ addHorseMethods({
                 (typeof worldSettings === "undefined" || worldSettings.toxoplasmosis) &&
                 !this.isToxoplasmosis &&
                 Math.random() < 0.3 * dt &&
-                puddle.color == "#5c4033"
+                puddle.type === "poop"
               ) {
                 this.isToxoplasmosis = true;
               }

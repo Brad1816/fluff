@@ -32,6 +32,7 @@ module.exports = [
         fluffyNames[mum.id] = "Daisy";
         fluffyNames[dad.id] = "Clover";
         mum.triggerPregnancy(dad);
+        mum.pregnancyTimer = 0; // (full term: not born early, Premature.js)
         mum.anatomy.spawnBaby(true);
         const pip = fluffies[fluffies.length - 1];
         mum.anatomy.spawnBaby(true);

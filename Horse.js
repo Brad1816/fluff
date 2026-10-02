@@ -271,6 +271,16 @@ class Horse {
     this.lastY = this.y;
     this.physicsLegAngle = 0;
     this.flailAngle = 0;
+    // The throw tool (ThrowTool.js, HorsePhysics.updateThrowFall)
+    this.heldWithThrowTool = false;
+    this.wasHeldHigh = false;
+    this.isFallingFromThrow = false;
+    this.throwFallVx = 0;
+    this.throwFallVy = 0;
+    this.throwStartY = null; // where it was lifted from (it lands back there)
+    this.throwShadowY = null;
+    this.throwTool = null;
+    this.ballCooldown = 0; // (rests a while after playing with a ball)
 
     // State Management
     this.currentStateKey = "IDLE";
@@ -346,6 +356,8 @@ class Horse {
     this.sensitiveBaby = false;
     this.spayed = false;
     this.pregnancyTimer = 0;
+    this.miscarriageTimer = null; // Counts down to an early (non-viable) birth; null when not miscarrying
+    this.prematureGrowth = 1.0; // Pregnancy progress at birth (1 = full term); shrinks premature babies
     this.pregnancyTorsoStretch = 0;
     this.fatherGenes = null;
     this.seekingBirthBed = false;
@@ -377,6 +389,9 @@ class Horse {
     this.dreamEffectTimer = 0;
     this.dreamStretch = { x: 1.0, y: 1.0 };
     this.dreamAngle = 0;
+    this.shownDream = null; // Dream currently drawn in the bubble (lags currentDream while animating)
+    this.dreamBubbleProgress = 0; // 0 = hidden, 1 = fully shown
+    this.dreamPulsePhase = 0;
     this.sleepDeprivation = 0;
     this.sleepTargetSet = false;
 
@@ -523,6 +538,16 @@ class Horse {
     this.initBehavior("IDLE");
   }
 
+  // Where the horse is in the world, at ground level. While it's held by the
+  // throw tool or falling from a throw, that's the spot below it it was
+  // lifted from, not its literal (mid-air) x/y.
+  getWorldPosition() {
+    const airborne =
+      (this.heldWithThrowTool || this.isFallingFromThrow) &&
+      typeof this.throwStartY === "number";
+    return { x: this.x, y: airborne ? this.throwStartY : this.y };
+  }
+
   setTargetPosition(x, y) {
     this.targetX = x;
     this.targetY = y;
@@ -558,7 +583,7 @@ class Horse {
   }
 
   drawPortrait(ctx, x, y, size) {
-    this.renderer.drawPortrait(ctx, x, y, size);
+    this.renderer.drawSnapshot(ctx, x, y, size);
   }
 
   amputate(part, weapon = null) {
@@ -645,6 +670,7 @@ class Horse {
 
   shouldFlail() {
     if (!this.isAlive) return false;
+    if (this.happiness === WAN_DIE_THRESHOLD) return false;
     if (this.currentStateKey === "DROWNING") return true;
     if (!this.isDragging) return false;
     if (this.grabbedPart !== "torso") return true;
@@ -662,6 +688,14 @@ class Horse {
   tooYoungToSpeak() {
     if (this.isSensitive()) return true;
     return this.growth < CHIRPY_THRESHOLD;
+  }
+
+  // Flies when thrown (ThrowTool.js): both wings, and no wing jacket
+  hasBothWings() {
+    if (this.type !== "pegasus" && this.type !== "alicorn") return false;
+    if (!this.limbs || !this.limbs.leftWing || !this.limbs.rightWing) return false;
+    if (this.accessories && this.accessories.torso && this.accessories.torso.id === "wingjacket") return false;
+    return true;
   }
 
   canTalk() {
@@ -737,7 +771,8 @@ class Horse {
             this.expressionOverride = "ANGRY_PUFFED";
             this.expressionOverrideTimer = 3.0;
           }
-          if (obj.channel !== "OFF" && this.y > obj.y) {
+          // (in front of it, or watching from a cage)
+          if (obj.channel !== "OFF" && (this.y > obj.y || obj.currentCage != null)) {
             return obj;
           }
         }
@@ -905,6 +940,8 @@ class Horse {
     const genderBonus = this.gender === "male" ? 0.08 : 0;
     const g = this.getGrowthScale();
     this.scale = 0.5 * (lerp(1, 0.92 + genderBonus, g) + genetics) * g;
+    // Premature babies start smaller and catch up as they grow
+    this.scale *= lerp(this.prematureGrowth == null ? 1 : this.prematureGrowth, 1.0, this.growth);
     this.updateCrawling();
   }
 
@@ -948,7 +985,9 @@ class Horse {
       this.health < CRAWLING_HEALTH_THRESHOLD ||
       this.getLimbsMissing() >= 2 ||
       drugOverdoseCrawling ||
-      (this.isBeingTased && this.isBeingTased());
+      (this.isBeingTased && this.isBeingTased()) ||
+      // gasping for air in a culling cage (Cage.js)
+      (this.currentCage instanceof Cage && this.currentCage.suffocatesOccupants());
   }
 
   canFightBack() {
@@ -1085,6 +1124,10 @@ class Horse {
       const r = riderBottomY(this);
       if (r !== null) return r;
     }
+    // Up in the air (ThrowTool.js): sorted by the spot below it, where its shadow is
+    if ((this.heldWithThrowTool || this.isFallingFromThrow) && typeof this.throwShadowY === "number" && !isNaN(this.throwShadowY)) {
+      return this.throwShadowY;
+    }
     return this.getBottomYStanding();
   }
 
@@ -1137,6 +1180,7 @@ class Horse {
         !b.heldBy &&
         !b.stackedOn &&
         !fluffies.some((f) => f.blockTarget && f.targetX === b.x) &&
+        this.positioning.canReachBlock(b) &&
         !b.getStackedAbove() &&
         !b.isDragging &&
         b.isStill(),
@@ -1144,7 +1188,8 @@ class Horse {
     if (targetBlock) {
       this.blockTarget = true;
       this.initBehavior("MOVING");
-      this.setTargetPosition(targetBlock.x, targetBlock.y);
+      this.setTargetPosition(targetBlock.x, targetBlock.currentCage ? this.y : targetBlock.y);
+      this.constrainTargetToCage();
     } else {
       // find block stack to knock over
       targetBlock = sceneBlocks.find(
@@ -1152,13 +1197,15 @@ class Horse {
           !b.heldBy &&
           !b.stackedOn &&
           !fluffies.some((f) => f.blockTarget && f.targetX === b.x) &&
+          this.positioning.canReachBlock(b) &&
           !b.isDragging &&
           b.isStill(),
       );
       if (targetBlock) {
         this.blockTowerKnockOverTarget = true;
         this.initBehavior("MOVING");
-        this.setTargetPosition(targetBlock.x, targetBlock.y);
+        this.setTargetPosition(targetBlock.x, targetBlock.currentCage ? this.y : targetBlock.y);
+        this.constrainTargetToCage();
       }
     }
   }
@@ -1194,7 +1241,7 @@ class Horse {
         this.setTargetPosition(this.x, this.y);
       } else {
         // Force Y so visual bottom is at cage bottom
-        this.y = b.bottom - localBottom - 10;
+        this.y = b.bottom - localBottom - CAGE_FLOOR_OFFSET;
         this.x = clamp(this.x, b.left - localLeft, b.right - localRight);
       }
     }
@@ -1226,7 +1273,107 @@ class Horse {
     }
   }
 
+  // Landing hard after being thrown (HorsePhysics.updateThrowFall): hurts
+  // in proportion to the speed. Returns the damage.
+  handleThrowImpact(speed) {
+    if (typeof speed !== "number" || isNaN(speed)) return;
+    if (speed < THROW_IMPACT_MIN_SPEED) return;
+
+    const damage = speed * THROW_IMPACT_DAMAGE_FACTOR;
+    this.health = Math.max(0, this.health - damage);
+
+    const vol = Math.min(1.0, Math.max(0.4, speed / 1500));
+    const pitch = Math.max(0.7, 1.2 - (Math.abs(this.scale) || 0.5) * 0.4 * (1 + Math.random()));
+    playSound("thud", vol, pitch);
+
+    this.expressionOverride = "CRYING_SHOCKED";
+    this.expressionOverrideTimer = 2.0;
+
+    const line = getDialogue(["THROW_IMPACT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], this);
+    const s = Math.abs(this.scale * Math.min(damage, 100));
+    if (this.isAlive) {
+      addPointToPuddle(this.scene, this.x, this.y, "blood", s / 200, (3 * s) / 200, 0.05);
+    }
+    if (this.health <= 0) {
+      this.die("throw", "Killed by a hard landing when thrown");
+    } else if (this.isAlive) {
+      // It knows who threw it, and so do the ones watching (Memory.js)
+      if (typeof notifyViolence === "function") notifyViolence(this, false, "throw");
+      // A pregnant mare may go into labour early (Premature.js)
+      if (typeof maybeEarlyLabourFromFall === "function") maybeEarlyLabourFromFall(this, damage);
+      this.speak(line, true, true);
+      this.initBehavior("FLUFFY_KNOCKED_DOWN");
+    }
+    return damage;
+  }
+
+  // Let go of while held up with the throw tool: it falls, or flies off
+  // with the mouse's speed (HorsePhysics.updateThrowFall), and the tool
+  // goes back in your hand
+  _dropFromThrowTool() {
+    this.heldWithThrowTool = false;
+    this.wasHeldHigh = false;
+    this.isDragging = false;
+    this.despawnProtectionTimer = 10;
+    if (!this.isAlive) {
+      this.layout.globalRotation = 0;
+      this.ragdollRotation = 0;
+      this.layout.torso.angle = 0;
+    }
+    if (this.throwTool) {
+      this.throwTool.heldHorse = null;
+      this.throwTool.isDragging = true;
+      this.throwTool.dragOffset = { x: 0, y: 0 };
+      this.throwTool.scene = currentScene;
+      this.throwTool.x = mouse.x;
+      this.throwTool.y = mouse.y;
+      if (!objects.includes(this.throwTool)) objects.push(this.throwTool);
+      isGlobalDragging = true;
+    }
+    const mouseVel = getMouseVelocity();
+    this.throwFallVx = mouseVel.vx;
+    this.throwFallVy = mouseVel.vy;
+
+    const isLifted = typeof this.throwStartY === "number" && this.y < this.throwStartY - 0.5;
+    const hasUpwardVelocity = this.throwFallVy < -10;
+    const hasDownwardVelocity = this.throwFallVy > THROW_IMPACT_MIN_SPEED;
+    const hasHorizontalVelocity = Math.abs(this.throwFallVx) > 10;
+
+    if (
+      typeof this.throwStartY === "number" &&
+      (isLifted || hasUpwardVelocity || hasDownwardVelocity || hasHorizontalVelocity)
+    ) {
+      this.isFallingFromThrow = true;
+      if (this.isAlive && (isLifted || hasUpwardVelocity)) {
+        const isWinged = this.hasBothWings();
+        const isChirpy = this.tooYoungToSpeak();
+        this.expressionOverride = isWinged ? "GOOD_UPSIES" : "CRYING_SHOCKED";
+        this.expressionOverrideTimer = 2.0;
+        if (this.happiness > WAN_DIE_THRESHOLD) {
+          const dropLine = getDialogue(["THROW_DROPPED", isChirpy ? "CHIRPY" : isWinged ? "WINGED" : "DEFAULT"], this);
+          if (dropLine) {
+            this.speak(dropLine, false, isChirpy);
+            if (this.speech) this.speech.nextTime = 1.0 + Math.random();
+          }
+        }
+      }
+    } else {
+      this.isFallingFromThrow = false;
+      this.throwFallVx = 0;
+      this.throwFallVy = 0;
+      this.vx = 0;
+      this.vy = 0;
+      this.throwStartY = null;
+      this.throwShadowY = null;
+      if (this.isAlive) this.initBehavior("IDLE");
+    }
+  }
+
   onDrop() {
+    if (this.heldWithThrowTool) {
+      this._dropFromThrowTool();
+      return;
+    }
     handleDropping(this);
     this.despawnProtectionTimer = 10;
     if (!this.isAlive) {
@@ -1361,8 +1508,8 @@ class Horse {
 
     this.physics.updateTablePhysics(dt);
 
-    const topWallHeight = sceneTop(this.scene);
-    const groundYMin = topWallHeight + 50;
+    // (higher while held up with the throw tool)
+    const groundYMin = this.physics.getGroundYMin();
 
     // Sleep, happiness and other effects of the current state
     this._updateStateEffects(dt);
@@ -1410,6 +1557,13 @@ class Horse {
     if (this.birthRotation > 0) {
       this.birthRotation = Math.max(0, this.birthRotation - dt * 2.0);
     }
+
+    // Flying through the air after a throw: nothing else until it lands
+    if (this.physics.updateThrowFall(dt)) {
+      this.updateLayout();
+      return;
+    }
+
     if (this.isAlive) {
       this.updateSpeed();
       if (this.ragdollRotation !== 0 && !this.isDragging) {
@@ -1449,11 +1603,7 @@ class Horse {
           this.currentStateKey !== "LYING"
         ) {
           this.initBehavior("LYING");
-        } else if (
-          this.pregnancyTimer <= 0 &&
-          this.babiesToBirth > 0 &&
-          this.currentStateKey !== "LYING"
-        ) {
+        } else if (this.isInLabor() && this.currentStateKey !== "LYING") {
           this.initBehavior("LYING");
         }
       }
@@ -1489,6 +1639,7 @@ class Horse {
 
       // Growing up
       this._updateGrowingUp(dt);
+      this.ballCooldown = Math.max(0, (this.ballCooldown || 0) - dt);
 
       this.updateRelationships(dt);
       this.isFrantic = this.calculateIsFrantic();
@@ -1786,13 +1937,55 @@ class Horse {
     this.renderer.drawDream(ctx);
   }
 
+  drawShadow(ctx) {
+    if (this.renderer) this.renderer.drawShadow(ctx);
+  }
+
+  // Splashing and bubbles while it goes under (the river)
+  drowningSplashes() {
+    if (this.drowningTimer > 1 && this.isAlive && this.happiness !== WAN_DIE_THRESHOLD) {
+      this.soundTimer = (this.soundTimer || 0) - (0.025 - this.growth / 100);
+      if (this.soundTimer <= 0) {
+        this.soundTimer = 0.35;
+        playSound("splashing", Math.max(0.1, this.growth / 5), 1.6 - 0.6 * this.growth + Math.random() * 0.2);
+      }
+      this.bubbleTimer = (this.bubbleTimer || 0) - 0.016;
+      if (this.bubbleTimer <= 0) {
+        this.bubbleTimer = 0.01;
+        if (this.scene) {
+          poofs.push(
+            new Poof(
+              this.x + ((this.facingRight ? 1 : -1.5) + Math.random() * 0.5) * Math.max(20, 40 * this.growth),
+              this.y + Math.random() * 10,
+              this.scene,
+              ["#ffffff59", "#1e90ff"][Math.floor(Math.random() * 2)],
+              false,
+              Math.max(0.2, this.growth * 0.5),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   draw(ctx, clip = null) {
     if (this._layoutDirty || !this.layout) {
       this._layoutDirty = false;
       this.updateLayout();
     }
+    // Going under: bobs half under, then sinks (drowningTimer runs 1 to 5)
     if (!clip && this.drowningTimer > 0) {
-      clip = { top: 1.0 - this.drowningTimer / 5 };
+      const drowningEffect = Math.max(0, Math.min(1.0, (this.drowningTimer - 1.0) / 4.0));
+      let progress = 0;
+      if (drowningEffect < 0.1) {
+        progress = (drowningEffect / 0.1) * 0.5;
+      } else if (drowningEffect < 0.9) {
+        progress = 0.5;
+        this.drowningSplashes();
+      } else {
+        progress = 0.5 + ((drowningEffect - 0.9) / 0.1) * 0.6;
+      }
+      clip = { top: 1.0 - progress };
     }
     // Rotting corpses darken, fade and get flies (Corpses.js); dirty
     // fluffies look it (Bath.js) - both drawn tinted in one go
@@ -1987,7 +2180,7 @@ class Horse {
     } else {
       horse.smokePoints = [];
     }
-    horse.updateCrawling();
+    horse.updateGrowthStats(); // (size, including a premature baby's smallness; and crawling)
 
     // Re-calculate derived values
     horse.renderer.ensureTintedImages();

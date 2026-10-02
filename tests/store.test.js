@@ -14,7 +14,7 @@ const state = (page) =>
   page.evaluate(() => ({
     scene: currentScene,
     money,
-    toolbox: toolbox.length,
+    toolbox: toolbox.filter((t) => !(t instanceof ThrowTool)).length, // (everyone has the throw tool)
     bags: objects
       .filter((o) => o instanceof FoodBag)
       .map((b) => ({ scene: b.scene, dragging: b.isDragging })),

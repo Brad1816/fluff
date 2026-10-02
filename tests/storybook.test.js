@@ -32,6 +32,7 @@ module.exports = [
         fluffyNames[mum.id] = "Daisy";
         recordStory("named", mum, { x: "Daisy" });
         mum.triggerPregnancy(dad);
+        mum.pregnancyTimer = 0; // (full term: not born early, Premature.js)
         mum.anatomy.spawnBaby(true);
         const foal = fluffies[fluffies.length - 1];
         mum.anatomy.spawnBaby(false);

@@ -7,7 +7,7 @@ function applyImmediateDebugAction(action) {
   switch (action) {
     case "clean_all":
       for (const puddle of puddles) {
-        puddle.points = [];
+        puddle.clear();
       }
       gibs.length = 0;
       for (const f of fluffies) {

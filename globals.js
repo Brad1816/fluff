@@ -144,6 +144,22 @@ function isAlley(sceneName) {
   return isAlleyScene(sceneName);
 }
 
+function sceneHasWall(sceneName) {
+  const s =
+    sceneName || (typeof currentScene !== "undefined" ? currentScene : null);
+  if (!s) return true;
+  const cfg = getSceneConfig(s);
+  return !!(cfg && cfg.topWallColor);
+}
+
+function isIndoorScene(sceneName) {
+  const s =
+    sceneName || (typeof currentScene !== "undefined" ? currentScene : null);
+  if (!s) return true;
+  const cfg = getSceneConfig(s);
+  return cfg ? !!cfg.isIndoor : true;
+}
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
@@ -193,6 +209,8 @@ const mouse = { x: 0, y: 0, down: false, rightDown: false };
 let isShiftPressed = false;
 let shiftSellBlocked = false;
 
+const mouseVelocityHistory = [];
+
 function updateMouse(e) {
   if (!document.hasFocus()) return;
   const clientX = e.clientX;
@@ -204,6 +222,65 @@ function updateMouse(e) {
   // Screen position kept separately for the park's camera (Park.js)
   mouse.sx = mouse.x;
   mouse.sy = mouse.y;
+
+  const now =
+    typeof performance !== "undefined" && performance.now
+      ? performance.now()
+      : Date.now();
+  mouseVelocityHistory.push({ x: mouse.x, y: mouse.y, time: now });
+
+  while (
+    mouseVelocityHistory.length > 1 &&
+    now - mouseVelocityHistory[0].time > 100
+  ) {
+    mouseVelocityHistory.shift();
+  }
+}
+
+function getMouseVelocity() {
+  const now =
+    typeof performance !== "undefined" && performance.now
+      ? performance.now()
+      : Date.now();
+  while (
+    mouseVelocityHistory.length > 1 &&
+    now - mouseVelocityHistory[0].time > 100
+  ) {
+    mouseVelocityHistory.shift();
+  }
+
+  if (mouseVelocityHistory.length < 2) {
+    return { vx: 0, vy: 0 };
+  }
+
+  const latest = mouseVelocityHistory[mouseVelocityHistory.length - 1];
+  // If no mouse movement within the last 60ms, user stopped moving before release
+  if (now - latest.time > 60) {
+    return { vx: 0, vy: 0 };
+  }
+
+  // Find sample up to ~80ms ago for smooth velocity calculation
+  let oldest = mouseVelocityHistory[0];
+  for (let i = 0; i < mouseVelocityHistory.length - 1; i++) {
+    if (latest.time - mouseVelocityHistory[i].time <= 80) {
+      oldest = mouseVelocityHistory[i];
+      break;
+    }
+  }
+
+  const dt = (latest.time - oldest.time) / 1000.0;
+  if (dt <= 0.005) {
+    return { vx: 0, vy: 0 };
+  }
+
+  let vx = (latest.x - oldest.x) / dt;
+  let vy = (latest.y - oldest.y) / dt;
+
+  const MAX_SPEED = 2500;
+  vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vx));
+  vy = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, vy));
+
+  return { vx, vy };
 }
 
 // Global mouse listeners (Capturing to update state before other listeners)
@@ -228,8 +305,31 @@ window.addEventListener(
 );
 
 window.addEventListener("mouseup", (e) => {
-  if (e.button === 0) mouse.down = false;
+  if (e.button === 0) {
+    updateMouse(e);
+    mouse.down = false;
+    if (typeof fluffies !== "undefined") {
+      for (const f of fluffies) {
+        if (f.isDragging && f.heldWithThrowTool) {
+          f.onDrop();
+        }
+      }
+    }
+  }
   if (e.button === 2) mouse.rightDown = false;
+});
+
+window.addEventListener("blur", () => {
+  mouse.down = false;
+  mouse.rightDown = false;
+  mouseVelocityHistory.length = 0;
+  if (typeof fluffies !== "undefined") {
+    for (const f of fluffies) {
+      if (f.isDragging && f.heldWithThrowTool) {
+        f.onDrop();
+      }
+    }
+  }
 });
 
 window.addEventListener(
@@ -676,13 +776,7 @@ let wsPromptToxoplasmosis = true;
 let wsPromptSexuality = { ...DEFAULT_SEXUALITY };
 let saveList = [];
 
-const puddles = [
-  {
-    scene: "INDOORS",
-    points: [],
-    color: "#8a0303",
-  },
-];
+const puddles = []; // Puddle instances, created on demand by addPointToPuddle
 
 let waterRipples = [];
 let rippleTimer = 0;
@@ -890,6 +984,11 @@ function handleDropping(item) {
           item.y > b.top &&
           item.y < b.bottom
         ) {
+          if (cage.isCulling()) {
+            // Sealed off: push the item out below the cage instead
+            item.y = Math.min(height - 10, b.bottom + 10);
+            break;
+          }
           item.currentCage = cage;
           break;
         }
@@ -955,7 +1054,9 @@ function handleGenericCageContainment(item, width, height) {
   }
 }
 
-function handleBouncingPhysics(obj, dt) {
+// bounds (optional): { left, right, top } limits for obj.x / obj.y instead of
+// the screen edges. The floor is always obj.groundY.
+function handleBouncingPhysics(obj, dt, bounds = null) {
   // Gravity
   const gravity = 800;
   obj.vy = (obj.vy || 0) + gravity * dt;
@@ -975,12 +1076,20 @@ function handleBouncingPhysics(obj, dt) {
 
   // Wall Bouncing
   const margin = 20;
-  if (obj.x < margin) {
-    obj.x = margin;
+  const left = bounds ? bounds.left : margin;
+  const right = bounds ? bounds.right : sceneW(obj.scene) - margin;
+  if (obj.x < left) {
+    obj.x = left;
     obj.vx = -obj.vx * 0.7;
-  } else if (obj.x > sceneW(obj.scene) - margin) {
-    obj.x = sceneW(obj.scene) - margin;
+  } else if (obj.x > right) {
+    obj.x = right;
     obj.vx = -obj.vx * 0.7;
+  }
+
+  // Ceiling Bouncing
+  if (bounds && bounds.top !== undefined && obj.y < bounds.top) {
+    obj.y = bounds.top;
+    if (obj.vy < 0) obj.vy = -obj.vy * 0.5;
   }
 }
 
@@ -1258,6 +1367,31 @@ const CATTLE_PROD_SMOKE_COLOR = "rgba(60, 60, 60, 0.5)"; // Dark grey translucen
 const CATTLE_PROD_BASE_DAMAGE = 3.0;
 const CATTLE_PROD_GROWTH_FACTOR_BASE = 3.0;
 
+// Dream bubble
+const DREAM_BUBBLE_ANIM_TIME = 0.4; // Seconds for the bubble to pop in or out
+const DREAM_BUBBLE_PULSE_PERIOD = 3.2; // Seconds per in/out pulse while dreaming
+const DREAM_BUBBLE_PULSE_AMOUNT = 0.07; // Pulse size as a fraction of bubble size
+const DREAM_BUBBLE_REFERENCE_SCALE = 0.5; // Fluffy scale at which the bubble is drawn at 1x
+
+// Cage
+const CAGE_TAG_COLORS = {
+  breeding: "#E91E63",
+  sell: "#4CAF50",
+  eject: "#FF9800",
+  cull: "#607D8B",
+};
+const CAGE_FLOOR_OFFSET = 10; // How far above the cage's bottom edge caged fluffies stand
+const CAGE_CLICK_THRESHOLD = 5; // Max mouse travel (px) for a press to count as a click
+const CAGE_EJECT_OFFSET_Y = 30; // How far below the cage ejected contents land
+const CAGE_GLASS_EXTEND_TIME = 2.5; // Seconds for glass pane to slide down
+const CAGE_CULL_SEAL_DELAY = 12.0; // Seconds glass stays sealed before retracting
+const CAGE_CULL_PANIC_TIME = 6.0; // Seconds into the seal that fluffies stop crying out
+const CAGE_CULL_DEATH_TIME = 10.0; // Seconds into the seal that fluffies die
+const CAGE_CULL_SPEECH_INTERVAL = 1.0; // Seconds between panicked lines
+const CAGE_CULL_SMOKE_INTERVAL = 0.15; // Seconds between smoke bursts
+const CAGE_CULL_SMOKE_COLOR = "rgba(200, 200, 200, 0.8)";
+const CAGE_GLASS_RETRACT_TIME = 2.5; // Seconds for glass pane to slide back up
+
 const THUMBTACK_COOLDOWN = 1.5;
 const HAPPINESS_PENALTY_BABBEH_GRABBED = -0.0125;
 const HAPPINESS_PENALTY_BAD_UPSIES = -0.025;
@@ -1278,6 +1412,8 @@ const HAPPINESS_PENALTY_ATE_BODILY_WASTE = -0.002;
 const FULL_SPEECH_THRESHOLD = 0.35;
 const WALKY_THRESHOLD = 0.3;
 const CHIRPY_THRESHOLD = 0.15;
+const MISCARRIAGE_LABOR_DELAY = 10; // Seconds from a miscarriage starting until labor
+const PREMATURE_BIRTH_MIN_PROGRESS = 0.25; // Births earlier than this in a pregnancy leave no body
 
 // Poopie colours: the browns. Random "bad" coats are made near these
 // (generateRandomGenes); judging a coat is judgeCoatColour below.
@@ -1691,9 +1827,15 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Cage",
-    desc: "Drop fluffies in to trap them inside the cage. Right click the cage to switch modes.\n\nBreeding mode allows forcibly breeding caged fluffies by sorry-sticking the stallion.\n\nSell mode will allow caged fluffies to be prioritized for sale offers.",
+    desc: "Drop fluffies in to trap them inside the cage. Right click the cage to switch modes.\n\nBreeding mode allows forcibly breeding caged fluffies by sorry-sticking the stallion.\n\nSell mode will allow caged fluffies to be prioritized for sale offers.\n\nClicking the cage in eject mode instantly drops everything inside out below it.\n\nClicking it in cull mode (it asks first) seals it with glass and pumps the air out: every fluffy inside slowly and painfully suffocates.",
     cost: 150,
     isItem: "cage",
+  },
+  {
+    name: "Enclosure",
+    desc: "A roomy enclosure. Drop fluffies in to keep them inside. Unlike a cage, fluffies don't get sad from being kept in it.",
+    cost: 5000,
+    isItem: "enclosure",
   },
   {
     name: "Litterbox",
@@ -2068,7 +2210,20 @@ function getToolCountInToolbox(tool) {
   ).length;
 }
 
+function ensureThrowToolPrepended() {
+  if (typeof toolbox === "undefined" || !Array.isArray(toolbox)) return;
+  if (typeof ThrowTool === "undefined") return;
+  const idx = toolbox.findIndex((t) => t instanceof ThrowTool);
+  if (idx > 0) {
+    const [tool] = toolbox.splice(idx, 1);
+    toolbox.unshift(tool);
+  } else if (idx === -1) {
+    toolbox.unshift(new ThrowTool());
+  }
+}
+
 function getGroupedToolboxEntries() {
+  ensureThrowToolPrepended();
   const currentToolbox = typeof toolbox !== "undefined" ? toolbox : [];
   const groups = new Map();
 
@@ -2098,6 +2253,16 @@ function getGroupedToolboxEntries() {
           ? isMultiPurchaseTool(representative)
           : items.length > 1,
     });
+  }
+
+  const throwIdx = entries.findIndex(
+    (e) =>
+      e.key === "throw_tool" ||
+      (typeof ThrowTool !== "undefined" && e.tool instanceof ThrowTool),
+  );
+  if (throwIdx > 0) {
+    const [throwEntry] = entries.splice(throwIdx, 1);
+    entries.unshift(throwEntry);
   }
 
   return entries;
@@ -2189,7 +2354,14 @@ function addToolToToolbox(tool) {
     tool.attachedTo = null;
   }
   if (!toolbox.includes(tool)) {
-    toolbox.push(tool);
+    if (typeof ThrowTool !== "undefined" && tool instanceof ThrowTool) {
+      toolbox.unshift(tool);
+    } else {
+      toolbox.push(tool);
+    }
+  }
+  if (typeof ensureThrowToolPrepended === "function") {
+    ensureThrowToolPrepended();
   }
   if (typeof objects !== "undefined") {
     const idx = objects.indexOf(tool);
@@ -2258,6 +2430,10 @@ function equipTool(tool) {
     unequipTool(tool);
     return;
   }
+  const grabbedFluffy = fluffies.find((f) => f.isDragging);
+  if (grabbedFluffy) {
+    grabbedFluffy.onDrop();
+  }
   unequipCurrentTool();
 
   tool.isDragging = true;
@@ -2277,6 +2453,13 @@ function equipTool(tool) {
 
 function unequipTool(tool) {
   if (!tool) return;
+  if (tool.heldHorse) {
+    const h = tool.heldHorse;
+    tool.heldHorse = null;
+    if (typeof h.onDrop === "function") {
+      h.onDrop();
+    }
+  }
   tool.isDragging = false;
   if (typeof objects !== "undefined") {
     const idx = objects.indexOf(tool);
@@ -2294,6 +2477,13 @@ function unequipCurrentTool() {
     for (let i = objects.length - 1; i >= 0; i--) {
       const o = objects[i];
       if (o.isDragging && isToolObject(o)) {
+        if (o.heldHorse) {
+          const h = o.heldHorse;
+          o.heldHorse = null;
+          if (typeof h.onDrop === "function") {
+            h.onDrop();
+          }
+        }
         o.isDragging = false;
         objects.splice(i, 1);
       }
@@ -3077,4 +3267,105 @@ function getExpressionConfig(expr, isAlive = true) {
   }
 
   return config;
+}
+
+// Fluffy Shadow Constants
+const HORSE_SHADOW_BASE_RADIUS_X = 90.0;
+const HORSE_SHADOW_BASE_RADIUS_Y = 30.0;
+const HORSE_SHADOW_ALPHA = 0.25;
+
+// Throw Tool Constants
+const THROW_IMPACT_DAMAGE_FACTOR = 0.04;
+const THROW_IMPACT_MIN_SPEED = 500.0;
+const THROW_HIGH_ALTITUDE_THRESHOLD = 150.0;
+
+// A new game: everything back to how it starts (the main menu's New Game
+// and the "newgame" cheat)
+function resetGameState(customWorldSettings = null) {
+  if (
+    customWorldSettings &&
+    typeof WorldSettings !== "undefined" &&
+    customWorldSettings instanceof WorldSettings
+  ) {
+    worldSettings = customWorldSettings;
+  }
+
+  // Money, timers, rooms, names... back to their new-game values
+  // (the list is SAVED_GAME_STATE in Persistence.js)
+  resetSavedGameState();
+  resetTemporaryGameState();
+  chatLogScrollOffset = 0;
+  chatLogAutoScroll = true;
+  recentOutdoorDialogue.length = 0;
+
+  // Stop any sounds still playing from the old game's tools
+  for (const item of [...objects, ...toolbox]) {
+    if (item && typeof item.stopTaserSound === "function") item.stopTaserSound();
+  }
+
+  fluffies.length = 0;
+  objects.length = 0;
+  gibs.length = 0;
+  puddles.length = 0;
+  poofs.length = 0;
+  waterRipples.length = 0;
+  rippleTimer = 0;
+
+  // Toolbox and toolbar: just the throw tool (ThrowTool.js) to start with
+  toolbox.length = 0;
+  if (typeof ThrowTool !== "undefined") toolbox.push(new ThrowTool());
+  toolboxPage = 0;
+  showToolbox = true;
+  showToolbar = true;
+  hoveredToolboxItem = null;
+  for (const slot of toolbarSlots) slot.tool = null;
+  initDefaultToolbar();
+  isGlobalDragging = false;
+
+  // UI, debug tools and messages
+  if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
+  currentPauseScreenshot = null;
+  doorMessages.length = 0;
+  uiMessages.length = 0;
+  debugMessages.length = 0;
+  debugWatchedFluffyId = null;
+  debugPairFirst = null;
+  for (const k in debugActionHistory) delete debugActionHistory[k];
+  itemMenuFilter = "";
+  itemMenuPage = 0;
+  isShiftPressed = false;
+  shiftSellBlocked = false;
+  mouse.down = false;
+  mouse.rightDown = false;
+
+  // The things that are always there
+  if (typeof FoalVendor !== "undefined") objects.push(new FoalVendor("ALLEY"));
+  if (typeof DayCareDesk !== "undefined") {
+    objects.push(new DayCareDesk("DAY_CARE"));
+    if (typeof ShelterKennels !== "undefined") objects.push(new ShelterKennels("DAY_CARE"));
+  }
+
+  // Spawn 100 grasses in each grassy scene
+  for (const sceneKey in SCENES) {
+    const config = SCENES[sceneKey];
+    if (!config.isGrassy) continue;
+    for (let i = 0; i < 100; i++) {
+      const x = 50 + Math.random() * (width - 100);
+      const y = height * 0.15 + 50 + Math.random() * (height * 0.85 - 100);
+      const growth = 0.5 + Math.random() * 1.5;
+      let spawnX = x;
+      if (config.hasRiver && images && images.grass) {
+        spawnX = width * 0.25 + images.grass.width + Math.random() * (width * 0.75 - 100);
+      }
+      objects.push(new Grass(spawnX, y, config.id, growth));
+      poofs.push(new Poof(spawnX, y, config.id, "green"));
+    }
+  }
+
+  // Fluffy Park: berry bushes, meadow grass and a few wild families
+  if (typeof setupParkLife === "function") setupParkLife(true);
+}
+
+if (typeof window !== "undefined") {
+  window.resetGameState = resetGameState;
 }

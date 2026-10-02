@@ -143,11 +143,13 @@ class HorseAnatomy {
     if (typeof fluffySound === "function") fluffySound(this.horse, "death"); // FluffySounds.js
     this.horse.currentStateKey = "IDLE";
     this.horse.deathWeapon = weaponType;
-    if (cause !== "Born non-viable") if (typeof recordStory === "function") recordStory("died", this.horse, { x: cause || (weaponType ? `killed with the ${weaponType}` : "") });
+    // (stillborn foals - "Born non-viable", "Born far too early"... - get no life story)
+    const stillborn = /^Born /.test(cause || "");
+    if (!stillborn) if (typeof recordStory === "function") recordStory("died", this.horse, { x: cause || (weaponType ? `killed with the ${weaponType}` : "") });
     // Its life goes in the Memories book with an epilogue (Lives.js)
-    if (cause !== "Born non-viable" && typeof recordLife === "function") recordLife(this.horse, cause || (weaponType ? `killed with the ${weaponType}` : ""));
+    if (!stillborn && typeof recordLife === "function") recordLife(this.horse, cause || (weaponType ? `killed with the ${weaponType}` : ""));
     // Its foals lose their mum or dad: a turning point for yours (Identity.js)
-    if (cause !== "Born non-viable" && typeof noteTurningPoint === "function" && typeof fluffies !== "undefined") {
+    if (!stillborn && typeof noteTurningPoint === "function" && typeof fluffies !== "undefined") {
       const who = this.horse.gender === "male" ? "dad" : "mum";
       for (const c of fluffies) {
         if (!c.isAlive || !c.adopted || (c.motherId !== this.horse.id && c.fatherId !== this.horse.id)) continue;
@@ -160,6 +162,10 @@ class HorseAnatomy {
     }
     this.horse.isAlive = false;
     this.horse.hunger = 0;
+    if (this.horse.speech) {
+      this.horse.speech.text = null;
+      this.horse.speech.timer = 0;
+    }
     if (this.horse.claimedBed) {
       this.horse.claimedBed.unclaim(this.horse.id);
       this.horse.claimedBed = null;
@@ -555,6 +561,7 @@ class HorseAnatomy {
   triggerPregnancy(father) {
     this.horse.isPregnant = true;
     this.horse.pregnancyTimer = pregnancyDuration;
+    this.horse.miscarriageTimer = null;
     this.horse.lactatingTimer = LACTATION_TIME; // until the foals can walk (Aging.js)
     this.horse.fatherGenes = [...father.genes];
     this.horse.babyDaddyId = father.id;
@@ -592,6 +599,22 @@ class HorseAnatomy {
     this.horse.lastBirthAt = typeof timePlayed === "number" ? timePlayed : 0;
     if (!this.horse.fatherGenes) return;
 
+    let birthPosX = this.horse.x;
+    let birthPosY = this.horse.y;
+
+    // Positioning
+    if (this.horse.layout) {
+        const torsoWidth = this.horse.layout ? this.horse.layout.torso.w : 100;
+        const offsetX =
+          (torsoWidth / 2) * (this.horse.facingRight ? -0.5 : 0.5) * this.horse.scale;
+        birthPosX = this.horse.x + offsetX;
+        birthPosY = this.horse.getBottomY() - 10;
+    } 
+
+    // Born early? How early decides how it goes (Premature.js)
+    const early = typeof prematureStage === "function" ? prematureStage(this.horse.getPregnancyProgress()) : null;
+    if (early && typeof prematureSurvives === "function") isViable = prematureSurvives(this.horse, early, isViable);
+
     // Spawn baby
     const babyGenes = this.horse.genetics.combineGenes(this.horse.fatherGenes);
 
@@ -606,7 +629,7 @@ class HorseAnatomy {
     baby.birthRotation = Math.PI / 2;
     baby.currentCage = this.horse.currentCage;
     baby.hunger = 0.4;
-    if (typeof fluffySound === "function") fluffySound(baby, "peep"); // a newborn's first peep (FluffySounds.js)
+    if (isViable && typeof fluffySound === "function") fluffySound(baby, "peep"); // a newborn's first peep (FluffySounds.js)
 
     if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
       let chance = this.horse.isSensitive() ? 0.175 : 0.04;
@@ -631,7 +654,7 @@ class HorseAnatomy {
     // The story book (StoryBook.js): born, to whom
     if (typeof recordStory === "function") recordStory(isViable ? "born" : "stillborn", [baby.id, this.horse.id, this.horse.babyDaddyId]);
     if (!isViable) {
-      baby.anatomy.die(null, "Born non-viable");
+      baby.anatomy.die(null, early ? (early.key === "too_early" ? "Born far too early" : "Born too early to live") : "Born non-viable");
       baby.bloodTolerance = 1;
       this.horse.bloodTolerance = 1;
       this.horse.bloodReactionTimer = 15;
@@ -649,33 +672,27 @@ class HorseAnatomy {
       }
     }
 
-    // Positioning
-    if (this.horse.tinted && this.horse.tinted.torso) {
-      baby.x =
-        this.horse.x +
-        (this.horse.facingRight
-          ? -this.horse.tinted.torso.width * 0.2 * this.horse.scale
-          : this.horse.tinted.torso.width * 0.2 * this.horse.scale);
-      baby.y = this.horse.y + this.horse.tinted.torso.height * this.horse.scale;
-    } else {
-      baby.x = this.horse.x;
-      baby.y = this.horse.y;
-    }
+    baby.x = birthPosX;
+    baby.y = birthPosY;
 
     if (!isViable) {
       const pX = baby.x;
       const pY = baby.y;
-      addPointToPuddle(baby.scene, pX, pY, "#8a0303", 10 / 200, 20 / 200);
+      addPointToPuddle(baby.scene, pX, pY, "blood", 10 / 200, 20 / 200);
     }
+
 
     fluffies.push(baby);
     // Litter size, and how strong it is from mum's care (Pregnancy.js)
     if (typeof onFoalBorn === "function") onFoalBorn(this.horse, baby, isViable);
+    // Small and weak if it came early (Premature.js)
+    if (early && typeof applyPrematureBirth === "function") applyPrematureBirth(baby, early, isViable);
     if (isViable) {
       baby.speak(getDialogue("BABY_PEEP", baby, this.horse));
     } else {
       this.horse.speak(getDialogue(["BIRTH", "DEAD_BABY"], this.horse, baby));
     }
+    return isViable; // (born alive)
   }
 
   spawnTear() {
@@ -684,13 +701,11 @@ class HorseAnatomy {
       (torsoWidth / 2) * (this.horse.facingRight ? 1 : -1) * this.horse.scale;
     const pX = this.horse.x + offsetX;
     const pY = this.horse.getBottomY();
-    const color = "rgba(180, 180, 180, 0.25)";
-
     addPointToPuddle(
       this.horse.scene,
       pX,
       pY,
-      color,
+      "tears",
       2.0 / 200,
       4.5 / 200,
       0.08,
@@ -925,4 +940,5 @@ class HorseAnatomy {
       gib.carCollisionCooldown = 3.0; // Cooldown of 3 seconds
     }
   }
+
 }

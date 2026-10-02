@@ -139,9 +139,7 @@ class Roomba {
       for (let i = p.points.length - 1; i >= 0; i--) {
         const pt = p.points[i];
         if (Math.abs(pt.x - this.x) > 30 || Math.abs(pt.y - this.y) > 20) continue;
-        pt.scale -= ROOMBA_CLEAN * dt;
-        if (pt.targetScale) pt.targetScale = Math.min(pt.targetScale, pt.scale);
-        if (pt.scale <= 0.02) p.points.splice(i, 1);
+        p.shrinkPoint(i, ROOMBA_CLEAN * dt, 0.0201);
         cleaned = true;
       }
     }

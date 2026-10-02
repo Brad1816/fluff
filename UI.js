@@ -954,6 +954,10 @@ canvas.addEventListener("mousedown", (e) => {
     if (f.currentCage && f.currentCage instanceof FoalInACan) {
       continue;
     }
+    // (sealed in a culling cage)
+    if (Cage.locksItem(f)) {
+      continue;
+    }
     const hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
     if (!hitPart) {
       continue;
@@ -993,8 +997,9 @@ canvas.addEventListener("mousedown", (e) => {
             mom,
           ),
         );
-        let targetX = f.x + (Math.random() - 0.5) * 100;
-        let targetY = f.y + (Math.random() - 0.5) * 50;
+        const foalPos = f.getWorldPosition();
+        let targetX = foalPos.x + (Math.random() - 0.5) * 100;
+        let targetY = foalPos.y + (Math.random() - 0.5) * 50;
         mom.setTargetPosition(targetX, targetY);
         mom.initBehavior("MOVING");
       }

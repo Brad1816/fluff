@@ -1342,6 +1342,14 @@ const DIALOGUE = {
     ],
   },
   BABY_PEEP: ["Peep!", "Chirp!", "Peep...peep...peep..."],
+  CULL: [
+    "NU CAN BWEATHIES!!!",
+    "EEK!! *GASP*",
+    "*GASP* *WHEEZE* *GASP*",
+    "WET OUT!!!! WET OUT!!!!!!!!!",
+    "NEE OUTSIES NAO!!!! PWEEEEEASEEEEE!!!!",
+  ],
+  CULL_CHIRPY: ["PEEEEP!!!!", "*GASP*", "EEEEP!!! PEEEEP!!!"],
   BABY_FIRST_WORDS: [
     "Chirp! d... dadd.. daddeh? Dadd... daddeh!",
     "Peep... m... mum... mummah! Mum.. mummah!",
@@ -2651,6 +2659,48 @@ const DIALOGUE = {
       "WOWSTEST WUMP HUWTIES EBAH!!!!!!!!!!!",
     ],
     BABY: ["EEEEEEE!!!!", "PIPIPIPI!!!!!"],
+  },
+  THROW_IMPACT: {
+    DEFAULT: [
+      "OOF!!!!!",
+      "EEEE!!!!! OWWIES!!!!",
+      "WEGGIE HUWTIES!!",
+    ],
+    CHIRPY: [
+      "EEEEEEEEEEEE!!!!",
+      "CHEEEEEEEEEEEEEEPPPPPP!!!",
+      "PIPIPIPIPIPIPIPIPIPIPIPI!",
+    ],
+  },
+  THROW_HELD_HIGH: {
+    DEFAULT: [
+      "UPSIES TUU HIGH!!! NU WIKE!!!",
+      "WAN DOWNSIES!!! WAN DOWNSIES!!!!",
+      "NU WAN DIE!!!!!",
+    ],
+    WINGED: [
+      "Yayy!!! <Speaker> am fwying!!!",
+      "Wooksies!!! <Speaker> am fwying! Am fwying!!!!",
+    ],
+    CHIRPY: [
+      "CHEEEEEEP! CHEEEEEP!",
+      "PIPIPIPI!",
+      "CHEEEEEEEEEEP!",
+    ],
+  },
+  THROW_DROPPED: {
+    DEFAULT: [
+      "NUUUUUUUUU!!!!!!",
+      "HUUUUU HUUUUUU HUUUUUUUU!!!!!!!!",
+    ],
+    WINGED: [
+      "<Speaker> fwy!!!!",
+      "Wingies am wowking!!!!!",
+    ],
+    CHIRPY: [
+      "PIPIPIPIPIPIPIPI!",
+      "CHEEEEEEEEEEEP!",
+    ],
   },
 };
 

@@ -73,7 +73,7 @@ function alicornStance(f, a) {
   if (!f || !a) return "flee";
   const brave = typeof traitValue === "function" ? traitValue(f, "bravery") : 0;
   if (brave < ALICORN_BRAVE_AT || f.growth < 1 || f.health < 50) return "flee";
-  if (f.happiness <= WAN_DIE_THRESHOLD + 0.1 || (f.babiesToBirth > 0 && f.pregnancyTimer <= 0)) return "flee";
+  if (f.happiness <= WAN_DIE_THRESHOLD + 0.1 || f.isInLabor()) return "flee";
   if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(f, a)) return "ignore"; // (behind bars: just glares)
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   const b = f._alicornBlows;

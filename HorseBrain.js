@@ -62,7 +62,7 @@ class HorseBrain {
     if (!this.horse.isAlive) return;
     if (!this.horse.avoidStateChangerActions()) return;
     if (this.horse.placedOn) return;
-    if (this.horse.pregnancyTimer <= 0 && this.horse.babiesToBirth > 0) return;
+    if (this.horse.isInLabor()) return;
 
     // Score all desires
     let evaluatedDesires = this.desires.map((desire) => {
@@ -216,7 +216,7 @@ class GrinderFearDesire extends Desire {
       horse.currentStateKey === "SLEEPING"
     )
       return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findScaryGrinder();
     if (target) {
@@ -254,7 +254,7 @@ class AlicornFearDesire extends Desire {
       horse.currentStateKey === "SLEEPING"
     )
       return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findScaryAlicorn();
     if (target) {
@@ -290,7 +290,7 @@ class FearedFluffyDesire extends Desire {
       horse.currentStateKey === "SLEEPING"
     )
       return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
     if (!horse.fearedFluffies || horse.fearedFluffies.length === 0) return 0;
 
     const target = horse.positioning.findScaryFearedFluffy();
@@ -325,7 +325,7 @@ class CarFearDesire extends Desire {
       horse.currentStateKey === "SLEEPING"
     )
       return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findScaryCar();
     if (target) {
@@ -354,7 +354,7 @@ class SprinklerFearDesire extends Desire {
       return 0;
     if (horse.hunger <= 0.3 || (!horse.canSee() && !horse.canHear())) return 0;
     if (horse.isDragging || horse.placedOn) return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findScarySprinkler();
     if (target) {
@@ -394,7 +394,7 @@ class CorpseReactionDesire extends Desire {
       horse.currentStateKey === "SLEEPING"
     )
       return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findScaryCorpse();
     if (target) {
@@ -434,7 +434,7 @@ class BloodReactionDesire extends Desire {
       horse.currentStateKey === "SLEEPING"
     )
       return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findScaryBlood();
     if (target) {
@@ -462,7 +462,7 @@ class SmartyChaseFearDesire extends Desire {
       return 0;
     if (!horse.canSee()) return 0;
     if (horse.isDragging || horse.placedOn) return 0;
-    if (horse.pregnancyTimer <= 0 && horse.babiesToBirth > 0) return 0;
+    if (horse.isInLabor()) return 0;
 
     const target = horse.positioning.findChasingSmarty();
     if (target) {
@@ -789,7 +789,7 @@ class PlayWithBallDesire extends Desire {
     if (horse.isFrantic) return 0;
     if (
       horse.isDragging ||
-      horse.currentCage ||
+      horse.ballCooldown > 0 ||
       !horse.canSee() ||
       !canRun(horse)
     )
@@ -800,7 +800,7 @@ class PlayWithBallDesire extends Desire {
     let hasBall =
       typeof objects !== "undefined" &&
       objects.some(
-        (o) => o instanceof Ball && o.scene === horse.scene && !o.currentCage,
+        (o) => o instanceof Ball && o.scene === horse.scene && horse.currentCage === o.currentCage,
       );
     if (!hasBall) return 0;
 
@@ -821,7 +821,6 @@ class PlayWithBlocksDesire extends Desire {
     if (horse.isFrantic) return 0;
     if (
       horse.isDragging ||
-      horse.currentCage ||
       !horse.canSee() ||
       horse.blockCooldown > 0 ||
       !horse.limbs.legs[1] ||
@@ -835,7 +834,12 @@ class PlayWithBlocksDesire extends Desire {
     let hasBlock =
       typeof objects !== "undefined" &&
       objects.some(
-        (o) => o instanceof Block && o.scene === horse.scene && !o.currentCage,
+        (o) =>
+          o instanceof Block &&
+          o.scene === horse.scene &&
+          o.currentCage === horse.currentCage &&
+          !o.heldBy &&
+          horse.positioning.canReachBlock(o),
       );
     if (!hasBlock) return 0;
 
@@ -921,7 +925,8 @@ class SeekSpecialFriendDesire extends Desire {
     this.lastCalledTime =
       gameTimeMs();
     horse.initBehavior("MOVING");
-    horse.setTargetPosition(this.target.x, this.target.y);
+    const targetPos = this.target.getWorldPosition();
+    horse.setTargetPosition(targetPos.x, targetPos.y);
     return true;
   }
 }
@@ -1236,6 +1241,8 @@ class WanderDesire extends Desire {
       }
       horse.initBehavior("MOVING");
       horse.setTargetPosition(tx, ty);
+      // Keep caged fluffies wandering inside their cage
+      horse.constrainTargetToCage();
     }
     return true;
   }

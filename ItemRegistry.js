@@ -305,12 +305,23 @@ const ITEM_TYPES = [
 
   // ---- Containers and equipment ----
   {
+    // A roomy cage (Enclosure.js): before "cage", as it is one
+    sellType: "enclosure",
+    is: (o) => typeof Enclosure !== "undefined" && o instanceof Enclosure,
+    inCage: "ignore",
+    hitTest: imageHit("enclosure", "center"),
+    sellable: true,
+    sellValue: (o) => o.getSellValue(),
+    onRightClick: () => true, // (no modes)
+    create: () => centered(new Enclosure(currentScene)),
+  },
+  {
     sellType: "cage",
     is: (o) => o instanceof Cage,
     inCage: "ignore", // cages can't go in cages
     hitTest: imageHit("cage", "center"),
     sellable: true,
-    onRightClick: (cage) => cage.cycleTag(), // none / breeding / sell
+    onRightClick: (cage) => cage.cycleTag(), // none / breeding / sell / eject / cull
     create: () => centered(new Cage(currentScene)),
   },
   {
@@ -654,6 +665,21 @@ const ITEM_TYPES = [
     },
   },
   {
+    // Everyone has one (ThrowTool.js): lift a fluffy up and fling it
+    sellType: "throw_tool",
+    is: (o) => typeof ThrowTool !== "undefined" && o instanceof ThrowTool,
+    inCage: "never",
+    tool: {
+      className: "ThrowTool",
+      create: (scene) => new ThrowTool(scene),
+      key: "throw_tool",
+      name: "Throw",
+      fullName: "Throw tool",
+      desc: "Drag fluffies with this tool to lift them up and release to throw.",
+      image: () => images.throw_tool_unheld,
+    },
+  },
+  {
     sellType: "iv_bag",
     is: (o) => o instanceof IVBag,
     inCage: "never",
@@ -725,6 +751,7 @@ const SAVED_CLASSES = {
   Litterbox: (d) => new Litterbox(d.scene),
   Grinder: (d) => new Grinder(d.scene),
   Cage: (d) => new Cage(d.scene),
+  Enclosure: (d) => new Enclosure(d.scene), // (Enclosure.js)
   Brush: (d) => new Brush(d.scene),
   Sponge: (d) => new Sponge(d.scene),
   LawnMower: (d) => new LawnMower(d.scene), // (LawnMower.js)
@@ -761,6 +788,7 @@ const SAVED_CLASSES = {
   Thumbtack: (d) => new Thumbtack(d.scene),
   Syringe: (d) => new Syringe(d.scene),
   CattleProd: (d) => new CattleProd(d.scene),
+  ThrowTool: (d) => new ThrowTool(d.scene), // (ThrowTool.js)
   DayCareDesk: (d) => new DayCareDesk(d.scene),
   ShelterKennels: (d) => new ShelterKennels(d.scene), // Shelter.js
 };
@@ -788,6 +816,8 @@ function itemHitTest(obj, x, y) {
 function itemCanBePickedUpAt(obj, x, y) {
   const entry = getItemType(obj);
   if (entry && entry.canPickUp && !entry.canPickUp(obj)) return false;
+  // Nothing goes in or out of a cage while it's culling (Cage.js)
+  if (Cage.locksItem(obj) || (obj instanceof Cage && obj.isCulling())) return false;
   return itemHitTest(obj, x, y);
 }
 

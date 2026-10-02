@@ -10,6 +10,10 @@ class HorseActionHandler {
     )
       return false;
 
+    if (this.horse.currentCage != null) {
+        this.horse.positioning.constrainTargetToCage();
+    }
+
     this.horse.attemptUseTargetLitterbox();
     const dx = this.horse.targetX - this.horse.x;
     const dy = this.horse.targetY - this.horse.y;
@@ -28,10 +32,11 @@ class HorseActionHandler {
         );
         if (ball) {
           if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "ball"); // Play.js
-          poofs.push(new Poof(ball.x, ball.y, this.horse.scene));
+          poofs.push(new Poof(ball.x, ball.getCenterY(), this.horse.scene));
           ball.vx = (Math.random() - 0.5) * 800;
           ball.vy = -300 - Math.random() * 300;
           this.horse.speak(getDialogue(["PLAY", "BALL"], this.horse));
+          this.horse.ballCooldown = Math.random() * 10 + 10;
           this.horse.expressionOverride = "GOOD_UPSIES";
           this.horse.expressionOverrideTimer = 2.0;
           this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
@@ -168,7 +173,6 @@ class HorseActionHandler {
   executeRunawayFear(target, dialogueKey) {
     this.horse.isScared = true;
     this.horse.scaredTimer = 5.0;
-    this.horse.speech.nextTime = 0;
     this.horse.setShock(3.0);
 
     const runawayTarget = this.horse.positioning.getRunawayTarget(
@@ -253,12 +257,11 @@ class HorseActionHandler {
   executeFearedFluffyFear(target) {
     this.horse.isScared = true;
     this.horse.scaredTimer = 5.0;
-    this.horse.speech.nextTime = 0;
     this.horse.setShock(3.0);
 
     const runawayTarget = this.horse.positioning.getRunawayTarget(
-      target.x,
-      target.y,
+      target.getWorldPosition().x,
+      target.getWorldPosition().y,
     );
     this.horse.initBehavior("MOVING");
     this.horse.setTargetPosition(runawayTarget.x, runawayTarget.y);
@@ -371,8 +374,8 @@ class HorseActionHandler {
     this.horse.scaredTimer = 5.0;
 
     const runawayTarget = this.horse.positioning.getRunawayTarget(
-      smarty.x,
-      smarty.y,
+      smarty.getWorldPosition().x,
+      smarty.getWorldPosition().y,
     );
     this.horse.initBehavior("MOVING");
     this.horse.setTargetPosition(runawayTarget.x, runawayTarget.y);
@@ -577,7 +580,7 @@ class HorseActionHandler {
     for (const puddle of puddles) {
       if (
         puddle.scene === this.horse.scene &&
-        puddle.color !== "#8a0303" &&
+        puddle.type !== "blood" &&
         puddle.points.length >= 4
       ) {
         for (const pt of puddle.points) {
@@ -718,7 +721,11 @@ class HorseActionHandler {
         if (!this.horse.isMovingOrRunning()) {
           this.horse.initBehavior("MOVING");
         }
-        this.horse.setTargetPosition(bestTarget.x, bestTarget.y);
+        const targetPos =
+          bestTarget instanceof Horse
+            ? bestTarget.getWorldPosition()
+            : { x: bestTarget.x, y: bestTarget.y };
+        this.horse.setTargetPosition(targetPos.x, targetPos.y);
 
         this.horse.milkCooldown = 2.0;
         fed = true;
@@ -727,4 +734,5 @@ class HorseActionHandler {
 
     return fed;
   }
+
 }

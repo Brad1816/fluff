@@ -434,6 +434,101 @@ function attemptDrop() {
         }
         if (!hitFluffy) missWithTool(obj);
         return true;
+      } else if (typeof ThrowTool !== "undefined" && obj instanceof ThrowTool) {
+        // Lift a fluffy up with it; let go to throw (ThrowTool.js)
+        let hitFluffy = false;
+        for (let i = fluffies.length - 1; i >= 0; i--) {
+          const f = fluffies[i];
+          if (f.scene !== obj.scene) continue;
+          if (
+            f.currentCage &&
+            typeof FoalInACan !== "undefined" &&
+            f.currentCage instanceof FoalInACan
+          )
+            continue;
+          if (Cage.locksItem(f)) continue;
+          let hitPart = f.hitTestAsSeen(mouse.x, mouse.y);
+          if (hitPart) {
+            hitFluffy = true;
+            if (f.placedOn) {
+              f.placedOn.releaseFluffy();
+              f.placedOn = null;
+            }
+            f.interruptMating();
+            cancelPendingConnections();
+
+            if (f.isAlive) {
+              if (f.tooYoungToWalk()) {
+                const mom = fluffies.find(
+                  (m) =>
+                    m.id === f.motherId &&
+                    m.scene === f.scene &&
+                    m.isAlive &&
+                    !m.tooYoungToWalk(),
+                );
+                if (mom) {
+                  mom.setShock(2.0);
+                  mom.speak(
+                    getDialogue(
+                      mom.adopted ? ["UPSIES", "WITNESS_BABY"] : ["UPSIES", "WITNESS_BABY", "FERAL"],
+                      mom,
+                    ),
+                  );
+                  const foalPos = f.getWorldPosition();
+                  let targetX = foalPos.x + (Math.random() - 0.5) * 100;
+                  let targetY = foalPos.y + (Math.random() - 0.5) * 50;
+                  mom.setTargetPosition(targetX, targetY);
+                  mom.initBehavior("MOVING");
+                }
+              } else if (hitPart === "torso") {
+                let key = f.adopted ? ["UPSIES"] : ["UPSIES", "FERAL"];
+                f.speak(getDialogue(key, f));
+                if (f.happiness > WAN_DIE_THRESHOLD) {
+                  f.changeHappiness(HAPPINESS_BONUS_UPSIES);
+                  f.expressionOverride = "GOOD_UPSIES";
+                  f.expressionOverrideTimer = 2.0;
+                }
+              } else {
+                let key = f.adopted ? ["UPSIES", "BAD"] : ["UPSIES", "BAD", "FERAL"];
+                f.speak(getDialogue(key, f));
+                f.changeHappiness(HAPPINESS_PENALTY_BAD_UPSIES);
+                f.expressionOverride = null;
+                f.expressionOverrideTimer = 0;
+              }
+            }
+
+            f.isDragging = true;
+            // Scared fluffies panic, trusting ones like it (Memory.js)
+            if (typeof onFluffyPickedUp === "function") onFluffyPickedUp(f);
+            f.heldWithThrowTool = true;
+            f.currentCage = null;
+            f.throwTool = obj;
+            obj.heldHorse = f;
+            f.grabbedPart = hitPart;
+            if (f.grabbedPart !== "torso") {
+              f.anim.bodyAngle = 0;
+            }
+
+            if (f.throwStartY === null) {
+              f.throwStartY = f.y;
+            }
+            f.throwShadowY =
+              typeof f.getBottomY === "function"
+                ? f.getBottomY()
+                : f.y + 83.2 * (Math.abs(f.scale) || 0.5);
+
+            f.dragOffset.x = f.x - mouse.x;
+            f.dragOffset.y = f.y - mouse.y;
+            f.throwGrabTime = Date.now();
+            f.isFallingFromThrow = false;
+            f.throwFallVy = 0;
+            f.throwFallVx = 0;
+            isGlobalDragging = true;
+            break;
+          }
+        }
+        if (!hitFluffy) missWithTool(obj);
+        return true;
       } else if (obj instanceof Brush) {
         let hitFluffy = false;
         for (const f of fluffies) {
@@ -1621,12 +1716,10 @@ function updateSimulation(dt) {
           (o) =>
             o instanceof Bed && o.type === "cardboard_box" && o.scene === s,
         ).length;
-        return count < 3;
+        return count < 3 && s !== currentScene; // (not popping up in front of you)
       });
       if (candidateScenes.length > 0) {
-        const targetScene = candidateScenes.includes(currentScene)
-          ? currentScene
-          : candidateScenes[Math.floor(Math.random() * candidateScenes.length)];
+        const targetScene = candidateScenes[Math.floor(Math.random() * candidateScenes.length)];
         const box = new Bed(targetScene, "cardboard_box");
         const topWallHeight = height * 0.15;
         box.x = 100 + Math.random() * (width - 200);
@@ -1657,7 +1750,7 @@ function updateSimulation(dt) {
 
       for (let j = fluffies.length - 1; j >= 0; j--) {
         const f = fluffies[j];
-        if (f.scene === "ALLEY_ROAD" && !f.isDestroyed) {
+        if (f.scene === "ALLEY_ROAD" && !f.isDestroyed && !f.heldWithThrowTool && !f.isFallingFromThrow) {
           const fRadius = 30 * f.scale;
           const fHeight = 50 * f.scale;
 
@@ -1972,7 +2065,7 @@ function render() {
       if (typeof drawHerdMarker === "function") drawHerdMarker(osCtx, f);
       // A snowflake when it's cold (Warmth.js)
       if (typeof drawColdMarker === "function") drawColdMarker(osCtx, f);
-      if (f.currentStateKey === "SLEEPING") f.drawDream(osCtx);
+      f.drawDream(osCtx); // (only while the dream bubble is showing or popping in/out)
       const isPairSelection =
         debugMenuAction === "pair" && debugPairFirst === f.id;
       if (showFluffyNames || isPairSelection) {

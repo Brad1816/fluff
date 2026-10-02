@@ -38,6 +38,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "ribbons", fallback: [], clone: true }, // Shows.js
   { name: "groomedAt", fallback: null },
   { name: "pregCare", fallback: null, clone: true }, // Pregnancy.js
+  { name: "miscarriageTimer", fallback: null }, // HorseMating.beginMiscarriage
+  { name: "prematureGrowth", fallback: 1.0 }, // born early: smaller (Premature.js)
+  { name: "bornEarly", fallback: null }, // ...and how early
   { name: "litterSize", fallback: null },
   { name: "litterBorn", fallback: null },
   { name: "birthVigor", fallback: null },

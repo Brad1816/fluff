@@ -90,6 +90,7 @@ module.exports = [
         const mare = __mk(300);
         const stallion = __mk(400, "male");
         mare.triggerPregnancy(stallion);
+        mare.pregnancyTimer = 0; // (full term: not born early, Premature.js)
         out.first = mare.isPregnant;
         mare.anatomy.spawnBaby(true);
         out.birthAt = mare.lastBirthAt === timePlayed;

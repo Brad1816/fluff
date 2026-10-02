@@ -50,28 +50,12 @@ class Sponge {
 
     // 1. Check Puddles
     if (typeof puddles !== "undefined") {
-      const baseA = 200;
-      const baseB = 100;
-
       for (const puddle of puddles) {
         if (puddle.scene !== this.scene) continue;
         for (let j = puddle.points.length - 1; j >= 0; j--) {
           const p = puddle.points[j];
-          const a = baseA * Math.max(0.2, p.scale);
-          const b = baseB * Math.max(0.2, p.scale);
-
-          if (a <= 0 || b <= 0) continue;
-
-          const normalizedDist =
-            Math.pow(this.x - p.x, 2) / (a * a) +
-            Math.pow(this.y - p.y, 2) / (b * b);
-
-          if (normalizedDist <= 1) {
-            p.scale -= 0.1;
-            if (p.targetScale) p.targetScale = Math.min(p.targetScale, p.scale);
-            if (p.scale < 0.1) {
-              puddle.points.splice(j, 1);
-            }
+          if (puddle.pointContains(p, this.x, this.y, 0.2)) {
+            puddle.shrinkPoint(j, 0.1, 0.1);
             cleanedSomething = true;
             break;
           }

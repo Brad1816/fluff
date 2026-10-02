@@ -20,8 +20,10 @@ const soundSources = {
   foal_peep: "assets/sounds/foal_peep.ogg",
   foal_scree: "assets/sounds/foal_scree.ogg",
   spray_bottle: "assets/sounds/spray_bottle.ogg",
+  splashing: "assets/sounds/splash.mp3",
   thumbtack: "assets/sounds/thumbtack_sound.ogg",
   taser: "assets/sounds/taser.ogg",
+  thud: "assets/sounds/thud.ogg",
 };
 
 let isMuted = false;

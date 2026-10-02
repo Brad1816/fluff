@@ -67,7 +67,8 @@ addHorseMethods({
               (f.foalInDistress() || f.foalCallingMum()),
           );
           if (grabbedChild) {
-            this.setTargetPosition(grabbedChild.x, grabbedChild.y);
+            const childPos = grabbedChild.getWorldPosition(); // (where it was lifted from)
+            this.setTargetPosition(childPos.x, childPos.y);
 
             this.setShock(0.5); // Sustain while held
             if (!this.isMovingOrRunning()) {
@@ -192,14 +193,20 @@ addHorseMethods({
       }
 
       if (this.currentStateKey === "DROWNING" && this.expressionOverrideTimer <= 1) {
-        this.expressionOverride = "CRYING_SHOCKED";
-        this.expressionOverrideTimer = 2.0;
-        this.facingRight = Math.random() > 0.5;
+        if (this.happiness !== WAN_DIE_THRESHOLD) {
+          this.expressionOverride = "CRYING_SHOCKED";
+          this.expressionOverrideTimer = 2.0;
+          this.facingRight = Math.random() > 0.5;
 
-        let key = this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT";
-        this.speak(getDialogue(["DROWNING", key], this));
+          let key = this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT";
+          this.speak(getDialogue(["DROWNING", key], this));
 
-        this.speech.nextTime = 1.0 + Math.random();
+          this.speech.nextTime = 1.0 + Math.random();
+        } else {
+          // (a wan die fluffy just lets it happen)
+          this.expressionOverride = "MISERABLE";
+          this.expressionOverrideTimer = 2.0;
+        }
       }
     }
   },
@@ -212,9 +219,13 @@ addHorseMethods({
         this.pregnancyTorsoStretch = Math.max(0, 1.0 - this.pregnancyTimer / pregnancyDuration);
       }
 
-      if (this.pregnancyTimer > 0) {
+      if (!this.isPregnancyDue()) {
         this.pregnancyTimer -= dt * debugPregnancyMultiplier;
-        if (this.pregnancyTimer <= 0) {
+        // (a miscarriage brings labour on early: HorseMating.beginMiscarriage)
+        if (this.miscarriageTimer !== null && this.miscarriageTimer !== undefined) {
+          this.miscarriageTimer -= dt * debugPregnancyMultiplier;
+        }
+        if (this.isPregnancyDue()) {
           if (this.hasBlockOnBack()) {
             this.blockOnBack.heldBy = null;
             this.blockOnBack.x = this.x;
@@ -274,9 +285,8 @@ addHorseMethods({
           this.initBehavior("BENDING_2");
           this.stateTimer = 0.8;
           const viabilityIdx = this.foalViability.length - this.babiesToBirth;
-          const isViable = this.foalViability[viabilityIdx] !== false;
-
-          this.spawnBaby(isViable);
+          // (born early, it may not live: Premature.js)
+          const isViable = this.spawnBaby(this.foalViability[viabilityIdx] !== false) !== false;
 
           // Each birth costs her health: less with good care or a midwife
           // (Pregnancy.js)
@@ -293,6 +303,7 @@ addHorseMethods({
             if (typeof onLitterFinished === "function") onLitterFinished(this);
             this.isPregnant = false;
             this.pregnancyTimer = 0;
+            this.miscarriageTimer = null;
             this.pregnancyTorsoStretch = 0;
             this.fatherGenes = null;
             this.foalViability = [];
@@ -651,34 +662,58 @@ addHorseMethods({
       }
     }
 
-    // Diarrhea logic: Causes a fluffy to void its bowels completely, can also be used for laxative effects.
+    // Diarrhea logic. A fluffy will void its bowels where it stands regardless of what's going on.
+    // The time can be arbitrarily defined, check out anxiety incontinence.
     if (this.isDiarrhea) {
-      if (this.poopStorage <= 0.1) {
-        this.isDiarrhea = false;
+      // Delays diarrhea until fluffy has at least enough poopstorage
+      if (!this.diarrheaTimer || this.diarrheaTimer <= 0) {
+        if (this.poopStorage >= 0.2) this.diarrheaTimer = this.poopStorage * 10;
       }
-      if (this.poopStorage > 0.2 && Math.random() < (1 / 3) * dt) {
-        this.diarrheaTimer = this.poopStorage * 20;
-      }
-      if (this.diarrheaTimer > 0 && this.poopStorage > 0) {
-        this.diarrheaTimer -= 3 * dt;
-        this.poopStorage = Math.max(0, this.poopStorage - 0.3 * dt);
-        this.excretePoop(dt);
+      // Only run and check for cleanup if the timer has successfully initialized
+      if (this.diarrheaTimer > 0) {
+        // As long as poopStorage is above zero, it voids its bowels
+        if (this.poopStorage > 0) {
+          this.diarrheaTimer -= 1 * dt;
+          this.poopStorage = Math.max(0, this.poopStorage - 0.3 * dt);
+          this.excretePoop(dt);
+        }
+        // When either storage or timer hits zero, it's over
+        if (this.poopStorage <= 0 || this.diarrheaTimer <= 0) {
+          this.isDiarrhea = false;
+          this.diarrheaTimer = 0;
+        }
       }
     }
 
-    // Incontinence logic: Causes a fluffy to involuntarily urinate on the spot, can also be used for diuretics.
+    // Incontinence logic. A fluffy will empty its bladder where it stands regardless of what's going on.
     if (this.isIncontinent) {
-      if (this.peeStorage <= 0.1) {
-        this.isIncontinent = false;
+      if (!this.incontinenceTimer || this.incontinenceTimer <= 0) {
+        if (this.peeStorage >= 0.2) this.incontinenceTimer = this.peeStorage * 10;
       }
-      if (this.peeStorage > 0.2 && Math.random() < (1 / 3) * dt) {
-        this.incontinenceTimer = this.peeStorage * 20;
+      if (this.incontinenceTimer > 0) {
+        if (this.peeStorage > 0) {
+          this.incontinenceTimer -= 1 * dt;
+          this.peeStorage = Math.max(0, this.peeStorage - 0.3 * dt);
+          this.excretePee(dt);
+        }
+        if (this.peeStorage <= 0 || this.incontinenceTimer <= 0) {
+          this.isIncontinent = false;
+          this.incontinenceTimer = 0;
+        }
       }
-      if (this.incontinenceTimer > 0 && this.peeStorage > 0) {
-        this.incontinenceTimer -= 2 * dt;
-        this.peeStorage = Math.max(0, this.peeStorage - 0.2 * dt);
-        this.excretePee(dt);
+    }
+
+    // Anxiety incontinence: soiling itself in fright (checked once per scare)
+    if (this.isScared) {
+      if (!this.scareCheck && this.poopStorage > 0.3 && !this.isDiarrhea) {
+        this.scareCheck = true;
+        if (Math.random() < 0.25) {
+          this.diarrheaTimer = 0.5;
+          this.isDiarrhea = true;
+        }
       }
+    } else {
+      this.scareCheck = false;
     }
     return false;
   },
@@ -838,7 +873,8 @@ addHorseMethods({
         this.chaseTarget = null;
         this.chaseReason = null;
       } else {
-        this.setTargetPosition(target.x, target.y);
+        const targetPos = target.getWorldPosition();
+        this.setTargetPosition(targetPos.x, targetPos.y);
 
         if (!this.isMovingOrRunning() && this.attackCooldown <= 0) {
           this.initBehavior("RUNNING");
@@ -1013,13 +1049,31 @@ addHorseMethods({
       this.dreamStretch = { x: 1.0, y: 1.0 };
       this.dreamAngle = 0;
     }
+
+    // Dream bubble: shrink out before switching/ending a dream, grow in for a new one
+    if (this.shownDream !== this.currentDream && this.dreamBubbleProgress <= 0) {
+      this.shownDream = this.currentDream;
+    }
+    const bubbleTarget = this.shownDream && this.shownDream === this.currentDream ? 1 : 0;
+    const bubbleStep = dt / DREAM_BUBBLE_ANIM_TIME;
+    this.dreamBubbleProgress =
+      bubbleTarget > this.dreamBubbleProgress
+        ? Math.min(1, this.dreamBubbleProgress + bubbleStep)
+        : Math.max(0, this.dreamBubbleProgress - bubbleStep);
+    if (this.dreamBubbleProgress > 0) {
+      this.dreamPulsePhase = (this.dreamPulsePhase + (dt * Math.PI * 2) / DREAM_BUBBLE_PULSE_PERIOD) % (Math.PI * 2);
+    } else {
+      this.dreamPulsePhase = 0;
+    }
   },
 
   // Wing flapping
   _updateWings(dt) {
     // Wing Flapping
     if (this.isAlive && (this.type === "pegasus" || this.type === "alicorn")) {
-      if (this.isDragging) {
+      // (flapping while held, and while flying through the air: ThrowTool.js)
+      const flying = Math.abs(this.throwFallVx || 0) > 10 || Math.abs(this.throwFallVy || 0) > 10;
+      if (this.isDragging || flying) {
         this.wingFlapTimer = 0.0;
       }
       if (this.wingFlapPhase > 0) {
@@ -1139,7 +1193,9 @@ addHorseMethods({
       }
 
       // Cage penalty: -0.1 per minute (not below HUNGER_CAGE_FLOOR)
-      if ((this.currentCage || this.placedOn instanceof LitterpalBox) && this.happiness > HUNGER_CAGE_FLOOR) {
+      // (not in an Enclosure: roomy enough to be happy in - Enclosure.js)
+      const penned = this.currentCage && !(this.currentCage instanceof Cage && !this.currentCage.causesUnhappiness());
+      if ((penned || this.placedOn instanceof LitterpalBox) && this.happiness > HUNGER_CAGE_FLOOR) {
         const decrease = (0.1 / 60) * dt;
         this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR));
       }

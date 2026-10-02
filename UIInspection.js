@@ -163,6 +163,8 @@ function getFluffyInspectionInfo(f) {
     if (role) about.push({ label: "Family role", value: role[0], tone: role[1] });
     const bestest = typeof describeBestest === "function" ? describeBestest(f) : null; // Favourites.js
     if (bestest) about.push({ label: "Favourite", value: bestest[0], tone: bestest[1] });
+    const early = typeof describePremature === "function" ? describePremature(f) : null; // Premature.js
+    if (early) about.push({ label: "Birth", value: early[0], tone: early[1] });
     const rule = typeof describeMatingRule === "function" ? describeMatingRule(f) : null; // MatingRule.js
     if (rule) about.push({ label: "Mating", value: rule[0], tone: rule[1] });
     const title = typeof describeTitle === "function" ? describeTitle(f) : null; // Titles.js

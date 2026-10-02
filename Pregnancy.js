@@ -97,7 +97,7 @@ function startPregnancyCare(f) {
 function updatePregnancyCare(dt) {
   if (!pregnancyCareTicker.step(dt)) return;
   for (const f of fluffies) {
-    if (!f.isAlive || !f.isPregnant || !(f.pregnancyTimer > 0)) continue;
+    if (!f.isAlive || !f.isPregnant || f.isPregnancyDue()) continue;
     if (!f.pregCare || typeof f.pregCare !== "object") f.pregCare = { sum: 0, n: 0 };
     f.pregCare.sum += pregnancyConditionNow(f);
     f.pregCare.n += 1;
@@ -198,7 +198,7 @@ function pregnancyMinutesLeft(f) {
 // Magnifying glass "Pregnant" row: [text, tone]
 function describePregnancy(f) {
   if (!f.isPregnant) return ["No", ""];
-  if (!(f.pregnancyTimer > 0)) return ["Giving birth", "ok"];
+  if (f.isPregnancyDue()) return ["Giving birth", "ok"];
   const [care, tone] = describeCare(pregnancyCareScore(f));
   const scan = f.pregScan ? ` · expecting ${f.pregScan.count}` : "";
   return [`Due in ${pregnancyMinutesLeft(f)} min · care: ${care}${scan}`, tone];

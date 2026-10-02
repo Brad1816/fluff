@@ -1,129 +1,348 @@
-function updatePuddles(dt) {
-  const baseA = 200;
-  const baseB = 100;
-  const R = (baseA * baseA) / (baseB * baseB);
-  const EPS = 0.0001;
+// Each puddle is a set of overlapping ellipses ("points") of one type in one
+// scene. A point's ellipse has radii PUDDLE_BASE_A/B times its scale.
+const PUDDLE_BASE_A = 200;
+const PUDDLE_BASE_B = 100;
+// Squared ratio of the radii; scaling y by this makes the ellipses circles
+const PUDDLE_AXIS_RATIO_SQ =
+  (PUDDLE_BASE_A * PUDDLE_BASE_A) / (PUDDLE_BASE_B * PUDDLE_BASE_B);
+const PUDDLE_EPS = 0.0001;
+const PUDDLE_GRASS_RADIUS = 100; // Grass this close soaks up puddle points
+const PUDDLE_GRASS_SOAK_RATE = 0.0017;
+const PUDDLE_OUTLINE_WIDTH = 2; // Visible outline thickness, drawn just outside the puddle
+const PUDDLE_CACHE_SLACK = 64; // Cache canvases grow in steps of this many px
 
-  // Wake up puddles that are near any grass
-  if (typeof objects !== "undefined") {
-    const grasses = objects.filter((o) => o instanceof Grass);
-    if (grasses.length > 0) {
-      puddles.forEach((puddle) => {
-        if (!puddle.isGrowing) {
-          // The whole park is lawn, so everything soaks in there
-          if (puddle.scene === "PARK") {
-            if (puddle.points.length) puddle.isGrowing = true;
-            return;
-          }
-          const nearGrass = puddle.points.some((p) =>
-            grasses.some(
-              (g) =>
-                g.scene === puddle.scene &&
-                Math.sqrt((p.x - g.x) ** 2 + (p.y - g.y) ** 2) <= 100,
-            ),
-          );
-          if (nearGrass) puddle.isGrowing = true;
-        }
-      });
-    }
+// evaporationRate: scale lost per second (only for puddles that dry up)
+const PUDDLE_TYPES = {
+  blood: { color: "#8a0303" },
+  poop: { color: "#5c4033" },
+  pee: { color: "#f1c40f" },
+  vomit: { color: "#4b5320" },
+  tears: { color: "rgba(180, 180, 180, 0.25)", evaporationRate: 0.005 },
+  water: { color: "rgba(100, 150, 255, 0.3)", evaporationRate: 0.01 },
+};
+
+function puddleTypeFromColor(color) {
+  for (const [type, def] of Object.entries(PUDDLE_TYPES)) {
+    if (def.color === color) return type;
+  }
+  return null;
+}
+
+class Puddle {
+  constructor(scene, type) {
+    this.scene = scene;
+    this.type = type;
+    this.points = []; // { x, y, scale, targetScale, growthRate }
+    this.isGrowing = true;
+
+    // Rendered image of the puddle, rebuilt only when its points change
+    this.cache = null;
+    this.cacheX = 0;
+    this.cacheY = 0;
+    this.cacheW = 0;
+    this.cacheH = 0;
+    this.dirty = true;
   }
 
-  puddles.forEach((puddle) => {
-    if (!puddle.isGrowing) return;
+  // Call after changing any point so the cached image is redrawn
+  markDirty() {
+    this.dirty = true;
+  }
 
-    let hasGrowth = false;
+  get color() {
+    return PUDDLE_TYPES[this.type].color;
+  }
 
-    // 1. Merge overlapping points
-    for (let i = puddle.points.length - 1; i >= 0; i--) {
-      const p1 = puddle.points[i];
-      const s1 = p1.scale || 1.0;
-      const a1 = baseA * s1;
+  get evaporationRate() {
+    return PUDDLE_TYPES[this.type].evaporationRate || 0;
+  }
 
-      for (let j = 0; j < puddle.points.length; j++) {
-        if (i === j) continue;
-        const p2 = puddle.points[j];
-        const s2 = p2.scale || 1.0;
+  isEmpty() {
+    return this.points.length === 0;
+  }
 
-        // Only merge into larger or equal (with index check for equal)
-        if (s2 < s1) continue;
-        if (s2 === s1 && j < i) continue;
+  addPoint(point) {
+    this.points.push(point);
+    this.markDirty();
+  }
 
-        const a2 = baseA * s2;
-        const d = Math.sqrt(
-          Math.pow(p1.x - p2.x, 2) + R * Math.pow(p1.y - p2.y, 2),
-        );
+  removePointAt(index) {
+    this.points.splice(index, 1);
+    this.markDirty();
+  }
 
-        // If p1 is entirely inside p2
-        if (d + a1 <= a2 + EPS) {
-          // Add size to larger puddle (transfer targetScale)
-          if (p1.targetScale) {
-            const s1 = p1.targetScale;
-            const s2 = p2.targetScale || p2.scale;
-            p2.targetScale = Math.sqrt(s1 * s1 + s2 * s2);
-          }
-          puddle.points.splice(i, 1);
-          hasGrowth = true;
-          break;
-        }
-      }
+  clear() {
+    this.points = [];
+    this.markDirty();
+  }
+
+  // Shrinks a point by amount and removes it once its scale is at or below 0,
+  // or below removeBelow. Its targetScale is either shrunk by the same amount
+  // (shrinkTarget) or capped at the new scale so it doesn't regrow.
+  // Returns true if the point was removed.
+  shrinkPoint(index, amount, removeBelow = 0, shrinkTarget = false) {
+    const p = this.points[index];
+    p.scale -= amount;
+    if (p.targetScale) {
+      p.targetScale = shrinkTarget
+        ? Math.max(0, p.targetScale - amount)
+        : Math.min(p.targetScale, p.scale);
     }
+    this.markDirty();
+    if (p.scale <= 0 || p.scale < removeBelow) {
+      this.removePointAt(index);
+      return true;
+    }
+    return false;
+  }
 
-    // 2. Growth and Evaporation logic
-    for (let i = puddle.points.length - 1; i >= 0; i--) {
-      const p = puddle.points[i];
+  // Whether (x, y) is inside the point's ellipse, with its scale clamped to
+  // at least minScale
+  pointContains(p, x, y, minScale = 0) {
+    const s = Math.max(minScale, p.scale || 1.0);
+    const a = PUDDLE_BASE_A * s;
+    const b = PUDDLE_BASE_B * s;
+    if (a <= 0 || b <= 0) return false;
+    return ((x - p.x) / a) ** 2 + ((y - p.y) / b) ** 2 <= 1;
+  }
 
-      // Check if near any grass
-      let nearGrass = puddle.scene === "PARK"; // lawn everywhere in the park
-      if (!nearGrass && typeof objects !== "undefined") {
-        nearGrass = objects.some(
-          (o) =>
-            o instanceof Grass &&
-            o.scene === puddle.scene &&
-            Math.sqrt((p.x - o.x) ** 2 + (p.y - o.y) ** 2) <= 100,
-        );
+  // Removes points entirely inside a larger one, passing their target size
+  // on to it. Returns true if anything was merged.
+  mergeCoveredPoints() {
+    let merged = false;
+    for (let i = this.points.length - 1; i >= 0; i--) {
+      const j = puddlePointIsCovered(this.points, i);
+      if (j === -1) continue;
+      const p1 = this.points[i];
+      const p2 = this.points[j];
+      if (p1.targetScale) {
+        const s1 = p1.targetScale;
+        const s2 = p2.targetScale || p2.scale;
+        p2.targetScale = Math.sqrt(s1 * s1 + s2 * s2);
       }
+      this.removePointAt(i);
+      merged = true;
+    }
+    return merged;
+  }
 
-      if (nearGrass) {
-        const rate = 0.0017 * dt;
+  // Grows points toward their target size, lets nearby grass soak them up
+  // and evaporates drying puddle types. Returns true if any point changed.
+  updatePoints(dt, grasses) {
+    let changed = false;
+    const evaporationRate = this.evaporationRate;
+    for (let i = this.points.length - 1; i >= 0; i--) {
+      const p = this.points[i];
+
+      // (the whole park is lawn, so everything soaks in there)
+      if (this.scene === "PARK" || (grasses.length > 0 && isNearAnyGrass(grasses, p.x, p.y))) {
+        const rate = PUDDLE_GRASS_SOAK_RATE * dt;
         p.scale -= rate;
         if (p.targetScale) p.targetScale -= rate;
-        if (p.scale <= 0) {
-          puddle.points.splice(i, 1);
-        }
-        hasGrowth = true;
-      } else {
-        if (p.targetScale && p.scale < p.targetScale) {
-          p.scale = Math.min(
-            p.targetScale,
-            p.scale + (p.growthRate || 0.05) * dt,
-          );
-          hasGrowth = true;
-        }
+        if (p.scale <= 0) this.removePointAt(i);
+        changed = true;
+        continue;
+      }
 
-        // Evaporation for tear puddles
-        if (puddle.color === "rgba(180, 180, 180, 0.25)") {
-          p.scale -= 0.005 * dt;
-          if (p.targetScale) p.targetScale -= 0.005 * dt;
-          if (p.scale <= 0) {
-            puddle.points.splice(i, 1);
-          }
-          hasGrowth = true;
-        }
+      if (p.targetScale && p.scale < p.targetScale) {
+        p.scale = Math.min(
+          p.targetScale,
+          p.scale + (p.growthRate || 0.05) * dt,
+        );
+        changed = true;
+      }
 
-        // Evaporation for water puddles
-        if (puddle.color === "rgba(100, 150, 255, 0.3)") {
-          p.scale -= 0.01 * dt;
-          if (p.targetScale) p.targetScale -= 0.01 * dt;
-          if (p.scale <= 0) {
-            puddle.points.splice(i, 1);
-          }
-          hasGrowth = true;
-        }
+      if (evaporationRate > 0) {
+        p.scale -= evaporationRate * dt;
+        if (p.targetScale) p.targetScale -= evaporationRate * dt;
+        if (p.scale <= 0) this.removePointAt(i);
+        changed = true;
       }
     }
+    return changed;
+  }
 
-    if (!hasGrowth) puddle.isGrowing = false;
-  });
+  draw(ctx) {
+    if (this.dirty) this.rebuildCache();
+    if (!this.cache || this.cacheW === 0) return;
+    ctx.drawImage(
+      this.cache,
+      0,
+      0,
+      this.cacheW,
+      this.cacheH,
+      this.cacheX,
+      this.cacheY,
+      this.cacheW,
+      this.cacheH,
+    );
+  }
+
+  // Draws the union of all the points' ellipses with a black outline around
+  // the outside only: stroke every ellipse, erase everything inside the union
+  // (removing the strokes where ellipses overlap), then fill the union once.
+  rebuildCache() {
+    this.dirty = false;
+    const visible = this.points.filter(
+      (p, i) => puddlePointIsCovered(this.points, i) === -1,
+    );
+    if (visible.length === 0) {
+      this.cacheW = this.cacheH = 0;
+      return;
+    }
+
+    const pad = PUDDLE_OUTLINE_WIDTH + 1;
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    const path = new Path2D();
+    for (const p of visible) {
+      const s = p.scale || 1.0;
+      const a = PUDDLE_BASE_A * s;
+      const b = PUDDLE_BASE_B * s;
+      if (a <= 0 || b <= 0) continue;
+      minX = Math.min(minX, p.x - a);
+      maxX = Math.max(maxX, p.x + a);
+      minY = Math.min(minY, p.y - b);
+      maxY = Math.max(maxY, p.y + b);
+      path.moveTo(p.x + a, p.y);
+      path.ellipse(p.x, p.y, a, b, 0, 0, Math.PI * 2);
+    }
+    if (minX === Infinity) {
+      this.cacheW = this.cacheH = 0;
+      return;
+    }
+
+    this.cacheX = Math.floor(minX) - pad;
+    this.cacheY = Math.floor(minY) - pad;
+    this.cacheW = Math.ceil(maxX) + pad - this.cacheX;
+    this.cacheH = Math.ceil(maxY) + pad - this.cacheY;
+
+    // Reuse the canvas while it's big enough, growing it in steps so a
+    // growing puddle doesn't reallocate every frame
+    if (
+      !this.cache ||
+      this.cache.width < this.cacheW ||
+      this.cache.height < this.cacheH
+    ) {
+      const roundUp = (v) =>
+        Math.ceil(v / PUDDLE_CACHE_SLACK) * PUDDLE_CACHE_SLACK;
+      this.cache = new OffscreenCanvas(roundUp(this.cacheW), roundUp(this.cacheH));
+    }
+
+    const c = this.cache.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = "source-over";
+    c.clearRect(0, 0, this.cacheW, this.cacheH);
+    c.translate(-this.cacheX, -this.cacheY);
+
+    // Stroke is centered on the edge, so double it to leave the full
+    // outline width outside once the inside is erased
+    c.strokeStyle = "black";
+    c.lineWidth = PUDDLE_OUTLINE_WIDTH * 2;
+    c.stroke(path);
+
+    c.globalCompositeOperation = "destination-out";
+    c.fill(path);
+
+    c.globalCompositeOperation = "source-over";
+    c.fillStyle = this.color;
+    c.fill(path);
+  }
+
+  serialize() {
+    return {
+      scene: this.scene,
+      type: this.type,
+      points: this.points.map((p) => ({ ...p })),
+      isGrowing: this.isGrowing,
+    };
+  }
+
+  static deserialize(data) {
+    // Older saves identify puddles by color
+    const type = PUDDLE_TYPES[data.type]
+      ? data.type
+      : puddleTypeFromColor(data.color) || "blood";
+    const puddle = new Puddle(data.scene, type);
+    puddle.points = (data.points || []).map((p) => ({ ...p }));
+    puddle.isGrowing = data.isGrowing !== false;
+    return puddle;
+  }
+}
+
+// Whether inner's ellipse lies entirely inside outer's
+function puddleEllipseContains(outer, inner) {
+  const a1 = PUDDLE_BASE_A * (inner.scale || 1.0);
+  const a2 = PUDDLE_BASE_A * (outer.scale || 1.0);
+  const d = Math.sqrt(
+    (inner.x - outer.x) ** 2 + PUDDLE_AXIS_RATIO_SQ * (inner.y - outer.y) ** 2,
+  );
+  return d + a1 <= a2 + PUDDLE_EPS;
+}
+
+// Whether p1 should be dropped because another point fully covers it. Equal
+// sized duplicates only drop the later one so one of them survives.
+function puddlePointIsCovered(points, i) {
+  const p1 = points[i];
+  const s1 = p1.scale || 1.0;
+  for (let j = 0; j < points.length; j++) {
+    if (i === j) continue;
+    const s2 = points[j].scale || 1.0;
+    if (s2 < s1) continue;
+    if (s2 === s1 && j < i) continue;
+    if (puddleEllipseContains(points[j], p1)) return j;
+  }
+  return -1;
+}
+
+function findPuddle(scene, type) {
+  return puddles.find((p) => p.scene === scene && p.type === type);
+}
+
+// Grass objects grouped by scene, gathered once per update
+function getGrassByScene() {
+  const byScene = new Map();
+  if (typeof objects === "undefined") return byScene;
+  for (const o of objects) {
+    if (!(o instanceof Grass)) continue;
+    let list = byScene.get(o.scene);
+    if (!list) {
+      list = [];
+      byScene.set(o.scene, list);
+    }
+    list.push(o);
+  }
+  return byScene;
+}
+
+function isNearAnyGrass(grasses, x, y) {
+  const r2 = PUDDLE_GRASS_RADIUS * PUDDLE_GRASS_RADIUS;
+  return grasses.some((g) => (x - g.x) ** 2 + (y - g.y) ** 2 <= r2);
+}
+
+function updatePuddles(dt) {
+  const grassByScene = getGrassByScene();
+  const noGrass = [];
+
+  for (const puddle of puddles) {
+    const grasses = grassByScene.get(puddle.scene) || noGrass;
+
+    // Idle puddles only need updating again once grass is near them
+    if (!puddle.isGrowing) {
+      const soaks =
+        (puddle.scene === "PARK" && puddle.points.length > 0) ||
+        (grasses.length > 0 && puddle.points.some((p) => isNearAnyGrass(grasses, p.x, p.y)));
+      if (!soaks) continue;
+      puddle.isGrowing = true;
+    }
+
+    const merged = puddle.mergeCoveredPoints();
+    const changed = puddle.updatePoints(dt, grasses);
+    if (merged || changed) puddle.markDirty();
+    else puddle.isGrowing = false;
+  }
 
   fadeMess(dt);
 }
@@ -137,13 +356,19 @@ function updatePuddles(dt) {
 //   minute or so at full strength (RAIN_WASH per second x rain amount).
 //   Blood doesn't fade by itself indoors - it needs the sponge (or rain).
 // ---------------------------------------------------------------------------
-const MESS_COLORS = { "#5c4033": "poop", "#f1c40f": "pee", "#4b5320": "vomit", "#8a0303": "blood" };
 const MESS_FADE = { poop: 0.6, pee: 1.5, vomit: 0.9, blood: 0 }; // size per game day
 const RAIN_WASH = 0.02; // size per second in full rain
 
-// Poop, pee, sick or blood (what a starving fluffy will eat - HorseToilet.js)
-function isBodilyWaste(color) {
-  return !!MESS_COLORS[color];
+// Poop, pee, sick or blood (what a starving fluffy will eat - HorseToilet.js).
+// Takes a puddle type or (older code) a colour.
+function isBodilyWaste(typeOrColor) {
+  return MESS_FADE[puddleType(typeOrColor)] !== undefined;
+}
+
+// A puddle type from a type name or a colour ("#8a0303" -> "blood")
+function puddleType(typeOrColor) {
+  if (PUDDLE_TYPES[typeOrColor]) return typeOrColor;
+  return puddleTypeFromColor(typeOrColor);
 }
 
 function _messOutdoor(scene) {
@@ -155,18 +380,15 @@ function fadeMess(dt) {
   const day = typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200;
   const rain = typeof rainAmount === "function" ? rainAmount() : 0;
   for (const puddle of puddles) {
-    const kind = MESS_COLORS[puddle.color];
-    if (!kind || !puddle.points.length) continue;
+    const kind = puddle.type;
+    if (MESS_FADE[kind] === undefined || !puddle.points.length) continue;
     const outdoor = _messOutdoor(puddle.scene);
     let rate = (MESS_FADE[kind] / day) * (outdoor ? 2 : 1);
     if (outdoor && rain > 0) rate += RAIN_WASH * rain;
     if (rate <= 0) continue;
     const step = rate * dt;
     for (let i = puddle.points.length - 1; i >= 0; i--) {
-      const p = puddle.points[i];
-      p.scale -= step;
-      if (p.targetScale) p.targetScale = Math.max(0, p.targetScale - step);
-      if (p.scale <= 0.005) puddle.points.splice(i, 1);
+      puddle.shrinkPoint(i, step, 0.005, true);
     }
   }
 }
@@ -175,16 +397,16 @@ function addPointToPuddle(
   scene,
   x,
   y,
-  color,
+  type,
   scale,
   targetScale,
   growthRate = 0.05,
-  type = null,
 ) {
-  let puddle = puddles.find((p) => p.scene === scene && p.color === color);
+  // (a colour works too: older code and the mod's files pass "#8a0303" etc.)
+  type = puddleType(type) || "blood";
+  let puddle = findPuddle(scene, type);
   if (!puddle) {
-    const pType = type || (color === "#4b5320" ? "vomit" : "general");
-    puddle = { scene, color, type: pType, points: [], isGrowing: true };
+    puddle = new Puddle(scene, type);
     puddles.push(puddle);
   }
 
@@ -203,195 +425,14 @@ function addPointToPuddle(
       Math.sqrt(existingPoint.scale * existingPoint.scale + scale * scale),
     );
   } else {
-    puddle.points.push({ x, y, scale, targetScale, growthRate });
+    puddle.addPoint({ x, y, scale, targetScale, growthRate });
   }
   puddle.isGrowing = true;
+  puddle.markDirty();
 }
 
 function renderPuddles(ctx) {
-  const baseA = 200;
-  const baseB = 100;
-  const R = (baseA * baseA) / (baseB * baseB);
-  const EPS = 0.0001;
-
-  puddles.forEach((puddle) => {
-    if (puddle.scene !== currentScene) return;
-
-    // Pre-filter: remove ellipses that are entirely contained within another larger one
-    const activePoints = puddle.points.filter((p1, i) => {
-      const s1 = p1.scale || 1.0;
-      const a1 = baseA * s1;
-      return !puddle.points.some((p2, j) => {
-        if (i === j) return false;
-        const s2 = p2.scale || 1.0;
-        if (s2 < s1) return false;
-        // Equal size: only remove one to avoid removing both
-        if (s2 === s1 && j < i) return false;
-
-        const a2 = baseA * s2;
-        const d = Math.sqrt(
-          Math.pow(p1.x - p2.x, 2) + R * Math.pow(p1.y - p2.y, 2),
-        );
-        return d + a1 <= a2 + EPS;
-      });
-    });
-
-    ctx.save();
-
-    ctx.fillStyle = puddle.color;
-    ctx.strokeStyle = "black";
-    ctx.lineWidth = 2;
-
-    // 1. Fill the union
-    ctx.beginPath();
-    activePoints.forEach((p) => {
-      const scale = p.scale || 1.0;
-      const a = baseA * scale;
-      const b = baseB * scale;
-      ctx.moveTo(p.x + a, p.y);
-      ctx.ellipse(p.x, p.y, a, b, 0, 0, Math.PI * 2);
-    });
-    ctx.fill();
-
-    // 2. Stroke the boundary
-    ctx.beginPath();
-    activePoints.forEach((p1, i) => {
-      const s1 = p1.scale || 1.0;
-      const a1 = baseA * s1;
-      const b1 = baseB * s1;
-      let intersections = [];
-
-      activePoints.forEach((p2, j) => {
-        if (i === j) return;
-        const s2 = p2.scale || 1.0;
-        const a2 = baseA * s2;
-
-        const dx = p1.x - p2.x;
-        const dy = p1.y - p2.y;
-        if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) return;
-
-        const A_val = -2 * dx;
-        const B_val = -2 * R * dy;
-        const C_val =
-          p1.x * p1.x -
-          p2.x * p2.x +
-          R * (p1.y * p1.y - p2.y * p2.y) -
-          a1 * a1 +
-          a2 * a2;
-
-        const checkAndPush = (px, py) => {
-          // USER REQUEST: check if points lie within any other ellipses. If so, remove.
-          let insideOther = false;
-          for (let k = 0; k < activePoints.length; k++) {
-            if (k === i || k === j) continue;
-            const pk = activePoints[k];
-            const sk = pk.scale || 1.0;
-            const ak = baseA * sk;
-            const bk = baseB * sk;
-            const val =
-              Math.pow((px - pk.x) / ak, 2) + Math.pow((py - pk.y) / bk, 2);
-            if (val < 1.0 - EPS) {
-              insideOther = true;
-              break;
-            }
-          }
-          if (!insideOther) {
-            intersections.push(Math.atan2((py - p1.y) / b1, (px - p1.x) / a1));
-          }
-        };
-
-        if (Math.abs(B_val) > 0.01) {
-          const k = -A_val / B_val;
-          const m = -C_val / B_val;
-          const dy1 = m - p1.y;
-          const p_quad = 1 + R * k * k;
-          const q_quad = -2 * p1.x + 2 * R * k * dy1;
-          const r_quad = p1.x * p1.x + R * dy1 * dy1 - a1 * a1;
-          const det = q_quad * q_quad - 4 * p_quad * r_quad;
-          if (det >= 0) {
-            const sqrtDet = Math.sqrt(det);
-            checkAndPush(
-              (-q_quad + sqrtDet) / (2 * p_quad),
-              k * ((-q_quad + sqrtDet) / (2 * p_quad)) + m,
-            );
-            checkAndPush(
-              (-q_quad - sqrtDet) / (2 * p_quad),
-              k * ((-q_quad - sqrtDet) / (2 * p_quad)) + m,
-            );
-          }
-        } else {
-          const x = -C_val / A_val;
-          const rhs = a1 * a1 * (1 - Math.pow((x - p1.x) / a1, 2));
-          if (rhs >= 0) {
-            const sqrtRhs = Math.sqrt(rhs / R);
-            checkAndPush(x, p1.y + sqrtRhs);
-            checkAndPush(x, p1.y - sqrtRhs);
-          }
-        }
-      });
-
-      if (intersections.length === 0) {
-        let inside = false;
-        for (let j = 0; j < activePoints.length; j++) {
-          if (i === j) continue;
-          const p2 = activePoints[j];
-          const s2 = p2.scale || 1.0;
-          const val =
-            Math.pow((p1.x - p2.x) / (baseA * s2), 2) +
-            Math.pow((p1.y - p2.y) / (baseB * s2), 2);
-          if (val < 1.0 - EPS) {
-            inside = true;
-            break;
-          }
-        }
-        if (!inside) {
-          ctx.moveTo(p1.x + a1, p1.y);
-          ctx.ellipse(p1.x, p1.y, a1, b1, 0, 0, Math.PI * 2);
-        }
-      } else {
-        intersections.sort((a, b) => a - b);
-        let unique = [];
-        for (let k = 0; k < intersections.length; k++) {
-          if (k === 0 || intersections[k] - intersections[k - 1] > 0.001) {
-            unique.push(intersections[k]);
-          }
-        }
-
-        for (let k = 0; k < unique.length; k++) {
-          const start = unique[k];
-          const end = unique[(k + 1) % unique.length];
-          let diff = end - start;
-          if (diff <= 0) diff += 2 * Math.PI;
-
-          const mid = start + diff / 2;
-          const mx = p1.x + a1 * Math.cos(mid);
-          const my = p1.y + b1 * Math.sin(mid);
-
-          let inside = false;
-          for (let j = 0; j < activePoints.length; j++) {
-            if (i === j) continue;
-            const p2 = activePoints[j];
-            const s2 = p2.scale || 1.0;
-            const val =
-              Math.pow((mx - p2.x) / (baseA * s2), 2) +
-              Math.pow((my - p2.y) / (baseB * s2), 2);
-            if (val < 1.0 - EPS) {
-              inside = true;
-              break;
-            }
-          }
-
-          if (!inside) {
-            const sx = p1.x + a1 * Math.cos(start);
-            const sy = p1.y + b1 * Math.sin(start);
-            ctx.moveTo(sx, sy);
-            ctx.ellipse(p1.x, p1.y, a1, b1, 0, start, end);
-          }
-        }
-      }
-    });
-    ctx.stroke();
-
-    ctx.restore();
-  });
+  for (const puddle of puddles) {
+    if (puddle.scene === currentScene) puddle.draw(ctx);
+  }
 }

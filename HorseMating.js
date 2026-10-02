@@ -199,23 +199,46 @@ addHorseMethods({
     }
 
     if (friend.gender === "female" && friend.isPregnant) {
-      // Force miscarriage of existing foals
-      if (friend.foalViability) {
-        for (let i = 0; i < friend.foalViability.length; i++) {
-          friend.foalViability[i] = false;
-          friend.pregnancyTimer = Math.min(friend.pregnancyTimer, 10);
-        }
-        if (!friend.traumaMemory.some((tm) => tm.type === "miscarriage")) {
-          friend.traumaMemory.push({
-            type: "miscarriage",
-            timer: 30 + Math.random() * 60,
-          });
-        }
-        friend.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE);
-      }
+      // Mating a pregnant mare makes her lose the foals: labour in a few
+      // seconds, however far along she is (HorseAnatomy.giveBirth)
+      friend.beginMiscarriage();
     } else if (friend.gender === "female" && this.gender === "male" && !friend.spayed && !hasCastrationBand) {
       friend.triggerPregnancy(this);
     }
+  },
+
+  // Labour comes early: within MISCARRIAGE_LABOR_DELAY seconds. How the
+  // foals turn out depends on how far along she is (Premature.js): too
+  // early and they're all stillborn.
+  beginMiscarriage() {
+    if (!this.isPregnant || !this.foalViability) return;
+    const timeLeft = Math.min(this.pregnancyTimer, MISCARRIAGE_LABOR_DELAY);
+    this.miscarriageTimer =
+      this.miscarriageTimer === null || this.miscarriageTimer === undefined ? timeLeft : Math.min(this.miscarriageTimer, timeLeft);
+    if (!this.traumaMemory.some((tm) => tm.type === "miscarriage")) {
+      this.traumaMemory.push({
+        type: "miscarriage",
+        timer: 30 + Math.random() * 60,
+      });
+    }
+    this.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE);
+  },
+
+  // Labor is due once the pregnancy has run its course or a miscarriage has
+  isPregnancyDue() {
+    return (
+      this.pregnancyTimer <= 0 ||
+      (this.miscarriageTimer !== null && this.miscarriageTimer !== undefined && this.miscarriageTimer <= 0)
+    );
+  },
+
+  isInLabor() {
+    return this.isPregnancyDue() && this.babiesToBirth > 0;
+  },
+
+  // How far along the pregnancy is, 0 to 1
+  getPregnancyProgress() {
+    return clamp(1.0 - this.pregnancyTimer / pregnancyDuration, 0, 1);
   },
 
   triggerPregnancy(father) {
@@ -241,6 +264,6 @@ addHorseMethods({
   },
 
   spawnBaby(isViable = true) {
-    this.anatomy.spawnBaby(isViable);
+    return this.anatomy.spawnBaby(isViable);
   },
 });

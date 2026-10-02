@@ -47,10 +47,19 @@ class Block {
     return images[`block_${this.type}`];
   }
 
+  // x/y is the bottom center of the sprite. A stacked block reports the
+  // bottom of its whole stack.
   getBottomY() {
-    return this.stackedOn
-      ? this.stackedOn.getBottomY()
-      : this.y + this.getImage().height / 2;
+    return this.stackedOn ? this.stackedOn.getBottomY() : this.y;
+  }
+
+  getHalfHeight() {
+    const img = this.getImage();
+    return img ? img.height / 2 : 20;
+  }
+
+  getCenterY() {
+    return this.y - this.getHalfHeight();
   }
 
   isStill() {
@@ -59,7 +68,7 @@ class Block {
 
   getClampedY() {
     const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
-    return Math.max(this.y, topWallHeight + 10);
+    return Math.max(this.y, topWallHeight + 10 + this.getHalfHeight());
   }
 
   clampY() {
@@ -89,7 +98,11 @@ class Block {
           ? this.heldBy.scale
           : -this.heldBy.scale;
         this.x = this.heldBy.x + this.heldBy.layout.block.x * s;
-        this.y = this.heldBy.y + this.heldBy.layout.block.y * this.heldBy.scale;
+        // The block's center sits on the carry point
+        this.y =
+          this.heldBy.y +
+          this.heldBy.layout.block.y * this.heldBy.scale +
+          this.getHalfHeight();
       }
       return;
     }
@@ -118,7 +131,7 @@ class Block {
     const img = this.getImage();
     if (!img || img.width === 0) return;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(this.x, this.getCenterY());
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
   }
@@ -133,8 +146,8 @@ class Block {
     return (
       px >= this.x - img.width / 2 &&
       px <= this.x + img.width / 2 &&
-      py >= this.y - img.height / 2 &&
-      py <= this.y + img.height / 2
+      py >= this.y - img.height &&
+      py <= this.y
     );
   }
 

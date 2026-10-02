@@ -178,7 +178,7 @@ function wakeFromNightmare(f) {
 
 // HorseRenderer.drawDream: a story dream's bubble (not mirrored)
 function drawStoryDream(ctx, f) {
-  const d = f.currentDream;
+  const d = f.shownDream || f.currentDream; // (the one in the bubble: HorseUpdate._updateDreams)
   if (!d || typeof d !== "object") return;
   const bx = f.x + (f.facingRight ? -18 : 18);
   const by = f.y - 120 * f.scale;

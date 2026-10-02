@@ -517,62 +517,8 @@ function handleWorldSettingsClick() {
     transitionPhase = "IN";
     transitionTimer = 0;
 
-    // Money, timers, rooms, names... back to their new-game values
-    // (the list is SAVED_GAME_STATE in Persistence.js)
-    resetSavedGameState();
-    resetTemporaryGameState();
-
-    puddles.length = 0;
-    fluffies.length = 0;
-    objects.length = 0;
-    if (typeof toolbox !== "undefined") {
-      toolbox.length = 0;
-      toolboxPage = 0;
-      showToolbox = true;
-      showToolbar = true;
-      hoveredToolboxItem = null;
-      if (typeof initDefaultToolbar === "function") {
-        initDefaultToolbar();
-      }
-    }
-
-    if (typeof FoalVendor !== "undefined") {
-      objects.push(new FoalVendor("ALLEY"));
-    }
-
-    if (typeof DayCareDesk !== "undefined") {
-      objects.push(new DayCareDesk("DAY_CARE"));
-      if (typeof ShelterKennels !== "undefined") objects.push(new ShelterKennels("DAY_CARE"));
-    }
-
-    // Spawn 100 grasses in each grassy scene
-    for (const sceneKey in SCENES) {
-      const config = SCENES[sceneKey];
-      if (config.isGrassy) {
-        for (let i = 0; i < 100; i++) {
-          const x = 50 + Math.random() * (width - 100);
-          const y = height * 0.15 + 50 + Math.random() * (height * 0.85 - 100);
-          const growth = 0.5 + Math.random() * 1.5;
-
-          let spawnX = x;
-          if (config.hasRiver && images && images.grass) {
-            spawnX =
-              width * 0.25 +
-              images.grass.width +
-              Math.random() * (width * 0.75 - 100);
-          }
-
-          const grass = new Grass(spawnX, y, config.id, growth);
-          objects.push(grass);
-          if (typeof poofs !== "undefined") {
-            poofs.push(new Poof(spawnX, y, config.id, "green"));
-          }
-        }
-      }
-    }
-
-    // Fluffy Park: berry bushes, meadow grass and a few wild families
-    if (typeof setupParkLife === "function") setupParkLife(true);
+    // A brand new world (globals.js)
+    resetGameState();
     return;
   }
 
