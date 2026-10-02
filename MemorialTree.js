@@ -4,6 +4,7 @@
 //
 // The plaque (memorialPlaque, saved with the game) lists every one of your
 // fluffies that dies - its name, the day, and what took it - whether or not
+// (not stillborn foals - those that never lived, "Born ..." - nor wild ones)
 // you have a tree yet: plant one and they're all on it. Long-press (right-
 // click) the tree to read it. There's one plaque however many trees you
 // plant; it holds the last MEMORIAL_KEEP names.
@@ -162,6 +163,7 @@ function memorialTrees() {
 // ---- When one of yours dies (HorseAnatomy.die) ----
 function rememberOnPlaque(f) {
   if (!f || !f.adopted) return false;
+  if (/^Born /.test(f.causeOfDeath || "")) return false; // (stillborn: not on the plaque)
   if (memorialPlaque.some((e) => e.id === f.id)) return false;
   const day = typeof getDayNumber === "function" ? getDayNumber() : 1;
   const named = typeof fluffyNames !== "undefined" && fluffyNames[f.id];

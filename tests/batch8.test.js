@@ -140,6 +140,13 @@ module.exports = [
         const wild = __mk(600, { adopted: false });
         pip.die(null, "Fell off the table");
         wild.die(null, "Old age");
+        // A stillborn foal isn't on the plaque, and its mum doesn't mourn it there
+        const mare = __mk(100, { name: "Poppy" });
+        const still = __mk(700, { growth: 0.2, name: "Tiny" });
+        still.motherId = mare.id;
+        setRelationship(mare.id, still.id, "baby_child");
+        still.die(null, "Born non-viable");
+        out.stillMourn = isMourning(mare);
         out.plaque = memorialPlaque.map((e) => [e.name, e.cause]);
         out.mourners = [mum, friend, stranger].map((f) => isMourning(f));
         out.describe = describeMourning(mum);
@@ -176,11 +183,12 @@ module.exports = [
         return out;
       }, SETUP);
       check(r.shop, "in the shop");
-      check(r.plaque.length === 1 && r.plaque[0][0] === "Pip" && /table/.test(r.plaque[0][1]), `yours on the plaque, not a wild one: ${JSON.stringify(r.plaque)}`);
+      check(r.plaque.length === 1 && r.plaque[0][0] === "Pip" && /table/.test(r.plaque[0][1]), `yours on the plaque, not a wild one or a stillborn: ${JSON.stringify(r.plaque)}`);
       checkEqual(JSON.stringify(r.mourners), JSON.stringify([true, true, false]), "its mum and its friend mourn, a stranger doesn't");
       check(r.describe && /Missing Pip/.test(r.describe[0]), `magnifying glass: ${JSON.stringify(r.describe)}`);
       check(r.going && r.arrived, "she goes and sits by the tree");
       check(r.eased && r.cheered, "it comforts her and eases her grief");
+      check(!r.stillMourn, "a stillborn isn't mourned at the tree");
       check(r.open, "long-press: the plaque");
       check(r.saved && r.treeSaved, "saved");
     },

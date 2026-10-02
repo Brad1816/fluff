@@ -475,7 +475,7 @@ const HELP_TOPICS = [
       "",
       "# The memorial tree ($200, Home & Play)",
       "- Its plaque remembers every fluffy of yours that dies (right-click",
-      "  or long-press the tree to read it).",
+      "  or long-press the tree to read it). Stillborn foals aren't on it.",
       "- Those close to one who died mourn it for a couple of days. With a",
       "  memorial tree in their room they go and sit by it now and then",
       "  (or carry them there): it comforts them and eases the grief.",
