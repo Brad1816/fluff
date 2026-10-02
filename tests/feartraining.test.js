@@ -81,7 +81,11 @@ module.exports = [
         out.refusal = trickRefusal(b, "sit");
         out.chance = +trickChance(b, "sit").toFixed(2);
         b.trickNow = null;
-        const res = tryTrick(b, "sit");
+        let res = tryTrick(b, "sit");
+        for (let i = 0; i < 4 && res !== "done"; i++) {
+          b.trickNow = null;
+          res = tryTrick(b, "sit");
+        }
         out.joyless = [res, b.expressionOverride];
         out.show = [trickShowScore(__a), trickShowScore(b)];
         out.drilled = describeFearTraining(b);

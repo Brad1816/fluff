@@ -149,7 +149,7 @@ module.exports = [
         setRelationship(a.id, b.id, "friend");
         setRelationship(b.id, a.id, "friend");
         const c = __mk(1000);
-        c.traitShift = { social: 0.6 };
+        c.traitShift = { social: 2 }; // (very social, whatever its genes)
         relationships[c.id] = {};
         for (const f of [a, b, c]) f.initBehavior("SLEEPING");
         for (let i = 0; i < 10; i++) {

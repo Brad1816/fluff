@@ -1181,6 +1181,7 @@ class WanderDesire extends Desire {
     if (horse.isScared || horse.isStacking) return 0;
     if (horse.sleepingOrTargetSet()) return 0;
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 0;
+    if (typeof mareResting === "function" && mareResting(horse)) return 0; // (Pregnancy.js)
     let score = 0;
     if (!horse.isMovingOrRunning() && horse.isFrantic) {
       score = 40;

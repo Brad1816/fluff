@@ -127,6 +127,8 @@ module.exports = [
         eval(setup)();
         const red = __family(2, 200, "Red");
         const blue = __family(2, 900, "Blue");
+        // (wild herds: under your roof they don't keep apart - batch9 test)
+        for (const f of [...red, ...blue]) f.adopted = false;
         __tick();
         const res = {
           twoHerds: herdOf(red[0]) && herdOf(blue[0]) && herdOf(red[0]) !== herdOf(blue[0]),

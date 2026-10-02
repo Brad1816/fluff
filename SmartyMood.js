@@ -76,7 +76,9 @@ function smartyLandedHit(s, f) {
 // Its herd, family and friends (and anyone else it likes)
 function smartyTolerates(s, f) {
   if (!s || !f) return false;
-  if (s.herdId !== null && s.herdId !== undefined && s.herdId === f.herdId) return true;
+  // Never a poopie coat - not even its own (Intelligence.js)
+  if (typeof isPoopieCoated === "function" && isPoopieCoated(f)) return false;
+  if (typeof sameHerd === "function" && sameHerd(s, f)) return true;
   if (f.id === s.motherId || f.id === s.fatherId || f.motherId === s.id || f.fatherId === s.id) return true;
   const known = (x) => x !== null && x !== undefined;
   if ((known(s.motherId) && f.motherId === s.motherId) || (known(s.fatherId) && f.fatherId === s.fatherId)) return true;
@@ -124,7 +126,8 @@ function smartyFightTarget(s) {
   for (const f of fluffies) {
     if (!_smCanReach(s, f) || !alicornOk(f)) continue;
     const provoked = smartyProvokedBy(s, f);
-    if (!provoked && !(f.gender === "male" && smartyInBadMood(s) && !smartyTolerates(s, f))) continue;
+    const poopie = typeof isPoopieCoated === "function" && isPoopieCoated(f) && f.growth >= 0.5;
+    if (!provoked && !((f.gender === "male" || poopie) && smartyInBadMood(s) && !smartyTolerates(s, f))) continue;
     const d = Math.hypot(s.x - f.x, s.y - f.y) - (provoked ? 1000 : 0); // provokers first
     if (d < bestD) {
       bestD = d;
@@ -145,7 +148,8 @@ function smartyBullyTarget(s) {
   for (const f of fluffies) {
     if (!_smCanReach(s, f) || smartyTolerates(s, f) || f.tooYoungToWalk()) continue;
     if (f.health <= SMARTY_BULLY_FLOOR) continue;
-    const d = Math.hypot(s.x - f.x, s.y - f.y);
+    // (a poopie coat first)
+    const d = Math.hypot(s.x - f.x, s.y - f.y) - (typeof isPoopieCoated === "function" && isPoopieCoated(f) ? 200 : 0);
     if (d < bestD) {
       bestD = d;
       best = f;

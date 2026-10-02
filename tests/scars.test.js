@@ -56,6 +56,7 @@ module.exports = [
         for (let i = 0; i < 10; i++) addScar(c, "flank", "Test");
         out.max = scarsOf(c).length;
         out.line = describeScars(c);
+        a.coloristDegree = 0; // (so a brown coat doesn't get it called "poopie" instead)
         out.owie = fluffyCallsOther(a, c);
         return out;
       }, SETUP);

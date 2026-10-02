@@ -1400,11 +1400,13 @@ class HorseRenderer {
           const hS = this.horse.hornSizeFactor || 1.0;
           ctx.translate(0, (1 - hS) * this.tinted.horn.height);
           ctx.scale(hS, hS);
-          ctx.drawImage(
-            this.tinted.horn,
-            (rect.w * 0.5) / hS,
-            (localOY * 1.05) / hS,
-          );
+          if (typeof isMangled === "function" && isMangled(this.horse, "horn")) drawBrokenHorn(ctx, this.tinted.horn, (rect.w * 0.5) / hS, (localOY * 1.05) / hS); // (Injuries.js)
+          else
+            ctx.drawImage(
+              this.tinted.horn,
+              (rect.w * 0.5) / hS,
+              (localOY * 1.05) / hS,
+            );
           ctx.restore();
         }
 
@@ -1597,8 +1599,10 @@ class HorseRenderer {
     // Draw Far Legs
     const farLegs = view.facingRight ? [2, 3] : [0, 1];
     for (const i of farLegs) {
-      if (this.horse.limbs.legs[i])
-        drawPart(this.tinted.leg, layout.legs[i]);
+      if (this.horse.limbs.legs[i]) {
+        if (typeof isMangled === "function" && isMangled(this.horse, `leg_${i}`)) drawMangledLeg(drawPart, this.tinted.leg, layout.legs[i], ctx); // (Injuries.js)
+        else drawPart(this.tinted.leg, layout.legs[i]);
+      }
     }
 
     // Torso & Overlays
@@ -1710,7 +1714,9 @@ class HorseRenderer {
       ctx.translate(wingAnchorX, wingAnchorY);
       ctx.scale(wS, wingYScale * wS);
 
-      ctx.drawImage(this.tinted.wing, 0, -wingH * yAnchorFrac);
+      const nearWing = view.facingRight ? "rightWing" : "leftWing";
+      if (typeof isMangled === "function" && isMangled(this.horse, nearWing)) drawMangledWing(ctx, this.tinted.wing, yAnchorFrac); // (Injuries.js)
+      else ctx.drawImage(this.tinted.wing, 0, -wingH * yAnchorFrac);
       ctx.restore();
     }
 
@@ -1726,8 +1732,10 @@ class HorseRenderer {
     // Near Legs
     const nearLegs = view.facingRight ? [0, 1] : [2, 3];
     for (const i of nearLegs) {
-      if (this.horse.limbs.legs[i])
-        drawPart(this.tinted.leg, layout.legs[i]);
+      if (this.horse.limbs.legs[i]) {
+        if (typeof isMangled === "function" && isMangled(this.horse, `leg_${i}`)) drawMangledLeg(drawPart, this.tinted.leg, layout.legs[i], ctx); // (Injuries.js)
+        else drawPart(this.tinted.leg, layout.legs[i]);
+      }
     }
   }
 

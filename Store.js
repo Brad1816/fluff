@@ -40,6 +40,7 @@ const STORE_AISLES = [
       "memorial_tree",
       "roomba",
       "feedbot",
+      "auto_trainer",
       "repair_kit",
       "night_light",
       "ball",

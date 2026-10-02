@@ -42,6 +42,7 @@ const FEAR_FROM_WEAPON = {
 };
 
 const MEMORY_TEXT = {
+  sprayed_lots: "Sprayed again and again",
   forced_fear: "Forced to face what it fears", // (FearExposure.js)
   stick: "Hit with the stick",
   spray: "Squirted with the spray bottle",
@@ -65,7 +66,7 @@ const MEMORY_TEXT = {
 };
 
 // Memories of harm from you (for the story book, StoryBook.js)
-const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "took_family", "taken_away", "taken_from_mum", "forced_fear"]);
+const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "sprayed_lots", "took_family", "taken_away", "taken_from_mum", "forced_fear"]);
 
 function ensurePlayerMemory(f) {
   if (typeof f.playerTrust !== "number") f.playerTrust = f.adopted ? TRUST_START : TRUST_START_FERAL;
@@ -122,6 +123,15 @@ function fearHappinessTarget(f) {
   return -FEAR_MOOD * f.playerFear;
 }
 
+// Sprayed more than SPRAY_OVERUSE times in a game day? (counts this one)
+const SPRAY_OVERUSE = 4;
+function sprayOverused(f) {
+  const now = timePlayed;
+  f._sprays = (Array.isArray(f._sprays) ? f._sprays : []).filter((t) => now - t < DAY_LENGTH);
+  f._sprays.push(now);
+  return f._sprays.length > SPRAY_OVERUSE;
+}
+
 // Called at the start of notifyViolence (Horse.js): you hurt `victim`
 function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation) {
   if (!victim || weaponType === "car") return; // traffic isn't you
@@ -137,7 +147,10 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
   if (!isDead && victim.isAlive) {
     if ((weaponType === "stick" || weaponType === "spray") && typeof noteConditionStick === "function") noteConditionStick(victim); // (Care.js)
     changePlayerFear(victim, fear);
-    rememberPlayerEvent(victim, isTraining ? "training" : weaponType);
+    // A squirt of water is a telling-off, not harm - unless you overdo it
+    let memory = isTraining ? "training" : weaponType;
+    if (weaponType === "spray") memory = sprayOverused(victim) ? "sprayed_lots" : "spray";
+    rememberPlayerEvent(victim, memory);
     // It may carry the mark for good (Scars.js)
     if (!isTraining && !isAmputation && typeof scarFromYou === "function") scarFromYou(victim, weaponType);
   }

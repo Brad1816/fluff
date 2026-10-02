@@ -34,7 +34,9 @@ module.exports = [
         const brother = __mk(340, "male", { mum: 999 });
         s.motherId = 999;
         const herdMate = __mk(360);
-        herdMate.herdId = s.herdId = 77;
+        herdState = freshHerdState();
+        herdState.list.push({ id: 77, name: "Test", leaderId: s.id, memberIds: [s.id, herdMate.id], colorIndex: 0, formedAt: 0 });
+        _herdChanged();
         const stranger = __mk(420);
         const desire = new SmartyCombatDesire();
         const out = {};

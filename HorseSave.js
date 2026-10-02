@@ -47,6 +47,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "infection", fallback: null, clone: true },
   { name: "flightSkill", fallback: 0 }, // wing strength (Flight.js)
   { name: "mourning", fallback: null, clone: true }, // missing one who died (MemorialTree.js)
+  { name: "pastHerds", fallback: null, clone: true }, // herds it used to be in (Herds.js)
+  { name: "smartyKind", fallback: undefined }, // "good" or "bad" (Intelligence.js)
+  { name: "limbState", fallback: null, clone: true }, // mangled legs, wings, horn (Injuries.js)
   { name: "lostFoalAt", fallback: null }, // when she last lost a foal (Fostering.js)
   { name: "fosterMumId", fallback: null }, // the wild mare who took it in
   { name: "litterSize", fallback: null },

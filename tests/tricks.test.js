@@ -3,7 +3,7 @@ const { check, checkEqual } = require("./helpers");
 
 const SETUP = `() => {
   __clearScene();
-  __seedRandom(21);
+  __seedRandom(23);
   if (typeof closeTrickUI === "function") closeTrickUI();
   weatherState.until = 1e9;
   weatherState.type = weatherState.target = "clear";

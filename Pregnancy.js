@@ -231,3 +231,41 @@ function isRiskyLitter(f) {
 }
 
 registerSystem("pregnancy", updatePregnancyCare, 125);
+
+// ---- Heavy with foal, and just foaled: she hardly moves ----
+// From MARE_HEAVY of the way through, and for MARE_POSTPARTUM game hours
+// after giving birth, a mare shuffles at MARE_REST_SPEED (Horse.updateSpeed),
+// doesn't wander (HorseBrain WanderDesire) and lies down when she's idle. She
+// still goes to her bed to give birth, and to eat and use the litterbox.
+const MARE_HEAVY = 0.8;
+const MARE_POSTPARTUM = 3; // game hours
+const MARE_REST_SPEED = 0.3; // (on top of being pregnant: x0.5)
+const mareRestTicker = new Ticker(2);
+
+function mareResting(f) {
+  if (!f || f.gender !== "female" || !f.isAlive) return false;
+  if (f.isPregnant && typeof f.getPregnancyProgress === "function" && f.getPregnancyProgress() >= MARE_HEAVY) return true;
+  return typeof f.lastBirthAt === "number" && timePlayed - f.lastBirthAt >= 0 && timePlayed - f.lastBirthAt < MARE_POSTPARTUM * HOUR_LENGTH;
+}
+
+// Horse.updateSpeed
+function mareRestSpeed(f) {
+  if (!mareResting(f)) return 1;
+  return f.seekingBirthBed ? 0.7 : MARE_REST_SPEED;
+}
+
+// Magnifying glass
+function describeMareRest(f) {
+  if (!mareResting(f)) return null;
+  return f.isPregnant ? "Heavy with foal: resting, barely moves" : "Just gave birth: resting";
+}
+
+function updateMareRest(dt) {
+  const step = mareRestTicker.step(dt);
+  if (!step || typeof fluffies === "undefined") return;
+  for (const f of fluffies) {
+    if (!mareResting(f) || f.isDragging || f.currentCage || f.placedOn || f.seekingBirthBed) continue;
+    if (f.currentStateKey === "IDLE" && Math.random() < 0.5) f.initBehavior("LYING");
+  }
+}
+registerSystem("mareRest", updateMareRest, 126);

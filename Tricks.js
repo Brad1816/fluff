@@ -87,6 +87,7 @@ function trickLearnRate(f) {
   const stage = typeof lifeStage === "function" ? lifeStage(f) : "adult";
   if (stage === "foal") r *= 1.3;
   else if (stage === "elderly") r *= 0.6;
+  if (typeof smartsLearn === "function") r *= smartsLearn(f); // clever or dim (Intelligence.js)
   return r;
 }
 
@@ -97,6 +98,7 @@ function trickChance(f, key) {
   p *= { adores: 1.15, loves: 1.1, likes: 1, unsure: 0.9, dislikes: 0.6 }[lvl] ?? 1;
   if (f.hunger < 0.3) p *= 0.7;
   if (f.happiness < 0.3) p *= 0.7;
+  if (typeof smartsOf === "function") p *= 1 + 0.15 * smartsOf(f); // (Intelligence.js)
   if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
   if (typeof climateLearnMultiplier === "function") p *= climateLearnMultiplier(f); // the room's feel (Climate.js)
   if (typeof fearChanceBoost === "function") p = fearChanceBoost(f, key, p); // strict, or drilled in (FearTraining.js)
@@ -244,7 +246,7 @@ function rewardTrick(f, kind, key) {
   f.changeHappiness(kind === "treat" ? 0.05 : 0.03);
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 1.5;
-  _trSay(f, "PRAISED");
+  _trSay(f, kind === "treat" ? "TREAT" : "PRAISED");
   return got;
 }
 
@@ -435,6 +437,7 @@ function rightClickActions(f) {
   if (typeof matingRuleActions === "function") out.push(...matingRuleActions(f)); // MatingRule.js
   if (typeof outingActions === "function") out.push(...outingActions(f)); // ParkOutings.js
   if (typeof photoActions === "function") out.push(...photoActions(f)); // Lives.js
+  if (typeof herdActions === "function") out.push(...herdActions(f)); // Herds.js (forget its old herd)
   if (typeof wholesaleActions === "function") out.push(...wholesaleActions(f)); // the mill trade (Inspector.js)
   return out;
 }

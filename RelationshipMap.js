@@ -38,6 +38,7 @@ const REL_KINDS = [
 
 let relMapOpen = false;
 let relMapSel = null; // selected fluffy id
+let relMapAll = null; // { id, page }: every tie one fluffy has, as a list ("All ties")
 let relMapFilters = { love: true, family: true, grudge: true, fear: true, gossip: true, you: false };
 let _relCache = null; // { at, people, groups, edges }
 let _relPortraits = {}; // id:size -> canvas
@@ -57,6 +58,7 @@ function openRelationshipMap(focus = null) {
 function closeRelationshipMap() {
   relMapOpen = false;
   relMapSel = null;
+  relMapAll = null;
 }
 function isRelationshipMapOpen() {
   return relMapOpen;
@@ -268,7 +270,12 @@ function getRelMapLayout() {
     chips,
     nodes,
     you: relMapFilters.you ? { x: youAt.x, y: youAt.y, r: 24 * view.z } : null,
-    showMe: relMapSel !== null ? { x: pane.x + 14, y: pane.y + pane.h - 44, w: 120, h: 34 } : null,
+    showMe: relMapSel !== null && !relMapAll ? { x: pane.x + 14, y: pane.y + pane.h - 44, w: 120, h: 34 } : null,
+    allTies: relMapSel !== null && !relMapAll ? { x: pane.x + 142, y: pane.y + pane.h - 44, w: 134, h: 34 } : null,
+    list: { x: x + 16, y: y + 60, w: w - 32, h: h - 60 - 62 },
+    back: { x: x + 20, y: y + h - 50, w: 130, h: 36 },
+    prev: { x: x + 160, y: y + h - 50, w: 110, h: 36 },
+    next: { x: x + 280, y: y + h - 50, w: 110, h: 36 },
     close: { x: x + w - 150, y: y + h - 50, w: 130, h: 36 },
   };
 }
@@ -470,6 +477,13 @@ function drawRelationshipMap(c) {
   c.fillStyle = "rgba(255,255,255,0.7)";
   c.fillText("Hover a fluffy to light up its lines; click one for the details.", L.x + 170, L.y + 40);
 
+  if (relMapAll) {
+    _drawRelAllTies(c, L);
+    drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 16, borderRadius: 10 });
+    c.restore();
+    return;
+  }
+
   // Filter chips
   for (const ch of L.chips) {
     const k = REL_KINDS.find((x) => x.id === ch.id);
@@ -630,6 +644,7 @@ function drawRelationshipMap(c) {
 
   _drawRelPane(c, L, data, focus);
   if (L.showMe) drawGlassButton(L.showMe.x, L.showMe.y, L.showMe.w, L.showMe.h, "Show me", { fontSize: 15, borderRadius: 9 });
+  if (L.allTies) drawGlassButton(L.allTies.x, L.allTies.y, L.allTies.w, L.allTies.h, "All its ties", { fontSize: 15, borderRadius: 9 });
   drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 16, borderRadius: 10 });
   c.restore();
 }
@@ -749,6 +764,159 @@ function _drawRelPane(c, L, data, focus) {
   }
 }
 
+// ---- All its ties: everyone it has a bond, a grudge or family with, here or
+// not (the herd it came from, fluffies sold or gone, ones that died) ----
+
+const REL_TIE_WORDS = {
+  mother: "Mum",
+  father: "Dad",
+  baby_child: "Foal",
+  child: "Foal",
+  estranged_child: "Foal (turned away)",
+  dead_baby_child: "Foal (died)",
+  dead_mother: "Mum (died)",
+  sister: "Sister",
+  brother: "Brother",
+  special_friend: "Special friend \u2665",
+  friend: "Friend",
+};
+
+function _relFeelingWords(v) {
+  if (v >= 0.6) return "adores";
+  if (v >= 0.3) return "likes";
+  if (v >= 0.1) return "friendly";
+  if (v <= -0.6) return "hates";
+  if (v <= -0.3) return "dislikes";
+  if (v <= -0.1) return "wary of";
+  return null;
+}
+
+// { herd, pastHerds: [text], met, here: [rows], away: [rows] }; a row is
+// { id, name, text, where, strength }
+function allTiesOf(f) {
+  const rel = (typeof relationships !== "undefined" && relationships[f.id]) || {};
+  const ops = f.opinions || {};
+  const why = f.opinionWhy || {};
+  const ids = new Set();
+  for (const id of Object.keys(rel)) ids.add(String(id));
+  for (const [id, v] of Object.entries(ops)) if (Math.abs(v) >= 0.1) ids.add(String(id));
+  if (f.motherId !== null && f.motherId !== undefined) ids.add(String(f.motherId));
+  if (f.fatherId !== null && f.fatherId !== undefined) ids.add(String(f.fatherId));
+  for (const o of fluffies) if (o !== f && (o.motherId === f.id || o.fatherId === f.id)) ids.add(String(o.id));
+  ids.delete(String(f.id));
+  const here = [];
+  const away = [];
+  for (const id of ids) {
+    const o = fluffies.find((x) => String(x.id) === id) || null;
+    const rec = typeof getFamilyRecord === "function" ? getFamilyRecord(id) : null;
+    if (!o && !rec && !(typeof fluffyNames !== "undefined" && fluffyNames[id])) continue; // (nothing known about it)
+    const bits = [];
+    let tie = REL_TIE_WORDS[rel[id]] || null;
+    if (!tie && String(f.motherId) === id) tie = "Mum";
+    if (!tie && String(f.fatherId) === id) tie = "Dad";
+    if (!tie && o && (o.motherId === f.id || o.fatherId === f.id)) tie = "Foal";
+    if (tie) bits.push(tie);
+    const v = typeof ops[id] === "number" ? ops[id] : 0;
+    const feel = _relFeelingWords(v);
+    if (feel) bits.push(why[id] ? `${feel} (${why[id]})` : feel);
+    if (o && typeof sameHerd === "function" && sameHerd(f, o)) bits.push("same herd");
+    if (!bits.length) continue;
+    let where = null;
+    if (o && o.isAlive) {
+      if (!o.adopted) where = `wild, ${typeof householdRoomName === "function" ? householdRoomName(o.scene) : o.scene}`;
+      else if (o.scene !== f.scene) where = typeof householdRoomName === "function" ? householdRoomName(o.scene) : o.scene;
+    } else if (o && !o.isAlive) where = "died";
+    else if (rec) where = (typeof FAMILY_STATUS_TEXT !== "undefined" && FAMILY_STATUS_TEXT[rec.status]) || rec.status || "gone";
+    else where = "not seen since";
+    const row = {
+      id,
+      name: typeof fluffyDisplayNameById === "function" ? fluffyDisplayNameById(id) : id,
+      text: bits.join(" \u00b7 "),
+      where,
+      strength: (tie ? 1 : 0) + Math.abs(v),
+    };
+    (o && o.isAlive && o.adopted ? here : away).push(row);
+  }
+  here.sort((a, b) => b.strength - a.strength);
+  away.sort((a, b) => b.strength - a.strength);
+  const h = typeof herdOf === "function" ? herdOf(f) : null;
+  const pastHerds = (Array.isArray(f.pastHerds) ? f.pastHerds : [])
+    .slice()
+    .reverse()
+    .map((p) => `The ${p.name}${p.wild ? " (wild)" : ""}, until day ${p.day}`);
+  const met = typeof metOf === "function" ? Object.keys(metOf(f) || {}).length : 0;
+  return { herd: h && typeof getHerdName === "function" ? `The ${getHerdName(h)}` : null, pastHerds, met, here, away };
+}
+
+// The lines of the list, in order: { text, colour, bold, indent }
+function _relTieLines(f) {
+  const T = allTiesOf(f);
+  const out = [];
+  const head = (text, colour) => out.push({ text, colour, bold: true });
+  const line = (text, colour = "rgba(255,255,255,0.9)", indent = 1) => out.push({ text, colour, indent });
+  head("Herds", "#ffd6f0");
+  line(T.herd ? `Now: ${T.herd}` : "Now: no herd");
+  for (const p of T.pastHerds) line(`Before: ${p}`, "rgba(255,255,255,0.7)");
+  if (T.met) line(`Has met ${T.met} other fluffies`, "rgba(255,255,255,0.6)");
+  head(`Here with it (${T.here.length})`, "#6fdc8c");
+  if (!T.here.length) line("Nobody yet", "rgba(255,255,255,0.6)");
+  for (const r of T.here) line(`${r.name}: ${r.text}${r.where ? `  [${r.where}]` : ""}`);
+  head(`Elsewhere, or gone (${T.away.length})`, "#c8c8d0");
+  if (!T.away.length) line("Nobody", "rgba(255,255,255,0.6)");
+  for (const r of T.away) line(`${r.name}: ${r.text}  [${r.where}]`, "rgba(255,255,255,0.8)");
+  return out;
+}
+
+function _drawRelAllTies(c, L) {
+  const f = fluffies.find((x) => x.id === relMapAll.id);
+  if (!f) {
+    relMapAll = null;
+    return;
+  }
+  const A = L.list;
+  fillRoundRect(c, A.x, A.y, A.w, A.h, 12, "rgba(0,0,0,0.22)");
+  const p = _relPortrait(f, 64);
+  if (p) c.drawImage(p, A.x + 10, A.y + 6);
+  c.textAlign = "left";
+  c.fillStyle = "#ffd6f0";
+  c.font = "bold 18px Arial";
+  c.fillText(`${_relFullName(f)}: all its ties`, A.x + 84, A.y + 32);
+  c.font = "13px Arial";
+  c.fillStyle = "rgba(255,255,255,0.65)";
+  c.fillText("Family, friends and grudges - here, in the wild, sold or gone - and the herds it has belonged to.", A.x + 84, A.y + 52);
+  // Two columns of lines, paged
+  const lines = _relTieLines(f);
+  const rowH = 19;
+  const top = A.y + 84;
+  const perCol = Math.max(4, Math.floor((A.h - 96) / rowH));
+  const cols = A.w >= 760 ? 2 : 1;
+  const perPage = perCol * cols;
+  const pages = Math.max(1, Math.ceil(lines.length / perPage));
+  relMapAll.page = Math.max(0, Math.min(pages - 1, relMapAll.page));
+  const shown = lines.slice(relMapAll.page * perPage, (relMapAll.page + 1) * perPage);
+  const colW = (A.w - 40) / cols;
+  shown.forEach((ln, i) => {
+    const col = Math.floor(i / perCol);
+    const x = A.x + 20 + col * colW + (ln.indent ? 14 : 0);
+    const y = top + (i % perCol) * rowH;
+    c.font = ln.bold ? "bold 15px Arial" : "14px Arial";
+    c.fillStyle = ln.colour || "white";
+    let t = ln.text;
+    while (t.length > 4 && c.measureText(t).width > colW - 24) t = t.slice(0, -2);
+    if (t !== ln.text) t += "\u2026";
+    c.fillText(t, x, y);
+  });
+  drawGlassButton(L.back.x, L.back.y, L.back.w, L.back.h, "\u25c0 Map", { fontSize: 15, borderRadius: 10 });
+  if (pages > 1) {
+    drawGlassButton(L.prev.x, L.prev.y, L.prev.w, L.prev.h, "Previous", { fontSize: 14, borderRadius: 10 });
+    drawGlassButton(L.next.x, L.next.y, L.next.w, L.next.h, "Next", { fontSize: 14, borderRadius: 10 });
+    c.fillStyle = "rgba(255,255,255,0.75)";
+    c.font = "13px Arial";
+    c.textAlign = "left";
+    c.fillText(`Page ${relMapAll.page + 1} of ${pages}`, L.next.x + L.next.w + 12, L.next.y + 23);
+  }
+}
+
 // ---- Clicks ----
 
 function handleRelationshipMapClick() {
@@ -772,6 +940,16 @@ function handleRelationshipMapClick() {
       else relMapZoom(b.id === "in" ? REL_ZOOM_STEP : 1 / REL_ZOOM_STEP);
       return true;
     }
+  }
+  if (relMapAll) {
+    if (hit(L.back)) relMapAll = null;
+    else if (hit(L.prev)) relMapAll.page = Math.max(0, relMapAll.page - 1);
+    else if (hit(L.next)) relMapAll.page++;
+    return true;
+  }
+  if (hit(L.allTies)) {
+    relMapAll = { id: relMapSel, page: 0 };
+    return true;
   }
   if (hit(L.showMe)) {
     const f = relMapPeople().find((x) => x.id === relMapSel);

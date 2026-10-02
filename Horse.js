@@ -49,7 +49,7 @@ function notifyViolence(
 
       other.pottyTraining = Math.min(
         1.0,
-        other.pottyTraining + (0.05 + Math.random() * 0.05) * 0.25,
+        other.pottyTraining + (0.05 + Math.random() * 0.05) * 0.25 * (typeof smartsLearn === "function" ? smartsLearn(other) : 1),
       );
       key2 = "STICK";
       key3 = "TRAINING";
@@ -101,11 +101,15 @@ class Horse {
       return;
     }
     let unique = [...new Set(val)];
+    const wasSmarty = Array.isArray(this._personalities) && this._personalities.includes("smarty");
     if (this.gender === "female") {
       this._personalities = unique.filter((p) => p !== "smarty");
     } else {
       this._personalities = unique;
     }
+    // Made a smarty (or not one any more): good or bad is decided afresh -
+    // rollSmartyKind where one is born or found; left alone, it's a bad one
+    if (wasSmarty !== this._personalities.includes("smarty") && typeof horseBeingLoaded !== "undefined" && !horseBeingLoaded) this.smartyKind = undefined;
   }
 
   getName() {
@@ -121,7 +125,8 @@ class Horse {
     ) {
       return false;
     }
-    return this.personalities.includes("smarty");
+    // (a good smarty is clever and kind: it doesn't act like one - Intelligence.js)
+    return this.personalities.includes("smarty") && this.smartyKind !== "good";
   }
 
   isUnderAphrodisiac() {
@@ -498,6 +503,9 @@ class Horse {
     if (this.type === "unicorn") {
       this.limbs.horn = true;
     }
+    // A foal born a smarty: good or bad? (Intelligence.js; ones found in the
+    // park or the shelter are rolled where they're made)
+    if (motherId !== null && !horseBeingLoaded && typeof rollSmartyKind === "function") rollSmartyKind(this);
 
     if (motherId !== null && !horseBeingLoaded) {
       relationships[this.id][motherId] = "mother";
@@ -554,6 +562,10 @@ class Horse {
   }
 
   setTargetPosition(x, y) {
+    // Never into the wall (a block on its back, a toy dropped against the
+    // wall...): the nearest spot on the floor instead
+    if (typeof y === "number" && typeof sceneTop === "function" && !this.placedOn && !this.currentCage && !this.heldWithThrowTool) y = Math.max(y, sceneTop(this.scene) + 50);
+    if (typeof x === "number" && typeof sceneW === "function") x = Math.max(20, Math.min(sceneW(this.scene) - 20, x));
     this.targetX = x;
     this.targetY = y;
     this.litterboxUsed = null;
@@ -882,6 +894,8 @@ class Horse {
     if (this.isPregnant) {
       this.speed *= 0.5;
     }
+    // Close to giving birth, or just after: she hardly moves (Pregnancy.js)
+    if (typeof mareRestSpeed === "function") this.speed *= mareRestSpeed(this);
 
     // Elderly fluffies are slower (Aging.js)
     if (typeof isElderly === "function" && isElderly(this)) {
@@ -896,6 +910,8 @@ class Horse {
     }
     let limbsMissing = this.getLimbsMissing();
     this.speed /= 1 + limbsMissing;
+    // A mangled leg: half as bad as none (Injuries.js)
+    if (typeof mangledLegCount === "function") this.speed /= 1 + 0.5 * mangledLegCount(this);
     if (this.isSensitive()) {
       this.speed /= 4;
     }
@@ -1314,6 +1330,8 @@ class Horse {
       if (typeof maybeEarlyLabourFromFall === "function") maybeEarlyLabourFromFall(this, damage);
       // Healing from surgery: a setback (Bandages.js)
       if (typeof recoverySetback === "function") recoverySetback(this);
+      // Something may be broken for good (Injuries.js)
+      if (typeof injureFromThrow === "function") injureFromThrow(this, speed, minSpeed);
       this.speak(line, true, true);
       this.initBehavior("FLUFFY_KNOCKED_DOWN");
     }
@@ -2118,6 +2136,7 @@ class Horse {
     horse.targetY = data.targetY;
     horse.fatherId = data.fatherId;
     horse.personalities = data.personalities;
+    horse.smartyKind = data.smartyKind; // (setting personalities clears it)
     horse.adopted = data.adopted;
     horse.traumaMemory = data.traumaMemory;
     // Memory and trust (Memory.js); older saves keep the defaults

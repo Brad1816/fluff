@@ -309,7 +309,7 @@ function attemptDrop() {
               f.trainedForThisOccurrence = true;
               f.pottyTraining = Math.min(
                 1.0,
-                f.pottyTraining + (0.1 + Math.random() * 0.1) * 0.25,
+                f.pottyTraining + (0.1 + Math.random() * 0.1) * 0.25 * (typeof smartsLearn === "function" ? smartsLearn(f) : 1),
               );
               key = "TRAINING";
             } else if (f.tooYoungToSpeak()) {
@@ -557,7 +557,7 @@ function attemptDrop() {
               f.trainedForThisOccurrence = true;
               f.pottyTraining = Math.min(
                 1.0,
-                f.pottyTraining + (0.1 + Math.random() * 0.1) * 0.25,
+                f.pottyTraining + (0.1 + Math.random() * 0.1) * 0.25 * (typeof smartsLearn === "function" ? smartsLearn(f) : 1),
               );
               key = ["BRUSH", "TRAINING"];
 
@@ -576,7 +576,7 @@ function attemptDrop() {
                 if (!other.isSmarty()) {
                   other.pottyTraining = Math.min(
                     1.0,
-                    other.pottyTraining + (0.05 + Math.random() * 0.05) * 0.25,
+                    other.pottyTraining + (0.05 + Math.random() * 0.05) * 0.25 * (typeof smartsLearn === "function" ? smartsLearn(other) : 1),
                   );
                   other.speak(
                     getDialogue(["BRUSH", "WITNESS_TRAINING"], other),
@@ -743,6 +743,8 @@ let feralDespawnTimer = 30;
 function spawnFeralGroup(targetScene, forcedScenario = null, opts = {}) {
   const before = fluffies.length;
   _spawnFeralGroup(targetScene, forcedScenario);
+  // Good smarty or bad? (Intelligence.js)
+  for (let i = before; i < fluffies.length; i++) if (fluffies[i].smartyKind === undefined && typeof rollSmartyKind === "function") rollSmartyKind(fluffies[i]);
   // Through the broken fence: not yours - you're asked (Strays.js)
   if (targetScene === "BACKYARD" && typeof noteBackyardStrays === "function") noteBackyardStrays(fluffies.slice(before));
   if (opts.walkIn) {
@@ -916,8 +918,12 @@ function _spawnFeralGroup(targetScene, forcedScenario = null) {
       if (r < 0.4) return "unicorn";
       if (r < 0.7) return "pegasus";
     }
+    // Every breed has its smarties (Intelligence.js: as clever as their breed)
     if (personalities.includes("smarty")) {
-      if (Math.random() < 0.5) return "unicorn";
+      const r = Math.random();
+      if (r < 0.01) return "alicorn";
+      if (r < 0.31) return "unicorn";
+      if (r < 0.51) return "pegasus";
     }
     return "earthy";
   };
@@ -1009,7 +1015,7 @@ function _spawnFeralGroup(targetScene, forcedScenario = null) {
       let spawnedHorse;
       if (!smartySpawned && Math.random() < 0.3) {
         p = ["smarty"];
-        type = Math.random() < 0.5 ? "unicorn" : "earthy";
+        type = getScenarioType(p);
         smartySpawned = true;
         spawnedHorse = spawnFeral(
           1.0,

@@ -85,6 +85,9 @@ module.exports = [
         const blue = fam(2600, 1500);
         herdsTicker.fireNext();
         updateHerds(3);
+        // (the mums lead: who leads otherwise depends on their smarts)
+        herdOf(red[0]).leaderId = red[0].id;
+        herdOf(blue[0]).leaderId = blue[0].id;
         // Old friends from before, now in rival herds
         setRelationship(red[1].id, blue[1].id, "friend");
         setRelationship(blue[1].id, red[1].id, "friend");

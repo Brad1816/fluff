@@ -137,6 +137,8 @@ function startFright(f, key) {
   if (!f || !f.isAlive || f.isDragging) return false;
   // Its plushie's here: often it's not so scary after all (Plushie.js)
   if (typeof plushieSoothes === "function" && plushieSoothes(f)) return false;
+  // A good smarty leading its herd keeps them steady (Intelligence.js)
+  if (typeof goodLeaderCalms === "function" && goodLeaderCalms(f)) return false;
   // (a Fearful room makes it worse, Climate.js)
   // (...and so does remembering the last storm, SharedMemories.js)
   const fear = Math.min(

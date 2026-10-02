@@ -1543,7 +1543,9 @@ function colourShunChance(judge, other) {
   if (typeof worldSettings !== "undefined" && !worldSettings.colorism) return 0;
   if (!judge || !other || !other.genetics) return 0;
   const p = other.genetics.calculateColorismPerception();
+  // (a bad smarty can't stand a poopie coat, whatever it thinks of drab ones)
   const degree = Math.max(0, Math.min(1, judge.coloristDegree || 0));
+  if (judge.isSmarty && judge.isSmarty() && p < COAT_POOPIE_LINE) return 1;
   return degree * (p < COAT_POOPIE_LINE ? 1 : Math.min(1, 1.5 * (1 - p)));
 }
 

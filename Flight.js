@@ -28,6 +28,7 @@ const WING_BASE = 0.25; // what any pegasus's wings do, untrained (strength coun
 
 // Both wings, to flap with
 function canFly(f) {
+  if (typeof isMangled === "function" && (isMangled(f, "leftWing") || isMangled(f, "rightWing"))) return false; // (Injuries.js)
   return !!(f && f.isAlive && typeof f.hasBothWings === "function" && f.hasBothWings());
 }
 
@@ -85,7 +86,10 @@ function updateFlightShadow(f) {
 function describeFlight(f) {
   if (!f || !f.isAlive || (f.type !== "pegasus" && f.type !== "alicorn")) return null;
   const s = Math.max(0, Math.min(1, f.flightSkill || 0));
-  if (!canFly(f)) return ["Can't flap (a wing is gone)", "bad"];
+  if (!canFly(f)) {
+    const mangled = typeof isMangled === "function" && (isMangled(f, "leftWing") || isMangled(f, "rightWing"));
+    return [mangled && f.hasBothWings() ? "Can't flap (a wing is mangled)" : "Can't flap (a wing is gone)", "bad"];
+  }
   if (typeof isPractisingFlight === "function" && isPractisingFlight(f)) return ["Practising flapping on the perch", "good"];
   if (s >= 0.8) return ["Very strong: breaks almost any fall", "good"];
   if (s >= WING_FEET) return ["Strong: lands on its feet from a small fall", "good"];

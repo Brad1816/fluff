@@ -129,7 +129,7 @@ function refusesFriendshipFrom(other, from) {
   if (typeof unwelcomeOnLand === "function" && (unwelcomeOnLand(from, other) || unwelcomeOnLand(other, from)))
     return true;
   // Nor with members of another herd
-  if (typeof herdOf === "function" && herdOf(other) && herdOf(from) && herdOf(other) !== herdOf(from)) return true;
+  if (typeof rivalHerds === "function" && rivalHerds(other, from)) return true;
   return getLiking(other, from) < -0.1;
 }
 
@@ -192,7 +192,7 @@ function updateSocialBonds(dt) {
     // Calm time together (sleeping side by side counts too)
     const calm = a.happiness > HAPPINESS_SAD_THRESHOLD && b.happiness > HAPPINESS_SAD_THRESHOLD;
     // Members of different herds don't warm to each other (Herds.js)
-    const rivals = typeof herdOf === "function" && herdOf(a) && herdOf(b) && herdOf(a) !== herdOf(b);
+    const rivals = typeof rivalHerds === "function" && rivalHerds(a, b);
     if (calm && !rivals && !a.isScared && !b.isScared) {
       // Social fluffies bond faster, loners slower
       const sa = 1 + 0.5 * (typeof traitValue === "function" ? traitValue(a, "social") : 0);

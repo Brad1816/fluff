@@ -19,6 +19,8 @@
 //                   (f.bellLearn, saved) and come running when it rings.
 //   Small portions  fills bowls only halfway (for fluffies getting fat)
 //   Off             parks at its dock
+// Between meals it also empties litterboxes in its room once they're a
+// quarter full (FEEDBOT_LITTER_AT) - not a Litterpal with a fluffy strapped in.
 //
 // Fluffies: most like it ("Nummy-wobot!"). Timid ones can be scared of it
 // like the Fluff-Bot (Fears.js "bot"), but every time it brings food nearby
@@ -51,6 +53,7 @@ const FEEDBOT_RETIP = 100;
 const FEEDBOT_REPAIR_PRICE = 80;
 const REPAIR_KIT_PRICE = 40;
 const FEEDBOT_FEAR_FADE = 0.01;
+const FEEDBOT_LITTER_AT = 0.25; // of a litterbox's uses: time to empty it
 const FEEDBOT_MODES = [
   { key: "full", name: "Keep full" },
   { key: "meals", name: "Mealtimes" },
@@ -230,7 +233,28 @@ class FeedBot {
       const need = bowls.filter((b) => b.type !== "feeder" && b.type !== "mega_feeder" && this._bowlTarget(b) > b.food).sort(near);
       if (need.length) return { kind: "bowl", target: need[0] };
     }
+    if (this.mode !== "off") {
+      const boxes = this._litterboxes().filter((b) => this._litterNeedsCleaning(b)).sort(near);
+      if (boxes.length) return { kind: "litter", target: boxes[0] };
+    }
     return null;
+  }
+
+  // Litterboxes (and Litterpals) in its room
+  _litterboxes() {
+    if (typeof objects === "undefined") return [];
+    return objects.filter(
+      (o) =>
+        ((typeof Litterbox !== "undefined" && o instanceof Litterbox) || (typeof LitterpalBox !== "undefined" && o instanceof LitterpalBox)) &&
+        o.scene === this.scene &&
+        !o.isDragging,
+    );
+  }
+
+  _litterNeedsCleaning(b) {
+    if (b.securedFluffy) return false; // (someone's strapped in)
+    const max = b.maxUses || 30;
+    return (b.uses || 0) >= Math.max(1, Math.ceil(max * FEEDBOT_LITTER_AT));
   }
 
   _bounds() {
@@ -260,6 +284,10 @@ class FeedBot {
 
   _doJob(job) {
     const t = job.target;
+    if (job.kind === "litter") {
+      t.uses = 0; // (scooped clean, like the sponge)
+      return;
+    }
     if (job.kind === "orphan") {
       if (!t.isAlive || this.formula <= 0) return;
       this.formula--;
@@ -486,6 +514,7 @@ class FeedBot {
     if (job.kind === "orphan") return t.isAlive && t.scene === this.scene && t.hunger < 0.5 && this.formula > 0;
     if (!objects.includes(t) || t.scene !== this.scene || t.isDragging) return false;
     if (job.kind === "feeder") return this.formula > 0 && t.food < t.maxFood;
+    if (job.kind === "litter") return this.mode !== "off" && (t.uses || 0) > 0 && !t.securedFluffy;
     return this.portions() > 0 && this._bowlTarget(t) > t.food;
   }
 
@@ -848,7 +877,7 @@ function feedBotStatusLines() {
 
 SPAWN_ACTIONS.push({
   name: "Feed-Bot",
-  desc: "Keeps the bowls in its room filled. Pour food bags into it (formula too, for feeders and orphaned foals). Right-click to change mode: keep full, mealtimes, small portions, off.",
+  desc: "Keeps the bowls in its room filled and empties the litterboxes. Pour food bags into it (formula too, for feeders and orphaned foals). Right-click to change mode: keep full, mealtimes, small portions, off.",
   cost: FEEDBOT_PRICE,
   isItem: "feedbot",
 });

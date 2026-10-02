@@ -74,7 +74,33 @@ class Plushie {
   }
   drawOffScreen(ctx) {
     drawPlushieShape(ctx, this.x, this.y, 1, this.colour);
+    const tag = plushieOwnerTag(this);
+    if (tag && !this.isDragging) drawOwnerTag(ctx, this.x, this.y + 4, tag);
   }
+}
+
+// "Daisy's" (or "pink unicorn mare's") for a plushie that's someone's, else null
+function plushieOwnerTag(p) {
+  if (!p || p.ownerId === null || p.ownerId === undefined) return null;
+  const named = typeof fluffyNames !== "undefined" && fluffyNames[p.ownerId];
+  if (named) return `${named}'s`;
+  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === p.ownerId) : null;
+  return f && typeof describeFluffyLooks === "function" ? `${describeFluffyLooks(f)}'s` : null;
+}
+
+// A little label under a personal thing: whose it is
+function drawOwnerTag(c, x, y, text) {
+  c.save();
+  c.font = "bold 11px Arial";
+  c.textAlign = "center";
+  c.textBaseline = "top";
+  const w = Math.min(160, c.measureText(text).width + 12);
+  c.fillStyle = "rgba(40, 25, 45, 0.78)";
+  roundRectPath(c, x - w / 2, y, w, 16, 7);
+  c.fill();
+  c.fillStyle = "#ffe3f1";
+  c.fillText(text, x, y + 2, w - 8);
+  c.restore();
 }
 
 // A little stitched toy fluffy, sitting; (x, y) is its bottom middle

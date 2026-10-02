@@ -178,17 +178,17 @@ function scoldFluffy(f) {
     if (f.isSmarty && f.isSmarty()) f.smartyReform = Math.min(0.95, (f.smartyReform || 0) + 0.03);
     if (typeof f.smartyProvokedUntil === "number") f.smartyProvokedUntil = 0;
   } else if (misdeed === "mischief") {
-    f._nextMischief = timePlayed + DAY_LENGTH;
+    f._nextMischief = timePlayed + DAY_LENGTH * (typeof smartsLearn === "function" ? smartsLearn(f) : 1); // (a clever one remembers longer)
   } else if (misdeed === "accident") {
-    f.pottyTraining = Math.min(1, (f.pottyTraining || 0) + 0.05);
+    f.pottyTraining = Math.min(1, (f.pottyTraining || 0) + 0.05 * (typeof smartsLearn === "function" ? smartsLearn(f) : 1));
   }
-  // The cost (twice as much for nothing)
-  const k = misdeed ? 1 : 2;
-  if (typeof loseAffection === "function") loseAffection(f, "scolded", 0.02 * k);
-  if (typeof changePlayerFear === "function") changePlayerFear(f, 0.02 * k);
-  f.changeHappiness(-0.04 * k);
+  // The cost: a telling-off is a small thing (three times as much for nothing)
+  const k = misdeed ? 1 : 3;
+  if (typeof loseAffection === "function") loseAffection(f, "scolded", 0.01 * k);
+  if (typeof changePlayerFear === "function") changePlayerFear(f, 0.01 * k);
+  f.changeHappiness(-0.03 * k);
   if (typeof recordStory === "function") recordStory("scolded", f);
-  if (typeof noteTitleHarm === "function") noteTitleHarm(f, 0.5 * k, "scolded"); // (Titles.js)
+  if (typeof noteTitleHarm === "function") noteTitleHarm(f, 0.1 * k, "scolded"); // (Titles.js; a stick hit is 1)
   if (misdeed && typeof noteTitleCare === "function") noteTitleCare(f, "scolded"); // (firm care for a Spoiled one)
   _caSay(f, misdeed ? "SCOLDED" : "SCOLDED_NOTHING");
   return misdeed || "nothing";

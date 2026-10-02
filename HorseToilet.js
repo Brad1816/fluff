@@ -37,6 +37,7 @@ addHorseMethods({
     if (this.growth >= 0.8) gain *= 0.5;
     if (this.isSmarty && this.isSmarty()) gain *= 0.25;
     if (needs) gain *= 2;
+    gain *= (typeof smartsLearn === "function" ? smartsLearn(this) : 1); // a clever one gets it sooner (Intelligence.js)
     this.pottyTraining = Math.min(1, (this.pottyTraining || 0) + gain);
     // Sit it right in the box, and it goes if it needs to
     this.x = lb.x;
@@ -251,7 +252,7 @@ addHorseMethods({
       this.trainedForThisOccurrence = false;
 
       if (this.pottyTraining < 1.0) {
-        this.pottyTraining = Math.min(1.0, this.pottyTraining + 0.01);
+        this.pottyTraining = Math.min(1.0, this.pottyTraining + 0.01 * (typeof smartsLearn === "function" ? smartsLearn(this) : 1));
       }
     }
 

@@ -27,6 +27,7 @@ const TRAITS = [
   { key: "appetite", high: "Greedy", low: "Picky eater", highCode: "GREEDY", lowCode: "PICKY" },
   { key: "energy", high: "Playful", low: "Lazy", highCode: "PLAYFUL", lowCode: "LAZY" },
   { key: "temper", high: "Grumpy", low: "Gentle", highCode: "GRUMPY", lowCode: "GENTLE" },
+  { key: "wits", high: "Clever", low: "Dim", highCode: "CLEVER", lowCode: "DIM" }, // (Intelligence.js)
 ];
 
 const TRAIT_GENE_TOTAL = TRAIT_GENE_START + TRAITS.length * TRAIT_GENES_EACH;

@@ -110,13 +110,22 @@ function sameHerd(a, b) {
   return !!h && h === herdOf(b);
 }
 
-// Fluffies that don't hug, chat, befriend or sleep together: members of
-// different herds, or when one dislikes the other
-function keepsApart(a, b) {
+// Members of different herds who treat each other as rivals. Under your roof
+// (both yours) they don't: a house is one family, so a fluffy you brought
+// home from another herd can still make friends with the ones already there.
+function rivalHerds(a, b) {
   if (!a || !b) return false;
   const ha = herdOf(a);
   const hb = herdOf(b);
-  if (ha && hb && ha !== hb) return true;
+  if (!ha || !hb || ha === hb) return false;
+  return !(a.adopted && b.adopted);
+}
+
+// Fluffies that don't hug, chat, befriend or sleep together: members of
+// rival herds, or when one dislikes the other
+function keepsApart(a, b) {
+  if (!a || !b) return false;
+  if (rivalHerds(a, b)) return true;
   return typeof getLiking === "function" && (getLiking(a, b) < 0 || getLiking(b, a) < 0);
 }
 
@@ -126,7 +135,8 @@ function herdLikingBonus(a, b) {
   const ha = herdOf(a);
   const hb = herdOf(b);
   if (!ha || !hb) return 0;
-  return ha === hb ? HERD_SAME_BONUS : HERD_RIVAL_PENALTY;
+  if (ha === hb) return HERD_SAME_BONUS;
+  return rivalHerds(a, b) ? HERD_RIVAL_PENALTY : 0;
 }
 
 function getHerdMembers(h) {
@@ -193,6 +203,8 @@ function herdLeadershipScore(f, members) {
   const tv = (k) => (typeof traitValue === "function" ? traitValue(f, k) : 0);
   let score = 1 + 0.8 * tv("bravery") + 0.2 * tv("social") + 0.3 * ((f.health || 100) / 100);
   if (f.isSmarty && f.isSmarty()) score += 0.5;
+  if (typeof isGoodSmarty === "function" && isGoodSmarty(f)) score += 0.8; // a careful, clever leader (Intelligence.js)
+  if (typeof smartsOf === "function") score += 0.3 * smartsOf(f);
   if (typeof runawayLeaderBonus === "function") score += runawayLeaderBonus(f); // a Rebel leads (Runaways.js)
   for (const m of members) if (m !== f) score += 0.15 * getLiking(m, f);
   return score;
@@ -267,7 +279,17 @@ function herdIsYours(h) {
   return m.length > 0 && m.filter((f) => f.adopted).length * 2 >= m.length;
 }
 
+// Herds it used to be in, newest last (saved: f.pastHerds) - the relationship
+// map lists them
+function _notePastHerd(f, h) {
+  if (!f || !h) return;
+  const list = Array.isArray(f.pastHerds) ? f.pastHerds.filter((p) => p.id !== h.id) : [];
+  list.push({ id: h.id, name: getHerdName(h), day: getDayNumber(), wild: !herdIsYours(h) });
+  f.pastHerds = list.slice(-8);
+}
+
 function _leave(h, f, quietly = false) {
+  _notePastHerd(f, h);
   h.memberIds = h.memberIds.filter((id) => id !== f.id);
   _herdChanged();
   if (!quietly) _say(f, ["HERD", "LEFT"], getHerdLeader(h));
@@ -306,6 +328,7 @@ function updateHerds(dt) {
     members = getHerdMembers(h);
 
     if (members.length < 2) {
+      for (const f of members) _notePastHerd(f, h);
       herdState.list = herdState.list.filter((x) => x !== h);
       _herdChanged();
       continue;
@@ -377,7 +400,7 @@ function updateHerds(dt) {
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   rebuildFluffyGrid();
   forEachNearbyPair(150, (a, b) => {
-    if (!herdOf(a) || !herdOf(b) || sameHerd(a, b)) return;
+    if (!rivalHerds(a, b)) return;
     if (typeof changeOpinion === "function") {
       // Slowly: about 8 minutes of close contact to really dislike
       changeOpinion(a, b, -0.0006 * step, "rival herd");
@@ -537,3 +560,23 @@ function drawHerdMarker(c, f) {
 
 // Runs every simulation step (Systems.js)
 registerSystem("herds", updateHerds, 30);
+
+// ---- Forget its old herd (right-click one of yours) ----
+// It stops counting itself one of them - its feelings for them stay. Loose,
+// it can join a herd here once it has made friends (step 2 above).
+function forgetHerd(f) {
+  const h = herdOf(f);
+  if (!h) return false;
+  _leave(h, f, true);
+  f._forgotHerdAt = timePlayed;
+  if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["HERD", "FORGET"], f));
+  if (typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} isn't one of the ${getHerdName(h)} any more - it can join a herd here once it makes friends.`);
+  return true;
+}
+
+function herdActions(f) {
+  if (!f || !f.adopted || !f.isAlive || f.growth < 1) return [];
+  const h = herdOf(f);
+  if (!h) return [];
+  return [{ key: "forgetherd", name: "Forget herd", sub: "keeps its friends", run: (x) => forgetHerd(x) }];
+}

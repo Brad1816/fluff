@@ -78,21 +78,25 @@ class HorseAnatomy {
       const idx = parseInt(part.split("_")[1]);
       if (this.horse.limbs.legs[idx]) {
         this.horse.limbs.legs[idx] = false;
+        if (typeof forgetMangled === "function") forgetMangled(this.horse, part);
         return part;
       }
     } else if (part === "horn") {
       if (this.horse.limbs.horn) {
         this.horse.limbs.horn = false;
+        if (typeof forgetMangled === "function") forgetMangled(this.horse, "horn");
         return "horn";
       }
     } else if (part === "leftWing") {
       if (this.horse.limbs.leftWing) {
         this.horse.limbs.leftWing = false;
+        if (typeof forgetMangled === "function") forgetMangled(this.horse, "leftWing");
         return "leftWing";
       }
     } else if (part === "rightWing") {
       if (this.horse.limbs.rightWing) {
         this.horse.limbs.rightWing = false;
+        if (typeof forgetMangled === "function") forgetMangled(this.horse, "rightWing");
         return "rightWing";
       }
     }

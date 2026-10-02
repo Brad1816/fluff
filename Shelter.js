@@ -176,7 +176,10 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
   if (typeof setSpawnAge === "function") setSpawnAge(h, 3, origin === "surrendered" ? 60 : 36);
   // How it's been treated
   h.personalities = (h.personalities || []).filter((p) => p !== "smarty");
-  if (!kind.goodNature && growth >= 1 && Math.random() < SHELTER_SMARTY_CHANCE) h.personalities.push("smarty");
+  if (!kind.goodNature && growth >= 1 && Math.random() < SHELTER_SMARTY_CHANCE) {
+    h.personalities.push("smarty");
+    if (typeof rollSmartyKind === "function") rollSmartyKind(h);
+  }
   h.hunger = 0.7 + Math.random() * 0.3;
   h.happiness = kind.goodNature ? 0.55 + Math.random() * 0.2 : 0.3 + Math.random() * 0.25;
   h.playerTrust = kind.goodNature ? 0.4 + Math.random() * 0.2 : 0.08 + Math.random() * 0.25;

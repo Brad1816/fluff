@@ -1365,7 +1365,8 @@ class HorsePositioning {
     return {
       minX,
       maxX,
-      y: b.bottom - localBottom - CAGE_FLOOR_OFFSET,
+      // (the same floor it's held to - an incubator's is higher: Incubator.js)
+      y: b.bottom - localBottom - (typeof this.horse.currentCage.floorOffset === "function" ? this.horse.currentCage.floorOffset() : CAGE_FLOOR_OFFSET),
     };
   }
 

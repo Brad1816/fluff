@@ -1,3 +1,6 @@
+// A fluffy that hasn't moved for this long while walking stops (seconds)
+const WALK_IN_PLACE_GIVE_UP = 1.5;
+
 class HorseActionHandler {
   constructor(horse) {
     this.horse = horse;
@@ -15,6 +18,14 @@ class HorseActionHandler {
     }
 
     this.horse.attemptUseTargetLitterbox();
+    // No target left (e.g. it reached a litterbox but couldn't go): stop,
+    // rather than walk off toward the corner
+    if (this.horse.targetX === null || this.horse.targetY === null || this.horse.targetX === undefined || this.horse.targetY === undefined) {
+      if (!this.horse.litterboxUsed) {
+        this.horse.initBehavior("IDLE");
+        return true;
+      }
+    }
     const dx = this.horse.targetX - this.horse.x;
     const dy = this.horse.targetY - this.horse.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -129,19 +140,53 @@ class HorseActionHandler {
       let mdx = dx,
         mdy = dy,
         mdist = dist;
+      let steering = false;
       if (typeof getFenceSteerPoint === "function") {
         const sp = getFenceSteerPoint(this.horse);
         if (sp) {
+          steering = true;
           mdx = sp.x - this.horse.x;
           mdy = sp.y - this.horse.y;
           mdist = Math.sqrt(mdx * mdx + mdy * mdy);
         }
       }
 
+      const ox = this.horse.x;
+      const oy = this.horse.y;
       if (mdist > 0.001) {
         const step = Math.min(mdist, moveStep);
         this.horse.x += step >= mdist ? mdx : (mdx / mdist) * step;
         this.horse.y += step >= mdist ? mdy : (mdy / mdist) * step;
+      }
+      // Walking on the spot (a wall, a block, a fence or a cage side in the
+      // way, a target it can't reach): if it gets no closer for a moment it
+      // gives up and stops there, so the legs don't keep going (the arrival
+      // check above takes it from here)
+      const h = this.horse;
+      const now = timePlayed;
+      const pr = h._walkProg;
+      if (!pr || Math.hypot(pr.tx - h.targetX, pr.ty - h.targetY) > 30 || now < pr.at || now - pr.at > 5) {
+        h._walkProg = { best: dist, at: now, tx: h.targetX, ty: h.targetY, x: h.x, y: h.y };
+        h._walkInPlace = 0;
+      } else if (dist < pr.best - 2 || (steering && Math.hypot(h.x - pr.x, h.y - pr.y) > 2)) {
+        // (closer - or, going round a fence, at least getting somewhere)
+        pr.best = Math.min(pr.best, dist);
+        pr.at = now;
+        pr.x = h.x;
+        pr.y = h.y;
+        h._walkInPlace = 0;
+      } else h._walkInPlace = now - pr.at;
+      if (this.horse._walkInPlace > WALK_IN_PLACE_GIVE_UP) {
+        this.horse._walkInPlace = 0;
+        this.horse._walkProg = null;
+        this.horse.litterboxUsed = null;
+        this.horse.ballTarget = false;
+        this.horse.blockTarget = false;
+        this.horse.blockTowerKnockOverTarget = false;
+        this.horse.targetX = this.horse.x;
+        this.horse.targetY = this.horse.y;
+        this.horse.initBehavior("IDLE");
+        return true;
       }
 
       if (mdist > 1) {

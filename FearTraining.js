@@ -78,7 +78,7 @@ function fearChanceBoost(f, key, p) {
 }
 
 function fearLearnRate(f) {
-  return 0.8 + 0.4 * (f.playerFear || 0);
+  return (0.8 + 0.4 * (f.playerFear || 0)) * (typeof smartsLearn === "function" ? smartsLearn(f) : 1); // (Intelligence.js)
 }
 
 function _ftLearn(f, key, amount) {

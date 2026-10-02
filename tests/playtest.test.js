@@ -135,7 +135,7 @@ module.exports = [
         out.used = lb.uses - uses;
         out.puddles = puddles.filter((p) => p.scene === "INDOORS" && p.points.length).length;
         objects.splice(objects.indexOf(lb), 1);
-        out.learn = LITTER_PLACE_LEARN;
+        out.learn = LITTER_PLACE_LEARN * smartsLearn(foal); // (a clever one gets it sooner)
         return out;
       }, SETUP);
       checkEqual(r.away, 0.1, "dropped elsewhere: no lesson");

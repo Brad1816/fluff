@@ -115,7 +115,7 @@ module.exports = [
         }
         return { gaveUp: state.indexOf("IDLE"), last: state[state.length - 1] };
       });
-      check(r.gaveUp > 15 && r.gaveUp <= 30, `gave up after ${r.gaveUp}s`);
+      check(r.gaveUp >= 1 && r.gaveUp <= 5, `gave up after ${r.gaveUp}s (getting no closer: within a couple of seconds, so it doesn't walk on the spot)`);
     },
   },
 ];

@@ -107,9 +107,9 @@ module.exports = [
       checkEqual(r.scoldSub, "for fighting", "it knows what for");
       checkEqual(r.scold, "fight", "scolded for fighting");
       check(r.stopped, "the fight stops");
-      check(r.cost[0] >= 0.02 && r.cost[1], `it costs ${r.cost}`);
+      check(r.cost[0] >= 0.01 && r.cost[0] < 0.03 && r.cost[1], `it costs a little: ${r.cost}`);
       check(r.nothing[0] === "nothing" && r.nothing[1] >= 0.04, `for nothing ${r.nothing}`);
-      check(r.accident[0] === "accident" && r.accident[1] === 0.05, `the mess ${r.accident}`);
+      check(r.accident[0] === "accident" && r.accident[1] > 0.02 && r.accident[1] < 0.08, `the mess ${r.accident}`); // (0.05, more or less with its smarts)
       check(r.tally >= 1, "in its story");
       check(r.timeout[0] && r.timeout[1] === null && r.timeout[2] === 80 && r.timeout[3] === 70, `time-out ${r.timeout}`);
       checkEqual(r.over, false, "and over");

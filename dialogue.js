@@ -104,6 +104,7 @@ const DIALOGUE = {
 
   // Herds (Herds.js)
   HERD: {
+    FORGET: ["<Speaker> wiww stiww wub owd fwens... but dis am home nao.", "Nu need owd hewd. Hab new famiwy!", "Bye-bye owd hewd..."],
     NEW_HERD: [
       "Aww fwens stay togedda! Am hewd nao!",
       "<Speaker> wiww be bestest hewd weadew!",
@@ -431,7 +432,8 @@ const DIALOGUE = {
     TIRED: ["<Speaker> tiwed of twicks...", "Nu moaw twicks, pwease...", "Twick-time ober..."],
     REFUSE: ["Nu wan!", "Nu do twick fow yu!", "Hmph. Nu."],
     SMARTY: ["Smawty nu do twicks fow dummeh!", "Smawty am too speshuw fow twicks!"],
-    PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "Nummy tweat! Tank yu!"],
+    PRAISED: ["<Speaker> am gud fwuffy!", "Yay! Daddeh happeh!", "<Speaker> did gud? Yay!", "Wub daddeh! <Speaker> am bestest!"],
+    TREAT: ["Nummy tweat! Tank yu!", "Tweat fow <speaker>! Nummies!", "Sketties tweat? Bestest!"],
     SHOW_OFF: ["Wook daddeh! Wook what <speaker> can do!", "Watch <speaker>!", "Daddeh wook!"],
   },
   // Crowded rooms (Population.js)
@@ -589,6 +591,8 @@ const DIALOGUE = {
       "Gib huggies?",
       "Be nice to fwens, otay?",
     ],
+    CLEVER: ["<Speaker> knows wots ob fings!", "<Speaker> fink weawwy hawd... an' knows!", "Dat am easy fow <speaker>!"],
+    DIM: ["Huh?", "<Speaker> fowget what <speaker> doin'...", "Wha' dat? <Speaker> confused..."],
   },
   PERSONALITY: {
     TRUE_FERAL: [

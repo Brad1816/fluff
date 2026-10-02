@@ -87,6 +87,8 @@ function describeInspectionPersonality(f) {
       .join(" "),
   );
   if (list.length === 0) return ["Normal", ""];
+  const good = typeof isGoodSmarty === "function" && isGoodSmarty(f);
+  if (good) return [list.map((p) => (p === "Smarty" ? "Good smarty" : p)).join(", "), "good"];
   const tone = f.isSmarty && f.isSmarty() ? "bad" : "";
   return [list.join(", "), tone];
 }
@@ -151,12 +153,16 @@ function getFluffyInspectionInfo(f) {
   if (ribbons) about.push({ label: "Ribbons", value: ribbons, tone: "good" });
   const [persText, persTone] = describeInspectionPersonality(f);
   about.push({ label: "Personality", value: persText, tone: persTone });
+  const smarts = typeof describeSmarts === "function" ? describeSmarts(f) : null; // Intelligence.js
+  if (smarts) about.push({ label: "Smarts", value: smarts[0], tone: smarts[1] });
   // Inherited personality traits (Traits.js)
   if (typeof describeTraits === "function") {
     about.push({ label: "Traits", value: describeTraits(f) });
     // What its life has done to it, and what it loves most (Personality.js)
     const shifts = typeof describeTraitShifts === "function" ? describeTraitShifts(f) : null;
     if (shifts) about.push({ label: "Life made it", value: shifts });
+    const hurt = typeof describeInjuries === "function" ? describeInjuries(f) : null; // Injuries.js
+    if (hurt) about.push({ label: "Injuries", value: hurt[0], tone: hurt[1] });
     const scars = typeof describeScars === "function" ? describeScars(f) : null; // Scars.js
     if (scars) about.push({ label: "Scars", value: scars[0], tone: scars[1], tip: scars[2] });
     const role = typeof describeFamilyRole === "function" ? describeFamilyRole(f) : null; // Gossip.js
@@ -177,6 +183,10 @@ function getFluffyInspectionInfo(f) {
     if (elder) about.push({ label: "Elder", value: elder[0], tone: elder[1] });
     const incub = typeof describeIncubator === "function" ? describeIncubator(f) : null; // Premature.js
     if (incub) about.push({ label: "Incubator", value: incub[0], tone: incub[1] });
+    const atTrainer = typeof describeAutoTraining === "function" ? describeAutoTraining(f) : null; // AutoTrainer.js
+    if (atTrainer) about.push({ label: "Training", value: atTrainer, tone: "good" });
+    const mare = typeof describeMareRest === "function" ? describeMareRest(f) : null; // Pregnancy.js
+    if (mare) about.push({ label: "Resting", value: mare, tone: "ok" });
     const early = typeof describePremature === "function" ? describePremature(f) : null; // Premature.js
     if (early) about.push({ label: "Birth", value: early[0], tone: early[1] });
     const rule = typeof describeMatingRule === "function" ? describeMatingRule(f) : null; // MatingRule.js
@@ -383,8 +393,8 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Breeding", "Spayed"] },
-      { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Settling in", "Sells for"] },
+      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Resting", "Breeding", "Spayed"] },
+      { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Injuries", "Settling in", "Sells for"] },
     ],
   },
   {
@@ -400,14 +410,14 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Scars", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
     ],
   },
   {
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Title", "Changing", "Wishes for", "Loves most", "Tricks", "Drilled", "Lessons", "Conditioned", "Remembers", "Heard", "Old owner"] },
+      { title: "You and it", rows: ["Affection", "Title", "Changing", "Wishes for", "Loves most", "Tricks", "Training", "Drilled", "Lessons", "Conditioned", "Remembers", "Heard", "Old owner"] },
       { title: "Worries", rows: ["Trauma", "Alicorns"] },
     ],
   },
@@ -439,7 +449,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;
@@ -727,8 +737,7 @@ function handleInspectionModalClick() {
 
 // Pop-up screen list (Screens.js)
 registerScreen({
-  name: "inspection",
-  pauses: false, // (it happens in the room, live)
+  name: "inspection", // (pauses the game while you read, like the other screens)
   layer: 5,
   isOpen: () => typeof inspectedFluffy !== "undefined" && inspectedFluffy !== null,
   close: () => (inspectedFluffy = null),

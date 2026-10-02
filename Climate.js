@@ -60,7 +60,7 @@ const CLIMATE_WEIGHTS = {
   named: [0.5, 0, 0, 0],
   attacked: [0, 1.2, 0.2, 0],
   lesson: [0.2, 0, 0, 0], // (a kind lesson; strict ones are "drilled")
-  scolded: [0, 0.25, 0.05, 0], // (also a squirt of the spray bottle; a telling-off is a small thing)
+  scolded: [0, 0.12, 0.02, 0], // (also a squirt of the spray bottle; a telling-off is a small thing)
   drilled: [0, 0.2, 0.05, 0],
   wish_denied: [0, 0.8, 0, 0.3],
   harmed: [0, 0.6, 1.2, 0], // (only a fifth for those who just saw it; half for the stick as a lesson)
