@@ -38,7 +38,7 @@ const SETUP = `() => {
 
 module.exports = [
   {
-    name: "batch7: the flight perch - in the shop, saved; a pegasus near it goes over and hops, learning a little, then rests; an earthy doesn't; a skilled flyer that wants to leave flutters over the backyard fence",
+    name: "batch7: the wing perch - in the shop, saved; a pegasus near it goes over and hops and flaps, its wings a little stronger, then rests; an earthy doesn't; nobody flies off over the fence",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -87,12 +87,12 @@ module.exports = [
       }, SETUP);
       check(r.shop && r.saved && r.sellable, `in the shop, saved, sellable: ${JSON.stringify(r)}`);
       check(r.going && !r.earthyGoing, "a pegasus goes to practise, an earthy doesn't");
-      check(/Practising/.test(r.describe), `magnifying glass: ${r.describe}`);
-      check(Math.abs(r.skill - 4 * 0.012) < 1e-6, `four hops, a little each: ${r.skill}`);
+      check(/Practising flapping/.test(r.describe), `magnifying glass: ${r.describe}`);
+      check(Math.abs(r.skill - 4 * 0.01) < 1e-6, `four hops, a little each: ${r.skill}`);
       check(r.done && r.near, `then it rests: ${JSON.stringify(r)}`);
       checkEqual(r.hurt, 0, "never hurt");
-      check(r.flewOff, "a Rebel flyer flutters over the backyard fence");
-      check(r.happyStays, "a happy one stays");
+      checkEqual(r.flewOff, false, "nobody flies over the backyard fence (a pegasus can't really fly)");
+      check(r.happyStays, "the other stays too");
     },
   },
   {

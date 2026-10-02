@@ -340,78 +340,60 @@ module.exports = [
     },
   },
   {
-    name: "batch6: throwing teaches a pegasus to fly - it falls slower, then glides and lands on its feet unhurt, then flies by itself; an earthy doesn't",
+    name: "batch6: a pegasus can't fly, but its wings break a fall - it's hurt less than an earthy, more so as its wings get stronger with each throw; strong wings land it on its feet from a small fall; it never takes off by itself",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const out = {};
         const peg = __mk(300, { type: "pegasus" });
         const earthy = __mk(700);
-        // Thrown from 300px up, sideways: how long in the air, how hard it lands
-        const throwIt = (f) => {
+        // Thrown from (up) px up, sideways: how hard it lands
+        const throwIt = (f, up) => {
           f.health = 100;
+          f.currentStateKey = "IDLE";
           f.throwStartY = f.y;
-          f.y -= 300;
+          f.y -= up;
           f.throwFallVx = 200;
           f.throwFallVy = 0;
           f.isFallingFromThrow = true;
           let t = 0;
-          let maxVy = 0;
           while (f.isFallingFromThrow && t < 20) {
             f.physics.updateThrowFall(1 / 60);
-            maxVy = Math.max(maxVy, f.throwFallVy || 0);
             t += 1 / 60;
           }
           f.x = Math.min(Math.max(f.x, 200), 900);
-          return { t, maxVy, hurt: 100 - f.health, state: f.currentStateKey };
+          return { t: +t.toFixed(2), hurt: +(100 - f.health).toFixed(1), state: f.currentStateKey };
         };
-        out.first = throwIt(peg);
+        out.earthyHigh = throwIt(earthy, 300);
+        out.pegHigh = throwIt(peg, 300);
         out.skill1 = peg.flightSkill;
-        for (let i = 0; i < 4; i++) throwIt(peg);
-        out.skill5 = peg.flightSkill;
-        out.glide = throwIt(peg);
-        out.describeGlide = describeFlight(peg);
-        out.earthy = throwIt(earthy);
-        out.earthySkill = earthy.flightSkill || 0;
+        peg.flightSkill = 1;
+        out.strongHigh = throwIt(peg, 300);
+        out.earthyLow = throwIt(earthy, 100);
+        out.strongLow = throwIt(peg, 100);
+        out.describeStrong = describeFlight(peg);
         out.earthyDescribe = describeFlight(earthy);
-        // Flies by itself: heading far, it takes off and lands there lightly
-        peg.flightSkill = 0.9;
-        peg.x = 200;
-        peg.y = 500;
-        peg.currentStateKey = "IDLE";
-        out.solo = startSoloFlight(peg, 700, 560);
-        let t = 0;
-        while (peg.isFallingFromThrow && t < 10) {
-          peg.physics.updateThrowFall(1 / 60);
-          t += 1 / 60;
-        }
-        out.landed = { x: Math.round(peg.x), y: Math.round(peg.y), state: peg.currentStateKey, flight: peg._flight };
-        out.describeSolo = describeFlight(peg);
-        // No wings, no flying
-        peg.flightSkill = 0.9;
+        out.earthySkill = earthy.flightSkill || 0;
+        // It never flies
+        out.noFlying = typeof startSoloFlight === "undefined" && typeof glideSpeed === "undefined" && !SYSTEMS.some((x) => x.name === "flight");
+        // No wings
         const realWings = peg.hasBothWings;
         peg.hasBothWings = () => false;
-        out.noWings = startSoloFlight(peg, 100, 500);
-        out.noWingsDescribe = describeFlight(peg);
+        out.noWings = describeFlight(peg);
+        out.noWingsHigh = throwIt(peg, 300);
         peg.hasBothWings = realWings;
         return out;
       }, SETUP);
-      check(Math.abs(r.skill1 - 0.08) < 1e-9, `a throw teaches it a little: ${r.skill1}`);
-      check(r.first.state === "FLUFFY_KNOCKED_DOWN", `at first it lands in a heap: ${JSON.stringify(r.first)}`);
-      check(r.skill5 >= 0.39, `five throws: ${r.skill5}`);
-      check(r.glide.t > r.first.t * 1.15, `it falls slower now: ${r.first.t.toFixed(2)}s -> ${r.glide.t.toFixed(2)}s`);
-      check(r.glide.maxVy <= 480.01, `gliding: its fall is capped: ${r.glide.maxVy}`);
-      check(r.glide.hurt === 0 && r.glide.state !== "FLUFFY_KNOCKED_DOWN", `lands on its feet, unhurt: ${JSON.stringify(r.glide)}`);
-      check(/Glides/.test(r.describeGlide[0]), `magnifying glass: ${r.describeGlide}`);
-      checkEqual(r.earthySkill, 0, "an earthy learns nothing");
-      check(r.earthy.hurt > 0, `and still lands hard: ${JSON.stringify(r.earthy)}`);
-      checkEqual(r.earthyDescribe, null, "and has no flying line");
-      check(r.solo, "a skilled one takes off by itself");
-      check(Math.abs(r.landed.x - 700) < 25 && Math.abs(r.landed.y - 560) < 2, `and lands where it was going: ${JSON.stringify(r.landed)}`);
-      check(r.landed.state === "IDLE" && !r.landed.flight, `lightly: ${JSON.stringify(r.landed)}`);
-      check(/by itself/.test(r.describeSolo[0]), `magnifying glass: ${r.describeSolo}`);
-      checkEqual(r.noWings, false, "no wings, no flying");
-      check(/Can't fly/.test(r.noWingsDescribe[0]), `magnifying glass: ${r.noWingsDescribe}`);
+      check(r.pegHigh.hurt < r.earthyHigh.hurt && r.pegHigh.hurt > 0, `a high fall: a pegasus is hurt less than an earthy: ${JSON.stringify(r)}`);
+      check(Math.abs(r.skill1 - 0.05) < 1e-9, `each throw makes its wings a little stronger: ${r.skill1}`);
+      check(r.strongHigh.hurt < r.pegHigh.hurt / 1.5, `strong wings: hurt far less: ${JSON.stringify(r.strongHigh)}`);
+      check(r.earthyLow.hurt > 0 && r.earthyLow.state === "FLUFFY_KNOCKED_DOWN", `a small fall hurts an earthy: ${JSON.stringify(r.earthyLow)}`);
+      check(r.strongLow.hurt === 0 && r.strongLow.state === "IDLE", `strong wings: on its feet, unhurt: ${JSON.stringify(r.strongLow)}`);
+      check(/Very strong/.test(r.describeStrong[0]), `magnifying glass: ${r.describeStrong}`);
+      checkEqual(r.earthyDescribe, null, "an earthy has no wings line");
+      checkEqual(r.earthySkill, 0, "and nothing to build up");
+      check(r.noFlying, "nothing takes off or glides");
+      check(/Can't flap/.test(r.noWings[0]) && r.noWingsHigh.hurt >= r.earthyHigh.hurt - 0.5, `no wings: no help: ${JSON.stringify(r)}`);
     },
   },
   {
@@ -476,7 +458,7 @@ module.exports = [
     },
   },
   {
-    name: "batch6: a foal that outgrows the incubator climbs out; a fluffy caught by hand in mid-air (thrown or flying) is held, not still falling",
+    name: "batch6: a foal that outgrows the incubator climbs out; a fluffy caught by hand in mid-air (thrown or hopping) is held, not still falling",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -498,11 +480,11 @@ module.exports = [
         out.fallingAfterGrab = peg.physics.updateThrowFall(1 / 60);
         out.cleared = !peg.isFallingFromThrow && peg.throwStartY === null && !peg._flight;
         peg.isDragging = false;
-        // Flying by itself, then caught
-        peg.flightSkill = 0.9;
+        // A flutter hop, then caught
         peg.y = 500;
         peg.currentStateKey = "IDLE";
-        out.solo = startSoloFlight(peg, 1000, 520);
+        perchHop(peg, null);
+        out.solo = peg.isFallingFromThrow;
         peg.physics.updateThrowFall(1 / 60);
         peg.isDragging = true;
         peg.physics.updateThrowFall(1 / 60);
@@ -513,7 +495,7 @@ module.exports = [
       check(r.in && r.out, `outgrown: put out beside it: ${JSON.stringify(r)}`);
       checkEqual(r.fallingAfterGrab, false, "caught: no longer falling");
       check(r.cleared, "and its throw is over");
-      check(r.solo && r.soloCleared, `caught mid-flight too: ${JSON.stringify(r)}`);
+      check(r.solo && r.soloCleared, `caught mid-hop too: ${JSON.stringify(r)}`);
     },
   },
 ];

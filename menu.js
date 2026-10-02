@@ -142,6 +142,15 @@ function drawTitleScreen() {
   const loadBtnY = btnY + btnH + 20;
   drawGlassButton(btnX, loadBtnY, btnW, btnH, "Load");
 
+  // Pick up where you left off (Autosave.js)
+  const cont = typeof lastSaveInfo === "function" ? lastSaveInfo() : null;
+  if (cont) {
+    const r = titleContinueRect();
+    drawGlassButton(r.x, r.y, r.w, r.h, cont.day ? `Continue (day ${cont.day})` : "Continue", {
+      normalFill: "rgba(255, 170, 220, 0.3)",
+    });
+  }
+
   // Buy Me a Coffee button (bottom-left)
   const bmacImg = images["bmac"];
   if (bmacImg && bmacImg.complete && bmacImg.naturalWidth > 0) {
@@ -1290,6 +1299,16 @@ function handlePauseMenuClick() {
   }
 }
 
+// The Continue button: under Load, or beside it on a short screen (a phone)
+function titleContinueRect() {
+  const btnW = 200;
+  const btnH = 60;
+  const btnX = width / 2 - btnW / 2;
+  const loadBtnY = height * 0.6 + btnH + 20;
+  if (height < 700) return { x: btnX + btnW + 20, y: loadBtnY, w: btnW + 60, h: btnH };
+  return { x: btnX - 30, y: loadBtnY + btnH + 20, w: btnW + 60, h: btnH };
+}
+
 function handleTitleScreenClick() {
   if (typeof transitionPhase !== "undefined" && transitionPhase !== "OFF")
     return;
@@ -1322,6 +1341,12 @@ function handleTitleScreenClick() {
   } else if (isPointInRect(mouse.x, mouse.y, btnX, loadBtnY, btnW, btnH)) {
     refreshSaveList();
     showSaveList = true;
+  } else if (
+    typeof lastSaveInfo === "function" &&
+    lastSaveInfo() &&
+    isPointInRect(mouse.x, mouse.y, titleContinueRect().x, titleContinueRect().y, titleContinueRect().w, titleContinueRect().h)
+  ) {
+    continueLastGame(); // (Autosave.js)
   } else {
     // Buy Me a Coffee button
     const bmacImg = images["bmac"];

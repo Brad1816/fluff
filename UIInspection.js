@@ -166,9 +166,15 @@ function getFluffyInspectionInfo(f) {
     const rec = typeof describeRecovery === "function" ? describeRecovery(f) : null; // Recovery.js
     if (rec) about.push({ label: "Surgery", value: rec[0], tone: rec[1] });
     const flight = typeof describeFlight === "function" ? describeFlight(f) : null; // Flight.js
-    if (flight) about.push({ label: "Flying", value: flight[0], tone: flight[1] });
+    if (flight) about.push({ label: "Wings", value: flight[0], tone: flight[1] });
     const foster = typeof describeFoster === "function" ? describeFoster(f) : null; // Fostering.js
     if (foster) about.push({ label: "Foster mum", value: foster[0], tone: foster[1] });
+    const mourn = typeof describeMourning === "function" ? describeMourning(f) : null; // MemorialTree.js
+    if (mourn) about.push({ label: "Mourning", value: mourn[0], tone: mourn[1] });
+    const plush = typeof describePlushie === "function" ? describePlushie(f) : null; // Plushie.js
+    if (plush) about.push({ label: "Comfort toy", value: plush[0], tone: plush[1] });
+    const elder = typeof describeElder === "function" ? describeElder(f) : null; // Elders.js
+    if (elder) about.push({ label: "Elder", value: elder[0], tone: elder[1] });
     const incub = typeof describeIncubator === "function" ? describeIncubator(f) : null; // Premature.js
     if (incub) about.push({ label: "Incubator", value: incub[0], tone: incub[1] });
     const early = typeof describePremature === "function" ? describePremature(f) : null; // Premature.js
@@ -394,7 +400,7 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Scars", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Flying", "Growing up"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
     ],
   },
   {
@@ -433,7 +439,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Flying"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;

@@ -1898,12 +1898,22 @@ const DIALOGUE = {
   INFECTION: {
     DEFAULT: ["Owwie am hot... an' huwtie...", "<Speaker> nu feew gud... aww shivewy...", "Huu huu... owwie smeww bad...", "Wan sweepies... too hot..."],
   },
-  // A pegasus learning to fly from being thrown (Flight.js)
+  // A pegasus's wings getting stronger (Flight.js, Perch.js)
   FLIGHT: {
-    GLIDE: ["Wingies wowk!! <Speaker> nu faww, <speaker> fwoat!", "Wook!! <Speaker> am fwyin' wike biwdie!", "Fwap fwap fwap... soft wandies!"],
-    SOLO: ["<Speaker> am weaw sky-fwuffy nao!!", "Nu nee' daddeh fwow, <speaker> fwy aww by sewf!", "Wingies am stwong! <Speaker> go up up up!"],
-    FLYING: ["Wheeee!! Fwyin'!!", "Up in da sky!!", "Fwap fwap fwap!!", "<Speaker> fwy dewe!"],
-    PRACTICE: ["Fwap fwap! <Speaker> pwactice fwyin'!", "Up! Up! Wingies, go up!", "Hop an' fwap! Hop an' fwap!", "One day <speaker> fwy wike biwdie!"],
+    GLIDE: ["Wingies get stwong! Fwap fwap - soft wandies!", "<Speaker> fwap an' wand on hoofsies!", "Wook! Wingies make faww nu huwt!"],
+    SOLO: ["<Speaker> hab bestest stwong wingies!", "Wingies so stwong! Fwuttew fwuttew!", "<Speaker> nu scawed of fawwies nao!"],
+    PRACTICE: ["Fwap fwap! <Speaker> make wingies stwong!", "Hop an' fwap! Hop an' fwap!", "Wittwe fwuttew! Wingies wowk!", "Fwap fwap... huff... wingies tiwed."],
+  },
+  // Missing one who died, and the memorial tree (MemorialTree.js)
+  MEMORIAL: {
+    MISSING: ["<Speaker> miss <Name>...", "Whewe <Name> go? ...nu come back...", "*sniff* <Name> was bestest...", "Wan see <Name> again..."],
+    VISIT: ["<Name>'s name am hewe. <Speaker> nu fowget.", "Hewwo <Name>... <speaker> come visit.", "*sits quietly by the tree*", "<Name> wiv in twee nao. Dat nice."],
+  },
+  // A comfort plushie (Plushie.js)
+  PLUSHIE: {
+    HUG: ["Pwushie! <Speaker>'s bestest fwen!", "*hugs plushie tight*", "Pwushie make scawy go 'way."],
+    MISS: ["Whewe pwushie? <Speaker> nee' pwushie!", "Pwushie gone... huu huu...", "Wan pwushie! Pwease!"],
+    BACK: ["PWUSHIE!! Pwushie back!!", "*squeezes plushie and won't let go*", "Nebah weave <speaker> again, pwushie!"],
   },
   // Facing a fear (FearExposure.js)
   FACE_FEAR: {

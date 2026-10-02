@@ -724,6 +724,9 @@ async function loadGame(slotName) {
   // Fluffy Park food (saves from before the park had any)
   if (typeof setupParkLife === "function") setupParkLife(false);
 
+  // Autosave counts from here (Autosave.js), and Continue offers this one
+  if (typeof resetAutosaveClock === "function") resetAutosaveClock();
+  if (typeof noteLastSave === "function") noteLastSave(slotName);
   console.log("Game loaded successfully!");
 }
 
@@ -785,6 +788,8 @@ async function saveGame(slotName) {
   const saveData = buildSaveData(screenshot);
 
   await saveManager.save(slotName, saveData);
+  // Continue on the title screen picks up from here (Autosave.js)
+  if (typeof noteLastSave === "function") noteLastSave(slotName);
 
   if (typeof savePreviewCache !== "undefined" && savePreviewCache) {
     let img = null;

@@ -1281,9 +1281,11 @@ class Horse {
   // in proportion to the speed. Returns the damage.
   handleThrowImpact(speed) {
     if (typeof speed !== "number" || isNaN(speed)) return;
-    if (speed < THROW_IMPACT_MIN_SPEED) return;
+    // A pegasus's wings break the fall (Flight.js): it takes a harder landing to hurt it, and hurts less
+    const minSpeed = typeof wingImpactThreshold === "function" ? wingImpactThreshold(this, THROW_IMPACT_MIN_SPEED) : THROW_IMPACT_MIN_SPEED;
+    if (speed < minSpeed) return;
 
-    const damage = speed * THROW_IMPACT_DAMAGE_FACTOR;
+    const damage = speed * THROW_IMPACT_DAMAGE_FACTOR * (typeof wingDamageFactor === "function" ? wingDamageFactor(this) : 1);
     this.health = Math.max(0, this.health - damage);
 
     const vol = Math.min(1.0, Math.max(0.4, speed / 1500));

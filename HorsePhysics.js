@@ -367,19 +367,17 @@ class HorsePhysics {
       return false;
     }
     if (h.isFallingFromThrow) {
-      // A pegasus that's learnt to fly flaps: falls slower, glides (Flight.js)
-      const flying = !!h._flight;
+      // A pegasus flaps: it falls a little slower (Flight.js)
+      const flying = !!h._flight; // (a flutter hop on the perch: Perch.js)
       const gravity = typeof flightGravity === "function" && (flying || (h.throwFallVy || 0) > 0) ? flightGravity(h, 1500) : 1500;
       h.throwFallVy = (h.throwFallVy || 0) + gravity * dt;
-      if (!flying && typeof glideSpeed === "function") h.throwFallVy = Math.min(h.throwFallVy, glideSpeed(h));
       h.y += h.throwFallVy * dt;
       h.x += (h.throwFallVx || 0) * dt;
       if (flying && typeof updateFlightShadow === "function") updateFlightShadow(h);
 
-      // Air resistance damping for horizontal movement (less for a flyer; none flying by itself)
+      // Air resistance damping for horizontal movement
       if (h.throwFallVx) {
-        const skill = typeof flightSkillOf === "function" ? flightSkillOf(h) : 0;
-        if (!flying) h.throwFallVx *= Math.exp(-0.4 * (1 - 0.6 * skill) * dt);
+        if (!flying) h.throwFallVx *= Math.exp(-0.4 * dt);
         if (h.throwFallVx > 10) h.facingRight = true;
         else if (h.throwFallVx < -10) h.facingRight = false;
       }
@@ -426,7 +424,6 @@ class HorsePhysics {
         h.y >= h.throwStartY &&
         h.throwFallVy >= 0
       ) {
-        // (one that glides runs out its forward speed: Flight.js)
         const impactSpeed =
           typeof landingSpeed === "function"
             ? landingSpeed(h, h.throwFallVx || 0, h.throwFallVy || 0)
@@ -440,12 +437,12 @@ class HorsePhysics {
         h.throwStartY = null;
         h.throwShadowY = null;
         if (h._flight) {
-          // Flew there by itself: lands lightly (Flight.js)
+          // A flutter hop: lands lightly (Perch.js)
           h._flight = null;
           if (h.isAlive) h.initBehavior("IDLE");
         } else {
-          // Thrown: a pegasus learns a little each time (Flight.js), and one
-          // that's learnt lands on its feet
+          // Thrown: a pegasus's wings get a little stronger each time
+          // (Flight.js), and strong ones land it on its feet
           const onFeet = typeof landsOnItsFeet === "function" && landsOnItsFeet(h, impactSpeed);
           if (typeof learnFlight === "function") learnFlight(h);
           h.handleThrowImpact(impactSpeed);

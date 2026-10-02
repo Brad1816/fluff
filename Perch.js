@@ -1,30 +1,25 @@
 // ---------------------------------------------------------------------------
-// Flying lessons the gentle way: the perch (Fluff Mart, Home & Play, $90).
+// Wing practice, the gentle way: the perch (Fluff Mart, Home & Play, $90).
 //
 // A pegasus or alicorn with both wings (Flight.js canFly) that's awake, well
 // and not busy, near a perch in its room, now and then goes over to it and
-// practises: PERCH_HOPS little hops up, flapping, each teaching it a little
-// (PERCH_LEARN - throwing teaches far more: FLIGHT_LEARN). It's fun - less
-// bored, a little happier - and nothing to be scared of. Then it rests a
-// while (PERCH_REST) before it goes again. It can learn all the way to
-// flying by itself this way, just slowly.
-//
-// A good flyer is something to watch, though: one that's had enough of you
-// (Runaways.js runAwayChance - a Rebel, or frightened and miserable) and is
-// out in the backyard may simply flutter over the fence (FENCE_FLY_CHANCE an
-// hour) and be gone to the park.
+// practises: PERCH_HOPS little flutter-hops, flapping hard (it can't really
+// fly - a hop is all it manages), each making its wings a little stronger
+// (PERCH_LEARN; being thrown builds them faster, FLIGHT_LEARN, but hurts).
+// Stronger wings break its falls better (Flight.js). It's fun - less bored,
+// a little happier - and nothing to be scared of. Then it rests a while
+// (PERCH_REST) before it goes again.
 // The perch is drawn here (drawPerchShape).
 // ---------------------------------------------------------------------------
 
 const PERCH_PRICE = 90;
 const PERCH_NEAR = 450; // px: a perch this close in its room is worth going to
 const PERCH_REACH = 50; // px: close enough to hop
-const PERCH_LEARN = 0.012; // skill a hop
+const PERCH_LEARN = 0.01; // wing strength a hop
 const PERCH_HOPS = 4;
 const PERCH_REST = 3; // game hours between goes
 const PERCH_CHANCE = 0.25; // a game hour, of going over (each fluffy)
 const PERCH_GIVE_UP = 40; // game seconds to get there
-const FENCE_FLY_CHANCE = 0.15; // a game hour, for one that wants to leave
 const perchTicker = new Ticker(2);
 
 function _pcNow() {
@@ -131,10 +126,10 @@ function _perchById(id) {
   return typeof objects !== "undefined" ? objects.find((o) => o instanceof Perch && o.id === id) : null;
 }
 
-// One hop up off the floor, flapping (lands lightly, Flight.js _flight)
+// One little hop up off the floor, flapping hard (lands lightly, Flight.js _flight)
 function perchHop(f, perch) {
   const g = typeof flightGravity === "function" ? flightGravity(f, 1500) : 1500;
-  const up = 70 + 30 * (f.flightSkill || 0);
+  const up = 30 + 25 * (f.flightSkill || 0); // (a hop and a flutter: it can't really fly)
   f.throwStartY = f.y;
   f.throwFallVy = -Math.sqrt(2 * g * up);
   f.throwFallVx = perch ? Math.sign(perch.x - f.x) * 20 : 0;
@@ -209,23 +204,14 @@ function updatePerches(dt) {
       f._perch = { id: near[0].id, at: now, hops: PERCH_HOPS, wait: 0 };
     }
   }
-  // Over the backyard fence: a good flyer that wants to leave
-  const hourly = 1 - Math.pow(1 - FENCE_FLY_CHANCE, step / HOUR_LENGTH);
-  for (const f of fluffies) {
-    if (!f.isAlive || !f.adopted || f.scene !== "BACKYARD" || (f.flightSkill || 0) < FLIGHT_SOLO || !canFly(f)) continue;
-    if (f.currentStateKey === "SLEEPING" || f.isDragging || f.currentCage || f.placedOn || f.isFallingFromThrow) continue;
-    if (!(typeof runAwayChance === "function" && runAwayChance(f) > 0)) continue;
-    if (Math.random() > hourly) continue;
-    if (typeof runAway === "function") runAway(f, "flew over the backyard fence");
-  }
 }
 registerSystem("perches", updatePerches, 69);
 
 // ---- In the shop and the save ----
 if (typeof SPAWN_ACTIONS !== "undefined") {
   SPAWN_ACTIONS.push({
-    name: "Flight perch",
-    desc: "A perch for pegasi and alicorns to practise on. They go over by themselves now and then and hop and flap: they learn to fly slowly, but it's fun and nothing to be afraid of (throwing them teaches faster).",
+    name: "Wing perch",
+    desc: "A perch for pegasi and alicorns to practise flapping on. They go over by themselves now and then to hop and flutter: their wings get stronger, so falls hurt them less. Slower than throwing them, but fun and nothing to be afraid of.",
     cost: PERCH_PRICE,
     isItem: "perch",
   });

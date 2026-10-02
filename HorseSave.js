@@ -45,7 +45,8 @@ const SAVED_HORSE_FIELDS = [
   { name: "incubatorAlone", fallback: 0 }, // game seconds in the incubator since mum came (Premature.js)
   { name: "recovery", fallback: null, clone: true }, // after surgery (Recovery.js)
   { name: "infection", fallback: null, clone: true },
-  { name: "flightSkill", fallback: 0 }, // learnt from being thrown (Flight.js)
+  { name: "flightSkill", fallback: 0 }, // wing strength (Flight.js)
+  { name: "mourning", fallback: null, clone: true }, // missing one who died (MemorialTree.js)
   { name: "lostFoalAt", fallback: null }, // when she last lost a foal (Fostering.js)
   { name: "fosterMumId", fallback: null }, // the wild mare who took it in
   { name: "litterSize", fallback: null },

@@ -39,7 +39,8 @@
 //   - Comfort it while it's frightened: pick it up or brush it
 //     (onComfortedByYou, from Memory.js). The fright stops, it's happier, and
 //     the fear shrinks (FEAR_COMFORT).
-//   - A mum or friend next to it calms it twice as fast.
+//   - A mum or friend next to it calms it twice as fast (a foal: an old
+//     fluffy too, Elders.js).
 //   - Left to cry it out alone, the fear grows a little (FEAR_WORSEN).
 //   - The "Brave" lesson (Lessons.js) shrinks every fear a bit.
 //   - Foals pick up the fears of whoever raises them (Upbringing.js).
@@ -140,6 +141,8 @@ function _fSay(f, key) {
 // Something scary happened. True if it got frightened.
 function startFright(f, key) {
   if (!f || !f.isAlive || f.isDragging) return false;
+  // Its plushie's here: often it's not so scary after all (Plushie.js)
+  if (typeof plushieSoothes === "function" && plushieSoothes(f)) return false;
   // (a Fearful room makes it worse, Climate.js)
   // (...and so does remembering the last storm, SharedMemories.js)
   const fear = Math.min(
@@ -182,15 +185,18 @@ function frightComforter(f) {
   for (const o of fluffies) {
     if (o === f || !o.isAlive || o.scene !== f.scene || o.growth < 1) continue;
     const isMum = o.id === f.motherId;
-    if (!isMum && !close.includes(rels[o.id])) continue;
+    // (a frightened foal runs to a wise old fluffy too: Elders.js)
+    const elder = f.growth < 1 && typeof isWiseElder === "function" && isWiseElder(o);
+    if (!isMum && !elder && !close.includes(rels[o.id])) continue;
     if (isFrightened(o)) continue; // not much help
-    const d = Math.hypot(o.x - f.x, o.y - f.y) - (isMum ? 400 : 0); // mum first
+    const d = Math.hypot(o.x - f.x, o.y - f.y) - (isMum ? 400 : elder ? 150 : 0); // mum first, then an elder
     if (d < bd) {
       bd = d;
       best = o;
     }
   }
-  return best;
+  // Nobody to run to: its plushie, if it's in the room (Plushie.js)
+  return best || (typeof plushieComforter === "function" ? plushieComforter(f) : null);
 }
 
 // You picked it up or brushed it. True if it was frightened (and now isn't).
@@ -405,7 +411,7 @@ class FrightDesire extends Desire {
         h.currentStateKey = "RUNNING";
         if (!h._frightRanSaid) {
           h._frightRanSaid = true;
-          _fSay(h, buddy.id === h.motherId ? "MUM" : "FRIEND");
+          _fSay(h, buddy instanceof Horse && buddy.id === h.motherId ? "MUM" : "FRIEND");
         }
       }
       return true;
