@@ -133,9 +133,10 @@ function _lvGrab(f) {
     const src = typeof _renderBuffer !== "undefined" && _renderBuffer ? _renderBuffer : typeof canvas !== "undefined" ? canvas : null;
     if (!src) return null;
     const cam = typeof isCameraScene === "function" && isCameraScene(f.scene) && typeof camera !== "undefined" ? camera : { x: 0, y: 0 };
-    const size = 200 * Math.max(0.6, f.scale || 1);
-    const sx = Math.max(0, Math.min(src.width - size, f.x - cam.x - size / 2));
-    const sy = Math.max(0, Math.min(src.height - size, f.y - cam.y - size * 0.7));
+    const R = typeof width === "number" && width > 0 ? src.width / width : 1; // (drawn sharper on a phone)
+    const size = 200 * Math.max(0.6, f.scale || 1) * R;
+    const sx = Math.max(0, Math.min(src.width - size, (f.x - cam.x) * R - size / 2));
+    const sy = Math.max(0, Math.min(src.height - size, (f.y - cam.y) * R - size * 0.7));
     const c = document.createElement("canvas");
     c.width = PHOTO_SIZE;
     c.height = PHOTO_SIZE;

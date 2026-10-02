@@ -801,6 +801,30 @@ const HELP_TOPICS = [
       "  the mouse wheel scrolls the list or turns the page.",
     ],
   },
+  {
+    title: "Playing on a phone",
+    lines: [
+      "- Hold your phone sideways. Tap for a click.",
+      "- Drag to pick something up and carry it; let go to put it down.",
+      "  Or tap it, then tap where it should go.",
+      "- Press and hold (a ring grows) for a right-click: training a",
+      "  fluffy, cage modes, feeder settings, turning things on and off.",
+      "  Hold a tool in the toolbox to put it on the number row (hold a",
+      "  slot to empty it).",
+      "- Swipe up and down over the chat log, the save list or this help",
+      "  to scroll; two fingers zoom the relationship map.",
+      "- The round buttons on the right: \u2630 / \u2715 is Esc (close a",
+      "  window, put a tool away, pause menu); $ is sell mode (tap a",
+      "  fluffy or thing twice to sell it, tap $ again to stop); \u21BB turns",
+      "  the fence piece you're holding; \u22EF has the rest (the map,",
+      "  accounts, name tags, herds, bed labels, full screen, and faster",
+      "  drawing for a slow phone).",
+      "- Naming a fluffy: tap its name box and type.",
+      "- Full screen: Android goes full screen on your first tap. On an",
+      "  iPhone, tap Share, then Add to Home Screen, and open it from",
+      "  there.",
+    ],
+  },
 ];
 
 let helpOpen = false;

@@ -272,13 +272,18 @@ function isGoalsOpen() {
 }
 
 function getGoalsLayout() {
-  const w = 680;
-  // Rows squeeze up a little on short windows so every goal fits
-  const rowH = Math.max(22, Math.min(27, Math.floor((height - 16 - 170) / GOALS.length)));
-  const h = 110 + GOALS.length * rowH + 60;
+  // Rows squeeze up a little on short windows so every goal fits; too
+  // short even then (a phone), and they go in two columns
+  const fits = Math.floor((height - 16 - 170) / GOALS.length) >= 22;
+  const cols = fits ? 1 : 2;
+  const perCol = Math.ceil(GOALS.length / cols);
+  const colW = 680 - 30;
+  const w = cols === 1 ? 680 : Math.min(width - 20, 30 + cols * colW);
+  const rowH = Math.max(22, Math.min(27, Math.floor((height - 16 - 170) / perCol)));
+  const h = 110 + perCol * rowH + 60;
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(Math.max(8, height / 2 - h / 2));
-  return { x, y, w, h, rowH, close: { x: x + w / 2 - 70, y: y + h - 50, w: 140, h: 36 } };
+  return { x, y, w, h, rowH, cols, perCol, colW: cols === 1 ? w : (w - 30) / cols, close: { x: x + w / 2 - 70, y: y + h - 50, w: 140, h: 36 } };
 }
 
 function drawGoals(c) {
@@ -301,27 +306,29 @@ function drawGoals(c) {
     L.y + 64,
   );
 
-  let y = L.y + 100;
-  for (const g of GOALS) {
+  GOALS.forEach((g, gi) => {
+    const col = Math.floor(gi / L.perCol);
+    const y = L.y + 100 + (gi % L.perCol) * L.rowH;
+    const cx = L.x + col * L.colW; // (this column's left; its right is cx + colW + 30 in one column)
+    const cr = L.cols === 1 ? L.x + L.w : cx + L.colW + 15;
     const done = isGoalDone(g.id);
     c.textAlign = "left";
     c.font = "bold 16px Arial";
     c.fillStyle = done ? "#9fe0a8" : "rgba(255,255,255,0.35)";
-    c.fillText(done ? "✓" : "○", L.x + 28, y);
+    c.fillText(done ? "✓" : "○", cx + 28, y);
     c.font = "15px Arial";
     c.fillStyle = done ? "rgba(255,255,255,0.55)" : "white";
-    c.fillText(g.text, L.x + 54, y);
+    c.fillText(g.text, cx + 54, y);
     c.textAlign = "right";
     if (!done && g.progress) {
       c.fillStyle = "rgba(255,255,255,0.6)";
       c.font = "13px Arial";
-      c.fillText(g.progress(goalsState.stats), L.x + L.w - 110, y);
+      c.fillText(g.progress(goalsState.stats), cr - 110, y);
     }
     c.font = "bold 15px Arial";
     c.fillStyle = done ? "rgba(159,224,168,0.6)" : "#f7d774";
-    c.fillText(`$${g.reward.toLocaleString()}`, L.x + L.w - 28, y);
-    y += L.rowH;
-  }
+    c.fillText(`$${g.reward.toLocaleString()}`, cr - 28, y);
+  });
   if (typeof drawGlassButton === "function")
     drawGlassButton(L.close.x, L.close.y, L.close.w, L.close.h, "Close", { fontSize: 16, borderRadius: 10 });
   c.restore();

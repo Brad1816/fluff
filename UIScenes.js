@@ -563,7 +563,8 @@ function houseNavChips(scene = currentScene) {
   if (!portals.length) return [];
   const wallBottom = typeof sceneTop === "function" ? sceneTop(scene) : height * 0.15;
   const h = 24;
-  const y = Math.max(4, wallBottom - h - 8);
+  // (below the top bar's buttons, which end at y 80, on a short screen)
+  const y = Math.max(86, wallBottom - h - 8);
   const c = ctx;
   c.save();
   c.font = "bold 12px Arial";

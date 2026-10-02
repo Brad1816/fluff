@@ -127,6 +127,9 @@ function sellModeClick() {
     }
   }
 
+  // On a phone: tap once to see the price, again to sell (Touch.js)
+  if (bestItem && typeof touchSellConfirm === "function" && !touchSellConfirm(bestItem)) return true;
+
   if (bestItem) {
     if (bestType === "fluffy") {
       const accKeys = Object.keys(bestItem.accessories || {});

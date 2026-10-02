@@ -596,6 +596,11 @@ function toolboxAndToolbarClick() {
           if (typeof takeFromShoppingBag === "function") takeFromShoppingBag(item.name);
           return true;
         }
+        // Right-click (a long press on a phone): onto the number row, or off it
+        if (mouse.rightDown && typeof toolbarSlots !== "undefined") {
+          toggleToolOnToolbar(item.tool || item);
+          return true;
+        }
         if (typeof swapOrEquipTool === "function") {
           swapOrEquipTool(item.tool || item);
         } else {
@@ -617,6 +622,11 @@ function toolboxAndToolbarClick() {
       const slot = toolbarSlots[i];
       const x = startX + i * (slotSize + slotGap);
       if (isPointInRect(mouse.x, mouse.y, x, toolbarBoxY, slotSize, slotSize)) {
+        // Right-click (long press): empty the slot
+        if (mouse.rightDown) {
+          slot.tool = null;
+          return true;
+        }
         if (slot.tool) {
           if (typeof swapOrEquipTool === "function") {
             swapOrEquipTool(slot.tool);
@@ -630,6 +640,24 @@ function toolboxAndToolbarClick() {
   }
 
   return false;
+}
+
+// A tool onto the number row (the first empty slot), or off it if it's
+// there already. (A computer can also hover it and press a number.)
+function toggleToolOnToolbar(tool) {
+  if (!tool || typeof toolbarSlots === "undefined") return false;
+  const at = toolbarSlots.find((s) => s.tool === tool);
+  if (at) {
+    at.tool = null;
+    return true;
+  }
+  const free = toolbarSlots.find((s) => !s.tool);
+  if (!free) {
+    if (typeof addUIMessage === "function") addUIMessage(`The number row is full - ${typeof touchMode !== "undefined" && touchMode ? "long-press" : "right-click"} a slot to empty it.`);
+    return false;
+  }
+  free.tool = tool;
+  return true;
 }
 
 // ---------------------------------------------------------------------------

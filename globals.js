@@ -163,21 +163,69 @@ function isIndoorScene(sceneName) {
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
+// Phones and tablets (Touch.js): played with a finger, not a mouse.
+// ?mobile=1 / ?mobile=0 in the address forces it on or off.
+const touchMode = (() => {
+  try {
+    const q = new URLSearchParams(window.location.search).get("mobile");
+    if (q === "1") return true;
+    if (q === "0") return false;
+    return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 0);
+  } catch (e) {
+    return false;
+  }
+})();
+
+// The game's own size (fixed once it starts: everything is laid out in it).
+// A computer: the window. A phone: always sideways (long side across), and
+// at least TOUCH_MIN_H tall so every screen fits - the picture is then
+// scaled down to fit the phone (resize), drawn sharp (renderScale).
+const TOUCH_MIN_H = 600;
+const TOUCH_MAX_ASPECT = 2.4;
+const TOUCH_GUTTER = 58; // css px down the right for the touch buttons (Touch.js)
+function gameLogicalSize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (!touchMode) return { w, h };
+  let long = Math.max(w, h);
+  let short = Math.min(w, h);
+  // Held upright at the start: use the screen's shape, as it'll be turned
+  if (h > w && typeof screen !== "undefined" && screen.width && screen.height) {
+    long = Math.max(screen.width, screen.height);
+    short = Math.min(screen.width, screen.height);
+  }
+  long -= TOUCH_GUTTER;
+  long = Math.min(long, short * TOUCH_MAX_ASPECT);
+  const k = short < TOUCH_MIN_H ? TOUCH_MIN_H / short : 1;
+  return { w: Math.round(long * k), h: Math.round(short * k) };
+}
+
 // Capture Game Resolution at startup (Fixed Logical Resolution)
-const width = window.innerWidth;
-const height = window.innerHeight;
+const _logical = gameLogicalSize();
+const width = _logical.w;
+const height = _logical.h;
 
 canvas.width = width;
 canvas.height = height;
 
 // Scaling State
 let scale = 1;
+// Canvas pixels per game pixel: more on a phone's sharp screen (script.js
+// render draws at this scale), 1 on a computer
+let renderScale = 1;
+const RENDER_MAX_PIXELS = 2400000;
+// "Faster drawing" (the More button on a phone, Touch.js): game pixels only
+let touchLowRes = false;
+try {
+  touchLowRes = typeof localStorage !== "undefined" && localStorage.getItem("fluffyLowRes") === "1";
+} catch (e) {}
 let offsetX = 0;
 let offsetY = 0;
 const doorRect = { x: 0, y: 0, w: 200, h: 0 };
 
 function resize() {
-  const winW = window.innerWidth;
+  // (a phone keeps a strip on the right for the touch buttons)
+  const winW = window.innerWidth - (touchMode ? TOUCH_GUTTER : 0);
   const winH = window.innerHeight;
 
   // Maintain aspect ratio
@@ -191,6 +239,18 @@ function resize() {
 
   offsetX = (winW - newCanvasW) / 2;
   offsetY = (winH - newCanvasH) / 2;
+
+  // Sharp on a phone: as many canvas pixels as the screen shows (at most 2x)
+  if (touchMode) {
+    const dpr = window.devicePixelRatio || 1;
+    let r = touchLowRes ? 1 : Math.min(2, scale * dpr, Math.sqrt(RENDER_MAX_PIXELS / (width * height)));
+    r = Math.max(1, Math.round(r * 4) / 4);
+    if (r !== renderScale || canvas.width !== Math.round(width * r)) {
+      renderScale = r;
+      canvas.width = Math.round(width * r);
+      canvas.height = Math.round(height * r);
+    }
+  }
 
   canvas.style.width = `${newCanvasW}px`;
   canvas.style.height = `${newCanvasH}px`;

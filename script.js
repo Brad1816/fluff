@@ -1542,6 +1542,8 @@ let _renderBuffer = null;
 let _renderBufferCtx = null;
 
 function render() {
+  // (drawn at renderScale: sharp on a phone - globals.js resize)
+  ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
   if (gameState === "TITLE") {
@@ -1558,13 +1560,15 @@ function render() {
 
   // The offscreen buffer we draw into, reused every frame (a new one each
   // frame was slow), remade only when the window size changes
-  if (!_renderBuffer || _renderBuffer.width !== width || _renderBuffer.height !== height) {
-    _renderBuffer = new OffscreenCanvas(width, height);
+  const bufW = Math.round(width * renderScale);
+  const bufH = Math.round(height * renderScale);
+  if (!_renderBuffer || _renderBuffer.width !== bufW || _renderBuffer.height !== bufH) {
+    _renderBuffer = new OffscreenCanvas(bufW, bufH);
     _renderBufferCtx = _renderBuffer.getContext("2d");
   }
   const offScreenCanvas = _renderBuffer;
   const osCtx = _renderBufferCtx;
-  osCtx.setTransform(1, 0, 0, 1, 0, 0);
+  osCtx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
   osCtx.globalAlpha = 1;
   osCtx.clearRect(0, 0, width, height);
 
@@ -1832,7 +1836,7 @@ function render() {
   }
 
   // Final blit to main canvas
-  ctx.drawImage(offScreenCanvas, 0, 0);
+  ctx.drawImage(offScreenCanvas, 0, 0, width, height);
 
   drawPortals();
   // House rooms: where WASD / the arrow keys go (UIScenes.js)

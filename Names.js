@@ -433,7 +433,11 @@ function handleNamingClick() {
   else if (hit(L.skip)) skipNamingPopup();
   else {
     L.rows.forEach((row, i) => {
-      if (hit(row.box)) namingPopup.focus = i;
+      if (hit(row.box)) {
+        namingPopup.focus = i;
+        // A phone has no keyboard until it's asked for (Touch.js)
+        if (typeof touchMode !== "undefined" && touchMode) askNameByPhone(i);
+      }
       // Dice: a random name nobody else has
       if (row.dice && hit(row.dice)) {
         namingPopup.focus = i;
@@ -441,6 +445,16 @@ function handleNamingClick() {
       }
     });
   }
+  return true;
+}
+
+// On a phone: the phone's own keyboard, in a little box
+function askNameByPhone(i) {
+  const p = namingPopup;
+  if (!p || typeof prompt !== "function") return false;
+  const v = prompt("Name:", p.names[i] || "");
+  if (v === null || !namingPopup) return false;
+  p.names[i] = v.trim().slice(0, NAMING_MAX_LEN);
   return true;
 }
 
