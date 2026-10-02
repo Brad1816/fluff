@@ -234,6 +234,19 @@ module.exports = [
         check(size.renderScale > 1 && size.cw === Math.round(size.width * size.renderScale), `drawn sharp: ${JSON.stringify(size)}`);
         check(size.left + size.cssW <= 844 - 56 + 0.5 && size.cssH <= 390.5, `fits, clear of the button strip: ${JSON.stringify(size)}`);
         check(size.bar && size.manifest, "touch buttons and the home-screen manifest");
+        // Mouse words read as finger words, measured and drawn alike
+        const words = await p.evaluate(() => {
+          const c = document.createElement("canvas").getContext("2d");
+          c.font = "14px Arial";
+          return {
+            a: touchWords("None yet (right-click it to train)"),
+            b: touchWords("Click a fluffy to operate"),
+            same: c.measureText("Right-click to use").width === c.measureText("Long-press to use").width,
+          };
+        });
+        checkEqual(words.a, "None yet (long-press it to train)", "right-click: long-press");
+        checkEqual(words.b, "Tap a fluffy to operate", "click: tap");
+        check(words.same, "measured as it's drawn");
         // Start a game
         await p.evaluate(() => {
           worldSettings = new WorldSettings(true, true, true, true, fluffySexualitySliderSet.getValues(), true);

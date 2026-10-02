@@ -213,7 +213,7 @@ let scale = 1;
 // Canvas pixels per game pixel: more on a phone's sharp screen (script.js
 // render draws at this scale), 1 on a computer
 let renderScale = 1;
-const RENDER_MAX_PIXELS = 2400000;
+const RENDER_MAX_PIXELS = 2000000;
 // "Faster drawing" (the More button on a phone, Touch.js): game pixels only
 let touchLowRes = false;
 try {

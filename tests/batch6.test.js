@@ -475,4 +475,45 @@ module.exports = [
       check(r.grieving, "and is a grieving mum again");
     },
   },
+  {
+    name: "batch6: a foal that outgrows the incubator climbs out; a fluffy caught by hand in mid-air (thrown or flying) is held, not still falling",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const out = {};
+        const inc = __cage(Incubator, 400, 400);
+        const foal = __mk(100, { growth: 0.2 });
+        out.in = __drop(foal, inc);
+        foal.growth = INCUBATOR_MAX_GROWTH + 0.01;
+        updatePrematureCare(1.5);
+        out.out = foal.currentCage === null && foal.y > inc.bounds.bottom;
+        // Thrown, then grabbed by hand
+        const peg = __mk(600, { type: "pegasus" });
+        peg.throwStartY = peg.y;
+        peg.y -= 250;
+        peg.throwFallVx = 300;
+        peg.isFallingFromThrow = true;
+        peg.physics.updateThrowFall(1 / 60);
+        peg.isDragging = true;
+        out.fallingAfterGrab = peg.physics.updateThrowFall(1 / 60);
+        out.cleared = !peg.isFallingFromThrow && peg.throwStartY === null && !peg._flight;
+        peg.isDragging = false;
+        // Flying by itself, then caught
+        peg.flightSkill = 0.9;
+        peg.y = 500;
+        peg.currentStateKey = "IDLE";
+        out.solo = startSoloFlight(peg, 1000, 520);
+        peg.physics.updateThrowFall(1 / 60);
+        peg.isDragging = true;
+        peg.physics.updateThrowFall(1 / 60);
+        out.soloCleared = !peg.isFallingFromThrow && !peg._flight;
+        peg.isDragging = false;
+        return out;
+      }, SETUP);
+      check(r.in && r.out, `outgrown: put out beside it: ${JSON.stringify(r)}`);
+      checkEqual(r.fallingAfterGrab, false, "caught: no longer falling");
+      check(r.cleared, "and its throw is over");
+      check(r.solo && r.soloCleared, `caught mid-flight too: ${JSON.stringify(r)}`);
+    },
+  },
 ];

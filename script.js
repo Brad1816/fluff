@@ -1836,7 +1836,10 @@ function render() {
   }
 
   // Final blit to main canvas
-  ctx.drawImage(offScreenCanvas, 0, 0, width, height);
+  // (pixel for pixel: the buffer is already at renderScale - a plain copy is fast)
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(offScreenCanvas, 0, 0);
+  ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
 
   drawPortals();
   // House rooms: where WASD / the arrow keys go (UIScenes.js)

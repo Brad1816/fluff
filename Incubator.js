@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------------------
 // The incubator (Pharmacy & Lab, $350): a warm glass box for a frail foal
 // born early (Premature.js). Drop up to INCUBATOR_MAX foals still on milk
-// into it; anything bigger, or a third foal, is put down beside it.
+// into it; anything bigger, or a third foal, is put down beside it, and a
+// foal that grows too big for it climbs out (Premature.js).
 // Inside: kept warm, tube-fed (it never goes hungry), and it gets over its
 // frailty twice as fast. It runs off the mains - no power (in debt, the
 // power's cut: Pressure.js) and it's just a box. No modes, and a foal

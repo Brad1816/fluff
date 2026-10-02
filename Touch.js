@@ -122,7 +122,8 @@ function _touchClearTimers(t) {
 // ---- The finger ----
 
 function _onTouchStart(e) {
-  e.preventDefault();
+  if (e.cancelable) e.preventDefault();
+  _ringHide();
   _touchUsed = true;
   // A second finger: zooming the relationship map (or ignored)
   if (e.touches.length >= 2) {
@@ -149,8 +150,8 @@ function _onTouchStart(e) {
     if (_touch === t && t.mode === "wait" && !touchHeldThing()) _ringShow(t.x, t.y);
   }, 150);
   t.timer = setTimeout(() => {
-    if (_touch !== t || t.mode !== "wait") return;
-    if (touchHeldThing()) return; // (carrying something: a long press is just a press)
+    if (_touch !== t || t.mode !== "wait") return _ringHide();
+    if (touchHeldThing()) return _ringHide(); // (carrying something: a long press is just a press)
     t.mode = "long";
     _ringHide(true);
     if (navigator.vibrate) {
@@ -163,7 +164,7 @@ function _onTouchStart(e) {
 }
 
 function _onTouchMove(e) {
-  e.preventDefault();
+  if (e.cancelable) e.preventDefault();
   // Two fingers on the map: zoom
   if (_pinch && e.touches.length >= 2) {
     const [a, b] = [e.touches[0], e.touches[1]];
@@ -221,7 +222,8 @@ function _onTouchMove(e) {
 }
 
 function _onTouchEnd(e) {
-  e.preventDefault();
+  if (e.cancelable) e.preventDefault();
+  _ringHide(); // (whatever happens next, the ring goes)
   if (_pinch && e.touches.length < 2) _pinch = null;
   const t = _touch;
   if (!t) return;
@@ -306,6 +308,34 @@ function setTouchLowRes(on) {
   if (typeof resize === "function") resize();
 }
 
+// A phone too slow for sharp drawing: after a while playing, if frames
+// are coming slowly, switch to faster drawing once (and say so)
+let _fpsWatch = { frames: [], last: 0, done: false };
+function _touchWatchSpeed(t) {
+  const w = _fpsWatch;
+  if (w.done || touchLowRes || renderScale <= 1) return;
+  const playing = typeof gameState !== "undefined" && gameState === "PLAYING" && document.visibilityState !== "hidden";
+  if (playing && w.last) {
+    const dt = t - w.last;
+    if (dt < 1000) w.frames.push(dt); // (not a pause or a hidden tab)
+  }
+  w.last = t;
+  if (w.frames.length >= 300) {
+    const sorted = w.frames.slice().sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)];
+    w.frames = [];
+    if (median > 45) {
+      w.done = true;
+      setTouchLowRes(true);
+      if (typeof addUIMessage === "function") addUIMessage("Drawing less sharp to keep the game smooth (\u22EF > Sharper drawing to change it back).");
+    }
+  }
+}
+function _touchSpeedLoop(t) {
+  _touchWatchSpeed(t);
+  if (!_fpsWatch.done && !touchLowRes) requestAnimationFrame(_touchSpeedLoop);
+}
+
 // Sell mode (Shift on a computer): stays on till you turn it off
 let touchSellMode = false;
 function setTouchSellMode(on) {
@@ -319,7 +349,7 @@ function setTouchSellMode(on) {
 // A tap in sell mode: the first tap on something shows its price, a
 // second tap on it sells it (no selling by accident). UISelling.js.
 let _touchSellPick = null;
-function touchSellConfirm(item) {
+function touchSellConfirm(item, msg = null) {
   if (!touchSellMode) return true;
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
   if (_touchSellPick && _touchSellPick.item === item && now - _touchSellPick.at < 4000) {
@@ -327,7 +357,7 @@ function touchSellConfirm(item) {
     return true;
   }
   _touchSellPick = { item, at: now };
-  if (typeof addUIMessage === "function") addUIMessage("Tap it again to sell it.");
+  if (typeof addUIMessage === "function") addUIMessage(msg || "Tap it again to sell it.");
   return false;
 }
 
@@ -353,15 +383,31 @@ function _tbButton(label, title, onTap) {
   b.textContent = label;
   b.title = title;
   b.setAttribute("aria-label", title);
-  // (on touchend, not click: no 300ms wait, and it never reaches the canvas)
+  // (on touchend, not click: no 300ms wait, and it never reaches the canvas;
+  // a finger that slid off it - scrolling the More list - doesn't press it)
+  let down = null;
   const fire = (e) => {
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     e.stopPropagation();
+    if (e.type === "touchend") {
+      const p = e.changedTouches && e.changedTouches[0];
+      const moved = down && p ? Math.hypot(p.clientX - down.x, p.clientY - down.y) : 0;
+      down = null;
+      if (moved > TOUCH_TAP_MOVE) return;
+    }
     onTap();
   };
   b.addEventListener("touchend", fire, { passive: false });
   b.addEventListener("click", fire);
-  b.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
+  b.addEventListener(
+    "touchstart",
+    (e) => {
+      e.stopPropagation();
+      const p = e.touches && e.touches[0];
+      down = p ? { x: p.clientX, y: p.clientY } : null;
+    },
+    { passive: true },
+  );
   return b;
 }
 
@@ -370,6 +416,7 @@ function _heldFence() {
 }
 
 function _touchBarRefresh() {
+  if (!_touch) _ringHide(); // (no finger down: no ring, whatever happened)
   if (!_touchBar) return;
   const playing = typeof gameState !== "undefined" && gameState === "PLAYING";
   _touchBar.style.display = playing || gameState === "PAUSED" ? "flex" : "none";
@@ -437,6 +484,47 @@ function buildTouchBar() {
   _touchBarRefresh();
 }
 
+// ---- Words: what the game says to do with a mouse, said for a finger ----
+// (every bit of text the game draws goes through fillText / strokeText /
+// measureText: on a phone, "right-click" reads "long-press", "click" reads
+// "tap", and so on, in the measuring and the drawing alike)
+const TOUCH_WORDS = [
+  [/\b([Rr])ight[- ]?click(s|ed|ing)?\b/g, (m, r, e) => (r === "R" ? "Long-press" : "long-press") + (e === "s" ? "es" : e === "ed" ? "ed" : e === "ing" ? "ing" : "")],
+  [/\b([Ss])hift[- +]*click(s|ed|ing)?\b/g, (m, s0) => (s0 === "S" ? "Sell mode ($) + tap" : "sell mode ($) + tap")],
+  [/\b([Dd])ouble[- ]click(s|ed|ing)?\b/g, (m, d) => (d === "D" ? "Double-tap" : "double-tap")],
+  [/\b([Cc])lick(s|ed|ing)?\b/g, (m, c, e) => (c === "C" ? "Tap" : "tap") + (e === "s" ? "s" : e === "ed" ? "ped" : e === "ing" ? "ping" : "")],
+  [/\b([Hh])over(ing|s)?( over)?\b/g, (m, h) => (h === "H" ? "Tap" : "tap")],
+  [/\bthe mouse wheel\b/g, () => "a swipe"],
+  [/\bScroll to zoom\b/g, () => "Pinch to zoom"],
+  [/\(Esc\)/g, () => "(\u2715)"],
+];
+const _touchWordCache = new Map();
+function touchWords(text) {
+  if (typeof text !== "string" || !/[Cc]lick|[Hh]over|Esc|wheel|Scroll to zoom/.test(text)) return text;
+  let out = _touchWordCache.get(text);
+  if (out !== undefined) return out;
+  out = text;
+  for (const [re, fn] of TOUCH_WORDS) out = out.replace(re, fn);
+  if (_touchWordCache.size > 4000) _touchWordCache.clear();
+  _touchWordCache.set(text, out);
+  return out;
+}
+function _touchWordsOn(proto) {
+  if (!proto || proto._touchWords) return;
+  proto._touchWords = true;
+  for (const name of ["fillText", "strokeText", "measureText"]) {
+    const orig = proto[name];
+    if (typeof orig !== "function") continue;
+    proto[name] = function (text, ...rest) {
+      return orig.call(this, touchWords(text), ...rest);
+    };
+  }
+}
+if (touchMode && typeof CanvasRenderingContext2D !== "undefined") {
+  _touchWordsOn(CanvasRenderingContext2D.prototype);
+  if (typeof OffscreenCanvasRenderingContext2D !== "undefined") _touchWordsOn(OffscreenCanvasRenderingContext2D.prototype);
+}
+
 // ---- Held upright: turn it sideways ----
 let _rotateNote = null;
 function _touchOrientation() {
@@ -455,6 +543,7 @@ if (typeof window !== "undefined" && window.addEventListener && touchMode) {
   const start = () => {
     buildTouchBar();
     _touchOrientation();
+    requestAnimationFrame(_touchSpeedLoop);
   };
   if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", start);
   else start();

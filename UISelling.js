@@ -128,7 +128,9 @@ function sellModeClick() {
   }
 
   // On a phone: tap once to see the price, again to sell (Touch.js)
-  if (bestItem && typeof touchSellConfirm === "function" && !touchSellConfirm(bestItem)) return true;
+  // (a fluffy wearing something: the first thing to go is what it's wearing)
+  const dressed = bestType === "fluffy" && bestItem && Object.keys(bestItem.accessories || {}).length > 0;
+  if (bestItem && typeof touchSellConfirm === "function" && !touchSellConfirm(bestItem, dressed ? "Tap it again to take off what it's wearing." : null)) return true;
 
   if (bestItem) {
     if (bestType === "fluffy") {

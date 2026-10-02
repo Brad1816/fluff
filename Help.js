@@ -804,11 +804,12 @@ const HELP_TOPICS = [
   {
     title: "Playing on a phone",
     lines: [
-      "- Hold your phone sideways. Tap for a click.",
+      "- Hold your phone sideways, and tap to press buttons and use things.",
       "- Drag to pick something up and carry it; let go to put it down.",
       "  Or tap it, then tap where it should go.",
-      "- Press and hold (a ring grows) for a right-click: training a",
-      "  fluffy, cage modes, feeder settings, turning things on and off.",
+      "- Press and hold (a ring grows) to train a fluffy, change cage",
+      "  modes and feeder settings, and turn things on and off. (The",
+      "  rest of the help says \"long-press\" for this, and \"tap\".)",
       "  Hold a tool in the toolbox to put it on the number row (hold a",
       "  slot to empty it).",
       "- Swipe up and down over the chat log, the save list or this help",

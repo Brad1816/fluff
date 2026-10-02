@@ -108,6 +108,13 @@ function updatePrematureCare(dt) {
   if (!step || typeof fluffies === "undefined") return;
   for (const f of fluffies) {
     if (!f.isAlive) continue;
+    // Grown too big for the incubator (off milk): it's put out beside it
+    if (typeof Incubator !== "undefined" && f.currentCage instanceof Incubator && f.growth >= INCUBATOR_MAX_GROWTH) {
+      const b = f.currentCage.bounds;
+      f.currentCage = null;
+      f.y = Math.min(height - 10, b.bottom + 10);
+      if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A foal"} has grown too big for the incubator and climbed out.`);
+    }
     const incubated = inIncubator(f);
     if (incubated) {
       f.warmth = 1;

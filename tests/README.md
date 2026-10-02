@@ -55,6 +55,8 @@ the end under "Only passed in a freshly loaded page" - something an earlier
 test left behind, worth fixing. A test can always get a fresh page with
 `fresh: true`, and `TEST_REUSE=0 npm test` turns reuse off. On a computer
 with more cores, `TEST_WORKERS=6 npm test` (or 8) may be faster still.
+A test that hangs fails after 3 minutes (`TEST_TIMEOUT=300 npm test` for longer)
+instead of stalling the whole run.
 
 ## The files
 

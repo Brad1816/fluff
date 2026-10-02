@@ -135,13 +135,18 @@ function takeInFoal(mare, foal) {
     }
   }
   if (typeof meet === "function") meet(mare, foal); // (Acquaintance.js)
+  // Her foster foal (the family tree keeps its birth mum), a bond for life (Bonds.js)
+  foal.fosterMumId = mare.id;
+  if (typeof changeOpinion === "function") {
+    changeOpinion(mare, foal, FOSTER_OPINION, "my foster foal");
+    changeOpinion(foal, mare, FOSTER_OPINION, "took me in");
+  }
 }
 
 // She takes it in
 function fosterFoal(mare, foal, why = fosterMumReason(mare)) {
   if (!mare || !foal) return false;
   takeInFoal(mare, foal);
-  foal.fosterMumId = mare.id;
   // Her milk lasts till it's weaned (grieving, dried up: it comes back)
   const grow = typeof GROW_UP_TIME === "number" ? GROW_UP_TIME : 2400;
   const need = Math.max(0, FOSTER_MAX_GROWTH - foal.growth) * grow * 1.1;
@@ -151,11 +156,6 @@ function fosterFoal(mare, foal, why = fosterMumReason(mare)) {
   mare._fostering = null;
   foal.changeHappiness(0.2);
   mare.changeHappiness(why === "grieving" ? 0.25 : 0.1);
-  // A bond for life (Bonds.js)
-  if (typeof changeOpinion === "function") {
-    changeOpinion(mare, foal, FOSTER_OPINION, "my foster foal");
-    changeOpinion(foal, mare, FOSTER_OPINION, "took me in");
-  }
   if (typeof recordStory === "function") recordStory("fostered", [foal.id, mare.id]);
   if (mare.adopted && typeof addUIMessage === "function") {
     const nm = (x) => (typeof fluffyDisplayName === "function" ? fluffyDisplayName(x) : "a fluffy");

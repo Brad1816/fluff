@@ -356,6 +356,16 @@ class HorsePhysics {
   // Falling after a throw. Returns true while airborne (skips the rest of the update)
   updateThrowFall(dt) {
     const h = this.horse;
+    // Caught in the air (picked up by hand): it's held now, not falling
+    if (h.isFallingFromThrow && h.isDragging && !h.heldWithThrowTool) {
+      h.isFallingFromThrow = false;
+      h.throwFallVx = 0;
+      h.throwFallVy = 0;
+      h.throwStartY = null;
+      h.throwShadowY = null;
+      h._flight = null;
+      return false;
+    }
     if (h.isFallingFromThrow) {
       // A pegasus that's learnt to fly flaps: falls slower, glides (Flight.js)
       const flying = !!h._flight;

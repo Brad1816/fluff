@@ -133,6 +133,7 @@ async function openGame(context, port) {
 // can ask for a fresh page with `fresh: true`. Pages are replaced every
 // REUSE_LIMIT tests.
 const REUSE = process.env.TEST_REUSE !== "0";
+const TEST_TIMEOUT = (parseInt(process.env.TEST_TIMEOUT || "180", 10) || 180) * 1000; // per test
 const REUSE_LIMIT = 25;
 
 // The game's top-level `let`/`var` names and classes (from its source)
@@ -295,7 +296,16 @@ function loadTests(filter, files = null) {
       if (REUSE) await snapshotPage(opened.page);
     };
     const attempt = async (t) => {
-      await t.run(opened.page);
+      // A test that hangs (the page stuck) fails after TEST_TIMEOUT instead of stalling the run
+      let timer;
+      const limit = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`timed out after ${TEST_TIMEOUT / 1000}s`)), TEST_TIMEOUT);
+      });
+      try {
+        await Promise.race([t.run(opened.page), limit]);
+      } finally {
+        clearTimeout(timer);
+      }
       if (opened.errors.length) throw new Error("Game errors: " + opened.errors.slice(0, 3).join(" | "));
     };
     while (next < tests.length) {

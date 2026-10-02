@@ -470,11 +470,25 @@ function drawStoreAisle(c, aisle) {
   const aisles = getStoreAisles();
   const n = aisles.indexOf(aisle) + 1;
   const title = `Aisle ${n}: ${aisle.name}`;
-  c.font = "bold 26px Arial";
-  const tw = c.measureText(title).width + 50;
+  // (between the top bar's buttons: smaller on a narrow screen, so they don't cover it)
+  let gapL = 0;
+  let gapR = width;
+  if (typeof getHelpButtonRect === "function" && typeof getGameSpeedLayout === "function") {
+    const hb = getHelpButtonRect(100);
+    gapL = hb.x + hb.w + 8;
+    gapR = getGameSpeedLayout(100).sleep.x - 8;
+  }
+  let fontPx = 26;
+  c.font = `bold ${fontPx}px Arial`;
+  let tw = c.measureText(title).width + 50;
+  while (fontPx > 14 && (width / 2 - tw / 2 < gapL || width / 2 + tw / 2 > gapR)) {
+    fontPx -= 2;
+    c.font = `bold ${fontPx}px Arial`;
+    tw = c.measureText(title).width + 30;
+  }
   const signX = width / 2 - tw / 2;
   const signY = 12;
-  const signH = wallH * 0.48;
+  const signH = fontPx < 26 ? Math.min(wallH * 0.48, fontPx + 16) : wallH * 0.48;
   c.fillStyle = "#2e4a62";
   _storeRoundRect(c, signX, signY, tw, signH, 8);
   c.fill();
@@ -487,11 +501,9 @@ function drawStoreAisle(c, aisle) {
   c.fillText(title, width / 2, signY + signH / 2 + 1);
   c.fillStyle = "#6d6352";
   c.font = "bold 14px Arial";
-  c.fillText(
-    `${FLUFF_MART_NAME} - click something to buy it, then carry it home`,
-    width / 2,
-    signY + signH + (wallH - 6 - signY - signH) / 2,
-  );
+  // (below the top bar on a short screen)
+  const hintY = Math.max(signY + signH + (wallH - 6 - signY - signH) / 2, Math.min(wallH - 10, 88));
+  c.fillText(`${FLUFF_MART_NAME} - click something to buy it, then carry it home`, width / 2, hintY);
 
   // Shelving unit
   const L = getStoreShelfLayout(aisle);
