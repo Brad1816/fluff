@@ -188,6 +188,11 @@ addHorseMethods({
 
     if (!femaleForced) {
       friend.speak(getDialogue(["SPECIAL_HUGGIES", "GUD_FEEWS"], this));
+      // Against your rule? (MatingRule.js)
+      if (typeof noteMatingBreach === "function") {
+        noteMatingBreach(this);
+        noteMatingBreach(friend);
+      }
     }
     if (!hasCastrationBand) {
       this.speak(getDialogue(["SPECIAL_HUGGIES", "GUD_FEEWS"], this));

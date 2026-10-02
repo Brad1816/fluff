@@ -836,6 +836,9 @@ class Horse {
       this.speed = Math.min(this.speed, 180);
     }
 
+    // A newborn that can't crawl yet only wriggles (Carrying.js)
+    if (typeof cantCrawlYet === "function" && cantCrawlYet(this)) this.speed = FOAL_WRIGGLE_SPEED;
+
     if (this.isPregnant) {
       this.speed *= 0.5;
     }
@@ -1077,6 +1080,15 @@ class Horse {
   }
 
   getBottomY() {
+    // On its mum's back: drawn just in front of her (Carrying.js)
+    if (this._riding && typeof riderBottomY === "function") {
+      const r = riderBottomY(this);
+      if (r !== null) return r;
+    }
+    return this.getBottomYStanding();
+  }
+
+  getBottomYStanding() {
     if (!this.layout) return this.y;
     return this.positioning.getExtentsForCage().bottom;
   }
@@ -1528,6 +1540,8 @@ class Horse {
     }
 
     this.handleCageContainment();
+    // A newborn rides on its mum's back (Carrying.js)
+    if (typeof updateRiding === "function") updateRiding(this);
 
     if (this.bloodTolerance > 0) {
       this.bloodTolerance = Math.max(0, this.bloodTolerance - 0.001 * dt);

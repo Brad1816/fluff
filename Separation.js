@@ -140,11 +140,11 @@ function _isDeadParent(id) {
 }
 
 // How was `f` taken? "family_killed" | "violent" | "orphaned" | "peaceful"
-function howTaken(f) {
+function howTaken(f, fromScene = f.scene) {
   const now = _sepNow();
   const recent = (t) => typeof t === "number" && now - t < RECENT_VIOLENCE;
   const fam = _family(f);
-  if (fam.some((o) => !o.isAlive && o.killedByPlayer && (o.deathTimer || 0) < RECENT_VIOLENCE)) return "family_killed";
+  if (fam.some((o) => !o.isAlive && o.killedByPlayer && (o.deathTimer || 0) < RECENT_VIOLENCE && o.scene === fromScene)) return "family_killed"; // (killed where it was: it saw)
   if (recent(f.hurtByPlayerAt) || fam.some((o) => o.isAlive && recent(o.hurtByPlayerAt))) return "violent";
   const mumDead = _isDeadParent(f.motherId);
   const dadDead = _isDeadParent(f.fatherId);
@@ -190,7 +190,7 @@ function onFluffyTakenAway(f, fromScene) {
   if (fromScene === "PARK" && !f.adopted) f.fromPark = true;
   // Already missing someone: keep that separation going
   if (f.separation && f.separation.ids && f.separation.ids.length) return;
-  const how = howTaken(f);
+  const how = howTaken(f, fromScene);
   const young = !remembersBeingTaken(f);
   // Some ways of being taken leave a scar for life (not on tiny foals)
   if (!young && how !== "peaceful") addTrauma(f, how);

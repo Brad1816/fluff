@@ -196,7 +196,8 @@ class HorseAnatomy {
             });
 
             if (aliveFoals.length === 0 && allChildren.length > 1) {
-              if (weaponType) {
+              // (only a mum who's there knows: Acquaintance.js)
+              if (weaponType && mother.scene === this.horse.scene) {
                 mother.changeHappiness(-0.35);
               }
             }

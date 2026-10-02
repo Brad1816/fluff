@@ -69,6 +69,13 @@ addHorseMethods({
       key3;
     let success = true;
 
+    // A mum keeping the last of her milk for her bestest babbeh (Favourites.js)
+    const heldBack = isMom && typeof bestestHoldsBack === "function" && mare.happiness > WAN_DIE_THRESHOLD && mare.canSee() && bestestHoldsBack(mare, this);
+    if (mare.milkCharges > 0 && heldBack) {
+      this.milkCooldown = 3.0;
+      noteTurnedAway(mare, this);
+      return false;
+    }
     if (mare.milkCharges > 0) {
       if (mare.happiness <= WAN_DIE_THRESHOLD) {
         key2 = "DEFAULT";
@@ -129,6 +136,7 @@ addHorseMethods({
     if (success) {
       mare.milkCharges--;
       this.hunger = 1.0;
+      if (isMom && typeof noteBestestFed === "function") noteBestestFed(mare, this); // (Favourites.js)
       this.addPreferredMilkSource(mare.id, "HORSE");
       if (mare.isPoisoned) {
         this.isPoisoned = true;
@@ -215,12 +223,14 @@ addHorseMethods({
       const other = fluffies.find((f) => f.id == otherId);
       if (!this.perceivedRelationships[otherId]) {
         this.perceivedRelationships[otherId] = {
-          state: "current",
+          // (a relative it's never been around isn't missed: Acquaintance.js)
+          state: other && (typeof haveMet !== "function" || haveMet(this, other)) ? "current" : "unmet",
           timer: 0,
         };
       }
 
       const pRel = this.perceivedRelationships[otherId];
+      if (pRel.state === "unmet" && other && typeof haveMet === "function" && haveMet(this, other)) pRel.state = other.scene === this.scene ? "current" : "unmet";
       if (other && other.scene === this.scene) {
         if (!other.isAlive) {
           if (pRel.state !== "dead") {
@@ -245,6 +255,7 @@ addHorseMethods({
         }
       } else {
         // Not in scene
+        if (pRel.state === "unmet") continue;
         pRel.timer += effectiveDt;
         if (pRel.state === "current") {
           this.speech.nextTime = 0;
@@ -446,7 +457,11 @@ addHorseMethods({
       const other = fluffies.find((f) => f.id == otherId);
       if (!other || !other.isAlive || other.scene !== this.scene || !other.tooYoungToWalk()) continue;
       const dist = Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
-      if (dist <= FOAL_MUM_NEAR) continue;
+      // A newborn that can't crawl yet and isn't on her back: she fetches it
+      // (Carrying.js) - she has to come right up to it
+      const fetch = typeof cantCrawlYet === "function" && cantCrawlYet(other) && !other._riding && typeof rideMumFor === "function" && rideMumFor(other) === this;
+      if (dist <= (fetch ? RIDE_REACH * 0.7 : FOAL_MUM_NEAR)) continue;
+      if (fetch && this.canSee()) return other;
       if ((other.foalCallingMum() && this.canHear()) || (other.foalInDistress() && this.canSee())) return other;
     }
     return null;

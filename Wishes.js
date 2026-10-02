@@ -115,6 +115,7 @@ const WISHES = {
       let best = null;
       for (const o of fluffies) {
         if (o === f || !o.isAlive || !o.adopted || o.growth < 1) continue;
+        if (typeof haveMet === "function" && !haveMet(f, o)) continue; // (one it knows)
         if (typeof isSexuallyAttractedTo === "function" && !isSexuallyAttractedTo(f, o)) continue;
         const l = typeof getLiking === "function" ? getLiking(f, o) : 0;
         if (l > 0.1 && (!best || l > best.l)) best = { id: o.id, l };
@@ -262,6 +263,7 @@ function noteWishEvent(f, kind, info = {}) {
     const verb = info.reason === "sold" ? "sold" : info.reason === "given up" ? "gave up" : null;
     for (const o of fluffies) {
       if (!o.isAlive || !o.adopted || !o.wish || o.wish.target !== gone.id) continue;
+      if (typeof haveMet === "function" && !haveMet(o, gone)) continue; // (Acquaintance.js)
       const n = _wName(gone);
       const id = o.wish.id;
       if (!verb) {

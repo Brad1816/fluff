@@ -58,6 +58,9 @@ class HorsePositioning {
       }
     }
 
+    // Her bestest babbeh first, if it's at all hungry (Favourites.js)
+    const best = typeof bestestOf === "function" ? bestestOf(this.horse) : null;
+    if (best && best.isAlive && best.scene === this.horse.scene && best.hunger < 0.55 && best.growth < 0.4) hungryFoal = best;
     if (!hungryFoal) return false;
 
     const x = hungryFoal.x + (Math.random() - 0.5) * 100;

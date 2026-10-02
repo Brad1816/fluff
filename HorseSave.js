@@ -55,6 +55,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "smartyReformed", fallback: false },
   { name: "fearOfOperatingTable", fallback: false }, // (it remembers the table now; "The table" lesson, Lessons.js)
   { name: "tableCourage", fallback: 0 },
+  { name: "bestestId", fallback: null }, // her favourite foal (Favourites.js)
+  { name: "mateRule", fallback: null, clone: true }, // told not to mate (MatingRule.js)
+  { name: "met", fallback: null, clone: true }, // who it's met (Acquaintance.js)
   { name: "fears", fallback: null, clone: true }, // Fears.js
   { name: "bellLearn", fallback: 0 }, // FeedBot.js
   { name: "feedBotTips", fallback: 0 },

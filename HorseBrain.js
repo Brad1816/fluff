@@ -958,6 +958,8 @@ class MateDesire extends Desire {
         (horse.x - friend.x) ** 2 + (horse.y - friend.y) ** 2,
       );
       if (dist < 50 && !horse.isNearWasteSpot() && !friend.isNearWasteSpot()) {
+        // Told not to (MatingRule.js): it may hold off
+        if (typeof ruleStopsMating === "function" && ruleStopsMating(horse, friend)) return 0;
         this.target = friend;
         return 95; // Higher than Seek
       }

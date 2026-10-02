@@ -440,6 +440,7 @@ function rightClickActions(f) {
   if (typeof partyActions === "function") out.push(...partyActions(f)); // SharedMemories.js
   if (typeof releaseActions === "function") out.push(...releaseActions(f)); // Runaways.js
   if (typeof putOutActions === "function") out.push(...putOutActions(f)); // Strays.js
+  if (typeof matingRuleActions === "function") out.push(...matingRuleActions(f)); // MatingRule.js
   if (typeof outingActions === "function") out.push(...outingActions(f)); // ParkOutings.js
   if (typeof photoActions === "function") out.push(...photoActions(f)); // Lives.js
   if (typeof wholesaleActions === "function") out.push(...wholesaleActions(f)); // the mill trade (Inspector.js)
@@ -464,7 +465,11 @@ function getTrickMenuLayout() {
     let x = Math.max(8, Math.min(width - total - 8, cx - total / 2));
     const lessons = typeof lessonsFor === "function" ? lessonsFor(f) : [];
     const actions = rightClickActions(f);
-    const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0) - (actions.length ? 68 : 0), top - 40));
+    // (the "Other" row wraps onto a second line when it's too long for the screen)
+    const aw = 112;
+    const perRow = Math.max(1, Math.floor((width - 16 + gap) / (aw + gap)));
+    const actionRows = Math.ceil(actions.length / perRow);
+    const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0) - (actions.length ? 68 + (actionRows - 1) * 44 : 0), top - 40));
     for (const t of TRICKS) {
       chips.push({ x, y, w, h: 38, key: t.key, trick: t });
       x += w + gap;
@@ -485,12 +490,14 @@ function getTrickMenuLayout() {
     let actionY = null;
     if (actions.length) {
       actionY = (lessonY !== null ? lessonY : y) + 38 + 30;
-      const aw = 112;
-      const total2 = actions.length * aw + (actions.length - 1) * gap;
-      let ax = Math.max(8, Math.min(width - total2 - 8, titleX - total2 / 2));
-      for (const a of actions) {
-        chips.push({ x: ax, y: actionY, w: aw, h: 38, key: "action:" + a.key, action: a });
-        ax += aw + gap;
+      for (let r = 0; r < actionRows; r++) {
+        const row = actions.slice(r * perRow, (r + 1) * perRow);
+        const total2 = row.length * aw + (row.length - 1) * gap;
+        let ax = Math.max(8, Math.min(width - total2 - 8, titleX - total2 / 2));
+        for (const a of row) {
+          chips.push({ x: ax, y: actionY + r * 44, w: aw, h: 38, key: "action:" + a.key, action: a });
+          ax += aw + gap;
+        }
       }
     }
     // Kind or strict training (FearTraining.js)

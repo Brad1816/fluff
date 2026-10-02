@@ -456,7 +456,7 @@ module.exports = [
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const mum = __mk(200);
-        const foal = __mk(800, { growth: 0.1, mum: mum.id });
+        const foal = __mk(800, { growth: 0.2, mum: mum.id }); // (crawling: a newborn that can't crawl yet she always fetches, Carrying.js)
         relationships[mum.id][foal.id] = "baby_child";
         foal.hunger = 1;
         foal.health = 100;

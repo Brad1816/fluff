@@ -182,7 +182,7 @@ function noteSharedStory(kind, ids, opts = {}) {
     const f = _shmById(ids[0]);
     if (!f || !f.adopted) return;
     const rels = typeof relationships !== "undefined" ? relationships[f.id] || {} : {};
-    const close = fluffies.filter((o) => o !== f && o.isAlive && o.adopted && (rels[o.id] && rels[o.id] !== "rival" || o.id === f.motherId || o.motherId === f.id));
+    const close = fluffies.filter((o) => o !== f && o.isAlive && o.adopted && (rels[o.id] && rels[o.id] !== "rival" || o.id === f.motherId || o.motherId === f.id) && (typeof haveMet !== "function" || haveMet(f, o)));
     const n = _shmName(f);
     makeSharedMemory("show", `${n ? n + "'s" : "The"} blue ribbon`, [f, ...close], { key: `show:${f.id}:${_shmDay()}`, good: true });
   } else if (kind === "died") {

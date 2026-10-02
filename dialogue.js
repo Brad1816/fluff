@@ -849,6 +849,27 @@ const DIALOGUE = {
   },
 
   // Milk drinking
+  // Strays moving on to another area (Migration.js)
+  MIGRATE: {
+    HUNGRY: ["Nu nummies hewe... go find gwassies!", "Tummy huwties... mebbe nummies ova dewe?", "<Speaker> go find nummies."],
+    CROWDED: ["Tuu many fwuffies hewe!", "Nu woom fow <speaker>...", "<Speaker> find quiet pwace."],
+    DRIVEN: ["Nu wan' stay wif meanie fwuffies!", "<Speaker> go 'way... nobody wike <speaker> hewe.", "Huu... <speaker> weave."],
+    ARRIVE: ["New pwace...", "Hewwo? Am nummies hewe?", "*sniff sniff* Smeww wike udda fwuffies..."],
+  },
+  // Told not to mate (MatingRule.js)
+  MATE_RULE: {
+    TOLD: ["Nu speshuw huggies? ...Okie, daddeh.", "<Speaker> twy be gud...", "Bu'... bu' <speaker> wub speshuw fwen!"],
+    HOLDS_OFF: ["Nu... daddeh say nu speshuw huggies.", "<Speaker> gon be gud fwuffy. Nu huggies.", "Mebbe watew..."],
+    SORRY: ["Sowwy daddeh! Nu mowe speshuw huggies!", "<Speaker> nu do it agen! Pwomise!", "Huu huu... <speaker> knyo, <speaker> knyo..."],
+  },
+  // A mum's favourite (Favourites.js)
+  BESTEST: {
+    CHOSEN: ["<Target> am mummah's bestest babbeh!", "Wook! <Target> wook jus' wike mummah! Bestest babbeh!", "<Target> am da pwettiest babbeh. Mummah's bestest!"],
+    FEED: ["Dwink up, bestest babbeh!", "Bestest babbeh get bestest miwkies!", "Aww da miwkies fow mummah's bestest!"],
+    SAVE_MILK: ["Nu! Miwkies am fow bestest babbeh!", "Wait! Bestest babbeh fiwst!", "Udda babbehs nu need su much miwkies!", "Shoo! Dese miwkies am fow <speaker>'s bestest!"],
+    COO: ["<Target> am su pwetty... mummah's bestest!", "Mummah wub bestest babbeh mostest!", "Nu babbeh as speshuw as <target>!"],
+    RESENT: ["Wai mummah wub <target> mowe...", "<Target> getted aww da miwkies agen...", "Mummah nu wook at <speaker>...", "Nu faiw! <Target> awways fiwst!"],
+  },
   // A foal calling for its mum (HorseFamily updateFoalCalls)
   FOAL_CALL: {
     DEFAULT: ["Mummah? Mummah!", "MUMMAH! <Speaker> nee' mummah!", "Wan' mummah!", "Mummah, whewe am yu?"],

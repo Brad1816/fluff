@@ -122,6 +122,7 @@ function keepsApart(a, b) {
 
 // Used by getLiking (Bonds.js)
 function herdLikingBonus(a, b) {
+  if (typeof haveMet === "function" && !haveMet(a, b)) return 0; // (strangers: Acquaintance.js)
   const ha = herdOf(a);
   const hb = herdOf(b);
   if (!ha || !hb) return 0;
@@ -255,7 +256,8 @@ function _join(h, f) {
   if (h.memberIds.includes(f.id)) return;
   h.memberIds.push(f.id);
   _herdChanged();
-  _say(f, ["HERD", "JOIN"], getHerdLeader(h));
+  const lead = getHerdLeader(h);
+  _say(f, ["HERD", "JOIN"], lead && lead.scene === f.scene ? lead : null); // (only names a leader it can see)
 }
 
 // Which side a herd is on: yours (most members adopted) or the park's.
@@ -501,7 +503,8 @@ class FollowHerdDesire extends Desire {
     );
     // ("Hewd go dat way!" only out in the park, not across one room)
     const outdoors = typeof isCameraScene === "function" && isCameraScene(horse.scene);
-    if (Math.random() < 0.15) _say(horse, ["HERD", outdoors ? "FOLLOW" : "FOLLOW_NEAR"], getHerdLeader(herdOf(horse)));
+    const lead = getHerdLeader(herdOf(horse));
+    if (Math.random() < 0.15) _say(horse, ["HERD", outdoors ? "FOLLOW" : "FOLLOW_NEAR"], lead && lead.scene === horse.scene ? lead : null);
     return true;
   }
 }

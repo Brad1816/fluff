@@ -71,6 +71,7 @@ function dreamMaterial(f) {
   for (const [id, r] of Object.entries(rels)) {
     const n = _dName(+id);
     const other = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === +id) : null;
+    if (other && typeof haveMet === "function" && !haveMet(f, other)) continue; // (Acquaintance.js)
     const gone = !other || !other.isAlive;
     if (r === "mother" || r === "dead_mother") {
       if (gone) losses++;

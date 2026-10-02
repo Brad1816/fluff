@@ -62,6 +62,8 @@ function getOpinion(a, b) {
 // Opinion plus family/friend feelings, -1..1
 function getLiking(a, b) {
   if (!a || !b) return 0;
+  // A stranger: no feelings either way (Acquaintance.js)
+  if (typeof haveMet === "function" && !haveMet(a, b)) return 0;
   const rel = relationships[a.id] && relationships[a.id][b.id];
   let bonus = 0;
   if (rel) {
@@ -75,6 +77,7 @@ function getLiking(a, b) {
 
 function changeOpinion(a, b, amount, why = null) {
   if (!a || !b || a === b) return;
+  if (typeof meet === "function") meet(a, b); // (it knows it now: Acquaintance.js)
   ensureOpinions(a);
   const before = a.opinions[b.id] || 0;
   const after = clamp(before + amount, -1, 1);
