@@ -62,6 +62,14 @@ function beginCorpseLook(c, f) {
   return true;
 }
 
+// The same, drawn cheaply (Bath.js drawFluffyTinted): { tints, alpha } or null
+function corpseTint(f) {
+  const rot = corpseRot(f);
+  if (rot <= 0) return null;
+  const fade = corpseKeptForNow(f) ? Math.max(0.35, corpseFade(f)) : corpseFade(f);
+  return { tints: [["rgb(96, 100, 52)", 0.55 * rot], ["rgb(0, 0, 0)", 0.35 * rot]], alpha: fade };
+}
+
 // Flies buzzing over a rotting corpse (drawn after it)
 function drawCorpseFlies(c, f) {
   const rot = corpseRot(f);

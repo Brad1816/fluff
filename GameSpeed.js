@@ -74,9 +74,10 @@ const TOP_BAR_WIDTHS = [
   { clock: 118, goals: 50, records: 64, today: 58, household: 84 },
 ];
 function _topBarEnds(chatLogRight, w) {
-  // left group: clock, 4 speeds, goals, records, help; right group: today, household
+  // left group: clock, 4 speeds, goals, records, help; right group: sleep, today, household
+  // (the middle is left clear: the front door is there)
   const left = chatLogRight + 8 + w.clock + 4 + GAME_SPEEDS.length * 37 - 3 + 8 + w.goals + 6 + w.records + 6 + 30;
-  const right = width - 12 - w.household - 6 - w.today;
+  const right = width - 12 - w.household - 6 - w.today - 6 - 34;
   return { left, right };
 }
 function topBarSqueeze(chatLogRight) {
@@ -97,7 +98,12 @@ function getGameSpeedLayout(chatLogRight) {
   const btnW = 34;
   const h = 30;
   const buttons = GAME_SPEEDS.map((s, i) => ({ speed: s, x: x + clockW + 4 + i * (btnW + 3), y, w: btnW, h }));
-  return { x, y, clockW, h, buttons };
+  // Sleep until morning (Sleep.js): on the right, before Today (the
+  // middle of the bar is over the front door)
+  // (worked out here, not from the Today button: that goes back to this)
+  const tw = topBarWidths(chatLogRight);
+  const sleep = { x: width - 12 - tw.household - 6 - tw.today - 6 - btnW, y, w: btnW, h };
+  return { x, y, clockW, h, buttons, sleep };
 }
 
 function drawGameSpeed(chatLogRight) {
@@ -152,6 +158,7 @@ function drawGameSpeed(chatLogRight) {
       borderColor: on ? "rgba(255, 210, 120, 0.95)" : undefined,
     });
   }
+  if (typeof drawSleepButton === "function") drawSleepButton(L.sleep);
   // Goals button (Goals.js)
   const gb = getGoalsButtonRect(chatLogRight);
   if (typeof GOALS !== "undefined" && typeof drawGlassButton === "function") {
@@ -197,7 +204,7 @@ function drawGameSpeed(chatLogRight) {
   ctx.save();
   ctx.font = "12px Arial";
   const reallyFits =
-    typeof getTodayButtonRect !== "function" || hb.x + hb.w + 6 + ctx.measureText(reallyText).width + 6 <= getTodayButtonRect(chatLogRight).x;
+    hb.x + hb.w + 6 + ctx.measureText(reallyText).width + 6 <= L.sleep.x;
   ctx.restore();
   if (gameSpeed > 1 && actualGameSpeed < gameSpeed - 0.5 && reallyFits) {
     ctx.save();
@@ -269,6 +276,10 @@ function gameSpeedClick(chatLogRight) {
       setGameSpeed(b.speed);
       return true;
     }
+  }
+  if (typeof askSleep === "function" && isPointInRect(mouse.x, mouse.y, L.sleep.x, L.sleep.y, L.sleep.w, L.sleep.h)) {
+    askSleep();
+    return true;
   }
   return false;
 }

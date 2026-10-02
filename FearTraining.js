@@ -148,6 +148,7 @@ function fearLessonAfter(f, key) {
   if (key === "colours") f.coloristDegree = Math.min(1, (f.coloristDegree || 0) + LESSON_COLOURS * back);
   else if (key === "alicorns" && typeof addAlicornComfort === "function") addAlicornComfort(f, -LESSON_ALICORNS * back);
   else if (key === "brave" && typeof FEARS !== "undefined" && typeof changeFear === "function") for (const fe of FEARS) if (fearOf(f, fe.key) > 0) changeFear(f, fe.key, LESSON_BRAVE * back);
+  else if (key === "table") f.tableCourage = Math.max(0, (f.tableCourage || 0) - LESSON_TABLE * back);
 }
 
 // Every strict lesson costs, sunk in or not

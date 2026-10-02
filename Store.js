@@ -66,6 +66,7 @@ const STORE_AISLES = [
     id: "hardware",
     name: "Hardware & Discipline",
     items: [
+      "lawn_mower",
       "sorry_stick",
       "thumbtack",
       "knife",

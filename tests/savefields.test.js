@@ -18,7 +18,7 @@ module.exports = [
           pregCare: { sum: 3, n: 4 }, litterSize: 5, litterBorn: 6, birthVigor: 0.9, midwife: true,
           pregScan: { count: 5, at: 10 }, litterCareAt: 0.8, litterLost: 1, bredHere: true, warmth: 0.4,
           lastKindnessAt: 555, affectionToday: { day: 3, n: { brushed: 2 }, at: { brushed: 500 } },
-          tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 }, lessonTries: { day: 3, n: 2 }, smartyReform: 0.3, smartyReformed: true, fears: { thunder: 0.6, dark: 0, bot: 0.2 }, bellLearn: 0.4, feedBotTips: 2, lastBirthAt: 1234,
+          tricks: { sit: 0.8, bow: 0.2 }, trickTries: { day: 3, n: 4 }, lessonTries: { day: 3, n: 2 }, smartyReform: 0.3, smartyReformed: true, fearOfOperatingTable: true, tableCourage: 0.5, fears: { thunder: 0.6, dark: 0, bot: 0.2 }, bellLearn: 0.4, feedBotTips: 2, lastBirthAt: 1234,
           milestones: { walk: true, talk: false }, lastTurningAt: 88, nameCalledAt: 66,
           favouriteCare: "treat", favouriteFound: 4, traitShift: { bravery: 0.2 }, growthProgress: { comforted: 3 },
           wish: { id: "toy", since: 5, ache: 0 }, wishCooldownUntil: 77, contentUntil: 99, seenPark: true, hatWishGrantedAt: 44, scars: [{ kind: "ear", how: "Bitten", day: 3 }], gossip: { harm: 0.3, kind: 0, t: 5, feared: 0.02, trusted: 0 }, partiesHad: ["welcome:3"], careToday: { day: 2, praise: 1 }, formerPet: { how: "ran away", day: 3, name: "Rowan" }, _learntFromMum: "sit", _echoed: true, rescued: true, title: "Survivor", titleSince: 9, titleState: { lovedDays: 2 }, strain: 3.5, breakLimit: 11, conditioned: { brush: 3 }, trickFear: { sit: 0.2 }, _frightsComforted: 2, _stormComfortDay: 4,

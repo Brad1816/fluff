@@ -1780,21 +1780,17 @@ class Horse {
     if (!clip && this.drowningTimer > 0) {
       clip = { top: 1.0 - this.drowningTimer / 5 };
     }
-    // Rotting corpses darken, fade and get flies (Corpses.js)
-    const rotting = !this.isAlive && typeof beginCorpseLook === "function" && beginCorpseLook(ctx, this);
-    // Dirty fluffies look it (Bath.js)
+    // Rotting corpses darken, fade and get flies (Corpses.js); dirty
+    // fluffies look it (Bath.js) - both drawn tinted in one go
+    const rotting = !this.isAlive && typeof corpseTint === "function" ? corpseTint(this) : null;
+    const grubby = !rotting && this.isAlive && typeof dirtTint === "function" ? dirtTint(this) : null;
     // Frightened fluffies tremble (Fears.js)
     const shaking = typeof beginFrightShake === "function" && beginFrightShake(ctx, this);
-    const grubby = !rotting && typeof beginDirtLook === "function" && beginDirtLook(ctx, this);
-    this.renderer.drawOffScreen(ctx, clip);
-    if (rotting) {
-      ctx.restore();
-      drawCorpseFlies(ctx, this);
-    }
-    if (grubby) {
-      ctx.restore();
-      drawDirtEffects(ctx, this);
-    }
+    const tint = rotting || grubby;
+    if (tint && typeof drawFluffyTinted === "function") drawFluffyTinted(ctx, this, clip, tint.tints, tint.alpha);
+    else this.renderer.drawOffScreen(ctx, clip);
+    if (rotting) drawCorpseFlies(ctx, this);
+    if (grubby) drawDirtEffects(ctx, this);
     if (shaking) ctx.restore();
     if (this.placedOn instanceof ImmobilizationBoard) {
       this.placedOn.renderStrap(ctx, this);

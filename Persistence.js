@@ -154,6 +154,12 @@ const SAVED_GAME_STATE = [
     fresh: () => freshHeatingState(),
   },
   {
+    name: "foodDeliveries", // food ordered on the computer, on its way (OnlineShop.js)
+    get: () => foodDeliveries,
+    set: (v) => (foodDeliveries = Array.isArray(v) ? v : []),
+    fresh: () => [],
+  },
+  {
     name: "shoppingBag", // small things bought and not yet put down (ShoppingBag.js)
     get: () => shoppingBag,
     set: (v) => (shoppingBag = Array.isArray(v) ? v : []),
@@ -270,6 +276,8 @@ function resetTemporaryGameState() {
   // Things timed on the game clock, which just jumped (FluffySounds.js, Affection.js)
   if (typeof resetFluffySounds === "function") resetFluffySounds();
   if (typeof affectionPops !== "undefined") affectionPops = [];
+  // Strays waiting for you to decide about (Strays.js)
+  if (typeof strayVisits !== "undefined") strayVisits = [];
 }
 
 // Everything in SAVED_GAME_STATE back to how a new game starts

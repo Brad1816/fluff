@@ -216,6 +216,54 @@ function beginDirtLook(c, f) {
   return true;
 }
 
+// The same look, drawn cheaply (Horse.draw): [colour, alpha] layers laid
+// over the fluffy (drawFluffyTinted), or null if it's clean. (A canvas
+// filter on every body part was very slow: a second a frame for a room of
+// grubby fluffies on some computers.)
+function dirtTint(f) {
+  const d = dirtOf(f);
+  if (d < 0.2 || !f.isAlive) return null;
+  const k = (d - 0.2) / 0.8;
+  return { tints: [["rgb(110, 72, 34)", 0.18 + 0.4 * k], ["rgb(0, 0, 0)", 0.24 * k]], alpha: 1 };
+}
+
+// Draw a fluffy onto a scratch canvas, lay the tints over just the fluffy
+// (source-atop), and put the result down in one go
+let _tintCanvas = null;
+const TINT_W = 480;
+const TINT_H = 440;
+function drawFluffyTinted(ctx, f, clip, tints, alpha = 1) {
+  if (!_tintCanvas) {
+    _tintCanvas = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(TINT_W, TINT_H) : document.createElement("canvas");
+    _tintCanvas.width = TINT_W;
+    _tintCanvas.height = TINT_H;
+  }
+  const s = _tintCanvas.getContext("2d");
+  const left = Math.floor(f.x - TINT_W / 2);
+  const top = Math.floor(f.y - TINT_H + 90);
+  s.setTransform(1, 0, 0, 1, 0, 0);
+  s.globalCompositeOperation = "source-over";
+  s.globalAlpha = 1;
+  s.filter = "none";
+  s.clearRect(0, 0, TINT_W, TINT_H);
+  s.setTransform(1, 0, 0, 1, -left, -top);
+  f.renderer.drawOffScreen(s, clip);
+  s.setTransform(1, 0, 0, 1, 0, 0);
+  s.globalCompositeOperation = "source-atop";
+  for (const [colour, a] of tints) {
+    if (!(a > 0)) continue;
+    s.globalAlpha = Math.min(1, a);
+    s.fillStyle = colour;
+    s.fillRect(0, 0, TINT_W, TINT_H);
+  }
+  s.globalCompositeOperation = "source-over";
+  s.globalAlpha = 1;
+  ctx.save();
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(_tintCanvas, left, top);
+  ctx.restore();
+}
+
 // Flies and smell lines over a filthy fluffy
 function drawDirtEffects(c, f) {
   if (dirtLevel(f) !== "filthy" || !f.isAlive) return;

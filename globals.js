@@ -1630,6 +1630,12 @@ const SPAWN_ACTIONS = [
     isItem: "brush",
   },
   {
+    name: "Lawn Mower",
+    desc: "Hold it and sweep it over long grass outside (garden, river, backyard, park) to mow it. It grows back.",
+    cost: 150,
+    isItem: "lawn_mower",
+  },
+  {
     name: "Knife",
     desc: "Used for amputation.",
     cost: 50,
@@ -1945,6 +1951,7 @@ const TOOL_GRIPS = {
   brush: { ax: 0.5, ay: 0.5, turn: 0 },
   sponge: { ax: 0.5, ay: 0.5, turn: 0 },
   suture_kit: { ax: 0.5, ay: 0.5, turn: 0 },
+  lawn_mower: { ax: 0.48, ay: 0.78, turn: 0 }, // (the middle of the deck: where it cuts)
 };
 
 // Draw a held tool's picture (after ctx.translate(tool.x, tool.y)).

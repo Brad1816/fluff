@@ -81,6 +81,8 @@ async function installHelpers(page) {
     // No naming pop-ups for the fluffies tests make (tests/names.test.js
     // and help.test.js turn them on)
     if (typeof namingPopupsEnabled !== "undefined") namingPopupsEnabled = false;
+    // ...or "strays in the backyard" questions (tests/playtest3.test.js turns them on)
+    if (typeof strayQuestionsEnabled !== "undefined") strayQuestionsEnabled = false;
     // No first-time hint cards in the way (tests/hints.test.js turns them on)
     if (typeof hintsActive !== "undefined") hintsActive = false;
     window.__clearScene = (scene = "INDOORS") => {

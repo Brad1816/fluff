@@ -459,6 +459,9 @@ const DIALOGUE = {
     LET_GO_FREE: ["<Speaker> fwee!", "Bye bye scawy housie!", "*wuns off*"],
     MEET_HAPPY: ["Mistah! Mistah! <Speaker> 'membew yu!", "Mistah come fow <speaker>?!", "Yay! Mistah!"],
     MEET_SCARED: ["*SCREEE* Mistah fin' <speaker>!", "Nu! Nu take back!", "Wun! Wun!"],
+    // Put out of the house by you (Strays.js)
+    PUT_OUT_SAD: ["Daddeh? Wai <speaker> outsides?? Pwease wet in!", "*scratch scratch* Daddeh... <speaker> be gud, pwomise!", "Nu weave <speaker> hewe! Huu huu huu...", "Wai daddeh nu wub <speaker> nu mowe?"],
+    PUT_OUT: ["Outsides?? <Speaker> nu knyo whewe tu gu...", "*sniff* Big scawy outsides...", "Huu... <speaker> aww awone nao."],
     BOLT: ["<Speaker> nu stay hewe nu mowe!", "Gotta wun... gotta wun...", "Bye bye housie!", "*sneaks to doow*"],
     STAYED: ["...<speaker> stay. Fow nao.", "*sniff* ...otay mistah...", "Mistah nu wet <speaker> go?"],
   },
@@ -524,6 +527,8 @@ const DIALOGUE = {
     COLOURS_NO: ["Nu! Poopie cowows am bad!", "Bu' dey am poopie cowow...", "Nu wan be fwens wif poopie fwuffy!"],
     ALICORNS: ["Wingie-hownie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
     BRAVE: ["<Speaker> am bwave fwuffy!", "Nu be scawed... okie...", "Scawy fing nu huwt <speaker>."],
+    TABLE: ["Tabwe nu huwt... tabwe jus' tabwe?", "<Speaker> twy be bwave 'bout tabwe...", "Nu scawy tabwe... okie..."],
+    CALM: ["Daddeh... nu huwt <speaker>?", "<Speaker> twy nu be scawed of daddeh...", "*sniff* Daddeh gentwe nao..."],
     LITTER: ["Poopies go in speshuw pwace!", "<Speaker> make poopies in boxie!", "Nu poopies on fwoow. Okie!"],
     NOT_LISTENING: ["Wha'? <Speaker> nu undewstand...", "*yawn* ...huh?", "Wan pway, nu wan wissen..."],
     SMARTY_LISTENS: ["...Mebbe. Mebbe smawty wissen. Dis once.", "Hmph. Smawty... fink about it.", "Wha' if... smawty nu awways wight?"],

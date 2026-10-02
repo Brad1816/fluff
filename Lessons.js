@@ -11,7 +11,15 @@
 //                  "munstahs"): comfort + LESSON_ALICORNS (AlicornAcceptance)
 //   - "Litter"    (not fully litter trained): + LESSON_LITTER
 //   - "Brave"     (scared of thunder, the dark or the Fluff-Bot, Fears.js):
-//                  every fear - LESSON_BRAVE
+//                  its worst fear - LESSON_BRAVE_FOCUS, the others
+//                  - LESSON_BRAVE
+//   - "The table" (scared of the operating table since it saw or had an
+//                  operation): each lesson that sinks in is a step
+//                  (LESSON_TABLE) to getting over it
+//   - "Trust me"  (afraid of you, f.playerFear): - LESSON_CALM. The one
+//                  lesson a fluffy that's scared of you can still be given
+//                  (always gently, even with strict training on), but the
+//                  more scared it is the less often it sinks in
 //   - "Be good"   (Smarties only): very hard. Each lesson only sinks in
 //                  about a fifth as often (LESSON_SMARTY_CHANCE) and moves
 //                  it LESSON_SMARTY_STEP towards reformed (f.smartyReform,
@@ -37,7 +45,11 @@ const LESSON_TRIES_PER_DAY = 3;
 const LESSON_COLOURS = 0.08;
 const LESSON_ALICORNS = 0.07;
 const LESSON_LITTER = 0.07;
-const LESSON_BRAVE = 0.06; // off every fear (Fears.js)
+const LESSON_BRAVE = 0.04; // off every fear (Fears.js)...
+const LESSON_BRAVE_FOCUS = 0.12; // ...and this off the worst one
+const LESSON_TABLE = 0.25; // 4 lessons and it's over its fear of the operating table
+const LESSON_CALM = 0.05; // off its fear of you
+const LESSON_CALM_FROM = 0.15; // afraid of you at least this much for the lesson
 const LESSON_SMARTY_CHANCE = 0.2; // x the normal chance
 const LESSON_SMARTY_STEP = 0.1;
 const LESSON_SMARTY_SLIP = 0.02; // lost when a Smarty lesson fails (1 time in 4)
@@ -91,10 +103,38 @@ const LESSONS = [
       return Math.max(0, Math.min(1, 1 - worst));
     },
     teach: (f) => {
-      for (const fe of FEARS) if (fearOf(f, fe.key) > 0) changeFear(f, fe.key, -LESSON_BRAVE);
+      const worst = realFears(f)[0];
+      for (const fe of FEARS) if (fearOf(f, fe.key) > 0) changeFear(f, fe.key, -(worst && fe.key === worst.key ? LESSON_BRAVE_FOCUS : LESSON_BRAVE));
       return realFears(f).length === 0;
     },
     doneMsg: (n) => `${n} isn't scared of anything any more! ✓`,
+  },
+  {
+    key: "table",
+    name: "The table",
+    applies: (f) => !!f.fearOfOperatingTable,
+    progress: (f) => Math.max(0, Math.min(1, f.tableCourage || 0)),
+    teach: (f) => {
+      f.tableCourage = Math.min(1, (f.tableCourage || 0) + LESSON_TABLE);
+      if (f.tableCourage >= 0.999) {
+        f.fearOfOperatingTable = false;
+        f.tableCourage = 0;
+        return true;
+      }
+      return false;
+    },
+    doneMsg: (n) => `${n} isn't scared of the operating table any more! ✓`,
+  },
+  {
+    key: "calm",
+    name: "Trust me",
+    applies: (f) => (f.playerFear || 0) >= LESSON_CALM_FROM,
+    progress: (f) => Math.max(0, Math.min(1, 1 - (f.playerFear || 0))),
+    teach: (f) => {
+      f.playerFear = Math.max(0, (f.playerFear || 0) - LESSON_CALM);
+      return f.playerFear < LESSON_CALM_FROM;
+    },
+    doneMsg: (n) => `${n} isn't scared of you any more! ✓`,
   },
   {
     key: "smarty",
@@ -139,16 +179,17 @@ function lessonChance(f, key) {
   if (f.hunger < 0.3) p *= 0.7;
   if (f.happiness < 0.3) p *= 0.7;
   if (key === "smarty") p *= LESSON_SMARTY_CHANCE;
+  if (key === "calm") p *= 1 - 0.7 * Math.min(1, f.playerFear || 0); // (hard to reach when it's terrified)
   if (typeof wishPromiseBoost === "function") p *= wishPromiseBoost(f); // a dangled wish (Wishes.js)
   if (typeof climateLearnMultiplier === "function") p *= climateLearnMultiplier(f); // the room's feel (Climate.js)
   return Math.max(0.02, Math.min(0.95, p));
 }
 
-function lessonRefusal(f) {
+function lessonRefusal(f, key = null) {
   if (!canLearnTricks(f)) return "can't";
   if (f.currentStateKey === "SLEEPING") return "asleep";
   if (typeof titleOf === "function" && titleOf(f) === "Rebel") return "rebel"; // (Titles.js)
-  if ((f.playerFear || 0) >= 0.45 && !(typeof obeysFromFear === "function" && obeysFromFear(f))) return "scared";
+  if (key !== "calm" && (f.playerFear || 0) >= 0.45 && !(typeof obeysFromFear === "function" && obeysFromFear(f))) return "scared";
   if (lessonTriesLeft(f) <= 0) return "tired";
   return null;
 }
@@ -163,7 +204,7 @@ function giveLesson(f, key) {
   const lesson = getLesson(key);
   if (!lesson || !f) return "can't";
   if (!lesson.applies(f)) return "not needed";
-  const why = lessonRefusal(f);
+  const why = lessonRefusal(f, key);
   if (why) {
     if (why === "tired") _lsSay(f, "TIRED");
     else if (why === "scared" && !f.tooYoungToSpeak()) f.speak(getDialogue(["TRUST", "FLEE"], f), true);
@@ -173,8 +214,9 @@ function giveLesson(f, key) {
   if (!f.lessonTries || f.lessonTries.day !== d) f.lessonTries = { day: d, n: 0 };
   f.lessonTries.n++;
   const smarty = key === "smarty";
-  // Strict (FearTraining.js): fear makes it listen, and it costs
-  const strict = typeof isStrict === "function" && isStrict();
+  // Strict (FearTraining.js): fear makes it listen, and it costs (not
+  // "Trust me": that one's always gentle)
+  const strict = key !== "calm" && typeof isStrict === "function" && isStrict();
   if (strict) fearLessonCost(f);
   if (Math.random() < (strict ? fearLessonChance(f, key) : lessonChance(f, key))) {
     // Sits and listens
@@ -188,7 +230,7 @@ function giveLesson(f, key) {
     _lsSay(f, smarty ? "SMARTY_LISTENS" : key.toUpperCase());
     if (cured) {
       if (lesson.doneMsg && typeof addUIMessage === "function") addUIMessage(lesson.doneMsg(_trName(f)));
-      if (key !== "smarty") if (typeof recordStory === "function") recordStory("lesson_done", f, { x: { colours: "stopped caring about colours", alicorns: "stopped fearing alicorns", litter: "became litter trained", brave: "stopped being scared" }[key] });
+      if (key !== "smarty") if (typeof recordStory === "function") recordStory("lesson_done", f, { x: { colours: "stopped caring about colours", alicorns: "stopped fearing alicorns", litter: "became litter trained", brave: "stopped being scared", table: "got over its fear of the operating table", calm: "stopped being scared of you" }[key] });
       return "done";
     }
     return "learnt";

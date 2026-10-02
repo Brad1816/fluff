@@ -171,6 +171,11 @@ function attemptDrop() {
   }
   for (const f of fluffies) {
     if (f.isDragging) {
+      // One of yours set down outside: putting it out - ask first (Strays.js)
+      if (typeof wouldPutOut === "function" && wouldPutOut(f)) {
+        askPutOut(f, "drop");
+        return true;
+      }
       f.onDrop();
       return true;
     }
@@ -953,6 +958,8 @@ let feralDespawnTimer = 30;
 function spawnFeralGroup(targetScene, forcedScenario = null, opts = {}) {
   const before = fluffies.length;
   _spawnFeralGroup(targetScene, forcedScenario);
+  // Through the broken fence: not yours - you're asked (Strays.js)
+  if (targetScene === "BACKYARD" && typeof noteBackyardStrays === "function") noteBackyardStrays(fluffies.slice(before));
   if (opts.walkIn) {
     for (let i = before; i < fluffies.length; i++) {
       const h = fluffies[i];
@@ -1438,8 +1445,11 @@ function animate(timestamp) {
   }
   // Fast forward: extra game steps at 2x/4x/8x
   if (typeof runFastForward === "function") runFastForward(realElapsed, fixedStep);
+  // Sleeping until morning: the night goes by fast (Sleep.js), and the
+  // room is only drawn now and then meanwhile
+  if (typeof runSleep === "function") runSleep();
 
-  render();
+  if (typeof sleepWantsDraw !== "function" || sleepWantsDraw()) render();
   requestAnimationFrame(animate);
 }
 

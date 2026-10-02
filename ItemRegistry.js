@@ -553,6 +553,21 @@ const ITEM_TYPES = [
     },
   },
   {
+    sellType: "lawn_mower",
+    is: (o) => typeof LawnMower !== "undefined" && o instanceof LawnMower,
+    inCage: "never",
+    sellable: true,
+    tool: {
+      className: "LawnMower",
+      create: (scene) => new LawnMower(scene),
+      key: "lawn_mower",
+      name: "Mower",
+      fullName: "Lawn Mower",
+      desc: "Sweep it over long grass outside to mow it. It grows back.",
+      image: () => mowerImage(),
+    },
+  },
+  {
     sellType: "sponge",
     is: (o) => o instanceof Sponge,
     inCage: "never",
@@ -712,6 +727,7 @@ const SAVED_CLASSES = {
   Cage: (d) => new Cage(d.scene),
   Brush: (d) => new Brush(d.scene),
   Sponge: (d) => new Sponge(d.scene),
+  LawnMower: (d) => new LawnMower(d.scene), // (LawnMower.js)
   Knife: (d) => new Knife(d.type, d.scene),
   SutureKit: (d) => new SutureKit(d.scene),
   TrashBag: (d) => new TrashBag(d.scene),

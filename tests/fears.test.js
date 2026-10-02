@@ -213,7 +213,7 @@ module.exports = [
       await page.evaluate(TEARDOWN);
       check(r.applies, "Brave lesson offered");
       check(/Thunder \(scared\)/.test(r.row[0]) && /dark \(a bit\)/.test(r.row[0]), `fears row ${r.row}`);
-      check(Math.abs(r.after[0] - 0.44) < 0.001 && Math.abs(r.after[1] - 0.24) < 0.001 && r.after[2] === 0, `each fear down ${r.after}`);
+      check(Math.abs(r.after[0] - 0.38) < 0.001 && Math.abs(r.after[1] - 0.26) < 0.001 && r.after[2] === 0, `the worst fear down most, the others a little ${r.after}`);
       checkEqual(r.cured[0], 0, "not scared any more");
       checkEqual(r.cured[1], false, "no more Brave lessons");
       checkEqual(r.cured[2][1], "good", "row says so");
