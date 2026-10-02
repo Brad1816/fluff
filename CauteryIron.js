@@ -85,6 +85,7 @@ function ironImage(hot = false) {
 function cauterizeWound(f, iron = null) {
   if (!f || !f.isAlive || !(f.bleedingTimer > 0)) return false;
   f.bleedingTimer = 0;
+  if (typeof woundBurnt === "function") woundBurnt(f); // (burnt clean: it won't go bad, Recovery.js)
   const at = f.lastWound || "body";
   f.lastWound = null;
   // The burn
@@ -94,6 +95,8 @@ function cauterizeWound(f, iron = null) {
   if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
     for (let i = 0; i < 4; i++) poofs.push(new Poof(f.x + (Math.random() - 0.5) * 30, f.y - 10 - Math.random() * 20, f.scene, "rgba(170, 170, 170, 0.8)", true));
   }
+  // Terrified of the iron from now on - and so are the ones watching (Fears.js)
+  if (typeof learnFearOfFire === "function") learnFearOfFire(f);
   // You did it (Memory.js), and it shows for good (Scars.js)
   if (typeof notifyViolence === "function") notifyViolence(f, false, "cautery");
   const day = typeof getDayNumber === "function" ? getDayNumber() : 1;

@@ -1241,7 +1241,9 @@ class Horse {
         this.setTargetPosition(this.x, this.y);
       } else {
         // Force Y so visual bottom is at cage bottom
-        this.y = b.bottom - localBottom - CAGE_FLOOR_OFFSET;
+        // (an incubator's floor is the top of its base: Incubator.js)
+        const floor = typeof this.currentCage.floorOffset === "function" ? this.currentCage.floorOffset() : CAGE_FLOOR_OFFSET;
+        this.y = b.bottom - localBottom - floor;
         this.x = clamp(this.x, b.left - localLeft, b.right - localRight);
       }
     }

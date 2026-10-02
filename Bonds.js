@@ -72,6 +72,8 @@ function getLiking(a, b) {
   }
   // Herd-mates like each other more, rival herds less (Herds.js)
   if (typeof herdLikingBonus === "function") bonus += herdLikingBonus(a, b);
+  // Took each other in: a bond for life (Fostering.js)
+  if (typeof fosterLikingBonus === "function") bonus += fosterLikingBonus(a, b);
   return clamp(getOpinion(a, b) + bonus, -1, 1);
 }
 

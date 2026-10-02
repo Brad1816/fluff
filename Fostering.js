@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------------------
-// Foster mums: a wild mare may take in an orphaned wild foal near her.
+// Foster mums: a mare may take in an orphaned foal near her - a wild mare
+// a wild orphan, and one of your mares one of your orphans.
 //
-// Who might: a grown wild (not yours) mare, awake and well, who is either
+// Who might: a grown mare, awake and well, who is either
 //   - grieving: she lost a foal of her own in the last FOSTER_GRIEF_DAYS
 //     days (it died, or was born dead: f.lostFoalAt, HorseAnatomy.die).
 //     If her milk has dried up it comes back for the foal (and any foster
@@ -11,8 +12,9 @@
 // and isn't a mum who'd reject this foal anyway (its colour, an alicorn
 // she can't stand, one she's already turned away), and hasn't a full
 // litter already (FOSTER_MAX_LITTER).
-// Who can be taken in: a wild foal still on milk (growth under
-// FOSTER_MAX_GROWTH) whose mum is dead or gone, in the same area, within
+// Who can be taken in: a foal still on milk (growth under
+// FOSTER_MAX_GROWTH) whose mum is dead or gone, from the same household
+// (wild with wild, yours with yours), in the same area, within
 // FOSTER_RANGE of her, and that she can see or hear.
 // How often: now and then (FOSTER_CHANCE_*, per game hour, less the more
 // foals she's already nursing) - but a hungry orphan cries for its mum
@@ -25,7 +27,11 @@
 // It goes in both their stories ("taken in by"), the magnifying glass
 // shows it ("Foster mum: ..."; the family tree keeps its birth mum), and
 // the foal's foster mum is saved (f.fosterMumId).
-// Only wild ones: your own orphans are yours to look after.
+// A foster bond lasts: they like each other more for life (getLiking +
+// FOSTER_BOND, Bonds.js) on top of the start it gets (FOSTER_OPINION).
+// Sell or give away one of them (FamilyTree.noteFluffyLeft ->
+// noteFosterLeft) and the other grieves: unhappy, trusts you less, and a
+// foster mum who lost her foster foal is a grieving mum again.
 // ---------------------------------------------------------------------------
 
 const FOSTER_EVERY = 10; // game seconds between looks
@@ -43,15 +49,18 @@ const FOSTER_HEAR_RANGE = 750; // px: ...heard this far off...
 const FOSTER_CRY_BOOST = 4; // ...and she's this much likelier to come (at most FOSTER_CHANCE_MAX)
 const FOSTER_CHANCE_MAX = 0.95;
 const FOSTER_CRY_EVERY = 12; // game seconds between its cries
+const FOSTER_OPINION = 0.4; // a start, each of the other
+const FOSTER_BOND = 0.15; // liking each other, for life (Bonds.js getLiking)
+const FOSTER_LOSS_UNHAPPY = 0.3; // sold away from each other
 const fosterTicker = new Ticker(FOSTER_EVERY);
 
 function _fsNow() {
   return typeof timePlayed === "number" ? timePlayed : 0;
 }
 
-// Its mum is dead or gone (a wild foal still on milk)
-function isWildOrphan(f) {
-  if (!f || !f.isAlive || f.adopted || f.growth >= FOSTER_MAX_GROWTH) return false;
+// Its mum is dead or gone (a foal still on milk, wild or yours)
+function isOrphanFoal(f) {
+  if (!f || !f.isAlive || f.growth >= FOSTER_MAX_GROWTH) return false;
   if (f.isDragging || f.placedOn || f.currentCage) return false;
   if (f.motherId === null || f.motherId === undefined) return true;
   const mum = fluffies.find((m) => m.id === f.motherId);
@@ -72,7 +81,7 @@ function _fsNursing(m) {
 
 // Why she'd take one in: "grieving", "kind", or null
 function fosterMumReason(m) {
-  if (!m || !m.isAlive || m.adopted || m.gender !== "female" || m.growth < 1) return null;
+  if (!m || !m.isAlive || m.gender !== "female" || m.growth < 1) return null;
   if (m.currentStateKey === "SLEEPING" || m.isDragging || m.placedOn || m.currentCage || m.isPregnant) return null;
   if (m.happiness <= WAN_DIE_THRESHOLD || m.health < 40) return null;
   if (_fsNursing(m) >= FOSTER_MAX_LITTER) return null;
@@ -85,12 +94,13 @@ function fosterMumReason(m) {
 
 // Crying for a mum: hungry, awake
 function orphanCrying(f) {
-  return isWildOrphan(f) && f.hunger < FOSTER_HUNGRY && f.currentStateKey !== "SLEEPING";
+  return isOrphanFoal(f) && f.hunger < FOSTER_HUNGRY && f.currentStateKey !== "SLEEPING";
 }
 
 // Would she take this one? (a crying one she can hear from further off)
 function canFoster(m, foal) {
-  if (!fosterMumReason(m) || !isWildOrphan(foal) || m.scene !== foal.scene || m === foal) return false;
+  if (!fosterMumReason(m) || !isOrphanFoal(foal) || m.scene !== foal.scene || m === foal) return false;
+  if (!!m.adopted !== !!foal.adopted) return false; // (wild with wild, yours with yours)
   const crying = orphanCrying(foal);
   if (Math.hypot(m.x - foal.x, m.y - foal.y) > (crying ? FOSTER_HEAR_RANGE : FOSTER_RANGE)) return false;
   if (crying ? !m.canHear() : !(m.canSee() || m.canHear())) return false;
@@ -141,17 +151,62 @@ function fosterFoal(mare, foal, why = fosterMumReason(mare)) {
   mare._fostering = null;
   foal.changeHappiness(0.2);
   mare.changeHappiness(why === "grieving" ? 0.25 : 0.1);
+  // A bond for life (Bonds.js)
+  if (typeof changeOpinion === "function") {
+    changeOpinion(mare, foal, FOSTER_OPINION, "my foster foal");
+    changeOpinion(foal, mare, FOSTER_OPINION, "took me in");
+  }
   if (typeof recordStory === "function") recordStory("fostered", [foal.id, mare.id]);
+  if (mare.adopted && typeof addUIMessage === "function") {
+    const nm = (x) => (typeof fluffyDisplayName === "function" ? fluffyDisplayName(x) : "a fluffy");
+    addUIMessage(`${nm(mare)} has taken in the orphan ${nm(foal)} - she'll nurse it as her own.`);
+  }
   if (mare.happiness > WAN_DIE_THRESHOLD && !mare.tooYoungToSpeak()) mare.speak(getDialogue(["FOSTER", why === "grieving" ? "GRIEVING" : "KIND"], mare, foal), true);
   if (foal.tooYoungToSpeak()) foal.speak(getDialogue(["FOSTER", "FOAL"], foal, mare), false, true);
   return true;
 }
 
+// They took each other in (either way round)
+function isFosterPair(a, b) {
+  if (!a || !b) return false;
+  return (a.fosterMumId !== null && a.fosterMumId !== undefined && a.fosterMumId === b.id) || (b.fosterMumId !== null && b.fosterMumId !== undefined && b.fosterMumId === a.id);
+}
+
+// Bonds.js getLiking: the bond lasts
+function fosterLikingBonus(a, b) {
+  return isFosterPair(a, b) ? FOSTER_BOND : 0;
+}
+
+// One of them was sold or given away (FamilyTree.noteFluffyLeft): the
+// other one misses it
+function noteFosterLeft(gone, reason) {
+  if (!gone || typeof fluffies === "undefined") return 0;
+  let n = 0;
+  for (const o of fluffies) {
+    if (o === gone || !o.isAlive || !isFosterPair(o, gone)) continue;
+    n++;
+    o.changeHappiness(-FOSTER_LOSS_UNHAPPY);
+    if (typeof changePlayerTrust === "function" && o.adopted && (reason === "sold" || reason === "given up")) changePlayerTrust(o, -0.1);
+    const isMum = gone.fosterMumId === o.id;
+    if (isMum) o.lostFoalAt = _fsNow(); // (a grieving mum again)
+    if (typeof recordStory === "function") recordStory("turning", o, { x: `${typeof fluffyDisplayName === "function" ? fluffyDisplayName(o) : "It"} lost ${isMum ? "the foster foal she took in" : "the foster mum who took it in"}.` });
+    if (typeof getDialogue === "function") {
+      if (o.tooYoungToSpeak()) o.speak(getDialogue(["FOSTER", "FOAL_LOST"], o, gone), true, true);
+      else o.speak(getDialogue(["FOSTER", isMum ? "MUM_LOST" : "LOST_MUM"], o, gone), true);
+    }
+  }
+  return n;
+}
+
 // Magnifying glass: [text, tone] or null
 function describeFoster(f) {
-  if (!f || f.fosterMumId === null || f.fosterMumId === undefined) return null;
-  const name = typeof fluffyDisplayNameById === "function" ? fluffyDisplayNameById(f.fosterMumId, "a wild mare") : "a wild mare";
-  return [`Taken in by ${name}`, "good"];
+  if (!f) return null;
+  const nameOf = (id, d) => (typeof fluffyDisplayNameById === "function" ? fluffyDisplayNameById(id, d) : d);
+  if (f.fosterMumId !== null && f.fosterMumId !== undefined) return [`Taken in by ${nameOf(f.fosterMumId, f.adopted ? "a mare" : "a wild mare")}`, "good"];
+  if (typeof fluffies === "undefined") return null;
+  const kids = fluffies.filter((k) => k.isAlive && k.fosterMumId === f.id);
+  if (!kids.length) return null;
+  return [`Foster mum to ${kids.map((k) => nameOf(k.id, "a foal")).join(", ")}`, "good"];
 }
 
 function updateFostering(dt) {
@@ -176,7 +231,7 @@ function updateFostering(dt) {
   const step = fosterTicker.step(dt);
   if (!step) return;
   // Who sets off for one?
-  const orphans = fluffies.filter(isWildOrphan);
+  const orphans = fluffies.filter(isOrphanFoal);
   if (!orphans.length) return;
   // Hungry ones cry for a mum
   for (const o of orphans) {

@@ -532,6 +532,15 @@ function drawSurgery(c) {
       : "Knife: it bleeds and it hurts its health. Have the suture kit ready.";
   const onTable = typeof OperatingTable !== "undefined" && f.placedOn instanceof OperatingTable;
   c.fillText(toolNote + (onTable ? "" : "  (Not on an operating table.)"), L.x + 24, iy + 22);
+  // How likely the wound is to go bad (Recovery.js)
+  if (typeof isRecovering === "function" && isRecovering(f)) {
+    const r = f.recovery.risk;
+    c.font = "13px Arial";
+    c.fillStyle = r <= 0 ? "#9ff0c8" : r < 0.08 ? "rgba(255,255,255,0.75)" : "#ffb38a";
+    c.textAlign = "right";
+    c.fillText(r <= 0 ? "Wound burnt clean: no infection" : `Infection risk ${riskWord(r)} (${Math.round(r * 100)}%) - let it rest`, L.art.x + L.art.w, iy);
+    c.textAlign = "left";
+  }
   if (surgery.note) {
     c.fillStyle = "#ffd6a0";
     c.font = "bold 14px Arial";
@@ -854,6 +863,8 @@ function knifeCut(f, hitPart, knife) {
   const amputated = f.amputate(hitPart, knife);
   // (where the wound is, for a burn if it's cauterized: CauteryIron.js)
   f.lastWound = amputated || "body";
+  // A wound that could go bad while it heals (Recovery.js)
+  if (typeof startRecovery === "function") startRecovery(f, knife);
   f.changeHappiness(HAPPINESS_PENALTY_AMPUTATION);
 
   notifyViolence(f, false, knife.type, false, !!amputated);

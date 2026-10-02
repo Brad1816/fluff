@@ -984,12 +984,15 @@ function handleDropping(item) {
           item.y > b.top &&
           item.y < b.bottom
         ) {
-          if (cage.isCulling()) {
-            // Sealed off: push the item out below the cage instead
+          if (cage.isCulling() || (cage.accepts && !cage.accepts(item))) {
+            // Sealed off, or not for this (a full incubator): put it down
+            // below the cage instead
             item.y = Math.min(height - 10, b.bottom + 10);
             break;
           }
           item.currentCage = cage;
+          // One that dreads cages panics (Fears.js)
+          if (typeof onPutInCage === "function" && typeof Horse !== "undefined" && item instanceof Horse) onPutInCage(item, cage);
           break;
         }
       }
@@ -1836,6 +1839,12 @@ const SPAWN_ACTIONS = [
     desc: "Drop fluffies in to trap them inside the cage. Right click the cage to switch modes.\n\nBreeding mode allows forcibly breeding caged fluffies by sorry-sticking the stallion.\n\nSell mode will allow caged fluffies to be prioritized for sale offers.\n\nClicking the cage in eject mode instantly drops everything inside out below it.\n\nClicking it in cull mode (it asks first) seals it with glass and pumps the air out: every fluffy inside slowly and painfully suffocates.",
     cost: 150,
     isItem: "cage",
+  },
+  {
+    name: "Incubator",
+    desc: "A warm glass box for a frail foal born early. Drop up to two foals still on milk in: they're kept warm and tube-fed, and get over their frailty twice as fast.",
+    cost: 350,
+    isItem: "incubator",
   },
   {
     name: "Enclosure",

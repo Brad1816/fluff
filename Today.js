@@ -106,6 +106,8 @@ function todayItems() {
     else if (f.happiness < GIVING_UP_SOON) add("urgent", `${n} is close to giving up - cheer it up before it stops eating.`, f);
     if (typeof isFrightened === "function" && isFrightened(f)) add("urgent", `${n} is frightened - pick it up or sit with it.`, f);
     if (f.bleedingTimer > 0) add("urgent", `${n} is bleeding.`, f);
+    // Born early and frail, cold or hungry (Premature.js)
+    if (typeof frailInDanger === "function" && frailInDanger(f)) add("urgent", `${n} was born early and is frail - keep it warm and fed (an incubator helps).`, f);
     const ill = typeof vetProblems === "function" ? vetProblems(f).map((p) => p[0]) : [];
     if (ill.length && (typeof fluShowing !== "function" || fluShowing(f) || ill.some((x) => x !== "Fluffy flu"))) add("urgent", `${n} needs the vet: ${ill.join(", ").toLowerCase()}.`, f);
     if (typeof breakLimitOf === "function" && typeof titleOf === "function") {

@@ -131,10 +131,11 @@ module.exports = [
         window.mumRejectsFoalColour = (m, f) => m === proud;
         out.canProud = canFoster(proud, near);
         window.mumRejectsFoalColour = real;
-        // A tame mare (yours) never fosters
+        // A mare of yours grieves too, but only takes in your orphans
         const tame = __mk(450, { adopted: true });
         tame.lostFoalAt = timePlayed;
         out.tameReason = fosterMumReason(tame);
+        out.tameCanWild = canFoster(tame, near);
         // Grief wears off after a few days
         const old = __mk(500);
         old.lostFoalAt = timePlayed - (FOSTER_GRIEF_DAYS + 0.5) * DAY_LENGTH;
@@ -154,7 +155,8 @@ module.exports = [
       check(r.canNear && !r.canFar, `only one in range: ${JSON.stringify(r)}`);
       check(!r.canYours, "not one of yours");
       check(!r.canProud, "not a foal she'd reject for its colour");
-      checkEqual(r.tameReason, null, "your mares don't go fostering");
+      checkEqual(r.tameReason, "grieving", "your mares grieve too");
+      checkEqual(r.tameCanWild, false, "but don't take in a wild orphan");
       checkEqual(r.oldReason, null, "grief wears off after a few days");
       check(r.nearTaken && r.yoursLeft && r.farLeft, `the near orphan is taken in, the others aren't: ${JSON.stringify(r)}`);
       checkEqual(r.siblings, "sister", "her own foal (a filly) is its sister now");

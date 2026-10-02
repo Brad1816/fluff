@@ -305,6 +305,17 @@ const ITEM_TYPES = [
 
   // ---- Containers and equipment ----
   {
+    // A warm glass box for frail foals (Incubator.js): before "cage", as it is one
+    sellType: "incubator",
+    is: (o) => typeof Incubator !== "undefined" && o instanceof Incubator,
+    inCage: "ignore",
+    hitTest: imageHit(() => incubatorImage(), "center"),
+    sellable: true,
+    sellValue: (o) => o.getSellValue(),
+    onRightClick: () => true, // (no modes)
+    create: () => centered(new Incubator(currentScene)),
+  },
+  {
     // A roomy cage (Enclosure.js): before "cage", as it is one
     sellType: "enclosure",
     is: (o) => typeof Enclosure !== "undefined" && o instanceof Enclosure,
@@ -768,6 +779,7 @@ const SAVED_CLASSES = {
   Grinder: (d) => new Grinder(d.scene),
   Cage: (d) => new Cage(d.scene),
   Enclosure: (d) => new Enclosure(d.scene), // (Enclosure.js)
+  Incubator: (d) => new Incubator(d.scene), // (Incubator.js)
   Brush: (d) => new Brush(d.scene),
   Sponge: (d) => new Sponge(d.scene),
   LawnMower: (d) => new LawnMower(d.scene), // (LawnMower.js)

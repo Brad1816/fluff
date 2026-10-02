@@ -144,6 +144,7 @@ function vetProblems(f) {
   if (f.isToxoplasmosis) out.push(["toxoplasmosis", 100]);
   if (f.isDiarrhea || f.isIncontinent) out.push([f.isDiarrhea ? "the runs" : "incontinent", 15]);
   if (f.bleedingTimer > 0) out.push(["bleeding", 30]);
+  if (typeof hasInfection === "function" && hasInfection(f)) out.push(["infected wound", 50]); // (Recovery.js)
   if ((f.health ?? 100) < 90) out.push([`hurt (${Math.round(f.health)}/100)`, 20]);
   return out;
 }
@@ -198,6 +199,7 @@ function vetTreat(f) {
   f.isDiarrhea = false;
   f.isIncontinent = false;
   f.bleedingTimer = 0;
+  if (typeof cureInfection === "function") cureInfection(f);
   f.health = 100;
   f.vetCheckedAt = typeof timePlayed === "number" ? timePlayed : 0;
   f.vetNote = "treated - all better";

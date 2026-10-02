@@ -1,5 +1,6 @@
 // ---------------------------------------------------------------------------
-// Fears: thunder, the dark, and the Fluff-Bot.
+// Fears: thunder, the dark, the Fluff-Bot - and, learnt the hard way, the
+// hot iron and cages.
 //
 // Each fluffy has its own fears (f.fears = { thunder, dark, bot }, 0..1,
 // saved). They're made the first time they're needed (fearsOf): timid
@@ -22,6 +23,18 @@
 // runs to its mum (foals) or a friend in the room, or cowers where it is
 // (FrightDesire).
 //
+//   - The hot iron (learnt: nobody is born scared of it). Burnt with it
+//     (CauteryIron.js) a fluffy is terrified of it (FIRE_FROM_BURN); one
+//     that saw it happen is scared too (FIRE_FROM_SEEING, more for family).
+//     You holding the iron near it (FIRE_NEAR) sets it off, and so does
+//     going near a heater that's running (HEATER_NEAR).
+//   - Cages (learnt too): seeing a cage cull (Cage.js) makes the ones
+//     watching dread cages (CAGES_FROM_CULL, more if family were in it).
+//     Being put in a cage (not an Enclosure or incubator) sets it off, and
+//     so does being near a cage set to cull. Kept in an Enclosure (a cage
+//     that's nothing like that glass box) it slowly gets over it
+//     (CAGES_ENCLOSURE_HEAL a game hour).
+//
 // Helping it:
 //   - Comfort it while it's frightened: pick it up or brush it
 //     (onComfortedByYou, from Memory.js). The fright stops, it's happier, and
@@ -39,13 +52,22 @@ const FEARS = [
   { key: "thunder", name: "thunder" },
   { key: "dark", name: "the dark" },
   { key: "bot", name: "the Fluff-Bot" },
+  { key: "fire", name: "the hot iron", learnt: true }, // (CauteryIron.js)
+  { key: "cages", name: "cages", learnt: true }, // (a cull: Cage.js)
 ];
+const FIRE_FROM_BURN = 0.75;
+const FIRE_FROM_SEEING = 0.25; // (+0.15 when it was family)
+const FIRE_NEAR = 260; // px: you holding the iron this close
+const HEATER_NEAR = 110; // px: a running heater this close
+const CAGES_FROM_CULL = 0.5; // (+0.2 when family were in it)
+const CULL_CAGE_NEAR = 160; // px: a cage set to cull this close
+const CAGES_ENCLOSURE_HEAL = 0.025; // fear lost a game hour kept in an Enclosure
 const FEAR_MIN = 0.15; // weaker than this doesn't count
 const FEAR_INDOOR_THUNDER = 0.35; // indoors it has to be at least this scared
 const FEAR_COMFORT = 0.06;
 const FEAR_WORSEN = 0.02;
-const FRIGHT_TIME = { thunder: 20, dark: 15, bot: 12 }; // seconds, x (0.5 + fear)
-const FRIGHT_REST = { thunder: 0, dark: 200, bot: 300 }; // seconds after a fright before the same thing can start another
+const FRIGHT_TIME = { thunder: 20, dark: 15, bot: 12, fire: 15, cages: 15 }; // seconds, x (0.5 + fear)
+const FRIGHT_REST = { thunder: 0, dark: 200, bot: 300, fire: 40, cages: 90 }; // seconds after a fright before the same thing can start another
 const BOT_NEAR = 100; // px: the Fluff-Bot driving this close can set one off
 const DARK_FRIGHT_CHANCE = 0.004; // a second, x fear, awake in a dark room
 const NIGHT_LIGHT_PRICE = 30;
@@ -70,6 +92,10 @@ function fearsOf(f) {
     const chance = Math.max(0.04, Math.min(0.65, 0.25 - 0.3 * brave));
     const fears = {};
     for (const fe of FEARS) {
+      if (fe.learnt) {
+        fears[fe.key] = 0; // (nobody's born scared of these)
+        continue;
+      }
       fears[fe.key] = Math.random() < chance ? Math.round((0.3 + Math.random() * 0.6 - 0.15 * brave) * 100) / 100 : 0;
       fears[fe.key] = Math.max(0, Math.min(1, fears[fe.key]));
     }
@@ -312,6 +338,42 @@ function onRoombaBump(f) {
   return startFright(f, "bot");
 }
 
+// ---- Learnt fears ----
+
+// CauteryIron.js: burnt with the iron - it, and anyone who saw
+function learnFearOfFire(victim) {
+  if (!victim) return;
+  changeFear(victim, "fire", FIRE_FROM_BURN);
+  for (const o of fluffies) {
+    if (o === victim || !o.isAlive || o.scene !== victim.scene || o.currentStateKey === "SLEEPING" || !(o.canSee() || o.canHear())) continue;
+    const rel = typeof relationships !== "undefined" && relationships[o.id] ? relationships[o.id][victim.id] : null;
+    const family = rel && rel !== "friend";
+    changeFear(o, "fire", FIRE_FROM_SEEING + (family ? 0.15 : 0));
+  }
+}
+
+// Cage.js: a cull - the ones watching from outside the cage
+function learnFearOfCages(cage, victims) {
+  if (!cage) return;
+  const ids = new Set((victims || []).map((v) => v.id));
+  for (const o of fluffies) {
+    if (!o.isAlive || o.scene !== cage.scene || o.currentCage === cage || o.currentStateKey === "SLEEPING" || !(o.canSee() || o.canHear())) continue;
+    const rels = (typeof relationships !== "undefined" && relationships[o.id]) || {};
+    const family = [...ids].some((id) => rels[id] && rels[id] !== "friend");
+    changeFear(o, "cages", CAGES_FROM_CULL + (family ? 0.2 : 0));
+  }
+}
+
+// globals.js handleDropping: put in a cage
+function onPutInCage(f, cage) {
+  if (!f || !f.isAlive || !cage || !(cage instanceof Cage) || !cage.causesUnhappiness()) return false;
+  if (fearOf(f, "cages") < FEAR_MIN) return false;
+  // it struggles and cries (and doesn't forget who did it)
+  const scared = startFright(f, "cages");
+  if (scared && typeof changePlayerFear === "function") changePlayerFear(f, 0.02 * fearOf(f, "cages"));
+  return scared;
+}
+
 // ---- Behaviour: cower or run to mum ----
 
 class FrightDesire extends Desire {
@@ -394,6 +456,9 @@ function updateFears(dt) {
   const step = fearsTicker.step(dt);
   if (!step) return;
   const now = _fNow();
+  const irons = typeof CauteryIron !== "undefined" ? objects.filter((o) => o instanceof CauteryIron && o.isDragging) : [];
+  const heaters = typeof Heater !== "undefined" ? objects.filter((o) => o instanceof Heater && o.heating) : [];
+  const cullCages = typeof Cage !== "undefined" ? objects.filter((o) => o instanceof Cage && (o.tag === "cull" || o.isCulling())) : [];
   const bots = typeof objects !== "undefined" && typeof Roomba !== "undefined" ? objects.filter((o) => (o instanceof Roomba && o.on && o.state !== "docked" && !o.isDragging) || (typeof FeedBot !== "undefined" && o instanceof FeedBot && o.state === "driving")) : [];
   for (const f of fluffies) {
     if (!f.isAlive) continue;
@@ -417,7 +482,37 @@ function updateFears(dt) {
       }
       continue;
     }
+    // Kept in an Enclosure: slowly gets over cages (Enclosure.js)
+    // (saved up, as fears are kept to 3 decimal places)
+    if (typeof Enclosure !== "undefined" && f.currentCage instanceof Enclosure && fearOf(f, "cages") > 0) {
+      f._cageHeal = (f._cageHeal || 0) + (CAGES_ENCLOSURE_HEAL * step) / HOUR_LENGTH;
+      if (f._cageHeal >= 0.005) {
+        changeFear(f, "cages", -f._cageHeal);
+        f._cageHeal = 0;
+      }
+    }
     if (f.isDragging) continue;
+    const awake = f.currentStateKey !== "SLEEPING";
+    // The hot iron in your hand, or a heater running
+    const fire = fearOf(f, "fire");
+    if (fire >= FEAR_MIN && awake) {
+      const iron = irons.some((i) => i.scene === f.scene && Math.hypot(i.x - f.x, i.y - f.y) < FIRE_NEAR);
+      const heater = heaters.some((h) => h.scene === f.scene && Math.hypot(h.x - f.x, h.y - f.y) < HEATER_NEAR);
+      if ((iron && Math.random() < 0.6 * fire * step) || (heater && Math.random() < 0.1 * fire * step)) {
+        startFright(f, "fire");
+        continue;
+      }
+    }
+    // A cage: set to cull nearby, or in one
+    const cages = fearOf(f, "cages");
+    if (cages >= FEAR_MIN && awake) {
+      const inCage = f.currentCage instanceof Cage && f.currentCage.causesUnhappiness();
+      const cullNear = cullCages.some((c) => c.scene === f.scene && Math.hypot(c.x - f.x, c.y - f.y) < CULL_CAGE_NEAR);
+      if ((cullNear && Math.random() < 0.3 * cages * step) || (inCage && Math.random() < 0.01 * cages * step)) {
+        startFright(f, "cages");
+        continue;
+      }
+    }
     // The dark
     const dark = fearOf(f, "dark");
     if (dark >= FEAR_MIN && isDarkFor(f)) {

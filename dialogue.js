@@ -497,6 +497,8 @@ const DIALOGUE = {
     THUNDER: ["*SCREEEE* Woud sky-noise!", "Sky am angwy! Hewp!", "Nu wike boomies! Huu huu!", "Make it stop! Pwease!"],
     DARK: ["It am su dawk... scawy...", "Nu can see! Munstahs in dawk?", "Pwease tuwn on wight...", "*sniff* ...anyone dewe?"],
     BOT: ["Munstah-wobot! Nu eat <speaker>!", "*SCREEE* It comin' back!", "Go 'way scawy wobot!"],
+    FIRE: ["*SCREEE* Hot stick! Nu! Nu!", "Nu buwn <speaker> 'gain! Pwease!", "Hot huwties! Go 'way!", "*shaking* Nu hot fing... nu hot fing..."],
+    CAGES: ["Nu! Nu gwass box! Wet <speaker> out!", "*SCREEE* Nu can bweavies in dewe!", "Nu put <speaker> in box! Pwease!", "Box make fwuffies go sweepies fowebah..."],
     COMFORTED: ["Safe nao... tank yu...", "Huggies make scawies go 'way...", "<Speaker> nu scawed wif yu."],
     CALMED: ["Bettew nao...", "Nu scawed anymowe.", "Tank yu fow snuggwes, fwen."],
     MUM: ["Mummah! Mummah! Scawy!", "Mummah, hewp!", "Wan mummah!"],
@@ -1892,6 +1894,16 @@ const DIALOGUE = {
   },
 
   // Amputation
+  // A fever from an infected wound (Recovery.js)
+  INFECTION: {
+    DEFAULT: ["Owwie am hot... an' huwtie...", "<Speaker> nu feew gud... aww shivewy...", "Huu huu... owwie smeww bad...", "Wan sweepies... too hot..."],
+  },
+  // A pegasus learning to fly from being thrown (Flight.js)
+  FLIGHT: {
+    GLIDE: ["Wingies wowk!! <Speaker> nu faww, <speaker> fwoat!", "Wook!! <Speaker> am fwyin' wike biwdie!", "Fwap fwap fwap... soft wandies!"],
+    SOLO: ["<Speaker> am weaw sky-fwuffy nao!!", "Nu nee' daddeh fwow, <speaker> fwy aww by sewf!", "Wingies am stwong! <Speaker> go up up up!"],
+    FLYING: ["Wheeee!! Fwyin'!!", "Up in da sky!!", "Fwap fwap fwap!!", "<Speaker> fwy dewe!"],
+  },
   // A wild mare taking in an orphan (Fostering.js)
   FOSTER: {
     SEES: ["Wittwe babbeh aww awone...", "Who babbeh? Whewe babbeh's mummah?", "Babbeh nu hab mummah..."],
@@ -1906,6 +1918,9 @@ const DIALOGUE = {
       "Yu come wif us, babbeh. Yu famiwy nao.",
     ],
     FOAL: ["*happy peep*", "Peep! Peep!", "*snuggles in*"],
+    MUM_LOST: ["Whewe <target> go?! Mummah's babbeh... mummah's babbeh gone...", "Nu! Nu take <target>! Mummah wuv <target> wike own babbeh!", "Huu huu... mummah wose anuddah babbeh..."],
+    LOST_MUM: ["Whewe mummah <target>?! Mummah tuk <speaker> in... wan mummah!!", "Nu! Mummah come back!! Huu huu...", "<Speaker> wose two mummahs nao..."],
+    FOAL_LOST: ["*lost peeping*", "Peep? Peep...? *cries*", "*searching chirps*"],
   },
   // Burnt shut with the hot iron (CauteryIron.js)
   CAUTERY: {

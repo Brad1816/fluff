@@ -163,6 +163,10 @@ function getFluffyInspectionInfo(f) {
     if (role) about.push({ label: "Family role", value: role[0], tone: role[1] });
     const bestest = typeof describeBestest === "function" ? describeBestest(f) : null; // Favourites.js
     if (bestest) about.push({ label: "Favourite", value: bestest[0], tone: bestest[1] });
+    const rec = typeof describeRecovery === "function" ? describeRecovery(f) : null; // Recovery.js
+    if (rec) about.push({ label: "Surgery", value: rec[0], tone: rec[1] });
+    const flight = typeof describeFlight === "function" ? describeFlight(f) : null; // Flight.js
+    if (flight) about.push({ label: "Flying", value: flight[0], tone: flight[1] });
     const foster = typeof describeFoster === "function" ? describeFoster(f) : null; // Fostering.js
     if (foster) about.push({ label: "Foster mum", value: foster[0], tone: foster[1] });
     const early = typeof describePremature === "function" ? describePremature(f) : null; // Premature.js
@@ -379,7 +383,7 @@ const INSPECTION_TABS = [
     id: "family",
     name: "Family & friends",
     cols: [
-      { title: "Family", rows: ["Mother", "Father", "Line", "Born", "Named by", "Herd"] },
+      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Line", "Born", "Named by", "Herd"] },
       { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Misses"] },
     ],
   },
@@ -388,7 +392,7 @@ const INSPECTION_TABS = [
     name: "Looks & nature",
     cols: [
       { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Scars", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Growing up"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Flying", "Growing up"] },
     ],
   },
   {
@@ -427,7 +431,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Flying"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;

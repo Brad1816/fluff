@@ -35,6 +35,11 @@ class Cage {
     return 75;
   }
 
+  // Can this go in? (Incubator.js: only small foals, a couple at a time)
+  accepts(item) {
+    return true;
+  }
+
   cycleTag() {
     const tags = ["none", "breeding", "sell", "eject", "cull"];
     const idx = tags.indexOf(this.tag);
@@ -78,6 +83,8 @@ class Cage {
     if (t >= CAGE_CULL_DEATH_TIME) {
       if (!this.cullKilled) {
         this.cullKilled = true;
+        // The ones watching will dread cages (Fears.js)
+        if (typeof learnFearOfCages === "function") learnFearOfCages(this, occupants);
         for (const f of occupants) f.die("cull", "Suffocated in a culling cage"); // (you did it: Memory.js)
       }
       return;

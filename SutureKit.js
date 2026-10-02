@@ -138,6 +138,7 @@ class SutureKit {
 function sutureWound(f, kit) {
   if (!f || !kit || !(f.bleedingTimer > 0) || !(kit.charges > 0)) return false;
   f.bleedingTimer = 0;
+  if (typeof woundStitched === "function") woundStitched(f); // (less likely to go bad: Recovery.js)
   // You fixed its owie (Affection.js)
   if (typeof giveAffection === "function") giveAffection(f, "patched");
   kit.whackTimer = 0.2;

@@ -85,6 +85,8 @@ function roomIsHeated(scene) {
 
 // The cold one fluffy feels where it is
 function coldAt(f) {
+  // (a running incubator is warm: Incubator.js)
+  if (typeof inIncubator === "function" && inIncubator(f)) return 0;
   let c = placeColdness(f.scene);
   if (c <= 0) return 0;
   const heaters = heatersIn(f.scene);
