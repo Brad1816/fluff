@@ -38,6 +38,7 @@ const FEAR_FROM_WEAPON = {
   grinder: 0.5,
   throw: 0.2, // thrown and landing hard (ThrowTool.js)
   cull: 0.5, // a culling cage (Cage.js): only ever seen, never survived
+  cautery: 0.3, // a wound burnt shut with the hot iron (CauteryIron.js)
 };
 
 const MEMORY_TEXT = {
@@ -49,6 +50,7 @@ const MEMORY_TEXT = {
   scalpel: "Cut with a scalpel",
   grinder: "Saw the grinder",
   throw: "Thrown by you",
+  cautery: "Burnt with the hot iron",
   witness: "Saw you hurt a fluffy",
   witness_family: "Saw you hurt its family",
   training: "Stick potty training",

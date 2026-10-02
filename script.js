@@ -644,6 +644,19 @@ function attemptDrop() {
         }
         if (!hitFluffy) missWithTool(obj);
         return true;
+      } else if (typeof CauteryIron !== "undefined" && obj instanceof CauteryIron) {
+        // Burn a bleeding wound shut (CauteryIron.js)
+        let hitFluffy = false;
+        for (const f of fluffies) {
+          if (f.scene !== obj.scene || !f.isAlive) continue;
+          if (f.currentCage && typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan) continue;
+          if (!f.hitTestAsSeen(mouse.x, mouse.y)) continue;
+          hitFluffy = true;
+          if (!cauterizeWound(f, obj) && typeof addUIMessage === "function") addUIMessage("It isn't bleeding - nothing to burn shut.");
+          break;
+        }
+        if (!hitFluffy) missWithTool(obj);
+        return true;
       } else if (obj instanceof SutureKit) {
         let kit = obj;
         let hitFluffy = false;
@@ -657,25 +670,8 @@ function attemptDrop() {
             continue;
           if (f.hitTestAsSeen(mouse.x, mouse.y)) {
             if (f.bleedingTimer > 0) {
-              f.bleedingTimer = 0;
-              // You fixed its owie (Affection.js)
-              if (typeof giveAffection === "function") giveAffection(f, "patched");
-              kit.whackTimer = 0.2;
-              kit.charges--;
+              sutureWound(f, kit); // (SutureKit.js)
               hitFluffy = true;
-              if (kit.charges <= 0) {
-                if (typeof removeToolFromToolbox === "function") {
-                  removeToolFromToolbox(kit);
-                }
-                const idx = objects.indexOf(kit);
-                if (idx > -1) objects.splice(idx, 1);
-                if (
-                  typeof poofs !== "undefined" &&
-                  typeof Poof !== "undefined"
-                ) {
-                  poofs.push(new Poof(kit.x, kit.y, kit.scene));
-                }
-              }
               break;
             }
           }

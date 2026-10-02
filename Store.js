@@ -71,6 +71,7 @@ const STORE_AISLES = [
       "sorry_stick",
       "thumbtack",
       "knife",
+      "cautery_iron",
       "cattle_prod",
       "scalpel",
       "immobilization_board",

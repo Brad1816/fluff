@@ -1784,6 +1784,12 @@ const SPAWN_ACTIONS = [
     isItem: "scalpel",
   },
   {
+    name: "Cautery iron",
+    desc: "The harsh way to stop a fluffy bleeding: click a bleeding fluffy to burn the wound shut. Never runs out - but it's agony, it leaves a burn scar for life, and the fluffy won't forget who did it.",
+    cost: 120,
+    isItem: "cautery_iron",
+  },
+  {
     name: "Suture kit",
     desc: "Used to stop blood loss in amputated fluffies. 4 uses.",
     cost: 1000,
@@ -2094,6 +2100,7 @@ const TOOL_GRIPS = {
   sponge: { ax: 0.5, ay: 0.5, turn: 0 },
   suture_kit: { ax: 0.5, ay: 0.5, turn: 0 },
   lawn_mower: { ax: 0.48, ay: 0.78, turn: 0 }, // (the middle of the deck: where it cuts)
+  cautery_iron: { ax: 0.5, ay: 0.02, turn: -30 }, // (the hot tip)
 };
 
 // Draw a held tool's picture (after ctx.translate(tool.x, tool.y)).

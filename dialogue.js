@@ -1892,6 +1892,18 @@ const DIALOGUE = {
   },
 
   // Amputation
+  // Burnt shut with the hot iron (CauteryIron.js)
+  CAUTERY: {
+    DEFAULT: [
+      "SCREEEEEEEEEEEE!!! HOT HUWTIES!!! HOT HUWTIES!!!",
+      "FIWE!!! FIWE!!!! NU BUWN <SPEAKER>!!!!",
+      "*tssssss* SCREEEEEEEEEEEEEEEEEEE!!!!!",
+      "OWWIES AM ON FIWE!!!! MUMMAH!!! MUMMAH!!!",
+      "WAI HUWT WIF HOT STICKY?!?! SCREEEE!!!",
+      "EEEEEEEEEEEEEEEEEEEEK!!! SMEWW WIKE BUWNIES!!!",
+    ],
+    CHIRPY: ["SPEEEEEEEEEEEEEEEEEEEE!!!!!", "*shrill, endless peeping*", "SCREEEEEEEEEEEEeeee..."],
+  },
   AMPUTATION: {
     DEFAULT: [
       "SCREEEEEEEEEEEE!!!",

@@ -131,3 +131,22 @@ class SutureKit {
     ctx.restore();
   }
 }
+
+// Stitch a bleeding wound shut (a click with the kit, or the surgery
+// screen): it stops bleeding, and it's grateful. One use; an empty kit is
+// gone. Returns true if it did.
+function sutureWound(f, kit) {
+  if (!f || !kit || !(f.bleedingTimer > 0) || !(kit.charges > 0)) return false;
+  f.bleedingTimer = 0;
+  // You fixed its owie (Affection.js)
+  if (typeof giveAffection === "function") giveAffection(f, "patched");
+  kit.whackTimer = 0.2;
+  kit.charges--;
+  if (kit.charges <= 0) {
+    if (typeof removeToolFromToolbox === "function") removeToolFromToolbox(kit);
+    const idx = objects.indexOf(kit);
+    if (idx > -1) objects.splice(idx, 1);
+    if (typeof poofs !== "undefined" && typeof Poof !== "undefined") poofs.push(new Poof(kit.x, kit.y, kit.scene));
+  }
+  return true;
+}

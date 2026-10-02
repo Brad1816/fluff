@@ -30,6 +30,7 @@ const SCAR_KINDS = {
   bald: { name: "bald patch" },
   tail: { name: "crooked tail" },
   muzzle: { name: "nicked muzzle" },
+  burn: { name: "burn scar" }, // a wound burnt shut (CauteryIron.js): where it was in scar.at
 };
 
 // What each hurt can leave
@@ -62,14 +63,17 @@ function _scDay() {
   return typeof getDayNumber === "function" ? getDayNumber() : 1;
 }
 
-// Leaves a scar. Returns it (or null: no room left for a new one)
-function addScar(f, kind, how) {
+// Leaves a scar. Returns it (or null: no room left for a new one).
+// opts.at: where on the body (a burn: the wound it closed); opts.always:
+// it's left even when it already has SCAR_MAX (a burn is never skipped)
+function addScar(f, kind, how, opts = {}) {
   if (!f || !f.isAlive || !SCAR_KINDS[kind]) return null;
   if (!Array.isArray(f.scars)) f.scars = [];
-  if (f.scars.length >= SCAR_MAX) return null;
+  if (f.scars.length >= SCAR_MAX && !opts.always) return null;
   // (a tail it hasn't got can't be crooked)
   if (kind === "tail" && f.limbs && f.limbs.tail === false) kind = "flank";
   const scar = { kind, how: String(how || "Hurt"), day: _scDay(), where: _scPlace(f.scene) };
+  if (opts.at) scar.at = opts.at;
   f.scars.push(scar);
   const name = SCAR_KINDS[kind].name;
   if (typeof recordStory === "function") recordStory("scar", f, { x: `${name}: ${scar.how.charAt(0).toLowerCase()}${scar.how.slice(1)}` });
@@ -186,6 +190,7 @@ function drawScars(ctx, renderer, part, layout = renderer && renderer.layout) {
         ctx.stroke();
       }
     }
+    for (const b of scars) if (b.kind === "burn" && !_scOnHead(b.at)) _scDrawBurn(ctx, _scBurnSpot(b.at, w, h), Math.min(w, h) * 0.13);
     if (has("bald")) {
       ctx.fillStyle = "rgba(235, 190, 180, 0.8)";
       ctx.beginPath();
@@ -208,6 +213,12 @@ function drawScars(ctx, renderer, part, layout = renderer && renderer.layout) {
       ctx.lineTo(ex + 6, ey - 7);
       ctx.closePath();
       ctx.fill();
+    }
+    for (const b of scars) {
+      if (b.kind !== "burn" || !_scOnHead(b.at)) continue;
+      // by the ear, the eye or the horn it was
+      const spot = /Ear$/.test(b.at) ? [0.22, 0.2] : /Eye$/.test(b.at) ? [0.62, 0.42] : [0.45, 0.08];
+      _scDrawBurn(ctx, [ox + rect.w * spot[0], oy + rect.h * spot[1]], rect.w * 0.09);
     }
     if (has("muzzle")) {
       ctx.strokeStyle = SCAR_PINK;
@@ -233,5 +244,46 @@ function drawScars(ctx, renderer, part, layout = renderer && renderer.layout) {
     ctx.lineTo(tx - 6, ty + 6);
     ctx.stroke();
   }
+  ctx.restore();
+}
+
+// ---- Burn scars (CauteryIron.js) ----
+
+function _scOnHead(at) {
+  return /Ear$|Eye$|^horn$/.test(at || "");
+}
+
+// Where on the body (torso-local, facing right) a burnt-shut wound is
+function _scBurnSpot(at, w, h) {
+  if (at === "leg_1" || at === "leg_2") return [w * 0.24, h * 0.36];
+  if (at === "leg_0" || at === "leg_3") return [-w * 0.26, h * 0.36];
+  if (at === "tail") return [-w * 0.42, -h * 0.18];
+  if (/Wing$/.test(at || "")) return [-w * 0.04, -h * 0.34];
+  if (at === "lumps" || at === "udders" || at === "spay") return [-w * 0.08, h * 0.38];
+  return [w * 0.05, h * 0.05];
+}
+
+// A shiny, puckered patch: dark in the middle, pale round the edge
+function _scDrawBurn(ctx, [x, y], r) {
+  ctx.save();
+  ctx.fillStyle = "rgba(225, 160, 150, 0.85)";
+  ctx.beginPath();
+  for (let i = 0; i <= 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const rr = r * (1 + 0.22 * Math.sin(i * 2.7));
+    if (i === 0) ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.8);
+    else ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr * 0.8);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = "rgba(130, 50, 45, 0.8)";
+  ctx.beginPath();
+  ctx.ellipse(x, y, r * 0.55, r * 0.4, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 230, 225, 0.55)";
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.arc(x - r * 0.15, y - r * 0.1, r * 0.3, Math.PI * 1.1, Math.PI * 1.7);
+  ctx.stroke();
   ctx.restore();
 }

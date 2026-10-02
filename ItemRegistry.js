@@ -564,6 +564,22 @@ const ITEM_TYPES = [
     },
   },
   {
+    sellType: "cautery_iron",
+    is: (o) => typeof CauteryIron !== "undefined" && o instanceof CauteryIron,
+    inCage: "never",
+    sellable: true,
+    icon: "cautery_iron_hot", // (drawn at load: CauteryIron.js)
+    tool: {
+      className: "CauteryIron",
+      create: (scene) => new CauteryIron(scene),
+      key: "cautery_iron",
+      name: "Iron",
+      fullName: "Cautery iron",
+      desc: "Click a bleeding fluffy to burn the wound shut. Agony, and a scar for life.",
+      image: () => ironImage(false),
+    },
+  },
+  {
     sellType: "lawn_mower",
     is: (o) => typeof LawnMower !== "undefined" && o instanceof LawnMower,
     inCage: "never",
@@ -755,6 +771,7 @@ const SAVED_CLASSES = {
   Brush: (d) => new Brush(d.scene),
   Sponge: (d) => new Sponge(d.scene),
   LawnMower: (d) => new LawnMower(d.scene), // (LawnMower.js)
+  CauteryIron: (d) => new CauteryIron(d.scene), // (CauteryIron.js)
   Knife: (d) => new Knife(d.type, d.scene),
   SutureKit: (d) => new SutureKit(d.scene),
   TrashBag: (d) => new TrashBag(d.scene),

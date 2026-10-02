@@ -205,8 +205,11 @@ module.exports = [
         foal.x = 450;
         foal.y = 450;
         fluffies.push(foal);
-        const fed = bot._orphans().includes(foal);
+        // (its coat is random: keep mum from rejecting its colour by chance)
         const real = window.mumRejectsFoalColour;
+        foal.typeVisibleToOthers = () => "earthy";
+        window.mumRejectsFoalColour = () => false;
+        const fed = bot._orphans().includes(foal);
         window.mumRejectsFoalColour = (m, f) => m === mum && f === foal;
         const turnedAway = bot._orphans().includes(foal);
         window.mumRejectsFoalColour = real;

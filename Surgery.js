@@ -173,6 +173,13 @@ function _sgPoly(pts) {
   return p;
 }
 
+// Several shapes as one (outlined together)
+function _sgUnion(...paths) {
+  const p = new Path2D();
+  for (const q of paths) p.addPath(q);
+  return p;
+}
+
 // Lots of round puffs: a tail, a mane
 function _sgPuffs(circles) {
   const p = new Path2D();
@@ -229,7 +236,7 @@ function _sgHoof(x, bottom, w = 36) {
 function surgeryShapes(f, view, side = "right") {
   const C = _sgColours(f);
   const S = [];
-  const add = (id, path, fill, opts = {}) => S.push({ id, path, fill, ...opts });
+  const add = (id, path, fill, opts = {}) => S.push({ id, path, fill, key: `${view}|${side}|${id}|${S.length}`, ...opts });
   const winged = surgeryPartExists(f, "leftWing");
   const horned = surgeryPartExists(f, "horn");
   const male = f.gender === "male";
@@ -262,7 +269,12 @@ function surgeryShapes(f, view, side = "right") {
     add(null, _sgEllipse(272, 150, 38, 48, -0.5), C.coat);
     add(null, _sgPuffs([[262, 92, 22], [250, 118, 20], [244, 144, 16], [280, 70, 20]]), C.mane);
     // Head
-    add(null, _sgEllipse(300, 120, 58, 54), C.coat, { muzzle: _sgEllipse(344, 142, 30, 22) });
+    // Head and muzzle in one outline; nostril and mouth on the muzzle
+    add(null, _sgUnion(_sgEllipse(300, 120, 58, 54), _sgEllipse(340, 140, 30, 22, 0.15)), C.coat, {
+      muzzle: _sgEllipse(342, 141, 25, 17, 0.15),
+      nostrils: [[361, 134, 3.2, 2.2]],
+      mouth: { x: 354, y: 152, w: 16, side: true },
+    });
     // Horn
     if (horned) add("horn", _sgPoly([[300, 70], [330, 6], [322, 72]]), "rgb(250, 235, 180)", { spiral: [[300, 70], [330, 6], [322, 72]] });
     // Near ear
@@ -283,7 +295,11 @@ function surgeryShapes(f, view, side = "right") {
     add("leg_2", _sgLeg(234, 222, 294), C.coat, { hoof: _sgHoof(234, 294) });
     add("rightEar", _sgPoly([[138, 92], [128, 26], [178, 66]]), C.coat, { inner: _sgPoly([[144, 82], [137, 42], [168, 66]]) });
     add("leftEar", _sgPoly([[262, 92], [272, 26], [222, 66]]), C.coat, { inner: _sgPoly([[256, 82], [263, 42], [232, 66]]) });
-    add(null, _sgEllipse(200, 116, 66, 58), C.coat, { muzzle: _sgEllipse(200, 148, 36, 22) });
+    add(null, _sgEllipse(200, 116, 66, 58), C.coat, {
+      muzzle: _sgEllipse(200, 147, 32, 20),
+      nostrils: [[189, 142, 3.5, 2.5], [211, 142, 3.5, 2.5]],
+      mouth: { x: 200, y: 157, w: 22 },
+    });
     if (horned) add("horn", _sgPoly([[188, 64], [200, 0], [212, 64]]), "rgb(250, 235, 180)", { spiral: [[188, 64], [200, 0], [212, 64]] });
     add(null, _sgPuffs([[184, 66, 16], [200, 60, 16], [216, 66, 16]]), C.mane);
     add("rightEye", _sgEllipse(174, 112, 14, 18), "white", { iris: _sgEllipse(176, 115, 8, 11) });
@@ -313,7 +329,7 @@ function surgeryShapes(f, view, side = "right") {
     }
     add("rightEar", _sgPoly([[168, 36], [142, 2], [182, 22]]), C.coatDark);
     add("leftEar", _sgPoly([[232, 36], [258, 2], [218, 22]]), C.coatDark);
-    add(null, _sgEllipse(200, 46, 42, 34), C.coat, { muzzle: _sgEllipse(200, 28, 24, 14) });
+    add(null, _sgEllipse(200, 46, 42, 34), C.coat, { muzzle: _sgEllipse(200, 30, 22, 13), mouth: { x: 200, y: 22, w: 18, chin: true } });
     add("tail", _sgPuffs([[200, 284, 18], [186, 296, 13], [214, 296, 13]]), C.mane);
     add("body", _sgEllipse(200, 162, 72, 104), C.coat);
     if (!male) add("spay", _sgEllipse(200, 166, 38, 50), C.belly, { scarIfGone: true });
@@ -337,15 +353,19 @@ function surgeryLayout() {
   const x = Math.round(width / 2 - w / 2);
   const y = Math.round(height / 2 - h / 2);
   const listW = Math.min(300, Math.round(w * 0.32));
+  const rowH = h < 620 ? 24 : 27; // (room for the Stitch / Burn buttons under the list)
   const art = { x: x + 20, y: y + 104, w: w - listW - 60, h: h - 180 };
   const scale = Math.min((art.w - 20) / SURGERY_BOX.w, (art.h - 44) / SURGERY_BOX.h); // (room for the caption)
   const ox = art.x + (art.w - SURGERY_BOX.w * scale) / 2;
   const oy = art.y + 8 + (art.h - 44 - SURGERY_BOX.h * scale) / 2;
   const tabs = SURGERY_VIEWS.map((v, i) => ({ v, x: x + 20 + i * 112, y: y + 56, w: 104, h: 34 }));
   const flip = { x: x + 20 + 4 * 112 + 12, y: y + 56, w: 110, h: 34 };
-  const list = { x: x + w - listW - 20, y: y + 104, w: listW, rowH: 28 };
+  const list = { x: x + w - listW - 20, y: y + 104, w: listW, rowH };
   const close = { x: x + w - 150, y: y + h - 56, w: 130, h: 40 };
-  return { x, y, w, h, art, scale, ox, oy, tabs, flip, list, close };
+  // While it's bleeding: stitch it, or burn it shut
+  const stitch = { x: list.x - 6, y: close.y - 48, w: Math.floor(listW / 2) - 2, h: 38 };
+  const burn = { x: stitch.x + stitch.w + 8, y: close.y - 48, w: Math.floor(listW / 2) - 2, h: 38 };
+  return { x, y, w, h, art, scale, ox, oy, tabs, flip, list, close, burn, stitch };
 }
 
 // Parts listed beside the drawing: the ones this fluffy has (or had)
@@ -379,6 +399,21 @@ function surgeryListRowAt(mx, my, L = surgeryLayout()) {
   const i = Math.floor((my - top) / L.list.rowH);
   if (mx < L.list.x || mx > L.list.x + L.list.w || i < 0 || i >= ids.length) return null;
   return ids[i];
+}
+
+// Your suture kit (with stitches left) and cautery iron, if you've got them
+function _sgOwned(cls, ok = () => true) {
+  if (typeof cls === "undefined" || !cls) return null;
+  const all = [...(typeof toolbox !== "undefined" ? toolbox : []), ...(typeof objects !== "undefined" ? objects : [])];
+  return all.find((t) => t instanceof cls && ok(t)) || null;
+}
+
+function surgeryKit() {
+  return _sgOwned(typeof SutureKit !== "undefined" ? SutureKit : null, (k) => k.charges > 0);
+}
+
+function surgeryIron() {
+  return _sgOwned(typeof CauteryIron !== "undefined" ? CauteryIron : null);
 }
 
 // ---- Drawing ----
@@ -502,7 +537,43 @@ function drawSurgery(c) {
     c.font = "bold 14px Arial";
     c.fillText(fitText(c, surgery.note, L.w - 220), L.x + 24, iy + 44);
   }
+  // Bleeding: stitch it or burn it shut
+  if (f.isAlive && f.bleedingTimer > 0) {
+    c.font = "bold 14px Arial";
+    c.fillStyle = "#ff7a7a";
+    c.textAlign = "left";
+    c.fillText("Bleeding!", L.x + 290, iy);
+    const kit = surgeryKit();
+    const iron = surgeryIron();
+    drawPanelButton(L.stitch, kit ? `Stitch (${kit.charges} left)` : "Stitch (no kit)", { ctx: c, enabled: !!kit, fontSize: 13 });
+    drawPanelButton(L.burn, iron ? "Burn it shut" : "Burn (no iron)", { ctx: c, enabled: !!iron, fontSize: 13 });
+  }
   drawPanelButton(L.close, "Close", { ctx: c });
+  c.restore();
+}
+
+// A small mouth: a smile, a flat line or a frown with its mood
+// (side: just the corner of it; chin: the seam seen from below)
+function _sgDrawMouth(c, f, m) {
+  const mood = f.isAlive ? f.happiness : 0;
+  const bend = mood > 0.55 ? 1 : mood > 0.3 ? 0.3 : -0.8; // + smile, - frown
+  c.save();
+  c.strokeStyle = "rgba(60, 35, 45, 0.9)";
+  c.lineWidth = 2.2;
+  c.lineCap = "round";
+  c.beginPath();
+  if (m.chin) {
+    c.moveTo(m.x - m.w / 2, m.y);
+    c.quadraticCurveTo(m.x, m.y + 4, m.x + m.w / 2, m.y);
+  } else if (m.side) {
+    // from the front of the muzzle back to the corner
+    c.moveTo(m.x + m.w / 2, m.y - 1);
+    c.quadraticCurveTo(m.x, m.y + 2, m.x - m.w / 2, m.y - 3 * bend);
+  } else {
+    c.moveTo(m.x - m.w / 2, m.y - 3 * bend);
+    c.quadraticCurveTo(m.x, m.y + 5 * bend, m.x + m.w / 2, m.y - 3 * bend);
+  }
+  c.stroke();
   c.restore();
 }
 
@@ -534,6 +605,11 @@ function _sgDrawShapes(c, f, shapes) {
         c.strokeStyle = "rgba(255, 255, 255, 0.35)";
         c.lineWidth = 2;
         c.stroke(s.path);
+        // Burnt shut where it came off (CauteryIron.js)
+        if (typeof _scDrawBurn === "function" && scarsOf(f).some((b) => b.kind === "burn" && b.at === s.id)) {
+          c.setLineDash([]);
+          _scDrawBurn(c, _sgStump(s), 11);
+        }
       }
       c.restore();
       continue;
@@ -581,11 +657,19 @@ function _sgDrawShapes(c, f, shapes) {
     }
     if (s.muzzle) {
       c.fillStyle = C.coatLight;
+      c.globalAlpha = (s.dim ? 0.85 : 1) * 0.7;
       c.fill(s.muzzle);
-      c.strokeStyle = C.line;
-      c.lineWidth = 2;
-      c.stroke(s.muzzle);
+      c.globalAlpha = s.dim ? 0.85 : 1;
     }
+    if (s.nostrils) {
+      c.fillStyle = "rgba(60, 35, 45, 0.85)";
+      for (const [nx, ny, rx, ry] of s.nostrils) {
+        c.beginPath();
+        c.ellipse(nx, ny, rx, ry, 0, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+    if (s.mouth) _sgDrawMouth(c, f, s.mouth);
     if (s.iris) {
       c.fillStyle = C.eye;
       c.fill(s.iris);
@@ -609,6 +693,28 @@ function _sgDrawShapes(c, f, shapes) {
   }
 }
 
+// Where a part joins the body: the middle of its top end (a leg's top)
+// or its middle (an ear seen from behind...). Worked out once per shape.
+const _sgStumpCache = new Map();
+function _sgStump(shape) {
+  const key = shape.key;
+  if (key && _sgStumpCache.has(key)) return _sgStumpCache.get(key);
+  if (!_sgHitCtx) _sgHitCtx = (typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(4, 4) : document.createElement("canvas")).getContext("2d");
+  const pts = [];
+  for (let y = 0; y < SURGERY_BOX.h; y += 5) for (let x = 0; x < SURGERY_BOX.w; x += 5) if (_sgHitCtx.isPointInPath(shape.path, x, y)) pts.push([x, y]);
+  let spot = [SURGERY_BOX.w / 2, SURGERY_BOX.h / 2];
+  if (pts.length) {
+    const ys = pts.map((p) => p[1]);
+    const top = Math.min(...ys);
+    const bottom = Math.max(...ys);
+    const legish = /^leg_/.test(shape.id) && bottom - top > 40;
+    const use = legish ? pts.filter((p) => p[1] <= top + (bottom - top) * 0.25) : pts;
+    spot = [use.reduce((a, p) => a + p[0], 0) / use.length, use.reduce((a, p) => a + p[1], 0) / use.length];
+  }
+  if (key) _sgStumpCache.set(key, spot);
+  return spot;
+}
+
 // ---- Clicks ----
 
 function handleSurgeryClick() {
@@ -626,6 +732,16 @@ function handleSurgeryClick() {
       return true;
     }
   }
+  if (surgery.f.isAlive && surgery.f.bleedingTimer > 0) {
+    if (isPointInRect(mx, my, L.stitch.x, L.stitch.y, L.stitch.w, L.stitch.h)) {
+      surgeryStitch();
+      return true;
+    }
+    if (isPointInRect(mx, my, L.burn.x, L.burn.y, L.burn.w, L.burn.h)) {
+      askSurgeryBurn();
+      return true;
+    }
+  }
   if (surgery.view === "side" && isPointInRect(mx, my, L.flip.x, L.flip.y, L.flip.w, L.flip.h)) {
     surgery.side = surgery.side === "right" ? "left" : "right";
     return true;
@@ -633,6 +749,43 @@ function handleSurgeryClick() {
   const id = surgeryPartAt(mx, my, L) || surgeryListRowAt(mx, my, L);
   if (id) askSurgeryCut(id);
   return true; // (it's a full screen: clicks go nowhere else)
+}
+
+// Stitch the wound with your suture kit (SutureKit.js)
+function surgeryStitch() {
+  if (!isSurgeryOpen()) return false;
+  const kit = surgeryKit();
+  const f = surgery.f;
+  if (!kit || !sutureWound(f, kit)) return false;
+  surgery.note = `${typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It"}: stitched up.`;
+  return true;
+}
+
+// Burn it shut with the iron - asked first: it's agony and leaves a scar
+function askSurgeryBurn() {
+  if (!isSurgeryOpen()) return false;
+  const f = surgery.f;
+  const iron = surgeryIron();
+  if (!iron || !(f.bleedingTimer > 0)) return false;
+  const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "the fluffy";
+  openChoice({
+    title: `Burn ${name}'s wound shut?`,
+    lines: ["The hot iron stops the bleeding for good - but it's agony, and it leaves a burn scar for life.", "It'll remember who did it."],
+    buttons: [
+      { label: "Burn it shut", kind: "danger", run: () => surgeryBurn() },
+      { label: "Cancel", cancel: true, run: () => {} },
+    ],
+  });
+  return true;
+}
+
+function surgeryBurn() {
+  if (!isSurgeryOpen()) return false;
+  const f = surgery.f;
+  const iron = surgeryIron();
+  if (!iron || !cauterizeWound(f, iron)) return false;
+  surgery.note = `${typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It"}: burnt shut. It'll carry the scar for life.`;
+  return true;
 }
 
 // Asked first (Choices.js)
@@ -699,6 +852,8 @@ function knifeCut(f, hitPart, knife) {
   // Amputate!
   playSound("knife");
   const amputated = f.amputate(hitPart, knife);
+  // (where the wound is, for a burn if it's cauterized: CauteryIron.js)
+  f.lastWound = amputated || "body";
   f.changeHappiness(HAPPINESS_PENALTY_AMPUTATION);
 
   notifyViolence(f, false, knife.type, false, !!amputated);
