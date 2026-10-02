@@ -426,7 +426,7 @@ class Gib {
                 this.scene,
                 this.x,
                 this.y,
-                "#8a0303",
+                "blood",
                 0.05,
                 puddleScale,
                 0.05,
@@ -592,7 +592,7 @@ function updateGibs(dt) {
           grinder.scene,
           gibs[i].x,
           gibs[i].y,
-          "#8a0303",
+          "blood",
           5 / 200,
           (40 + Math.random() * 40) / 200,
         );

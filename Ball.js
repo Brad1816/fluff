@@ -49,8 +49,14 @@ class Ball {
     );
   }
 
+  // x/y is the bottom center of the sprite (where it touches the ground)
   getBottomY() {
-    return this.y + this.getImage().height / 2;
+    return this.y;
+  }
+
+  getCenterY() {
+    const img = this.getImage();
+    return this.y - (img ? img.height / 2 : 0);
   }
 
   update(dt) {
@@ -64,12 +70,43 @@ class Ball {
       return;
     }
 
-    handleBouncingPhysics(this, dt);
+    if (
+      this.currentCage &&
+      (!objects.includes(this.currentCage) ||
+        this.currentCage.scene !== this.scene)
+    ) {
+      this.currentCage = null;
+    }
 
     if (this.currentCage) {
-      handleGenericCageContainment(this, 40, 40);
-      this.groundY = this.y;
+      const bounds = this.getCageBounds();
+      this.groundY = bounds.bottom;
+      handleBouncingPhysics(this, dt, bounds);
+    } else {
+      handleBouncingPhysics(this, dt);
     }
+  }
+
+  // Limits for x/y (the ball's bottom center) while inside its cage
+  getCageBounds() {
+    const cage = this.currentCage;
+    const img = this.getImage();
+    const halfW = img ? img.width / 2 : 20;
+    const ballH = img ? img.height : 40;
+    const r = cage.getImage()
+      ? cage.getInteriorRect()
+      : {
+          x: cage.bounds.left,
+          y: cage.bounds.top,
+          w: cage.bounds.right - cage.bounds.left,
+          h: cage.bounds.bottom - cage.bounds.top,
+        };
+    return {
+      left: r.x + halfW,
+      right: r.x + r.w - halfW,
+      top: r.y + ballH,
+      bottom: r.y + r.h,
+    };
   }
 
   draw(ctx) {
@@ -80,7 +117,7 @@ class Ball {
     const img = this.getImage();
     if (!img || img.width === 0) return;
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(this.x, this.getCenterY());
     ctx.rotate(this.x * 0.05); // Rolling visual
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
@@ -89,7 +126,7 @@ class Ball {
   hitTest(px, py) {
     const img = this.getImage();
     if (!img) return false;
-    const dist = Math.sqrt((this.x - px) ** 2 + (this.y - py) ** 2);
+    const dist = Math.sqrt((this.x - px) ** 2 + (this.getCenterY() - py) ** 2);
     return dist < img.width / 2;
   }
 

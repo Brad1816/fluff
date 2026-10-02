@@ -113,6 +113,9 @@ function loadObject(oData) {
     case "Cage":
       obj = new Cage(oData.scene);
       break;
+    case "Enclosure":
+      obj = new Enclosure(oData.scene);
+      break;
     case "Brush":
       obj = new Brush(oData.scene);
       break;
@@ -188,6 +191,9 @@ function loadObject(oData) {
     case "CattleProd":
       obj = new CattleProd(oData.scene);
       break;
+    case "ThrowTool":
+      obj = new ThrowTool(oData.scene);
+      break;
     case "DayCareDesk":
       obj = new DayCareDesk(oData.scene);
       break;
@@ -202,6 +208,10 @@ function loadObject(oData) {
   obj.y = oData.y;
   if (typeof obj.deserialize === "function") {
     obj.deserialize(oData);
+  }
+
+  if (obj instanceof Cage) {
+    obj.updateBounds();
   }
 
   // Generic cage linking
@@ -349,7 +359,7 @@ async function loadGame(slotName) {
   }
 
   puddles.length = 0;
-  puddles.push(...saveData.puddles);
+  puddles.push(...(saveData.puddles || []).map(Puddle.deserialize));
 
   sellRequestTimer = saveData.sellRequestTimer;
   feralTimer = saveData.feralTimer;
@@ -502,10 +512,27 @@ async function loadGame(slotName) {
     showToolbar = true;
   }
 
+  // Ensure default ThrowTool exists in toolbox if missing and is prepended to other tools
+  if (typeof ThrowTool !== "undefined") {
+    const hasThrowTool = toolbox.some((t) => t instanceof ThrowTool);
+    if (!hasThrowTool) {
+      toolbox.unshift(new ThrowTool());
+    } else {
+      const idx = toolbox.findIndex((t) => t instanceof ThrowTool);
+      if (idx > 0) {
+        const [tt] = toolbox.splice(idx, 1);
+        toolbox.unshift(tt);
+      }
+    }
+  }
+  if (typeof ensureThrowToolPrepended === "function") {
+    ensureThrowToolPrepended();
+  }
+
   saveData.objects.sort((a, b) => {
     const getPriority = (item) => {
       const type = item.classType;
-      if (type === "Cage") return -100;
+      if (type === "Cage" || type === "Enclosure") return -100;
       if (type === "IVStand") return -50;
       if (type === "Block") return getBlockDepth(item.id, saveData.objects);
       return 0;
@@ -677,7 +704,7 @@ async function saveGame(slotName) {
     relationships: relationships,
     sceneChatLogs: sceneChatLogs,
     worldSettings: worldSettings.serialize(),
-    puddles: puddles,
+    puddles: puddles.map((p) => p.serialize()),
     sellRequestTimer: sellRequestTimer,
     feralTimer: feralTimer,
     sceneGrassSpawnTimers: sceneGrassSpawnTimers,

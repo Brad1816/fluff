@@ -148,6 +148,10 @@ class HorseAnatomy {
     }
     this.horse.isAlive = false;
     this.horse.hunger = 0;
+    if (this.horse.speech) {
+      this.horse.speech.text = null;
+      this.horse.speech.timer = 0;
+    }
     if (this.horse.claimedBed) {
       this.horse.claimedBed.unclaim(this.horse.id);
       this.horse.claimedBed = null;
@@ -542,6 +546,7 @@ class HorseAnatomy {
   triggerPregnancy(father) {
     this.horse.isPregnant = true;
     this.horse.pregnancyTimer = pregnancyDuration;
+    this.horse.miscarriageTimer = null;
     this.horse.lactatingTimer = 900; // 15 minutes
     this.horse.fatherGenes = [...father.genes];
     this.horse.babyDaddyId = father.id;
@@ -574,6 +579,27 @@ class HorseAnatomy {
   spawnBaby(isViable = true) {
     if (!this.horse.fatherGenes) return;
 
+    let birthPosX = this.horse.x;
+    let birthPosY = this.horse.y;
+
+    // Positioning
+    if (this.horse.layout) {
+        const torsoWidth = this.horse.layout ? this.horse.layout.torso.w : 100;
+        const offsetX =
+          (torsoWidth / 2) * (this.horse.facingRight ? -0.5 : 0.5) * this.horse.scale;
+        birthPosX = this.horse.x + offsetX;
+        birthPosY = this.horse.getBottomY() - 10;
+    } 
+
+    // Too early in the pregnancy for anything recognisable to be born
+    const progress = this.horse.getPregnancyProgress();
+    if (progress < PREMATURE_BIRTH_MIN_PROGRESS) {
+      const pX = birthPosX;
+      const pY = birthPosY;
+      addPointToPuddle(this.horse.scene, pX, pY, "blood", 10 / 200, 20 / 200);
+      return;
+    }
+
     // Spawn baby
     const babyGenes = this.horse.genetics.combineGenes(this.horse.fatherGenes);
 
@@ -588,6 +614,10 @@ class HorseAnatomy {
     baby.birthRotation = Math.PI / 2;
     baby.currentCage = this.horse.currentCage;
     baby.hunger = 0.4;
+    if (progress < 1.0) {
+      baby.prematureGrowth = progress;
+      baby.updateGrowthStats();
+    }
 
     if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
       let chance = this.horse.isSensitive() ? 0.175 : 0.04;
@@ -608,11 +638,6 @@ class HorseAnatomy {
       baby.bloodTolerance = 1;
       this.horse.bloodTolerance = 1;
       this.horse.bloodReactionTimer = 15;
-      // Create blood puddle
-      if (typeof puddles !== "undefined") {
-        const pX = baby.x;
-        const pY = baby.y;
-      }
     }
 
     if (isViable && this.horse.fatherId !== undefined) {
@@ -625,24 +650,15 @@ class HorseAnatomy {
       }
     }
 
-    // Positioning
-    if (this.horse.tinted && this.horse.tinted.torso) {
-      baby.x =
-        this.horse.x +
-        (this.horse.facingRight
-          ? -this.horse.tinted.torso.width * 0.2 * this.horse.scale
-          : this.horse.tinted.torso.width * 0.2 * this.horse.scale);
-      baby.y = this.horse.y + this.horse.tinted.torso.height * this.horse.scale;
-    } else {
-      baby.x = this.horse.x;
-      baby.y = this.horse.y;
-    }
+    baby.x = birthPosX;
+    baby.y = birthPosY;
 
     if (!isViable) {
       const pX = baby.x;
       const pY = baby.y;
-      addPointToPuddle(baby.scene, pX, pY, "#8a0303", 10 / 200, 20 / 200);
+      addPointToPuddle(baby.scene, pX, pY, "blood", 10 / 200, 20 / 200);
     }
+
 
     fluffies.push(baby);
     if (isViable) {
@@ -658,13 +674,11 @@ class HorseAnatomy {
       (torsoWidth / 2) * (this.horse.facingRight ? 1 : -1) * this.horse.scale;
     const pX = this.horse.x + offsetX;
     const pY = this.horse.getBottomY();
-    const color = "rgba(180, 180, 180, 0.25)";
-
     addPointToPuddle(
       this.horse.scene,
       pX,
       pY,
-      color,
+      "tears",
       2.0 / 200,
       4.5 / 200,
       0.08,
@@ -897,6 +911,535 @@ class HorseAnatomy {
       gib.roadkillFloorY = this.horse.y + (Math.random() - 0.5) * 80; // Small randomness
       gib.bounds = null; // Bounces on roadkillFloorY instead
       gib.carCollisionCooldown = 3.0; // Cooldown of 3 seconds
+    }
+  }
+
+  // Milk cooldown and milk charge regeneration while lactating
+  updateLactation(dt) {
+    const h = this.horse;
+    if (h.milkCooldown > 0) {
+      h.milkCooldown -= dt;
+    }
+
+    if (h.lactatingTimer > 0) {
+      h.lactatingTimer -= dt;
+      const restingAtBed =
+        h.claimedBed &&
+        h.claimedBed.scene === h.scene &&
+        Math.sqrt(
+          (h.x - h.claimedBed.x) ** 2 +
+            (h.y - h.claimedBed.y) ** 2,
+        ) < 120 &&
+        !h.isMovingOrRunning() &&
+        h.currentStateKey !== "SLEEPING";
+      h.milkRegenTimer += dt;
+      if (
+        h.milkRegenTimer >=
+        (restingAtBed
+          ? LACTATING_CHARGE_INCREASE_TIMER / 2
+          : LACTATING_CHARGE_INCREASE_TIMER)
+      ) {
+        h.milkRegenTimer = 0;
+        if (h.milkCharges < 5) {
+          h.milkCharges++;
+        }
+      }
+    } else {
+      h.milkRegenTimer = 0;
+    }
+  }
+
+  // Starvation, bleeding, regeneration, poisoning and toxoplasmosis.
+  // Returns false when the rest of this frame should be skipped
+  updateHealth(dt) {
+    const h = this.horse;
+    if (h.hunger <= 0) {
+      h.die(null, "Starved to death");
+    } else if (h.hunger <= 0.05 && h.currentStateKey !== "LYING") {
+      h.initBehavior("LYING");
+    }
+
+    // Bleeding Logic
+    if (h.bleedingTimer > 0) {
+      h.bleedingTimer -= dt;
+      h.health -= 8 * dt;
+      h.excreteBlood(dt);
+      h.sleepTargetSet = false;
+    }
+
+    if (h.lastAttackTimer > 0) {
+      h.lastAttackTimer -= dt;
+    }
+
+    if (h.health <= 0) {
+      if (h.lastAttackTimer > 0 && h.lastAttackerId !== null) {
+        const attackerName = fluffyNames[h.lastAttackerId] || "Fluffy";
+        h.die(null, `Killed by ${attackerName}`);
+      } else {
+        h.die(null, "Bled to death");
+      }
+    }
+
+    // Health Regeneration (Disabled if poisoned or suffering toxoplasmosis)
+    if (
+      h.health < 100 &&
+      h.bleedingTimer <= 0 &&
+      !h.isPoisoned &&
+      (!h.isToxoplasmosis ||
+        (typeof worldSettings !== "undefined" &&
+          !worldSettings.toxoplasmosis))
+    ) {
+      h.health = Math.min(100, h.health + 5 * h.growth * dt);
+    }
+
+    // Poisoning Logic: 1 damage per second forever & periodic vomiting
+    if (h.isPoisoned) {
+      h.health = Math.max(0, h.health - 1.0 * dt);
+      if (h.health <= 0) {
+        h.anatomy.die(null, "Rat poison");
+      } else {
+        h.vomitTimer -= dt;
+        if (h.vomitTimer <= 0) {
+          h.vomitTimer = 16.0 + Math.random() * 14.0;
+          h.triggerVomit();
+          h.health = Math.max(0, h.health - 20.0);
+          if (h.health <= 0) {
+            h.anatomy.die(null, "Rat poison");
+          }
+        }
+      }
+    }
+    // Toxoplasmosis Logic: 1 damage per 5 seconds forever, no regeneration, and diarrhea
+    if (h.isToxoplasmosis) {
+      if (
+        typeof worldSettings !== "undefined" &&
+        !worldSettings.toxoplasmosis
+      ) {
+        h.isToxoplasmosis = false;
+      } else if (h.isToxoVaccinated) {
+        h.isToxoplasmosis = false;
+        return false;
+      } else {
+        h.health = Math.max(0, h.health - 0.2 * dt);
+
+        if (h.poopStorage > 0.2 && Math.random() < (1 / 30) * dt) {
+          h.isDiarrhea = true;
+        }
+
+        if (h.health <= 0) {
+          h.anatomy.die(null, "Toxoplasmosis");
+        } else {
+          h.vomitTimer -= dt;
+          if (h.vomitTimer <= 0) {
+            h.vomitTimer = 16.0 + Math.random() * 14.0;
+            h.triggerVomit();
+            h.health = Math.max(0, h.health - 5.0);
+            if (h.health <= 0) {
+              h.anatomy.die(null, "Toxoplasmosis");
+            }
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  // Diarrhea, incontinence and anxiety incontinence
+  updateBowelConditions(dt) {
+    const h = this.horse;
+    // Diarrhea logic. A fluffy will void its bowels where it stands regardless of what's going on.
+    // The time can be arbitrarily defined, check out anxiety incontinence.
+    if (h.isDiarrhea) {
+      // Delays diarrhea until fluffy has at least enough poopstorage
+      if (!h.diarrheaTimer || h.diarrheaTimer <= 0) { 
+        if (h.poopStorage >= 0.2) { 
+          h.diarrheaTimer = h.poopStorage * 10;
+        }
+      }
+      // Only run and check for cleanup if the timer has successfully initialized
+      if (h.diarrheaTimer > 0) {
+        // As long as poopStorage is above zero, it voids its bowels
+        if (h.poopStorage > 0) {
+          h.diarrheaTimer -= 1 * dt;
+          h.poopStorage = Math.max(0, h.poopStorage - 0.3 * dt);
+          h.excretePoop(dt);
+        }
+        // When either storage or timer hits zero, isDiarrhea is set to false
+        if (h.poopStorage <= 0 || h.diarrheaTimer <= 0) {
+          h.isDiarrhea = false;
+          h.diarrheaTimer = 0;
+        }
+      }
+    }
+
+    // Incontinence logic. A fluffy will empty its bladder where it stands regardless of what's going on.
+    if (h.isIncontinent) {
+      // Delays incontinence until fluffy has at least enough peestorage
+      if (!h.incontinenceTimer || h.incontinenceTimer <= 0) { 
+        if (h.peeStorage >= 0.2) { 
+          h.incontinenceTimer = h.peeStorage * 10;
+        }
+      }
+      // Only run and check for cleanup if the timer has successfully initialized
+      if (h.incontinenceTimer > 0) {
+        // As long as peeStorage is above zero, it voids its bowels
+        if (h.peeStorage > 0) {
+          h.incontinenceTimer -= 1 * dt;
+          h.peeStorage = Math.max(0, h.peeStorage - 0.3 * dt);
+          h.excretePee(dt);
+        }
+        // When either storage or timer hits zero, isIncontinent is set to false
+        if (h.peeStorage <= 0 || h.incontinenceTimer <= 0) {
+          h.isIncontinent = false;
+          h.incontinenceTimer = 0;
+        }
+      }
+    }
+
+    // Anxiety incontinence logic: Causes fluffies to soil themselves in fear (checked once per scare)
+    if (h.isScared) {
+      if (!h.scareCheck && h.poopStorage > 0.3 && !h.isDiarrhea) {
+        h.scareCheck = true;
+        if (Math.random() < 0.25) {
+          h.diarrheaTimer = 0.5; 
+          h.isDiarrhea = true;          
+        }
+      }
+    } else {
+      h.scareCheck = false;
+    }
+  }
+
+  // Castration band pain and eventual amputation
+  updateCastrationBand(dt) {
+    const h = this.horse;
+    // Castration Band Logic: pain dialogue every 5-10s, bloodless amputation & poof after 3 mins
+    if (
+      h.accessories &&
+      h.accessories["ABOVE_LUMPS"] &&
+      h.accessories["ABOVE_LUMPS"].id === "castration_band" &&
+      h.gender === "male" &&
+      h.limbs.lumps &&
+      !h.spayed
+    ) {
+      h.castrationBandTimer -= dt;
+      h.castrationBandPainTimer -= dt;
+
+      if (h.castrationBandPainTimer <= 0) {
+        h.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
+        if (h.happiness > WAN_DIE_THRESHOLD) {
+          h.expressionOverride = "CRYING_SHOCKED";
+          h.expressionOverrideTimer = 3.0;
+          h.speak(
+            getDialogue([
+              "CASTRATION_BAND_PAIN",
+              h.tooYoungToSpeak() ? "BABY" : "DEFAULT",
+            ]),
+          );
+        }
+      }
+
+      if (h.castrationBandTimer <= 0) {
+        // 3 minutes completed! Bloodless amputation & band poof
+        h.limbs.lumps = false;
+        const accData = h.accessories["ABOVE_LUMPS"];
+        h.spawnGib("special_lumps");
+
+        delete h.accessories["ABOVE_LUMPS"];
+        h.castrationBandTimer = CASTRATION_BAND_TIMER;
+        h.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
+
+        if (
+          typeof AccessoryItem !== "undefined" &&
+          typeof objects !== "undefined"
+        ) {
+          const droppedAcc = new AccessoryItem(h.scene, accData.id);
+          droppedAcc.x = h.x;
+          droppedAcc.y = h.y - 20;
+          droppedAcc.color = accData.color;
+          objects.push(droppedAcc);
+
+          if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
+            poofs.push(new Poof(droppedAcc.x, droppedAcc.y, h.scene));
+          }
+        }
+
+        if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
+          poofs.push(new Poof(h.x, h.y, h.scene));
+        }
+
+        if (h.happiness > WAN_DIE_THRESHOLD) {
+          h.expressionOverride = "CRYING_SHOCKED";
+          h.expressionOverrideTimer = 5.0;
+          h.changeHappiness(HAPPINESS_PENALTY_AMPUTATION);
+          h.speak(
+            getDialogue([
+              "CASTRATION_BAND_FINISH",
+              h.tooYoungToSpeak() ? "BABY" : "DEFAULT",
+            ]),
+          );
+        }
+      }
+    } else if (
+      h.accessories &&
+      h.accessories["ABOVE_LUMPS"] &&
+      (h.gender !== "male" || !h.limbs.lumps || h.spayed)
+    ) {
+      const accData = h.accessories["ABOVE_LUMPS"];
+      delete h.accessories["ABOVE_LUMPS"];
+      h.castrationBandTimer = CASTRATION_BAND_TIMER;
+      h.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
+
+      if (
+        typeof AccessoryItem !== "undefined" &&
+        typeof objects !== "undefined"
+      ) {
+        const droppedAcc = new AccessoryItem(h.scene, accData.id);
+        droppedAcc.x = h.x;
+        droppedAcc.y = h.y - 20;
+        droppedAcc.color = accData.color;
+        objects.push(droppedAcc);
+
+        if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
+          poofs.push(new Poof(droppedAcc.x, droppedAcc.y, h.scene));
+        }
+      }
+    } else {
+      h.castrationBandTimer = CASTRATION_BAND_TIMER;
+      h.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
+    }
+  }
+
+  // Growing up, first words and growth stats
+  updateGrowth(dt) {
+    const h = this.horse;
+    if (h.growth < 1.0) {
+      const wasTooYoungToSpeak = h.tooYoungToSpeak();
+      h.growth = Math.min(
+        1.0,
+        h.growth + (dt / 1680.0) * debugGrowthMultiplier,
+      );
+      if (h.growth >= 1.0) {
+        for (const ownerId in relationships) {
+          if (relationships[ownerId][h.id] === "baby_child") {
+            relationships[ownerId][h.id] = "child";
+          }
+        }
+      }
+      if (wasTooYoungToSpeak && !h.tooYoungToSpeak()) {
+        h.initBehavior("IDLE");
+        h.firstWordsBabble();
+      }
+      h.updateGrowthStats();
+    }
+  }
+
+  // Poop/pee accumulation and deciding to go
+  updateExcretionStorage(dt) {
+    const h = this.horse;
+    // Poop and Pee Storage Accumulation
+    if (h.hunger > 0.5 || h.poopStorage > 0.3) {
+      h.poopStorage += Math.random() * dt * 0.005 * debugPoopMultiplier;
+      h.poopStorage = Math.min(1.0, h.poopStorage);
+    }
+    h.peeStorage += Math.random() * dt * 0.02 * debugPeeMultiplier;
+    h.peeStorage = Math.min(1.0, h.peeStorage);
+
+    // Peeing and Pooping
+    if (
+      (h.avoidStateChangerActions() ||
+        h.placedOn instanceof LitterpalBox) &&
+      !h.hasBlockOnBack()
+    ) {
+      // Pooping logic
+      if (
+        Math.max(h.poopStorage, h.peeStorage) >
+        0.6 + h.pottyTraining * 0.2
+      ) {
+        h.attemptPoop();
+      }
+    }
+  }
+
+  // Pregnancy progress, seeking a birth bed and giving birth
+  updatePregnancy(dt) {
+    const h = this.horse;
+    if (h.isPregnant) {
+      // Update stretch
+      if (h.pregnancyTimer > 0) {
+        h.pregnancyTorsoStretch = Math.max(
+          0,
+          1.0 - h.pregnancyTimer / pregnancyDuration,
+        );
+      }
+
+      if (!h.isPregnancyDue()) {
+        h.pregnancyTimer -= dt * debugPregnancyMultiplier;
+        if (h.miscarriageTimer !== null) {
+          h.miscarriageTimer -= dt * debugPregnancyMultiplier;
+        }
+        if (h.isPregnancyDue()) {
+          if (h.hasBlockOnBack()) {
+            h.blockOnBack.heldBy = null;
+            h.blockOnBack.x = h.x;
+            h.blockOnBack.y = h.y;
+            h.blockOnBack.groundY = h.y;
+            h.blockOnBack = null;
+          }
+          if (h.babiesToBirth === 0) {
+            h.babiesToBirth = Math.floor(Math.random() * 7) + 1;
+          }
+          if (h.foalViability.length === 0) {
+            for (let i = 0; i < h.babiesToBirth; i++) {
+              h.foalViability.push(true);
+            }
+          }
+
+          const birthBed =
+            h.claimedBed &&
+            h.claimedBed.scene === h.scene &&
+            h.claimedBed.currentCage === h.currentCage
+              ? h.claimedBed
+              : null;
+          const distToBed = birthBed
+            ? Math.sqrt(
+                (birthBed.x - h.x) ** 2 + (birthBed.y - h.y) ** 2,
+              )
+            : Infinity;
+
+          if (birthBed && distToBed > 30) {
+            h.seekingBirthBed = true;
+            h.birthBedSeekTimeout = 30.0;
+            if (!h.isMovingOrRunning()) h.initBehavior("MOVING");
+          } else {
+            h._startActiveLabor();
+          }
+        }
+      } else if (h.seekingBirthBed) {
+        h.birthBedSeekTimeout -= dt;
+        const birthBed =
+          h.claimedBed &&
+          h.claimedBed.scene === h.scene &&
+          h.claimedBed.currentCage === h.currentCage
+            ? h.claimedBed
+            : null;
+        const atBed =
+          birthBed &&
+          Math.sqrt(
+            (birthBed.x - h.x) ** 2 + (birthBed.y - h.y) ** 2,
+          ) <= 30;
+        if (atBed || h.birthBedSeekTimeout <= 0 || !birthBed) {
+          h.seekingBirthBed = false;
+          h._startActiveLabor();
+        } else if (!h.isMovingOrRunning()) {
+          h.initBehavior("MOVING");
+        }
+      } else if (h.babiesToBirth > 0) {
+        h.birthIntervalTimer -= dt;
+        if (h.birthIntervalTimer <= 0) {
+          if (h.hasBlockOnBack()) {
+            h.blockOnBack.heldBy = null;
+            h.blockOnBack.x = h.x;
+            h.blockOnBack.y = h.y;
+            h.blockOnBack.groundY = h.y;
+            h.blockOnBack = null;
+          }
+          h.speak(getDialogue(["BIRTH", "PAIN"], h), true);
+          h.initBehavior("BENDING_2");
+          h.stateTimer = 0.8;
+          const viabilityIdx = h.foalViability.length - h.babiesToBirth;
+          const isViable = h.foalViability[viabilityIdx] !== false;
+
+          h.spawnBaby(isViable);
+
+          // Reduce health per birth
+          const healthDamage = isViable ? 20 : 40;
+          h.health = Math.max(0, h.health - healthDamage);
+          if (h.health <= 0) {
+            h.die(null, "Died in childbirth");
+          }
+
+          h.babiesToBirth--;
+          if (h.babiesToBirth > 0) {
+            h.birthIntervalTimer = 3.0; // 3 second delay
+          } else {
+            h.isPregnant = false;
+            h.pregnancyTimer = 0;
+            h.miscarriageTimer = null;
+            h.pregnancyTorsoStretch = 0;
+            h.fatherGenes = null;
+            h.foalViability = [];
+            h.updateGrowthStats();
+          }
+        }
+      }
+    }
+  }
+
+  // Cattle prod damage, smoke and pain reactions
+  updateTased(dt) {
+    const h = this.horse;
+    h.vx = 0;
+    h.vy = 0;
+    if (h.matingState && h.matingState.isMating) {
+      h._interruptMating();
+    }
+    h.changeHappiness(HAPPINESS_PENALTY_CATTLE_PROD * dt);
+
+    h.continuousTasedTimer = (h.continuousTasedTimer || 0) + dt;
+    h.continuousTasedSmokeTimer =
+      (h.continuousTasedSmokeTimer || 0) + dt;
+    if (h.continuousTasedSmokeTimer >= CATTLE_PROD_SMOKE_THRESHOLD) {
+      h.continuousTasedSmokeTimer -= CATTLE_PROD_SMOKE_THRESHOLD;
+      const hitPoint =
+        h.tasedPoint ||
+        (typeof mouse !== "undefined"
+          ? { x: mouse.x, y: mouse.y }
+          : { x: h.x, y: h.y });
+      const offset = h.getTorsoOffsetFromPoint(
+        hitPoint.x,
+        hitPoint.y
+      );
+      if (!h.smokePoints) h.smokePoints = [];
+      h.smokePoints.push({
+        offset: { x: offset.x, y: offset.y },
+        x: offset.x,
+        y: offset.y,
+        timer: CATTLE_PROD_SMOKE_DURATION,
+      });
+    }
+
+    const growth = h.growth !== undefined ? h.growth : 1.0;
+    const damage =
+      CATTLE_PROD_BASE_DAMAGE *
+      dt *
+      h.continuousTasedTimer *
+      (CATTLE_PROD_GROWTH_FACTOR_BASE * (1.0 - growth) + 1);
+    h.health = Math.max(0, h.health - damage);
+
+    if (h.health <= 0) {
+      h.tasedTimer = 0;
+      h.continuousTasedTimer = 0;
+      h.continuousTasedSmokeTimer = 0;
+      h.tasedPoint = null;
+      if (h.updateCrawling) h.updateCrawling();
+      h.die("cattle_prod", "Electrocuted to death");
+    }
+
+    if (h.isAlive) {
+      if (
+        h.tasedOverrideTimer === undefined ||
+        h.tasedOverrideTimer <= 0
+      ) {
+        h.tasedOverrideTimer = CATTLE_PROD_OVERRIDE_DURATION;
+        h.expressionOverride = "CRYING_SHOCKED";
+        h.expressionOverrideTimer = CATTLE_PROD_OVERRIDE_DURATION;
+        if (h.happiness > WAN_DIE_THRESHOLD && h.canTalk()) {
+          h.speak(getDialogue(["CATTLE_PROD", h.tooYoungToSpeak() ? "BABY" : "DEFAULT"], h), false, true);
+        }
+      } else {
+        h.tasedOverrideTimer -= dt;
+      }
     }
   }
 }

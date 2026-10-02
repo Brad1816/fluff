@@ -479,76 +479,20 @@ class HorseRenderer {
     this.ensureTintedImages();
     if (!this.tinted || !this.tinted.torso) return;
 
-    const layout = {
-      torso: {
-        x: 0,
-        y: 0,
-        angle: 0,
-        w: this.tinted.torso.width,
-        h: this.tinted.torso.height,
-      },
-      head: {
-        x: 0,
-        y: 0,
-        angle: 0,
-        w: this.tinted.head.width,
-        h: this.tinted.head.height,
-      },
-      tail: {
-        x: 0,
-        y: 0,
-        angle: 0,
-        w: this.tinted.tail.width,
-        h: this.tinted.tail.height,
-      },
-      legs: [
-        {
-          x: 0,
-          y: 0,
-          angle: 0,
-          w: this.tinted.leg.width,
-          h: this.tinted.leg.height,
-        },
-        {
-          x: 0,
-          y: 0,
-          angle: 0,
-          w: this.tinted.leg.width,
-          h: this.tinted.leg.height,
-        },
-        {
-          x: 0,
-          y: 0,
-          angle: 0,
-          w: this.tinted.leg.width,
-          h: this.tinted.leg.height,
-        },
-        {
-          x: 0,
-          y: 0,
-          angle: 0,
-          w: this.tinted.leg.width,
-          h: this.tinted.leg.height,
-        },
-      ],
-      bodyY: 0,
-      globalRotation: 0,
-      stretch: 0,
-    };
-
+    let globalRotation = 0;
     if (this.horse.ragdollRotation !== 0)
-      layout.globalRotation = this.horse.ragdollRotation;
+      globalRotation = this.horse.ragdollRotation;
     else if (this.horse.birthRotation > 0)
-      layout.globalRotation = this.horse.birthRotation;
+      globalRotation = this.horse.birthRotation;
 
     // Invert rotation if facing left because canvas scale(-1, 1) reverses rotation direction visual
-    if (!this.horse.facingRight) layout.globalRotation = -layout.globalRotation;
+    if (!this.horse.facingRight) globalRotation = -globalRotation;
 
-    let headBobY, tailAngle, headAngle;
+    let bodyY, headBobY, tailAngle, headAngle;
     let bodyAngle = this.horse.anim.bodyAngle || 0;
 
     if (this.horse.isDragging && this.horse.isAlive) {
-      layout.bodyY = 0;
+      bodyY = 0;
       headBobY = 0;
       tailAngle = 0;
       headAngle =
@@ -569,7 +513,7 @@ class HorseRenderer {
       }
 
       const t = this.horse.deathAnim;
-      layout.bodyY = lerp(this.horse.deathSnapshot.bodyY, 25, t);
+      bodyY = lerp(this.horse.deathSnapshot.bodyY, 25, t);
       headBobY = lerp(this.horse.deathSnapshot.headBobY, 0, t);
       tailAngle = lerp(this.horse.deathSnapshot.tailAngle, Math.PI / 8, t);
       headAngle = lerp(
@@ -580,7 +524,7 @@ class HorseRenderer {
       // Interpolate bodyAngle to 0 (flat) from whatever it was
       bodyAngle = lerp(this.horse.deathSnapshot.bodyAngle, 0, t);
     } else {
-      layout.bodyY =
+      bodyY =
         (this.horse.anim.yOffset || 0) +
         Math.sin(this.horse.animPhase) * this.horse.anim.bodyBobAmp +
         (this.knockedDownBodyY || 0);
@@ -609,7 +553,7 @@ class HorseRenderer {
       }
 
       if (this.horse.isCrawling && !this.horse.isDragging) {
-        layout.bodyY += 20;
+        bodyY += 20;
       }
 
       if (this.horse.currentStateKey === "BENDING")
@@ -620,35 +564,18 @@ class HorseRenderer {
         bodyAngle -= Math.sin(this.horse.animPhase) * 0.15;
     }
 
-    if (this.horse.isBeingTased && this.horse.isBeingTased()) {
-      layout.bodyY += (Math.random() - 0.5) * 2.5;
+    const isTased = this.horse.isBeingTased && this.horse.isBeingTased();
+    if (isTased) {
+      bodyY += (Math.random() - 0.5) * 2.5;
       bodyAngle += (Math.random() - 0.5) * 0.08;
     }
-
-    layout.torso.angle = bodyAngle;
-    const tW = layout.torso.w,
-      tH = layout.torso.h;
-
-    // Helper to rotate offsets by torso angle
-    const rotate = (ox, oy) => {
-      const cos = Math.cos(bodyAngle),
-        sin = Math.sin(bodyAngle);
-      return { x: ox * cos - oy * sin, y: ox * sin + oy * cos };
-    };
-
-    // AGENT: leg distance relative to torso
-    const frontLegX = tW * 0.3,
-      backLegX = -tW * 0.3,
-      legY = tH * 0.2;
-    const lW = this.tinted.leg.width,
-      lH = this.tinted.leg.height;
 
     const legAngles = this.calculateLegAngles(bodyAngle);
 
     if (this.horse.isAlive) {
       // Capture angles for death transition
       this.horse.lastFrameAngles = {
-        bodyY: layout.bodyY,
+        bodyY: bodyY,
         legAngles: [...legAngles],
         headBobY: headBobY,
         tailAngle: tailAngle,
@@ -657,97 +584,32 @@ class HorseRenderer {
       };
     }
 
-    const legPos0 = rotate(backLegX, legY);
-    const legPos1 = rotate(frontLegX, legY);
-    const jabOffset = rotate(this.jabXOffset || 0, 0);
+    const layout = this.buildLayout({
+      globalRotation,
+      bodyY,
+      bodyAngle,
+      headBobY,
+      headAngle,
+      tailAngle,
+      legAngles,
+      jabXOffset: this.jabXOffset || 0,
+      facingRight: this.horse.facingRight,
+    });
 
-    layout.legs[0] = {
-      x: legPos0.x,
-      y: legPos0.y,
-      angle: legAngles[0],
-      w: lW,
-      h: lH,
-    };
-    layout.legs[1] = {
-      x: legPos1.x + jabOffset.x,
-      y: legPos1.y + jabOffset.y,
-      angle: legAngles[1],
-      w: lW,
-      h: lH,
-    };
-    layout.legs[2] = {
-      x: legPos1.x + (this.horse.facingRight ? 0 : jabOffset.x),
-      y: legPos1.y + (this.horse.facingRight ? 0 : jabOffset.y),
-      angle: legAngles[2],
-      w: lW,
-      h: lH,
-    };
-    layout.legs[3] = {
-      x: legPos0.x,
-      y: legPos0.y,
-      angle: legAngles[3],
-      w: lW,
-      h: lH,
-    };
-
-    if (this.horse.isBeingTased && this.horse.isBeingTased()) {
+    if (isTased) {
       for (let i = 0; i < 4; i++) {
         layout.legs[i].x += (Math.random() - 0.5) * 3;
         layout.legs[i].y += (Math.random() - 0.5) * 3;
       }
-    }
-
-    if (this.horse.isPregnant || this.horse.isSensitive()) {
-      let stretch = this.horse.pregnancyTorsoStretch || 0;
-      if (this.horse.isSensitive()) {
-        stretch = 1.0;
+      layout.head.angle += (Math.random() - 0.5) * 0.5;
+      layout.head.x += (Math.random() - 0.5) * 4;
+      layout.head.y += (Math.random() - 0.5) * 4;
+      if (this.horse.limbs && this.horse.limbs.tail) {
+        layout.tail.angle += (Math.random() - 0.5) * 0.6;
+        layout.tail.x += (Math.random() - 0.5) * 3;
+        layout.tail.y += (Math.random() - 0.5) * 3;
       }
-      layout.stretch = stretch * (tH * 0.2);
     }
-
-    // AGENT: head and tail distance relative to torso
-    const headPos = rotate(tW * 0.35, -tH * 0.25 + headBobY);
-    const tailPos = rotate(-tW * 0.4, -tH * 0.3);
-
-    let headX = headPos.x;
-    let headY = headPos.y;
-    let finalHeadAngle = headAngle + bodyAngle;
-
-    if (this.horse.isBeingTased && this.horse.isBeingTased()) {
-      finalHeadAngle += (Math.random() - 0.5) * 0.5;
-      headX += (Math.random() - 0.5) * 4;
-      headY += (Math.random() - 0.5) * 4;
-    }
-
-    layout.head = {
-      x: headX,
-      y: headY,
-      angle: finalHeadAngle,
-      w: this.tinted.head.width,
-      h: this.tinted.head.height,
-    };
-    let tailX = tailPos.x;
-    let tailY = tailPos.y;
-    let finalTailAngle = tailAngle + bodyAngle;
-
-    if (
-      this.horse.limbs &&
-      this.horse.limbs.tail &&
-      this.horse.isBeingTased &&
-      this.horse.isBeingTased()
-    ) {
-      finalTailAngle += (Math.random() - 0.5) * 0.6;
-      tailX += (Math.random() - 0.5) * 3;
-      tailY += (Math.random() - 0.5) * 3;
-    }
-
-    layout.tail = {
-      x: tailX,
-      y: tailY,
-      angle: finalTailAngle,
-      w: this.tinted.tail.width,
-      h: this.tinted.tail.height,
-    };
 
     // RAGDOLL OVERRIDE
     const headParts = ["leftEar", "rightEar", "leftEye", "rightEye"];
@@ -783,12 +645,7 @@ class HorseRenderer {
       // Override Tail
       if (effectiveGrabbedPart === "tail") layout.tail.angle = globalUp;
       else layout.tail.angle = globalDown;
-      if (
-        this.horse.limbs &&
-        this.horse.limbs.tail &&
-        this.horse.isBeingTased &&
-        this.horse.isBeingTased()
-      ) {
+      if (this.horse.limbs && this.horse.limbs.tail && isTased) {
         layout.tail.angle += (Math.random() - 0.5) * 0.6;
       }
 
@@ -797,6 +654,13 @@ class HorseRenderer {
     }
 
     if (this.horse.hasBlockOnBack()) {
+      const tW = layout.torso.w,
+        tH = layout.torso.h;
+      const rotate = (ox, oy) => {
+        const cos = Math.cos(bodyAngle),
+          sin = Math.sin(bodyAngle);
+        return { x: ox * cos - oy * sin, y: ox * sin + oy * cos };
+      };
       if (this.horse.isStacking) {
         const t = clamp((this.horse.stackingTimer - 1.0) / 2.0, 0, 1);
         const startAngle = -Math.PI / 1.5 - bodyAngle;
@@ -817,6 +681,88 @@ class HorseRenderer {
         layout.block = { x: backPos.x, y: backPos.y };
       }
     }
+
+    this.layout = layout;
+  }
+
+  // Positions every body part (torso-local) for the given pose. Shared by the
+  // live renderer and snapshots.
+  buildLayout(pose) {
+    const bodyAngle = pose.bodyAngle;
+    const tW = this.tinted.torso.width,
+      tH = this.tinted.torso.height;
+    const lW = this.tinted.leg.width,
+      lH = this.tinted.leg.height;
+
+    // Helper to rotate offsets by torso angle
+    const rotate = (ox, oy) => {
+      const cos = Math.cos(bodyAngle),
+        sin = Math.sin(bodyAngle);
+      return { x: ox * cos - oy * sin, y: ox * sin + oy * cos };
+    };
+
+    const layout = {
+      torso: { x: 0, y: 0, angle: bodyAngle, w: tW, h: tH },
+      head: null,
+      tail: null,
+      legs: [],
+      bodyY: pose.bodyY,
+      globalRotation: pose.globalRotation,
+      stretch: 0,
+    };
+
+    // AGENT: leg distance relative to torso
+    const frontLegX = tW * 0.3,
+      backLegX = -tW * 0.3,
+      legY = tH * 0.2;
+
+    const legPos0 = rotate(backLegX, legY);
+    const legPos1 = rotate(frontLegX, legY);
+    const jabOffset = rotate(pose.jabXOffset, 0);
+    const jabbedLegPos1 = {
+      x: legPos1.x + jabOffset.x,
+      y: legPos1.y + jabOffset.y,
+    };
+    const legPositions = [
+      legPos0,
+      jabbedLegPos1,
+      pose.facingRight ? legPos1 : jabbedLegPos1,
+      legPos0,
+    ];
+    layout.legs = legPositions.map((pos, i) => ({
+      x: pos.x,
+      y: pos.y,
+      angle: pose.legAngles[i],
+      w: lW,
+      h: lH,
+    }));
+
+    if (this.horse.isPregnant || this.horse.isSensitive()) {
+      let stretch = this.horse.pregnancyTorsoStretch || 0;
+      if (this.horse.isSensitive()) {
+        stretch = 1.0;
+      }
+      layout.stretch = stretch * (tH * 0.2);
+    }
+
+    // AGENT: head and tail distance relative to torso
+    const headPos = rotate(tW * 0.35, -tH * 0.25 + pose.headBobY);
+    const tailPos = rotate(-tW * 0.4, -tH * 0.3);
+
+    layout.head = {
+      x: headPos.x,
+      y: headPos.y,
+      angle: pose.headAngle + bodyAngle,
+      w: this.tinted.head.width,
+      h: this.tinted.head.height,
+    };
+    layout.tail = {
+      x: tailPos.x,
+      y: tailPos.y,
+      angle: pose.tailAngle + bodyAngle,
+      w: this.tinted.tail.width,
+      h: this.tinted.tail.height,
+    };
 
     // Horn layout (position in head-local space, relative to head pivot)
     if (this.tinted.horn) {
@@ -867,237 +813,173 @@ class HorseRenderer {
       layout.wing = null;
     }
 
-    this.layout = layout;
+    return layout;
   }
 
-  drawPortrait(ctx, x, y, size) {
+  // Draws a static picture of the horse centered at (x, y): standing (or
+  // crawling if too young/SBS), facing right, neutral expression, no accessories.
+  drawSnapshot(ctx, x, y, size) {
     this.ensureTintedImages();
-    if (!this.tinted) return;
+    if (!this.tinted || !this.tinted.torso) return;
+
+    const crawling = this.horse.tooYoungToWalk();
+    const layout = this.buildLayout({
+      globalRotation: 0,
+      bodyY: crawling ? 20 : 0,
+      bodyAngle: 0,
+      headBobY: 0,
+      headAngle: 0,
+      tailAngle: 0,
+      legAngles: crawling
+        ? [Math.PI / 2, -Math.PI / 2, -Math.PI / 2, Math.PI / 2]
+        : [0, 0, 0, 0],
+      jabXOffset: 0,
+      facingRight: true,
+    });
 
     ctx.save();
     ctx.translate(x, y);
-    // Scale to fit the requested size, but also account for legs/tail extent and horse growth
+    // Scale to fit the requested size, accounting for horse growth
     const s = (size / 100) * 0.45 * this.getGrowthScale();
     ctx.scale(s, s);
-
-    const tW = this.tinted.torso.width;
-    const tH = this.tinted.torso.height;
-    const frontLegX = tW * 0.3;
-    const backLegX = -tW * 0.3;
-    const legY = tH * 0.2;
-    const rightLegAngle = this.horse.tooYoungToWalk() ? Math.PI / 2 : 0.2;
-    const leftLegAngle = this.horse.tooYoungToWalk() ? Math.PI / 2 : 0.1;
-
-    // Draw Far Legs (Left side)
-    if (this.horse.limbs.legs[2])
-      this.drawLeg(ctx, frontLegX, legY, -leftLegAngle);
-    if (this.horse.limbs.legs[3])
-      this.drawLeg(ctx, backLegX, legY, leftLegAngle);
-
-    // Draw Torso & Parts
-    ctx.drawImage(this.tinted.torso, -tW / 2, -tH / 2);
-    if (this.tinted.udders) {
-      ctx.save();
-      const milkScale = 1.0 + (this.horse.milkCharges / 5.0) * 0.5;
-      ctx.scale(milkScale, milkScale);
-      ctx.drawImage(
-        this.tinted.udders,
-        -tW / 2.5 / milkScale,
-        tH / 3 / milkScale,
-      );
-      ctx.restore();
-    }
-    const hasWingJacket =
-      this.horse.accessories &&
-      this.horse.accessories["torso"] &&
-      this.horse.accessories["torso"].id === "wingjacket";
-    let visibleWing =
-      this.tinted.wing && this.horse.limbs.rightWing && !hasWingJacket;
-    if (visibleWing) {
-      ctx.save();
-      const wS = this.horse.wingSizeFactor || 1.0;
-      ctx.scale(wS, wS);
-      ctx.drawImage(this.tinted.wing, (-tW * 0.25) / wS, (-tH * 0.75) / wS);
-      ctx.restore();
-    }
-
-    // Head
-    const neckX = tW * 0.35;
-    const neckY = -tH * 0.25;
-    ctx.save();
-    ctx.translate(neckX, neckY);
-
-    if (this.horse.headKnockTimer > 0) {
-      ctx.rotate((60 * Math.PI) / 180);
-    }
-
-    const headImg = this.tinted.head;
-    const pivotX = headImg.width * 0.25;
-    const pivotY = headImg.height * 0.85;
-
-    const maneScale = this.getManeScale();
-    const headScale = this.getHeadScale();
-
-    // Mane Behind
-    if (maneScale > 0 && maneScale < MANE_LAYER_THRESHOLD && this.tinted.mane) {
-      ctx.save();
-      ctx.scale(maneScale, maneScale);
-      ctx.drawImage(this.tinted.mane, -pivotX, -pivotY);
-      ctx.restore();
-    }
-
-    // Scaled Head Group
-    ctx.save();
-    ctx.scale(headScale, headScale);
-
-    // Far Ear (Left Ear)
-    if (this.horse.limbs.leftEar && this.tinted.ear) {
-      ctx.save();
-      // Move forward (Positive X in portrait facing right)
-      ctx.translate(30, -5);
-      ctx.scale(0.95, 0.95);
-      ctx.drawImage(this.tinted.ear, -pivotX, -pivotY);
-      ctx.restore();
-    }
-
-    ctx.drawImage(this.tinted.head, -pivotX, -pivotY);
-
-    if (maneScale >= MANE_LAYER_THRESHOLD && this.tinted.mane) {
-      ctx.save();
-      const relManeScale = maneScale / headScale;
-      ctx.scale(relManeScale, relManeScale);
-      ctx.drawImage(this.tinted.mane, -pivotX, -pivotY);
-      ctx.restore();
-    }
-
-    if (this.horse.limbs.horn && this.tinted.horn) {
-      ctx.save();
-      const hS = this.horse.hornSizeFactor || 1.0;
-      ctx.translate(0, (1 - hS) * this.tinted.horn.height);
-      ctx.scale(hS, hS);
-      ctx.drawImage(this.tinted.horn, (pivotX * 2.0) / hS, -pivotY / hS);
-      ctx.restore();
-    }
-    if (this.horse.limbs.rightEar && this.tinted.ear) {
-      ctx.save();
-      const earScale = this.getEarScale();
-      ctx.scale(earScale, earScale);
-
-      const eImg = this.tinted.ear;
-      const drawX = -20;
-      const drawY = -pivotY + 10;
-
-      // Do not flop ears in portrait
-      ctx.drawImage(this.tinted.ear, drawX, drawY);
-      ctx.restore();
-    }
-
-    const eyeX = headImg.width * 0.73 - pivotX;
-    const eyeY = headImg.height * 0.5 - pivotY;
-
-    if (this.tinted.eye && this.horse.limbs.rightEye) {
-      ctx.drawImage(
-        this.tinted.eye,
-        eyeX - this.tinted.eye.width / 2,
-        eyeY - this.tinted.eye.height / 2,
-      );
-    }
-    if (this.tinted.pupil && this.horse.limbs.rightEye) {
-      const img = this.tinted.pupil;
-      const alpha = this.horse.isAlive
-        ? 1.0
-        : Math.max(0.25, 1.0 - (this.horse.deathTimer / 5) * 0.75);
-      ctx.save();
-      ctx.globalAlpha *= alpha;
-      ctx.drawImage(img, eyeX - img.width / 2 + 2, eyeY - img.height / 2 + 2);
-      ctx.restore();
-    }
-
-    // Blinking (Eyelid)
-    if (
-      (this.horse.isBlinking || !this.horse.limbs.rightEye) &&
-      this.tinted.eyelid
-    ) {
-      const img = this.tinted.eyelid;
-      ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
-    }
-
-    // Force neutral mouth
-    let mouthImg = images.mouth_neutral;
-    if (mouthImg) {
-      const mouthX = headImg.width * 0.85 - pivotX;
-      const mouthY = headImg.height * 0.8 - pivotY;
-      ctx.drawImage(
-        mouthImg,
-        mouthX - mouthImg.width / 2,
-        mouthY - mouthImg.height / 2,
-      );
-    }
-
-    // Force neutral cheek
-    const cheekImg = this.tinted.cheek;
-    if (cheekImg) {
-      ctx.drawImage(cheekImg, -pivotX, -pivotY);
-    }
-
-    ctx.restore(); // End head scale group
-    ctx.restore(); // End head translation group
-
-    // Tail
-    if (this.horse.limbs.tail) {
-      const tailX = -tW * 0.4;
-      const tailY = -tH * 0.3;
-      ctx.save();
-      ctx.translate(tailX, tailY);
-      const tailImg = this.tinted.tail;
-      ctx.drawImage(tailImg, -tailImg.width * 0.8, -tailImg.height * 0.1);
-      ctx.restore();
-    }
-
-    // Draw Near Legs (Right side)
-    if (this.horse.limbs.legs[0])
-      this.drawLeg(ctx, backLegX, legY, rightLegAngle);
-    if (this.horse.limbs.legs[1])
-      this.drawLeg(ctx, frontLegX, legY, -rightLegAngle);
-
+    ctx.translate(0, layout.bodyY);
+    this.drawBody(ctx, layout, this.getSnapshotView());
     ctx.restore();
   }
 
-  drawDream(ctx) {
-    if (!this.horse.currentDream) return;
+  // Per-frame visual state drawBody needs for the live horse
+  getLiveView() {
+    const h = this.horse;
+    if (!h.isAlive && h.deathWeapon === "knife") {
+      h.pupilOffset.x = lerp(h.pupilOffset.x, -2, 0.05);
+      h.pupilOffset.y = lerp(h.pupilOffset.y, -12.5, 0.05);
+    }
+    return {
+      facingRight: h.facingRight,
+      isAlive: h.isAlive,
+      expression: this.getExpressionConfig(),
+      eyesClosed: h.isBlinking,
+      earFlop: h.limbs.earFlopValue || 0,
+      wingYScale: h.wingFlapPhase > 0 ? Math.cos(h.wingFlapPhase) : 1.0,
+      pupilOffset: {
+        x: h.pupilOffset.x + h.pupilTwitchOffset.x,
+        y: h.pupilOffset.y + h.pupilTwitchOffset.y,
+      },
+      pupilAlpha: h.isAlive
+        ? 1.0
+        : Math.max(0.25, 1.0 - (h.deathTimer / 5) * 0.75),
+      tears:
+        h.tearStreakSize > 0
+          ? {
+              size: h.tearStreakSize,
+              crying: this.isCrying(),
+              flowPhase: h.tearFlowPhase,
+              gapPhase: h.tearGapPhase,
+            }
+          : null,
+      accessories: true,
+    };
+  }
 
+  // Neutral visual state for snapshots
+  getSnapshotView() {
+    return {
+      facingRight: true,
+      isAlive: true,
+      expression: getExpressionConfig("NEUTRAL"),
+      eyesClosed: !this.horse.eyesHaveGrown() || this.horse.isSensitive(),
+      earFlop: 0,
+      wingYScale: 1.0,
+      pupilOffset: { x: 0, y: 0 },
+      pupilAlpha: 1.0,
+      tears: null,
+      accessories: false,
+    };
+  }
+
+  // Puffy cloud outline: a ring of lobes around a core. Strokes go down first
+  // and the fills cover them, so only the outer scalloped edge stays outlined.
+  drawDreamCloud(ctx) {
+    const lobeCount = 9;
+    const ringRadius = 34;
+    const lobeRadius = 13;
+    const lobes = [];
+    for (let i = 0; i < lobeCount; i++) {
+      const a = (i / lobeCount) * Math.PI * 2;
+      // Alternate lobe sizes slightly so it doesn't look too regular
+      const r = lobeRadius * (i % 2 === 0 ? 1.0 : 0.85);
+      lobes.push({ x: Math.cos(a) * ringRadius, y: Math.sin(a) * ringRadius, r });
+    }
+
+    ctx.beginPath();
+    for (const l of lobes) {
+      ctx.moveTo(l.x + l.r, l.y);
+      ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2);
+    }
+    ctx.stroke();
+
+    ctx.beginPath();
+    for (const l of lobes) {
+      ctx.moveTo(l.x + l.r, l.y);
+      ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2);
+    }
+    ctx.moveTo(ringRadius, 0);
+    ctx.arc(0, 0, ringRadius, 0, Math.PI * 2);
+    ctx.fill("nonzero");
+  }
+
+  drawDream(ctx) {
+    const progress = this.horse.dreamBubbleProgress || 0;
+    if (!this.horse.shownDream || progress <= 0) return;
+
+    // Stage a bubble's pop-in within the overall progress (with a slight overshoot)
+    const stage = (start, end) => {
+      const t = clamp((progress - start) / (end - start), 0, 1);
+      if (t <= 0) return 0;
+      const c = 1.70158;
+      return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2);
+    };
+    const pulse = (offset) =>
+      1 +
+      Math.sin(this.horse.dreamPulsePhase + offset) * DREAM_BUBBLE_PULSE_AMOUNT;
+
+    const sizeScale = this.horse.scale / DREAM_BUBBLE_REFERENCE_SCALE;
     const bx = this.horse.x;
     const by = this.horse.y - 120 * this.horse.scale;
 
     ctx.save();
     ctx.translate(bx, by);
+    ctx.scale(sizeScale, sizeScale);
     // Invert X if facing right
     if (this.horse.facingRight) {
       ctx.scale(-1, 1);
     }
 
-    // Draw cloud-like thought bubble
+    // Draw cloud-like thought bubble, smallest trailing bubble first
     ctx.fillStyle = "white";
     ctx.strokeStyle = "#ccc";
     ctx.lineWidth = 2;
 
-    ctx.beginPath();
-    ctx.arc(0, 0, 40, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    const drawCircle = (x, y, r) => {
+      if (r <= 0) return;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    };
+    drawCircle(-32, 40, 4 * stage(0, 0.3) * pulse(1.2));
+    drawCircle(-25, 35, 8 * stage(0.2, 0.5) * pulse(0.6));
 
-    ctx.beginPath();
-    ctx.arc(-20, 35, 8, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(-25, 40, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    const mainScale = stage(0.4, 1.0) * pulse(0);
+    if (mainScale <= 0) {
+      ctx.restore();
+      return;
+    }
+    ctx.scale(mainScale, mainScale);
+    this.drawDreamCloud(ctx);
 
     // Draw dream image
-    const dreamImg = images[`dream_${this.horse.currentDream}`];
+    const dreamImg = images[`dream_${this.horse.shownDream}`];
     if (dreamImg && dreamImg.complete && dreamImg.width > 0) {
       const s = 0.5;
       ctx.save();
@@ -1114,10 +996,70 @@ class HorseRenderer {
     ctx.restore();
   }
 
+  drawShadow(ctx) {
+    if (this.horse.isDestroyed || !this.layout) return;
+    if (
+      this.horse.currentCage instanceof Cage ||
+      this.horse.currentCage instanceof FoalInACan
+    )
+      return;
+    if (this.horse.drowningTimer >= 5) return;
+
+    let alpha =
+      typeof HORSE_SHADOW_ALPHA !== "undefined" ? HORSE_SHADOW_ALPHA : 0.25;
+    if (this.horse.drowningTimer > 0) {
+      alpha *= Math.max(0, 1.0 - this.horse.drowningTimer / 5.0);
+      if (alpha <= 0.001) return;
+    }
+
+    const s = Math.abs(this.horse.scale) || 0.5;
+    const baseRx = HORSE_SHADOW_BASE_RADIUS_X;
+    const baseRy = HORSE_SHADOW_BASE_RADIUS_Y;
+
+    const shadowX = this.horse.x;
+    let shadowY = this.horse.y + 83.2 * s;
+    if (this.horse.heldWithThrowTool || this.horse.isFallingFromThrow) {
+      if (typeof this.horse.throwShadowY === "number" && !isNaN(this.horse.throwShadowY)) {
+        shadowY = this.horse.throwShadowY;
+      }
+    } else if (typeof this.horse.getBottomY === "function") {
+      const bY = this.horse.getBottomY();
+      if (typeof bY === "number" && !isNaN(bY)) {
+        shadowY = bY;
+      }
+    }
+
+    let heightInAir = 0;
+    if (this.horse.heldWithThrowTool || this.horse.isFallingFromThrow) {
+      if (typeof this.horse.throwStartY === "number") {
+        heightInAir = Math.max(0, this.horse.throwStartY - this.horse.y);
+      } else {
+        heightInAir = Math.max(0, shadowY - (this.horse.y + 83.2 * s));
+      }
+    } else {
+      heightInAir = Math.max(0, shadowY - (this.horse.y + 83.2 * s));
+    }
+
+    const heightFactor = 1 / (1 + heightInAir / 250);
+    const radiusX = Math.max(1.5, baseRx * s * heightFactor);
+    const radiusY = Math.max(1.0, baseRy * s * heightFactor);
+
+    ctx.save();
+    ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(shadowX, shadowY, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   drawOffScreen(ctx, clip = null) {
     if (this.horse.isDestroyed || !this.layout) return;
     this.ensureTintedImages();
     if (!this.tinted) return;
+
+    if (this.horse.drowningTimer <= 0) {
+        this.drawShadow(ctx);
+    }
 
     ctx.save();
     ctx.translate(this.horse.x, this.horse.y);
@@ -1247,11 +1189,19 @@ class HorseRenderer {
       ctx.clip();
     }
 
+    this.drawBody(ctx, this.layout, this.getLiveView());
+
+    ctx.restore();
+  }
+
+  // Draws the horse's parts at the current origin using the given layout and
+  // view (visual state: expression, blinking, tears, etc.)
+  drawBody(ctx, layout, view) {
     const drawPart = (img, rect) => {
       if (!img) return;
 
       const drawAccessoryLayer = (layer, slotCategory) => {
-        if (!this.horse.accessories) return;
+        if (!view.accessories || !this.horse.accessories) return;
         for (const [slot, data] of Object.entries(this.horse.accessories)) {
           const accDef =
             typeof ACCESSORY_DB !== "undefined" ? ACCESSORY_DB[data.id] : null;
@@ -1282,7 +1232,7 @@ class HorseRenderer {
 
           let ox = -rect.w / 2;
           let oy = -rect.h / 2;
-          if (rect === this.layout.head) {
+          if (rect === layout.head) {
             ox = -rect.w * 0.25;
             oy = -rect.h * 0.85;
             const headScale = this.getHeadScale();
@@ -1315,28 +1265,28 @@ class HorseRenderer {
       ctx.rotate(rect.angle);
       let ox = -rect.w / 2,
         oy = -rect.h / 2;
-      if (rect === this.layout.head) {
+      if (rect === layout.head) {
         ox = -rect.w * 0.25;
         oy = -rect.h * 0.85;
-      } else if (rect === this.layout.tail) {
+      } else if (rect === layout.tail) {
         ox = -rect.w * 0.8;
         oy = -rect.h * 0.1;
-      } else if (this.layout.legs.includes(rect)) {
+      } else if (layout.legs.includes(rect)) {
         ox = -rect.w / 2;
         oy = 0;
       }
 
-      if (rect === this.layout.torso) {
+      if (rect === layout.torso) {
         drawAccessoryLayer("UNDER_BODY", "torso");
-        ctx.drawImage(img, ox, oy, rect.w, rect.h + this.layout.stretch);
+        ctx.drawImage(img, ox, oy, rect.w, rect.h + layout.stretch);
         drawAccessoryLayer("OVER_BODY", "torso");
         drawAccessoryLayer("UNDER_HEAD", "torso");
-      } else if (rect !== this.layout.head) {
+      } else if (rect !== layout.head) {
         ctx.drawImage(img, ox, oy, rect.w, rect.h);
       }
 
       // Overlays for head
-      if (rect === this.layout.head) {
+      if (rect === layout.head) {
         const maneScale = this.getManeScale();
         const headScale = this.getHeadScale();
 
@@ -1363,12 +1313,12 @@ class HorseRenderer {
         const localOY = -rect.h * 0.85;
 
         // Far Ear
-        const farEar = this.horse.facingRight
+        const farEar = view.facingRight
           ? this.horse.limbs.leftEar
           : this.horse.limbs.rightEar;
         if (farEar && this.tinted.ear) {
           ctx.save();
-          const flopAngle = this.horse.limbs.earFlopValue || 0;
+          const flopAngle = view.earFlop;
           const eImg = this.tinted.ear;
           const farX = localOX + 35;
           const farY = localOY + 5;
@@ -1428,13 +1378,13 @@ class HorseRenderer {
         const pupilX = eyeX + rect.w * 0.02;
         const pupilY = eyeY + rect.h * 0.01;
 
-        const expConfig = this.getExpressionConfig();
-        const nearEye = this.horse.facingRight
+        const expConfig = view.expression;
+        const nearEye = view.facingRight
           ? this.horse.limbs.rightEye
           : this.horse.limbs.leftEye;
         let drawnExp = false;
 
-        if (this.horse.isAlive && nearEye) {
+        if (view.isAlive && nearEye) {
           if (expConfig.eye === "pained" && this.tinted.eye_pained) {
             const img = this.tinted.eye_pained;
             ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
@@ -1448,8 +1398,7 @@ class HorseRenderer {
 
         if (!drawnExp) {
           if (this.tinted.eye && nearEye) {
-            const isCrying =
-              this.horse.isAlive && this.horse.tearStreakSize > 0;
+            const isCrying = view.isAlive && view.tears !== null;
 
             const img = isCrying
               ? this.tinted.eye_pink || this.tinted.eye
@@ -1468,28 +1417,11 @@ class HorseRenderer {
             const img = this.tinted.pupil;
             const s = expConfig.pupilSize;
 
-            if (!this.horse.isAlive && this.horse.deathWeapon === "knife") {
-              this.horse.pupilOffset.x = lerp(
-                this.horse.pupilOffset.x,
-                -2,
-                0.05,
-              );
-              this.horse.pupilOffset.y = lerp(
-                this.horse.pupilOffset.y,
-                -12.5,
-                0.05,
-              );
-            }
-            let pOffsetX =
-              this.horse.pupilOffset.x + this.horse.pupilTwitchOffset.x;
-            let pOffsetY =
-              this.horse.pupilOffset.y + this.horse.pupilTwitchOffset.y;
+            const pOffsetX = view.pupilOffset.x;
+            const pOffsetY = view.pupilOffset.y;
 
-            const alpha = this.horse.isAlive
-              ? 1.0
-              : Math.max(0.25, 1.0 - (this.horse.deathTimer / 5) * 0.75);
             ctx.save();
-            ctx.globalAlpha *= alpha;
+            ctx.globalAlpha *= view.pupilAlpha;
             ctx.drawImage(
               img,
               pupilX - (img.width * s) / 2 + pOffsetX,
@@ -1511,7 +1443,7 @@ class HorseRenderer {
           }
 
           // Blinking (Eyelid)
-          if ((this.horse.isBlinking || !nearEye) && this.tinted.eyelid) {
+          if ((view.eyesClosed || !nearEye) && this.tinted.eyelid) {
             const img = this.tinted.eyelid;
             ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
           }
@@ -1536,7 +1468,7 @@ class HorseRenderer {
 
         drawAccessoryLayer("OVER_HEAD", "face_only");
 
-        const nearEar = this.horse.facingRight
+        const nearEar = view.facingRight
           ? this.horse.limbs.rightEar
           : this.horse.limbs.leftEar;
         if (nearEar && this.tinted.ear) {
@@ -1545,7 +1477,7 @@ class HorseRenderer {
           ctx.scale(earScale, earScale);
 
           const eImg = this.tinted.ear;
-          const flopAngle = this.horse.limbs.earFlopValue || 0;
+          const flopAngle = view.earFlop;
           const pushX = 10;
           const pushY = 10;
           const localX = localOX + pushX;
@@ -1578,27 +1510,27 @@ class HorseRenderer {
 
         drawAccessoryLayer("OVER_CHEEKS");
 
-        if (this.horse.tearStreakSize > 0) {
+        if (view.tears) {
+          const tears = view.tears;
           // Tear stream with 5 unit y difference minimum between streaks
           let fullStartY, fullEndY;
-          if (this.isCrying()) {
+          if (tears.crying) {
             fullStartY = eyeY + 12;
-            fullEndY = eyeY + 12 + (72 - 12) * this.horse.tearStreakSize;
+            fullEndY = eyeY + 12 + (72 - 12) * tears.size;
           } else {
             // Finishing: disappear from top down
-            fullStartY =
-              eyeY + 12 + (72 - 12) * (1 - this.horse.tearStreakSize);
+            fullStartY = eyeY + 12 + (72 - 12) * (1 - tears.size);
             fullEndY = eyeY + 72;
           }
 
           ctx.fillStyle = "rgba(80, 80, 80, 0.65)";
           const segmentHeight = 10;
-          const gap = 1 * (Math.sin(this.horse.tearGapPhase) * 0.5 + 0.5);
+          const gap = 1 * (Math.sin(tears.gapPhase) * 0.5 + 0.5);
           const totalPeriod = segmentHeight + gap;
 
           // Offset the starting point by phase
           let startY_offset =
-            fullStartY - (fullStartY % totalPeriod) + this.horse.tearFlowPhase;
+            fullStartY - (fullStartY % totalPeriod) + tears.flowPhase;
           if (startY_offset < fullStartY) startY_offset += totalPeriod;
 
           for (
@@ -1626,20 +1558,20 @@ class HorseRenderer {
     };
 
     // Draw Far Legs
-    const farLegs = this.horse.facingRight ? [2, 3] : [0, 1];
+    const farLegs = view.facingRight ? [2, 3] : [0, 1];
     for (const i of farLegs) {
       if (this.horse.limbs.legs[i])
-        drawPart(this.tinted.leg, this.layout.legs[i]);
+        drawPart(this.tinted.leg, layout.legs[i]);
     }
 
     // Torso & Overlays
-    drawPart(this.tinted.torso, this.layout.torso);
+    drawPart(this.tinted.torso, layout.torso);
     if (this.tinted.udders && !this.horse.tooYoungToWalk()) {
-      const tW = this.layout.torso.w,
-        tH = this.layout.torso.h;
+      const tW = layout.torso.w,
+        tH = layout.torso.h;
       ctx.save();
-      ctx.translate(this.layout.torso.x, this.layout.torso.y);
-      ctx.rotate(this.layout.torso.angle);
+      ctx.translate(layout.torso.x, layout.torso.y);
+      ctx.rotate(layout.torso.angle);
 
       // Udder Scale based on milk charges
       const milkScale = 1.0 + (this.horse.milkCharges / 5.0) * 0.5;
@@ -1648,7 +1580,7 @@ class HorseRenderer {
       ctx.drawImage(
         this.tinted.udders,
         -tW / 2.5 / milkScale,
-        (tH / 3 + this.layout.stretch * 0.8) / milkScale,
+        (tH / 3 + layout.stretch * 0.8) / milkScale,
       );
       ctx.restore();
     }
@@ -1658,20 +1590,21 @@ class HorseRenderer {
       this.horse.limbs.lumps &&
       !this.horse.tooYoungToWalk()
     ) {
-      const tW = this.layout.torso.w,
-        tH = this.layout.torso.h;
+      const tW = layout.torso.w,
+        tH = layout.torso.h;
       ctx.save();
-      ctx.translate(this.layout.torso.x, this.layout.torso.y);
-      ctx.rotate(this.layout.torso.angle);
+      ctx.translate(layout.torso.x, layout.torso.y);
+      ctx.rotate(layout.torso.angle);
       ctx.drawImage(
         this.tinted.special_lumps,
         -tW * 0.3,
-        tH * 0.4 + this.layout.stretch * 0.8,
+        tH * 0.4 + layout.stretch * 0.8,
       );
       ctx.restore();
     }
 
     if (
+      view.accessories &&
       this.horse.accessories &&
       this.horse.accessories["ABOVE_LUMPS"] &&
       this.horse.gender === "male" &&
@@ -1685,14 +1618,14 @@ class HorseRenderer {
         const accImg =
           typeof images !== "undefined" ? images[accDef.imageKey] : null;
         if (accImg && accImg.complete) {
-          const tW = this.layout.torso.w,
-            tH = this.layout.torso.h;
+          const tW = layout.torso.w,
+            tH = layout.torso.h;
           ctx.save();
-          ctx.translate(this.layout.torso.x, this.layout.torso.y);
-          ctx.rotate(this.layout.torso.angle);
+          ctx.translate(layout.torso.x, layout.torso.y);
+          ctx.rotate(layout.torso.angle);
           const bandX = -tW * 0.3 + (accDef.offsetX || 0);
           const bandY =
-            tH * 0.35 + this.layout.stretch * 0.8 + (accDef.offsetY || 0);
+            tH * 0.35 + layout.stretch * 0.8 + (accDef.offsetY || 0);
           const accScale = accDef.scale !== undefined ? accDef.scale : 1.0;
 
           ctx.translate(bandX, bandY);
@@ -1712,27 +1645,27 @@ class HorseRenderer {
     }
 
     const hasWingJacket =
+      view.accessories &&
       this.horse.accessories &&
       this.horse.accessories["torso"] &&
       this.horse.accessories["torso"].id === "wingjacket";
     let visibleWing =
       this.tinted.wing &&
       !hasWingJacket &&
-      ((this.horse.facingRight && this.horse.limbs.rightWing) ||
-        (!this.horse.facingRight && this.horse.limbs.leftWing));
+      ((view.facingRight && this.horse.limbs.rightWing) ||
+        (!view.facingRight && this.horse.limbs.leftWing));
     if (visibleWing) {
       ctx.save();
-      ctx.translate(this.layout.torso.x, this.layout.torso.y);
-      ctx.rotate(this.layout.torso.angle);
+      ctx.translate(layout.torso.x, layout.torso.y);
+      ctx.rotate(layout.torso.angle);
 
-      const wingYScale =
-        this.horse.wingFlapPhase > 0 ? Math.cos(this.horse.wingFlapPhase) : 1.0;
+      const wingYScale = view.wingYScale;
 
       const wingW = this.tinted.wing.width;
       const wingH = this.tinted.wing.height;
-      const wingAnchorX = -this.layout.torso.w * 0.25;
+      const wingAnchorX = -layout.torso.w * 0.25;
       const yAnchorFrac = 0.85;
-      const wingAnchorY = -this.layout.torso.h * 0.75 + wingH * yAnchorFrac;
+      const wingAnchorY = -layout.torso.h * 0.75 + wingH * yAnchorFrac;
 
       const wS = this.horse.wingSizeFactor || 1.0;
       ctx.translate(wingAnchorX, wingAnchorY);
@@ -1742,17 +1675,15 @@ class HorseRenderer {
       ctx.restore();
     }
 
-    drawPart(this.tinted.head, this.layout.head);
-    if (this.horse.limbs.tail) drawPart(this.tinted.tail, this.layout.tail);
+    drawPart(this.tinted.head, layout.head);
+    if (this.horse.limbs.tail) drawPart(this.tinted.tail, layout.tail);
 
     // Near Legs
-    const nearLegs = this.horse.facingRight ? [0, 1] : [2, 3];
+    const nearLegs = view.facingRight ? [0, 1] : [2, 3];
     for (const i of nearLegs) {
       if (this.horse.limbs.legs[i])
-        drawPart(this.tinted.leg, this.layout.legs[i]);
+        drawPart(this.tinted.leg, layout.legs[i]);
     }
-
-    ctx.restore();
   }
 
   drawSpeechBubble(ctx) {
@@ -1809,12 +1740,319 @@ class HorseRenderer {
     ctx.restore();
   }
 
-  drawLeg(ctx, x, y, angle) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-    const legImg = this.tinted.leg;
-    ctx.drawImage(legImg, -legImg.width / 2, 0);
-    ctx.restore();
+  // Footstep sounds while walking/running
+  updateMovementSound(dt) {
+    const h = this.horse;
+    // Movement Sound Logic
+    if (
+      h.isAlive &&
+      !h.isDragging &&
+      !h.placedOn &&
+      h.scene === currentScene
+    ) {
+      if (
+        (h.currentStateKey === "MOVING" ||
+          h.currentStateKey === "RUNNING") &&
+        !h.isCrawling
+      ) {
+        h.moveSoundTimer -= 9 * dt;
+        if (h.moveSoundTimer <= 0) {
+          const isRunning = h.currentStateKey === "RUNNING";
+          h.moveSoundTimer = Math.PI;
+          if (isRunning) {
+            h.moveSoundTimer = 2 * Math.PI;
+            setTimeout(() => {
+              if (
+                h.isAlive &&
+                !h.isDestroyed &&
+                h.scene === currentScene
+              ) {
+                const pitch2 = 0.9 + Math.random() * 0.2;
+                playSound("fluffy_move", 0.5, pitch2);
+              }
+            }, 100);
+          }
+
+          // Random pitch +- 10%
+          const pitch = 0.9 + Math.random() * 0.2;
+          playSound("fluffy_move", 0.5, pitch);
+        }
+      } else {
+        h.moveSoundTimer = 0;
+      }
+    }
+  }
+
+  // Blinking, or eyes shut while sleeping/unable to open them
+  updateBlinking(dt) {
+    const h = this.horse;
+    h.blinkTimer -= dt;
+    if (
+      h.currentStateKey === "SLEEPING" ||
+      !h.eyesHaveGrown() ||
+      h.isSensitive()
+    ) {
+      h.isBlinking = true;
+      h.blinkTimer = 0.5;
+    } else if (h.blinkTimer <= 0 && h.isAlive) {
+      if (h.isBlinking) {
+        h.isBlinking = false;
+        h.blinkTimer = Math.random() * 2 + 1; // Time until next blink
+      } else {
+        h.isBlinking = true;
+        h.blinkTimer = 0.15; // Blink duration
+      }
+    }
+  }
+
+  // Pupils follow the cursor and twitch
+  updatePupils(dt) {
+    const h = this.horse;
+    // Pupil Movement & Twitching
+    if (h.isAlive) {
+      // 1. Target cursor if close
+      const distToMouse = Math.sqrt(
+        (mouse.x - h.x) ** 2 + (mouse.y - h.y) ** 2,
+      );
+      let targetX = 0;
+      let targetY = 0;
+      if (distToMouse < 400 && h.currentStateKey !== "FOCUSING") {
+        const dx = mouse.x - h.x;
+        const dy = mouse.y - (h.y - 20 * h.scale); // Offset towards head approx
+        const angle = Math.atan2(dy, dx * (h.facingRight ? 1 : -1));
+        const strength = 1.0 - distToMouse / 400;
+        const maxOffset = 3;
+        targetX = Math.cos(angle) * maxOffset * strength;
+        targetY = Math.sin(angle) * maxOffset * strength;
+      }
+
+      // 2. Smoothly move offset to target
+      h.pupilOffset.x = lerp(h.pupilOffset.x, targetX, 10 * dt);
+      h.pupilOffset.y = lerp(h.pupilOffset.y, targetY, 10 * dt);
+
+      // 3. Pupil Twitching
+      h.pupilTwitchTimer -= dt;
+      if (h.pupilTwitchTimer <= 0) {
+        if (h.pupilTwitchOffset.x === 0 && h.pupilTwitchOffset.y === 0) {
+          // Start twitch
+          h.pupilTwitchOffset.x = (Math.random() - 0.5) * 2;
+          h.pupilTwitchOffset.y = (Math.random() - 0.5) * 2;
+          h.pupilTwitchTimer = 0.05 + Math.random() * 0.1;
+        } else {
+          // Reset twitch
+          h.pupilTwitchOffset.x = 0;
+          h.pupilTwitchOffset.y = 0;
+          h.pupilTwitchTimer = 0.5 + Math.random() * 2.5;
+        }
+      }
+    }
+  }
+
+  // Pegasus/alicorn wing flapping
+  updateWingFlap(dt) {
+    const h = this.horse;
+    // Wing Flapping
+    if (h.isAlive && (h.type === "pegasus" || h.type === "alicorn")) {
+      const hasHorizontalVelocity = Math.abs(h.throwFallVx) > 10;
+      const hasVerticalVelocity = Math.abs(h.throwFallVy) > 10;
+      if (h.isDragging || hasVerticalVelocity || hasHorizontalVelocity) {
+        h.wingFlapTimer = 0.0;
+      }
+      if (h.wingFlapPhase > 0) {
+        h.wingFlapPhase += dt * 20; // Fast flapping
+        if (h.wingFlapPhase >= Math.PI * 2) {
+          h.wingFlapPhase = 0;
+          h.wingFlapTimer = 0.0 + Math.random() * 5.0;
+        }
+      } else {
+        h.wingFlapTimer -= dt;
+        if (h.wingFlapTimer <= 0) {
+          h.wingFlapPhase = 0.01;
+        }
+      }
+    }
+  }
+
+  // Dream selection while sleeping and the dream bubble animation
+  updateDreams(dt) {
+    const h = this.horse;
+    if (
+      h.isAlive &&
+      h.currentStateKey === "SLEEPING"
+    ) {
+      h.dreamTimer -= dt;
+      if (h.dreamTimer <= 0) {
+        const dreams = ["sketties", "ball", "block", "man", "sun"];
+        h.currentDream =
+          Math.random() < 0.75
+            ? null
+            : dreams[Math.floor(Math.random() * dreams.length)];
+        h.dreamTimer = 3.0 + Math.random() * 5.0;
+      }
+
+      h.dreamEffectTimer -= dt;
+      if (h.dreamEffectTimer <= 0) {
+        h.dreamStretch = {
+          x: 0.95 + Math.random() * 0.1,
+          y: 0.95 + Math.random() * 0.1,
+        };
+        h.dreamAngle = (Math.random() - 0.5) * 0.2;
+        h.dreamEffectTimer = 0.4;
+      }
+    } else {
+      h.currentDream = null;
+      h.dreamTimer = 0;
+      h.dreamEffectTimer = 0;
+      h.dreamStretch = { x: 1.0, y: 1.0 };
+      h.dreamAngle = 0;
+    }
+
+    // Dream bubble: shrink out before switching/ending a dream, grow in for a new one
+    if (h.shownDream !== h.currentDream && h.dreamBubbleProgress <= 0) {
+      h.shownDream = h.currentDream;
+    }
+    const bubbleTarget =
+      h.shownDream && h.shownDream === h.currentDream ? 1 : 0;
+    const bubbleStep = dt / DREAM_BUBBLE_ANIM_TIME;
+    h.dreamBubbleProgress =
+      bubbleTarget > h.dreamBubbleProgress
+        ? Math.min(1, h.dreamBubbleProgress + bubbleStep)
+        : Math.max(0, h.dreamBubbleProgress - bubbleStep);
+    if (h.dreamBubbleProgress > 0) {
+      h.dreamPulsePhase =
+        (h.dreamPulsePhase + (dt * Math.PI * 2) / DREAM_BUBBLE_PULSE_PERIOD) %
+        (Math.PI * 2);
+    } else {
+      h.dreamPulsePhase = 0;
+    }
+  }
+
+  // Tear streak growth/shrink and tear drops
+  updateTears(dt) {
+    const h = this.horse;
+    if (h.isAlive) {
+      const shouldCry = h.isCrying();
+
+      if (shouldCry) {
+        h.tearStreakSize = Math.min(1.0, h.tearStreakSize + dt);
+      } else {
+        h.tearStreakSize = Math.max(0.0, h.tearStreakSize - dt);
+      }
+
+      if (h.tearStreakSize > 0) {
+        h.tearFlowPhase = (h.tearFlowPhase + dt * 40) % 15;
+        h.tearGapPhase = h.tearGapPhase + dt * 2;
+
+        h.tearTimer += dt;
+        if (h.tearTimer > 1.0) {
+          h.spawnTear();
+          h.tearTimer = Math.random() * 0.8;
+        }
+      }
+    }
+  }
+
+  // Random ear flopping
+  updateEarFlop(dt) {
+    const h = this.horse;
+    // Ear Flopping
+    if (Math.random() < dt / 15.0) {
+      // Random angle avoiding 1/3 pi to 2/3 pi
+      h.limbs.targetEarFlopAngle =
+        (Math.random() < 0.5
+          ? Math.random() / 4
+          : 3 / 4 + Math.random() / 4) * Math.PI;
+    }
+    h.limbs.earFlopValue = lerpAngle(
+      h.limbs.earFlopValue || 0,
+      h.limbs.targetEarFlopAngle,
+      5 * dt,
+    );
+  }
+
+  // Head angle toward the current animation state
+  updateHeadAnimation(dt) {
+    const h = this.horse;
+    const lerpFactor = 5.0 * dt;
+    const targetConfig = ANIMATION_STATES[h.currentStateKey];
+    let targetHeadAngle = targetConfig.headAngle;
+    if (h.currentStateKey === "LYING" && h.hunger <= 0.1) {
+      targetHeadAngle = (20 * Math.PI) / 180;
+    }
+
+    if (h.currentStateKey === "FLUFFY_BITE") {
+      const duration = BEHAVIOR_RULES.FLUFFY_BITE.getDuration(h);
+      const t = clamp(1.0 - h.stateTimer / duration, 0, 1);
+      // Swing up then down
+      if (t < 0.3) {
+        // Moving up
+        const frac = t / 0.3;
+        targetHeadAngle = lerpAngle(
+          ANIMATION_STATES.IDLE.headAngle,
+          targetConfig.headAngle,
+          frac,
+        );
+      } else {
+        // Moving down
+        const frac = (t - 0.7) / 0.7;
+        targetHeadAngle = lerpAngle(
+          targetConfig.headAngle,
+          ANIMATION_STATES.IDLE.headAngle,
+          frac,
+        );
+      }
+      h.anim.headAngle = targetHeadAngle;
+    } else {
+      h.anim.headAngle = lerpAngle(
+        h.anim.headAngle,
+        targetHeadAngle,
+        lerpFactor,
+      );
+    }
+  }
+
+  // Smoke puffs from cattle prod burns
+  updateSmokePoints(dt) {
+    const h = this.horse;
+    if (h.smokePoints && h.smokePoints.length > 0) {
+      h.smokeParticleTimer = (h.smokeParticleTimer || 0) - dt;
+      const shouldSpawnPoof = h.smokeParticleTimer <= 0;
+      if (shouldSpawnPoof) {
+        h.smokeParticleTimer = SMOKE_PARTICLE_FREQUENCY;
+      }
+
+      for (let i = h.smokePoints.length - 1; i >= 0; i--) {
+        const sp = h.smokePoints[i];
+        sp.timer -= dt;
+
+        if (
+          shouldSpawnPoof &&
+          typeof poofs !== "undefined" &&
+          typeof SmokePoof !== "undefined" &&
+          h.scene === currentScene
+        ) {
+          const offset = sp.offset || { x: sp.x || 0, y: sp.y || 0 };
+          const worldPos = h.getWorldPositionFromTorsoOffset(
+            offset.x,
+            offset.y
+          );
+          const jitter = (Math.random() - 0.5) * 4 * (h.scale || 1.0);
+          poofs.push(
+            new SmokePoof(
+              worldPos.x + jitter,
+              worldPos.y + jitter,
+              h.scene,
+              CATTLE_PROD_SMOKE_COLOR
+            )
+          );
+        }
+
+        if (sp.timer <= 0) {
+          h.smokePoints.splice(i, 1);
+        }
+      }
+    } else {
+      h.smokeParticleTimer = 0;
+    }
   }
 }

@@ -10,6 +10,10 @@ class HorseActionHandler {
     )
       return false;
 
+    if (this.horse.currentCage != null) {
+        this.horse.positioning.constrainTargetToCage();
+    }
+
     this.horse.attemptUseTargetLitterbox();
     const dx = this.horse.targetX - this.horse.x;
     const dy = this.horse.targetY - this.horse.y;
@@ -26,10 +30,11 @@ class HorseActionHandler {
               50,
         );
         if (ball) {
-          poofs.push(new Poof(ball.x, ball.y, this.horse.scene));
+          poofs.push(new Poof(ball.x, ball.getCenterY(), this.horse.scene));
           ball.vx = (Math.random() - 0.5) * 800;
           ball.vy = -300 - Math.random() * 300;
           this.horse.speak(getDialogue(["PLAY", "BALL"], this.horse));
+          this.horse.ballCooldown = Math.random() * 10 + 10;
           this.horse.expressionOverride = "GOOD_UPSIES";
           this.horse.expressionOverrideTimer = 2.0;
           this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
@@ -147,7 +152,6 @@ class HorseActionHandler {
   executeRunawayFear(target, dialogueKey) {
     this.horse.isScared = true;
     this.horse.scaredTimer = 5.0;
-    this.horse.speech.nextTime = 0;
     this.horse.setShock(3.0);
 
     const runawayTarget = this.horse.positioning.getRunawayTarget(
@@ -232,12 +236,11 @@ class HorseActionHandler {
   executeFearedFluffyFear(target) {
     this.horse.isScared = true;
     this.horse.scaredTimer = 5.0;
-    this.horse.speech.nextTime = 0;
     this.horse.setShock(3.0);
 
     const runawayTarget = this.horse.positioning.getRunawayTarget(
-      target.x,
-      target.y,
+      target.getWorldPosition().x,
+      target.getWorldPosition().y,
     );
     this.horse.initBehavior("MOVING");
     this.horse.setTargetPosition(runawayTarget.x, runawayTarget.y);
@@ -341,8 +344,8 @@ class HorseActionHandler {
     this.horse.scaredTimer = 5.0;
 
     const runawayTarget = this.horse.positioning.getRunawayTarget(
-      smarty.x,
-      smarty.y,
+      smarty.getWorldPosition().x,
+      smarty.getWorldPosition().y,
     );
     this.horse.initBehavior("MOVING");
     this.horse.setTargetPosition(runawayTarget.x, runawayTarget.y);
@@ -572,8 +575,6 @@ class HorseActionHandler {
       if (this.horse.chaseTarget !== target) {
         this.horse.chaseTarget = target;
         this.horse.chaseReason = "ATTACK";
-        target.speech.nextTime = 0;
-        this.horse.speech.nextTime = 0;
         this.horse.initBehavior("RUNNING");
       }
       return true;
@@ -588,7 +589,7 @@ class HorseActionHandler {
     for (const puddle of puddles) {
       if (
         puddle.scene === this.horse.scene &&
-        puddle.color !== "#8a0303" &&
+        puddle.type !== "blood" &&
         puddle.points.length >= 4
       ) {
         for (const pt of puddle.points) {
@@ -729,7 +730,11 @@ class HorseActionHandler {
         if (!this.horse.isMovingOrRunning()) {
           this.horse.initBehavior("MOVING");
         }
-        this.horse.setTargetPosition(bestTarget.x, bestTarget.y);
+        const targetPos =
+          bestTarget instanceof Horse
+            ? bestTarget.getWorldPosition()
+            : { x: bestTarget.x, y: bestTarget.y };
+        this.horse.setTargetPosition(targetPos.x, targetPos.y);
 
         this.horse.milkCooldown = 2.0;
         fed = true;
@@ -737,5 +742,510 @@ class HorseActionHandler {
     }
 
     return fed;
+  }
+
+  // Colorist mothers attack foals whose color they dislike
+  updateColoristAttacks() {
+    const h = this.horse;
+    // Proactive colorist mom attack logic
+    if (
+      worldSettings.colorism &&
+      h.isAlive &&
+      h.gender === "female" &&
+      h.happiness > WAN_DIE_THRESHOLD &&
+      h.attackCooldown <= 0 &&
+      h.canSee()
+    ) {
+      // Find babies
+      for (const child of fluffies) {
+        if (
+          child.isAlive &&
+          child.motherId === h.id &&
+          child.scene === h.scene &&
+          child.currentCage === h.currentCage
+        ) {
+          const dist = Math.sqrt(
+            (h.x - child.x) ** 2 + (h.y - child.y) ** 2,
+          );
+          if (dist < 100) {
+            if (
+              child.genetics &&
+              h.coloristDegree > child.genetics.calculateColorismPerception()
+            ) {
+              h.performAttack(child, "COLOR");
+              h.speak(getDialogue(["ATTACK", "COLOR"], h));
+              relationships[h.id][child.id] = "estranged_child";
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Delayed retaliation against a recent attacker
+  updateCounterattack(dt) {
+    const h = this.horse;
+    if (h.counterattack.timer > 0) {
+      h.counterattack.timer -= dt;
+      if (h.counterattack.timer <= 0 && h.counterattack.fluffy) {
+        const attacker = h.counterattack.fluffy;
+        if (
+          attacker.isAlive &&
+          attacker.scene === h.scene &&
+          !h.isDragging &&
+          !h.placedOn &&
+          h.canFightBack()
+        ) {
+          const dist = Math.sqrt(
+            (h.x - attacker.x) ** 2 + (h.y - attacker.y) ** 2,
+          );
+          // Retaliate if within reasonable reach
+          if (dist < 100) {
+            h.performAttack(attacker, "RETALIATION");
+          }
+        }
+        h.counterattack.fluffy = null;
+      }
+    }
+  }
+
+  // Finish or abort stacking a carried block
+  updateBlockStacking(dt) {
+    const h = this.horse;
+    if (h.blockCooldown > 0) {
+      h.blockCooldown -= dt;
+    }
+
+    if (h.isStacking) {
+      h.stackingTimer += dt;
+      if (
+        h.stackingTimer > 12.0 ||
+        (h.stackTargetBlock &&
+          (h.stackTargetBlock.isDragging || h.stackTargetBlock.heldBy))
+      ) {
+        h.isStacking = false;
+        h.blockCooldown = 10.0;
+        if (h.blockOnBack) {
+          h.blockOnBack.heldBy = null;
+          h.blockOnBack.x = h.x;
+          h.blockOnBack.y = h.y;
+          h.blockOnBack.groundY = h.y;
+          h.blockOnBack.clampY();
+          h.blockOnBack = null;
+        }
+        h.initBehavior("IDLE");
+      } else if (h.stackingTimer > 3.0) {
+        if (h.blockOnBack && h.stackTargetBlock) {
+          h.blockCooldown = 10.0;
+          if (Math.random() < 0.4 * h.stackTargetBlock.stackHeight()) {
+            h.failStackBlocks(h.stackTargetBlock);
+            h.speak(getDialogue(["PLAY", "BLOCK", "FAIL"], h));
+          } else {
+            let top = h.stackTargetBlock;
+            while (top.getStackedAbove()) {
+              top = top.getStackedAbove();
+            }
+            h.blockOnBack.stackedOn = top;
+            h.blockOnBack.stackXOffset = (Math.random() - 0.5) * 10;
+            h.blockOnBack.heldBy = null;
+            h.blockOnBack = null;
+            h.speak(getDialogue(["PLAY", "BLOCK"], h));
+            h.expressionOverride = "GOOD_UPSIES";
+            h.expressionOverrideTimer = 2.0;
+          }
+        }
+        h.isStacking = false;
+        h.initBehavior("IDLE");
+      }
+    }
+  }
+
+  // Smarty/aphrodisiac chasing, yelling at and reaching the chase target
+  updateChase() {
+    const h = this.horse;
+    // Smarty & Aphrodisiac Chase Logic
+    if (
+      h.isAlive &&
+      (h.isSmarty() || h.isUnderAphrodisiac()) &&
+      h.chaseTarget &&
+      h.canSee()
+    ) {
+      const target = h.chaseTarget;
+      // Validation
+      if (
+        !target.isAlive ||
+        target.scene !== h.scene ||
+        target.isDragging ||
+        target.currentCage !== h.currentCage ||
+        (!h.isUnderAphrodisiac() && h.specialHuggiesCooldown > 0) ||
+        (!h.isUnderAphrodisiac() && h.isFrantic) ||
+        h.isCrawling ||
+        !h.limbs.lumps ||
+        !placedOnValidForSpecialHuggies(target.placedOn) ||
+        h.happiness <= WAN_DIE_THRESHOLD
+      ) {
+        h.chaseTarget = null;
+        h.chaseReason = null;
+      } else {
+        const targetPos = target.getWorldPosition();
+        h.setTargetPosition(targetPos.x, targetPos.y);
+
+        if (!h.isMovingOrRunning() && h.attackCooldown <= 0) {
+          h.initBehavior("RUNNING");
+        }
+
+        if (h.speech.nextTime <= 0) {
+          h.speech.nextTime = 2 + Math.random();
+
+          // Smarty yells 100% of the time if target can't hear.
+          // Otherwise, regular logic: 100% if target can see, 20% if target can't.
+          const yellChance = !target.canHear()
+            ? 1.0
+            : target.canSee()
+              ? 1.0
+              : 0.2;
+          if (Math.random() < yellChance) {
+            const isTargetStallion = target.gender === "male";
+            const yellKey = isTargetStallion
+              ? ["SMARTY_CHASE", "STALLION"]
+              : ["SMARTY_CHASE", "MARE"];
+            const yellText = h.isUnderAphrodisiac()
+              ? h.getAphrodisiacDialogue()
+              : getDialogue(yellKey, h, target);
+            h.speak(yellText, h.isUnderAphrodisiac());
+
+            // Target only reacts to yelling if they can hear.
+            // If they can't see, they only react if they hear him.
+            if (
+              !target.canSee() &&
+              target.canHear() &&
+              !target.tooYoungToSpeak()
+            ) {
+              target.actionHandler.executeSmartyChaseFear(h);
+            }
+          }
+        }
+
+        const dist = Math.sqrt(
+          (h.x - target.x) ** 2 + (h.y - target.y) ** 2,
+        );
+        if (dist < 50 && h.attackCooldown <= 0) {
+          const isMaleOnMaleUnconsensual =
+            h.gender === "male" &&
+            target.gender === "male" &&
+            !isSexuallyAttractedTo(target, h);
+
+          if (h.chaseReason === "MATING" || h.isUnderAphrodisiac()) {
+            if (isMaleOnMaleUnconsensual && canFightBack(target)) {
+              h.performAttack(target, "SMARTY_VIOLENCE");
+              const attackText = h.isUnderAphrodisiac()
+                ? h.getAphrodisiacDialogue()
+                : getDialogue(
+                    [
+                      "ATTACK",
+                      "SMARTY",
+                      h.tooYoungToSpeak() ? "BABY" : "ADULT",
+                    ],
+                    h,
+                  );
+              h.speak(attackText, h.isUnderAphrodisiac());
+            } else if (h.mateWith(target, false, true)) {
+              h.chaseTarget = null;
+              h.chaseReason = null;
+            }
+          } else if (
+            h.chaseReason === "ATTACK" ||
+            target.gender === "male"
+          ) {
+            if (h.isSmarty()) {
+              h.performAttack(target, "SMARTY_VIOLENCE");
+              h.speak(
+                getDialogue(
+                  [
+                    "ATTACK",
+                    "SMARTY",
+                    h.tooYoungToSpeak() ? "BABY" : "ADULT",
+                  ],
+                  h,
+                ),
+              );
+            }
+          } else if (h.mateWith(target, false, true)) {
+            h.chaseTarget = null;
+            h.chaseReason = null;
+          }
+        }
+      }
+    }
+  }
+
+  // Outdoor fluffies knocking on the door while the player is inside
+  updateDoorTapping(dt) {
+    const h = this.horse;
+    // Door Tapping Logic (Outdoors)
+    if (
+      getSceneConfig(h.scene).id === "OUTDOORS" &&
+      getSceneConfig(currentScene).insidePlayerQuarters
+    ) {
+      if (h.isTapping) {
+        h.tapTimer -= dt;
+        if (h.tapTimer < 1.0) {
+          h.tapOpacity = Math.max(0, h.tapTimer);
+        } else {
+          h.tapOpacity = 1.0;
+        }
+        if (h.tapTimer <= 0) {
+          h.isTapping = false;
+          h.tapText = null;
+          h.nextTapTime = 5 + Math.random() * 10;
+        }
+      } else {
+        h.nextTapTime = (h.nextTapTime || 0) - dt;
+        if (h.nextTapTime <= 0) {
+          const distToDoor = Math.sqrt(
+            (h.x - width / 2) ** 2 + (h.y - (height * 0.15 + 50)) ** 2,
+          );
+
+          if (
+            distToDoor < 300 &&
+            !h.isFrantic &&
+            !h.tooYoungToSpeak()
+          ) {
+            let text = null;
+            const recent = recentOutdoorDialogue.filter(
+              (d) => Date.now() - d.time < 10000,
+            );
+
+            let key = null;
+
+            if (h.adopted) {
+              if (h.hunger > 0.6) {
+                key = ["DOOR_KNOCK", "ADOPTED"];
+              }
+            } else {
+              // Feral knocking
+              key = ["DOOR_KNOCK", "FERAL"];
+            }
+
+            if (key) {
+              text = getDialogue(key, h);
+            }
+
+            if (text) {
+              if (typeof addDoorMessage !== "undefined") {
+                addDoorMessage(text);
+              }
+              h.nextTapTime = 5 + Math.random() * 10;
+            } else {
+              h.nextTapTime = 1.0;
+            }
+          } else {
+            // Retry later if conditions not met
+            h.nextTapTime = 1.0;
+          }
+        }
+      }
+    }
+  }
+
+  // Eat from a nearby bowl or grass when hungry
+  updateBowlEating() {
+    const h = this.horse;
+    // Eating / Drinking Logic
+
+    if (h.hunger < 0.6) {
+      const isGagged =
+        h.accessories &&
+        h.accessories.mouth &&
+        h.accessories.mouth.id === "mouthgag";
+      // Bowl Eating (Not for chirpies)
+      if (
+        !isGagged &&
+        !h.tooYoungToWalk() &&
+        h.happiness > WAN_DIE_THRESHOLD && // Depressed fluffies don't eat
+        !h.isUnderAphrodisiac() && // Under aphrodisiac males don't eat
+        !(h.placedOn instanceof OperatingTable) &&
+        typeof objects !== "undefined"
+      ) {
+        const bowls = objects.filter(
+          (o) => o instanceof Bowl || o instanceof Grass,
+        );
+        for (const bowl of bowls) {
+          if (
+            (bowl instanceof Grass ||
+              (bowl.type !== "feeder" && bowl.type !== "mega_feeder")) &&
+            bowl.hasFood() &&
+            bowl.scene === h.scene
+          ) {
+            // Accessibility Check
+            if (h.currentCage !== bowl.currentCage) continue;
+
+            const dist = Math.sqrt(
+              (h.x - bowl.x) ** 2 + (h.y - bowl.y) ** 2,
+            );
+            if (dist < 50) {
+              if (bowl.eat()) {
+                h.hunger = 1.0;
+                h.initBehavior("EATING");
+                let key;
+                if (bowl.foodType === "sketties") {
+                  key = ["EAT", "SKETTIES"];
+                } else if (bowl.foodType === "soylent_brown") {
+                  key = ["EAT", "SOYLENT_BROWN"];
+                } else if (bowl.foodType === "rat_poison") {
+                  key = ["EAT", "RAT_POISON"];
+                } else {
+                  key = ["EAT", "NUMMIES"];
+                }
+
+                if (h.isSmarty()) {
+                  if (bowl.foodType === "sketties") {
+                    key = ["EAT", "SKETTIES", "SMARTY"];
+                  } else if (bowl.foodType === "soylent_brown") {
+                    key = ["EAT", "SOYLENT_BROWN"];
+                  } else if (bowl.foodType === "rat_poison") {
+                    key = ["EAT", "RAT_POISON"];
+                  } else {
+                    key = ["EAT", "NUMMIES", "SMARTY"];
+                  }
+                  h.expressionOverride = "ANGRY_PUFFED";
+                  h.expressionOverrideTimer = 3.0;
+                }
+                if (bowl.foodType === "sketties") {
+                  h.changeHappiness(HAPPINESS_BONUS_SKETTIES);
+                } else if (bowl.foodType === "soylent_brown") {
+                  h.changeHappiness(-0.03);
+                  if (!h.isSmarty()) {
+                    h.expressionOverride = "MISERABLE";
+                    h.expressionOverrideTimer = 3.0;
+                  }
+                } else if (bowl.foodType === "rat_poison") {
+                  h.isPoisoned = true;
+                  if (h.renderer) h.renderer.tinted = null;
+                  h.vomitTimer = 4.0 + Math.random() * 6.0;
+                  h.changeHappiness(-0.1);
+                  if (!h.isSmarty()) {
+                    h.expressionOverride = "MISERABLE";
+                    h.expressionOverrideTimer = 3.0;
+                  }
+                } else {
+                  h.changeHappiness(HAPPINESS_BONUS_NUMMIES);
+                }
+                h.speak(getDialogue(key, h));
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Approach and eat/attack the cannibalism target
+  updateCannibalism() {
+    const h = this.horse;
+    // Cannibalism interaction
+    if (h.cannibalTarget && !h.isDragging) {
+      // Prioritize nearby gibs over horses
+      if (
+        h.cannibalTarget instanceof Horse &&
+        typeof gibs !== "undefined"
+      ) {
+        let nearestGib = null;
+        let minGibDist = Infinity;
+        for (const gib of gibs) {
+          if (gib.scene === h.scene && gib.freeGib) {
+            const d = Math.sqrt(
+              (h.x - gib.x) ** 2 + (h.y - gib.y) ** 2,
+            );
+            if (d < 300 && d < minGibDist) {
+              minGibDist = d;
+              nearestGib = gib;
+            }
+          }
+        }
+        if (nearestGib) {
+          h.cannibalTarget = nearestGib;
+          h.setTargetPosition(nearestGib.x, nearestGib.y);
+        }
+      }
+      const target = h.cannibalTarget;
+      const isStillValid =
+        (target instanceof Gib &&
+          !target.shouldDespawn &&
+          target.scene === h.scene) ||
+        (target instanceof Horse &&
+          target.scene === h.scene &&
+          target.currentCage === h.currentCage &&
+          !target.isDestroyed);
+
+      if (!isStillValid) {
+        h.cannibalTarget = null;
+      } else {
+        const dist = Math.sqrt(
+          (h.x - target.x) ** 2 + (h.y - target.y) ** 2,
+        );
+        const isGagged =
+          h.accessories &&
+          h.accessories.mouth &&
+          h.accessories.mouth.id === "mouthgag";
+        if (dist < 50) {
+          if (target instanceof Gib) {
+            if (!isGagged) h.eatGib(target);
+            h.cannibalTarget = null;
+          } else if (target instanceof Horse) {
+            if (target.isAlive) {
+              if (h.attackCooldown <= 0) {
+                h.performCannibalAttack(target);
+              }
+            } else {
+              if (!isGagged) h.eatCorpse(target);
+              h.cannibalTarget = null;
+            }
+          }
+        } else {
+          // Move to target is already handled by scout/targetX in positioning
+        }
+      }
+    }
+  }
+
+  // Mothers run after their grabbed foal
+  updateMotherChase() {
+    const h = this.horse;
+    // Mother chasing grabbed baby logic
+    if (
+      !h.isDragging &&
+      !h.placedOn &&
+      !h.tooYoungToWalk() &&
+      h.canSee()
+    ) {
+      const rels = relationships[h.id];
+
+      if (rels) {
+        const grabbedChild = fluffies.find(
+          (f) =>
+            f.isDragging &&
+            f.tooYoungToWalk() &&
+            f.isAlive &&
+            !f.isSmarty() &&
+            f.gender === "female" &&
+            f.scene === h.scene &&
+            (rels[f.id] === "baby_child" || rels[f.id] === "child"),
+        );
+        if (grabbedChild) {
+          const childPos = grabbedChild.getWorldPosition();
+          h.setTargetPosition(childPos.x, childPos.y);
+
+          h.setShock(0.5); // Sustain while held
+          if (!h.isMovingOrRunning()) {
+            h.initBehavior(h.isCrawling ? "MOVING" : "RUNNING");
+          } else if (h.currentStateKey === "MOVING" && !h.isCrawling) {
+            h.currentStateKey = "RUNNING";
+          }
+        }
+      }
+    }
   }
 }

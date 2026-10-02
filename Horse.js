@@ -6,48 +6,6 @@ function areSpecialFriends(id1, id2) {
   return relationships[id1][id2] === "special_friend";
 }
 
-function triggerShock(hitFluffy) {
-  const rels = relationships[hitFluffy.id];
-  if (!rels) return;
-  for (const [otherId, rel] of Object.entries(rels)) {
-    if (rel === "mother") {
-      const mom = fluffies.find((f) => f.id == otherId);
-      if (
-        mom &&
-        mom.scene === hitFluffy.scene &&
-        (mom.canSee() || mom.canHear())
-      ) {
-        // Check if mom considers hitFluffy a baby_child
-        if (
-          relationships[mom.id] &&
-          relationships[mom.id][hitFluffy.id] === "baby_child"
-        ) {
-          mom.initBehavior("IDLE");
-          mom.setShock(3.0);
-          mom.speak(
-            getDialogue(
-              mom.adopted
-                ? ["WITNESS_VIOLENCE", "BABY"]
-                : ["WITNESS_VIOLENCE", "BABY", "FERAL"],
-              mom,
-              hitFluffy,
-            ),
-          );
-
-          // Run to baby
-          mom.initBehavior("MOVING");
-          let targetX = hitFluffy.x + (Math.random() - 0.5) * 100;
-          let targetY = hitFluffy.y + (Math.random() - 0.5) * 50;
-          mom.setTargetPosition(targetX, targetY);
-          if (!mom.isCrawling) {
-            mom.currentStateKey = "RUNNING";
-          }
-        }
-      }
-    }
-  }
-}
-
 function notifyViolence(
   victim,
   isDead,
@@ -275,6 +233,15 @@ class Horse {
     this.lastY = this.y;
     this.physicsLegAngle = 0;
     this.flailAngle = 0;
+    this.heldWithThrowTool = false;
+    this.wasHeldHigh = false;
+    this.isFallingFromThrow = false;
+    this.throwFallVx = 0;
+    this.throwFallVy = 0;
+    this.throwStartY = null;
+    this.throwShadowY = null;
+    this.throwTool = null;
+    this.ballCooldown = 0;
 
     // State Management
     this.currentStateKey = "IDLE";
@@ -333,7 +300,7 @@ class Horse {
     this.friendshipCooldowns = {};
 
     this.adopted = this.scene
-      ? getSceneConfig(this.scene).insidePlayerQuarters
+      ? getSceneConfig(this.scene).isAdoptionRoom
       : false;
     this.nextTapTime = Math.random() * 10; // Initialize random start
 
@@ -341,6 +308,8 @@ class Horse {
     this.sensitiveBaby = false;
     this.spayed = false;
     this.pregnancyTimer = 0;
+    this.miscarriageTimer = null; // Counts down to an early (non-viable) birth; null when not miscarrying
+    this.prematureGrowth = 1.0; // Pregnancy progress at birth (1 = full term); shrinks premature babies
     this.pregnancyTorsoStretch = 0;
     this.fatherGenes = null;
     this.seekingBirthBed = false;
@@ -371,6 +340,9 @@ class Horse {
     this.dreamEffectTimer = 0;
     this.dreamStretch = { x: 1.0, y: 1.0 };
     this.dreamAngle = 0;
+    this.shownDream = null; // Dream currently drawn in the bubble (lags currentDream while animating)
+    this.dreamBubbleProgress = 0; // 0 = hidden, 1 = fully shown
+    this.dreamPulsePhase = 0;
     this.sleepDeprivation = 0;
     this.sleepTargetSet = false;
 
@@ -440,6 +412,14 @@ class Horse {
     this.adoptionModifier = 0;
     this.isToxoVaccinated = false;
     this.isToxoplasmosis = false;
+
+    this.heldWithThrowTool = false;
+    this.wasHeldHigh = false;
+    this.isFallingFromThrow = false;
+    this.throwFallVy = 0;
+    this.throwStartY = null;
+    this.throwShadowY = null;
+    this.throwTool = null;
 
     this.counterattack = {
       fluffy: null,
@@ -517,6 +497,16 @@ class Horse {
     this.initBehavior("IDLE");
   }
 
+  // Where the horse is in the world, at ground level. While it's held by the
+  // throw tool or falling from a throw, that's the spot below it it was
+  // lifted from, not its literal (mid-air) x/y.
+  getWorldPosition() {
+    const airborne =
+      (this.heldWithThrowTool || this.isFallingFromThrow) &&
+      typeof this.throwStartY === "number";
+    return { x: this.x, y: airborne ? this.throwStartY : this.y };
+  }
+
   setTargetPosition(x, y) {
     this.targetX = x;
     this.targetY = y;
@@ -552,7 +542,7 @@ class Horse {
   }
 
   drawPortrait(ctx, x, y, size) {
-    this.renderer.drawPortrait(ctx, x, y, size);
+    this.renderer.drawSnapshot(ctx, x, y, size);
   }
 
   amputate(part, weapon = null) {
@@ -836,7 +826,7 @@ class Horse {
       }
     }
 
-    if (!text && this.currentCage && this.happiness > WAN_DIE_THRESHOLD) {
+    if (!text && this.currentCage && this.currentCage.causesUnhappiness() && this.happiness > WAN_DIE_THRESHOLD) {
       if (this.tooYoungToSpeak()) {
         text = getDialogue(["LOST", "MOTHER", "CHIRPY"], this);
       } else if (this.isSmarty()) {
@@ -1067,6 +1057,7 @@ class Horse {
 
   shouldFlail() {
     if (!this.isAlive) return false;
+    if (this.happiness === WAN_DIE_THRESHOLD) return false;
     if (this.currentStateKey === "DROWNING") return true;
     if (!this.isDragging) return false;
     if (this.grabbedPart !== "torso") return true;
@@ -1096,6 +1087,23 @@ class Horse {
       return false;
     }
     if (this.hunger <= 0.1) return false;
+    return true;
+  }
+
+  hasBothWings() {
+    if (this.type !== "pegasus" && this.type !== "alicorn") {
+      return false;
+    }
+    if (!this.limbs || !this.limbs.leftWing || !this.limbs.rightWing) {
+      return false;
+    }
+    if (
+      this.accessories &&
+      this.accessories.torso &&
+      this.accessories.torso.id === "wingjacket"
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -1159,7 +1167,7 @@ class Horse {
             this.expressionOverride = "ANGRY_PUFFED";
             this.expressionOverrideTimer = 3.0;
           }
-          if (obj.channel !== "OFF" && this.y > obj.y) {
+          if (obj.channel !== "OFF" && ((this.y > obj.y) || (obj.currentCage != null))) {
             return obj;
           }
         }
@@ -1317,6 +1325,8 @@ class Horse {
     const genderBonus = this.gender === "male" ? 0.08 : 0;
     const g = this.getGrowthScale();
     this.scale = 0.5 * (lerp(1, 0.92 + genderBonus, g) + genetics) * g;
+    // Premature babies start smaller and catch up as they grow
+    this.scale *= lerp(this.prematureGrowth, 1.0, this.growth);
     this.updateCrawling();
   }
 
@@ -1369,7 +1379,9 @@ class Horse {
       this.health < CRAWLING_HEALTH_THRESHOLD ||
       this.getLimbsMissing() >= 2 ||
       drugOverdoseCrawling ||
-      (this.isBeingTased && this.isBeingTased());
+      (this.isBeingTased && this.isBeingTased()) ||
+      (this.currentCage instanceof Cage &&
+        this.currentCage.suffocatesOccupants());
   }
 
   isTooWeakToFightBack() {
@@ -1452,9 +1464,7 @@ class Horse {
       this.blockTarget = false;
     }
 
-    if (stateKey === "MOVING") {
-      this.pickNewTarget();
-
+    if (stateKey === "MOVING" && this.targetX != null && this.targetY != null) {
       const dist = Math.sqrt(
         (this.targetX - this.x) ** 2 + (this.targetY - this.y) ** 2,
       );
@@ -1572,7 +1582,6 @@ class Horse {
         // Not in scene
         pRel.timer += effectiveDt;
         if (pRel.state === "current") {
-          this.speech.nextTime = 0;
           pRel.state = "lost";
           newlyLostRelative = [otherId, pRel];
         } else if (pRel.state === "lost" && pRel.timer > 180) {
@@ -2045,20 +2054,7 @@ class Horse {
     }
 
     if (friend.gender === "female" && friend.isPregnant) {
-      // Force miscarriage of existing foals
-      if (friend.foalViability) {
-        for (let i = 0; i < friend.foalViability.length; i++) {
-          friend.foalViability[i] = false;
-          friend.pregnancyTimer = Math.min(friend.pregnancyTimer, 10);
-        }
-        if (!friend.traumaMemory.some((tm) => tm.type === "miscarriage")) {
-          friend.traumaMemory.push({
-            type: "miscarriage",
-            timer: 30 + Math.random() * 60,
-          });
-        }
-        friend.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE);
-      }
+      friend.beginMiscarriage();
     } else if (
       friend.gender === "female" &&
       this.gender === "male" &&
@@ -2071,6 +2067,43 @@ class Horse {
 
   triggerPregnancy(father) {
     this.anatomy.triggerPregnancy(father);
+  }
+
+  // Makes all current foals non-viable and starts labor within 10 seconds
+  beginMiscarriage() {
+    if (!this.foalViability) return;
+    for (let i = 0; i < this.foalViability.length; i++) {
+      this.foalViability[i] = false;
+    }
+    const timeLeft = Math.min(this.pregnancyTimer, MISCARRIAGE_LABOR_DELAY);
+    this.miscarriageTimer =
+      this.miscarriageTimer === null
+        ? timeLeft
+        : Math.min(this.miscarriageTimer, timeLeft);
+    if (!this.traumaMemory.some((tm) => tm.type === "miscarriage")) {
+      this.traumaMemory.push({
+        type: "miscarriage",
+        timer: 30 + Math.random() * 60,
+      });
+    }
+    this.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE);
+  }
+
+  // Labor is due once the pregnancy has run its course or a miscarriage has
+  isPregnancyDue() {
+    return (
+      this.pregnancyTimer <= 0 ||
+      (this.miscarriageTimer !== null && this.miscarriageTimer <= 0)
+    );
+  }
+
+  isInLabor() {
+    return this.isPregnancyDue() && this.babiesToBirth > 0;
+  }
+
+  // How far along the pregnancy is, 0 to 1
+  getPregnancyProgress() {
+    return clamp(1.0 - this.pregnancyTimer / pregnancyDuration, 0, 1);
   }
 
   updateFear(dt) {
@@ -2110,7 +2143,13 @@ class Horse {
     this.speak(text, false, true);
   }
 
-  speak(text, wanDieBypass = false, chirpyBypass = false) {
+  speak(text, wanDieBypass = false, chirpyBypass = false, cullBypass = false) {
+    if (
+      !cullBypass &&
+      this.currentCage instanceof Cage &&
+      this.currentCage.mutesOccupants()
+    )
+      return;
     if (
       this.accessories &&
       this.accessories.mouth &&
@@ -2202,6 +2241,7 @@ class Horse {
         !b.heldBy &&
         !b.stackedOn &&
         !fluffies.some((f) => f.blockTarget && f.targetX === b.x) &&
+        this.positioning.canReachBlock(b) &&
         !b.getStackedAbove() &&
         !b.isDragging &&
         b.isStill(),
@@ -2209,7 +2249,8 @@ class Horse {
     if (targetBlock) {
       this.blockTarget = true;
       this.initBehavior("MOVING");
-      this.setTargetPosition(targetBlock.x, targetBlock.y);
+      this.setTargetPosition(targetBlock.x, targetBlock.currentCage ? this.y : targetBlock.y);
+      this.constrainTargetToCage();
     } else {
       // find block stack to knock over
       targetBlock = sceneBlocks.find(
@@ -2217,6 +2258,7 @@ class Horse {
           !b.heldBy &&
           !b.stackedOn &&
           !fluffies.some((f) => f.blockTarget && f.targetX === b.x) &&
+          this.positioning.canReachBlock(b) &&
           !b.isDragging &&
           b.isStill(),
       );
@@ -2224,6 +2266,7 @@ class Horse {
         this.blockTowerKnockOverTarget = true;
         this.initBehavior("MOVING");
         this.setTargetPosition(targetBlock.x, targetBlock.y);
+        this.constrainTargetToCage();
       }
     }
   }
@@ -2257,7 +2300,7 @@ class Horse {
         this.setTargetPosition(this.x, this.y);
       } else {
         // Force Y so visual bottom is at cage bottom
-        this.y = b.bottom - localBottom - 10;
+        this.y = b.bottom - localBottom - CAGE_FLOOR_OFFSET;
         this.x = clamp(this.x, b.left - localLeft, b.right - localRight);
       }
     }
@@ -2297,7 +2340,130 @@ class Horse {
     }
   }
 
+  handleThrowImpact(speed) {
+    if (typeof speed !== "number" || isNaN(speed)) return;
+    if (speed < THROW_IMPACT_MIN_SPEED) return;
+
+    const damage = speed * THROW_IMPACT_DAMAGE_FACTOR;
+    this.health = Math.max(0, this.health - damage);
+
+    const vol = Math.min(1.0, Math.max(0.4, speed / 1500));
+    const pitch = Math.max(0.7, 1.2 - (Math.abs(this.scale) || 0.5) * 0.4 * (1 + Math.random()));
+    playSound("thud", vol, pitch);
+
+    this.expressionOverride = "CRYING_SHOCKED";
+    this.expressionOverrideTimer = 2.0;
+
+    const line = getDialogue(["THROW_IMPACT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], this);
+    const s = Math.abs(this.scale * Math.min(damage, 100));
+    const initialScale = s / 200;
+    const targetScale = (3 * s) / 200;
+    const pX = this.x;
+    const pY = this.y;
+    if (this.isAlive) {
+        addPointToPuddle(
+            this.scene,
+            pX,
+            pY,
+            "blood",
+            initialScale,
+            targetScale,
+            0.05,
+        );
+    }
+    if (this.health <= 0) {
+      this.die("throw", "Impact");
+    } else if (this.isAlive) {
+      this.speak(line, true, true);
+      this.initBehavior("FLUFFY_KNOCKED_DOWN");
+    }
+    return damage;
+  }
+
   onDrop() {
+    if (this.heldWithThrowTool) {
+      this.heldWithThrowTool = false;
+      this.wasHeldHigh = false;
+      this.isDragging = false;
+      this.despawnProtectionTimer = 10;
+      if (!this.isAlive) {
+        this.layout.globalRotation = 0;
+        this.ragdollRotation = 0;
+        this.layout.torso.angle = 0;
+      }
+      if (this.throwTool) {
+        this.throwTool.heldHorse = null;
+        this.throwTool.isDragging = true;
+        this.throwTool.dragOffset = { x: 0, y: 0 };
+        if (typeof currentScene !== "undefined") {
+          this.throwTool.scene = currentScene;
+        }
+        if (typeof mouse !== "undefined") {
+          this.throwTool.x = mouse.x;
+          this.throwTool.y = mouse.y;
+        }
+        if (typeof objects !== "undefined" && !objects.includes(this.throwTool)) {
+          objects.push(this.throwTool);
+        }
+        if (typeof isGlobalDragging !== "undefined") {
+          isGlobalDragging = true;
+        }
+      }
+      const mouseVel = getMouseVelocity();
+      this.throwFallVx = mouseVel.vx;
+      this.throwFallVy = mouseVel.vy;
+
+      const isLifted =
+        typeof this.throwStartY === "number" &&
+        this.y < this.throwStartY - 0.5;
+      const hasUpwardVelocity = this.throwFallVy < -10;
+      const hasDownwardVelocity = this.throwFallVy > THROW_IMPACT_MIN_SPEED;
+      const hasHorizontalVelocity = Math.abs(this.throwFallVx) > 10;
+
+      if (
+        typeof this.throwStartY === "number" &&
+        (isLifted ||
+          hasUpwardVelocity ||
+          hasDownwardVelocity ||
+          hasHorizontalVelocity)
+      ) {
+        this.isFallingFromThrow = true;
+        if (this.isAlive && (isLifted || hasUpwardVelocity)) {
+          const isWinged = this.hasBothWings();
+          const isChirpy = this.tooYoungToSpeak();
+          this.expressionOverride = isWinged ? "GOOD_UPSIES" : "CRYING_SHOCKED";
+          this.expressionOverrideTimer = 2.0;
+          if (this.happiness > WAN_DIE_THRESHOLD) {
+            const dropLine = getDialogue(
+              [
+                "THROW_DROPPED",
+                isChirpy ? "CHIRPY" : isWinged ? "WINGED" : "DEFAULT",
+              ],
+              this,
+            );
+            if (dropLine) {
+              this.speak(dropLine, false, isChirpy);
+              if (this.speech) {
+                this.speech.nextTime = 1.0 + Math.random();
+              }
+            }
+          }
+        }
+      } else {
+        this.isFallingFromThrow = false;
+        this.throwFallVx = 0;
+        this.throwFallVy = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.throwStartY = null;
+        this.throwShadowY = null;
+        if (this.isAlive) {
+          this.initBehavior("IDLE");
+        }
+      }
+      return;
+    }
+
     handleDropping(this);
     this.despawnProtectionTimer = 10;
     if (!this.isAlive) {
@@ -2398,45 +2564,7 @@ class Horse {
     }
 
     this.physics.updateRiverDrowning(dt);
-
-    // Movement Sound Logic
-    if (
-      this.isAlive &&
-      !this.isDragging &&
-      !this.placedOn &&
-      this.scene === currentScene
-    ) {
-      if (
-        (this.currentStateKey === "MOVING" ||
-          this.currentStateKey === "RUNNING") &&
-        !this.isCrawling
-      ) {
-        this.moveSoundTimer -= 9 * dt;
-        if (this.moveSoundTimer <= 0) {
-          const isRunning = this.currentStateKey === "RUNNING";
-          this.moveSoundTimer = Math.PI;
-          if (isRunning) {
-            this.moveSoundTimer = 2 * Math.PI;
-            setTimeout(() => {
-              if (
-                this.isAlive &&
-                !this.isDestroyed &&
-                this.scene === currentScene
-              ) {
-                const pitch2 = 0.9 + Math.random() * 0.2;
-                playSound("fluffy_move", 0.5, pitch2);
-              }
-            }, 100);
-          }
-
-          // Random pitch +- 10%
-          const pitch = 0.9 + Math.random() * 0.2;
-          playSound("fluffy_move", 0.5, pitch);
-        }
-      } else {
-        this.moveSoundTimer = 0;
-      }
-    }
+    this.renderer.updateMovementSound(dt);
 
     if (this.isAlive) {
       this.age += dt;
@@ -2446,302 +2574,28 @@ class Horse {
       this.deathTimer += dt;
     }
 
-    // Proactive colorist mom attack logic
-    if (
-      worldSettings.colorism &&
-      this.isAlive &&
-      this.gender === "female" &&
-      this.happiness > WAN_DIE_THRESHOLD &&
-      this.attackCooldown <= 0 &&
-      this.canSee()
-    ) {
-      // Find babies
-      for (const child of fluffies) {
-        if (
-          child.isAlive &&
-          child.motherId === this.id &&
-          child.scene === this.scene &&
-          child.currentCage === this.currentCage
-        ) {
-          const dist = Math.sqrt(
-            (this.x - child.x) ** 2 + (this.y - child.y) ** 2,
-          );
-          if (dist < 100) {
-            if (
-              child.genetics &&
-              this.coloristDegree > child.genetics.calculateColorismPerception()
-            ) {
-              this.performAttack(child, "COLOR");
-              this.speak(getDialogue(["ATTACK", "COLOR"], this));
-              relationships[this.id][child.id] = "estranged_child";
-              break;
-            }
-          }
-        }
-      }
-    }
-
+    this.actionHandler.updateColoristAttacks();
     this.physics.updateTablePhysics(dt);
+    const groundYMin = this.physics.getGroundYMin();
 
-    const topWallHeight = height * 0.15;
-    const groundYMin = topWallHeight + 50;
-
-    // State-based expressions
     if (this.isAlive) {
-      if (this.currentStateKey === "SLEEPING") {
-        this.sleepDeprivation = Math.max(0, this.sleepDeprivation - dt / 30); // Takes 2 mins to fully rest
-
-        const inBed =
-          this.claimedBed &&
-          this.claimedBed.scene === this.scene &&
-          this.claimedBed.currentCage === this.currentCage &&
-          (this.x - this.claimedBed.x) ** 2 +
-            (this.y - this.claimedBed.y) ** 2 <
-            10000;
-
-        if (inBed && this.happiness > WAN_DIE_THRESHOLD) {
-          if (this.claimedBed.type === "cardboard_box") {
-            this.changeHappiness((HAPPINESS_BONUS_SLEEP_BOX / 60) * dt);
-
-            this.boxWhimperTimer =
-              (this.boxWhimperTimer || 5 + Math.random() * 15) - dt;
-            if (this.boxWhimperTimer <= 0) {
-              this.boxWhimperTimer = 15.0 + Math.random() * 20.0;
-              if (
-                !this.tooYoungToSpeak() &&
-                typeof getDialogue !== "undefined"
-              ) {
-                this.speak(getDialogue(["BED", "BOX_SLEEP"], this));
-              }
-            }
-          } else {
-            this.changeHappiness((HAPPINESS_BONUS_SLEEP_BED / 60) * dt);
-          }
-        }
-      } else {
-        this.sleepDeprivation = Math.min(1.0, this.sleepDeprivation + dt / 120); // Takes 5 mins to get fully tired
-      }
-
-      // Hunger penalty: < 0.4 hunger -> -0.2 happiness per minute (not below WAN_DIE_THRESHOLD)
-      if (this.hunger < 0.4 && this.happiness > WAN_DIE_THRESHOLD + 0.05) {
-        const decrease = (0.2 / 60) * dt;
-        this.changeHappiness(-decrease);
-      }
-
-      // Cage penalty: -0.1 per minute (not below WAN_DIE_THRESHOLD)
-      if (
-        (this.currentCage || this.placedOn instanceof LitterpalBox) &&
-        this.happiness > WAN_DIE_THRESHOLD + 0.05
-      ) {
-        const decrease = (0.1 / 60) * dt;
-        this.changeHappiness(-decrease);
-      }
-      this.changeHappiness(0); // Clamp and trigger rule logic if needed
-
+      this.updateSleep(dt);
+      this.updateHappinessPenalties(dt);
       this.updateExpression(dt);
-
-      if (this.expressionOverrideTimer > 0) {
-        this.expressionOverrideTimer -= dt;
-      }
-
-      if (this.gender === "male" && this.specialHuggiesCooldown > 0) {
-        this.specialHuggiesCooldown -= dt;
-      }
-
-      if (this.isUnderAphrodisiac()) {
-        if (this.aphrodisiacUtteranceTimer === undefined) {
-          this.aphrodisiacUtteranceTimer = 1.0 + Math.random() * 2.0;
-        }
-        this.aphrodisiacUtteranceTimer -= dt;
-        if (this.aphrodisiacUtteranceTimer <= 0) {
-          this.aphrodisiacUtteranceTimer = 3.0 + Math.random() * 3.0;
-          this.speak(this.getAphrodisiacDialogue(), true);
-          this.expressionOverride = "CRYING_SHOCKED";
-          this.expressionOverrideTimer = 3.0;
-        }
-      } else {
-        this.aphrodisiacUtteranceTimer = 0;
-      }
-
-      if (this.speech.nextTime > 0) {
-        this.speech.nextTime -= dt;
-      }
-
-      for (const id in this.friendshipCooldowns) {
-        this.friendshipCooldowns[id] -= dt;
-        if (this.friendshipCooldowns[id] <= 0) {
-          delete this.friendshipCooldowns[id];
-        }
-      }
-
-      if (this.attackCooldown > 0) {
-        this.attackCooldown -= dt;
-      }
-      if (this.counterattack.timer > 0) {
-        this.counterattack.timer -= dt;
-        if (this.counterattack.timer <= 0 && this.counterattack.fluffy) {
-          const attacker = this.counterattack.fluffy;
-          if (
-            attacker.isAlive &&
-            attacker.scene === this.scene &&
-            !this.isDragging &&
-            !this.placedOn &&
-            this.canFightBack()
-          ) {
-            const dist = Math.sqrt(
-              (this.x - attacker.x) ** 2 + (this.y - attacker.y) ** 2,
-            );
-            // Retaliate if within reasonable reach
-            if (dist < 100) {
-              this.performAttack(attacker, "RETALIATION");
-            }
-          }
-          this.counterattack.fluffy = null;
-        }
-      }
-      if (this.milkCooldown > 0) {
-        this.milkCooldown -= dt;
-      }
-
-      if (this.lactatingTimer > 0) {
-        this.lactatingTimer -= dt;
-        const restingAtBed =
-          this.claimedBed &&
-          this.claimedBed.scene === this.scene &&
-          Math.sqrt(
-            (this.x - this.claimedBed.x) ** 2 +
-              (this.y - this.claimedBed.y) ** 2,
-          ) < 120 &&
-          !this.isMovingOrRunning() &&
-          this.currentStateKey !== "SLEEPING";
-        this.milkRegenTimer += dt;
-        if (
-          this.milkRegenTimer >=
-          (restingAtBed
-            ? LACTATING_CHARGE_INCREASE_TIMER / 2
-            : LACTATING_CHARGE_INCREASE_TIMER)
-        ) {
-          this.milkRegenTimer = 0;
-          if (this.milkCharges < 5) {
-            this.milkCharges++;
-          }
-        }
-      } else {
-        this.milkRegenTimer = 0;
-      }
+      this.updateCooldowns(dt);
+      this.updateAphrodisiacUtterances(dt);
+      this.actionHandler.updateCounterattack(dt);
+      this.anatomy.updateLactation(dt);
     }
 
     if (this.headKnockTimer > 0) {
       this.headKnockTimer -= dt;
     }
 
-    this.blinkTimer -= dt;
-    if (
-      this.currentStateKey === "SLEEPING" ||
-      !this.eyesHaveGrown() ||
-      this.isSensitive()
-    ) {
-      this.isBlinking = true;
-      this.blinkTimer = 0.5;
-    } else if (this.blinkTimer <= 0 && this.isAlive) {
-      if (this.isBlinking) {
-        this.isBlinking = false;
-        this.blinkTimer = Math.random() * 2 + 1; // Time until next blink
-      } else {
-        this.isBlinking = true;
-        this.blinkTimer = 0.15; // Blink duration
-      }
-    }
-
-    // Pupil Movement & Twitching
-    if (this.isAlive) {
-      // 1. Target cursor if close
-      const distToMouse = Math.sqrt(
-        (mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2,
-      );
-      let targetX = 0;
-      let targetY = 0;
-      if (distToMouse < 400 && this.currentStateKey !== "FOCUSING") {
-        const dx = mouse.x - this.x;
-        const dy = mouse.y - (this.y - 20 * this.scale); // Offset towards head approx
-        const angle = Math.atan2(dy, dx * (this.facingRight ? 1 : -1));
-        const strength = 1.0 - distToMouse / 400;
-        const maxOffset = 3;
-        targetX = Math.cos(angle) * maxOffset * strength;
-        targetY = Math.sin(angle) * maxOffset * strength;
-      }
-
-      // 2. Smoothly move offset to target
-      this.pupilOffset.x = lerp(this.pupilOffset.x, targetX, 10 * dt);
-      this.pupilOffset.y = lerp(this.pupilOffset.y, targetY, 10 * dt);
-
-      // 3. Pupil Twitching
-      this.pupilTwitchTimer -= dt;
-      if (this.pupilTwitchTimer <= 0) {
-        if (this.pupilTwitchOffset.x === 0 && this.pupilTwitchOffset.y === 0) {
-          // Start twitch
-          this.pupilTwitchOffset.x = (Math.random() - 0.5) * 2;
-          this.pupilTwitchOffset.y = (Math.random() - 0.5) * 2;
-          this.pupilTwitchTimer = 0.05 + Math.random() * 0.1;
-        } else {
-          // Reset twitch
-          this.pupilTwitchOffset.x = 0;
-          this.pupilTwitchOffset.y = 0;
-          this.pupilTwitchTimer = 0.5 + Math.random() * 2.5;
-        }
-      }
-    }
-
-    // Wing Flapping
-    if (this.isAlive && (this.type === "pegasus" || this.type === "alicorn")) {
-      if (this.isDragging) {
-        this.wingFlapTimer = 0.0;
-      }
-      if (this.wingFlapPhase > 0) {
-        this.wingFlapPhase += dt * 20; // Fast flapping
-        if (this.wingFlapPhase >= Math.PI * 2) {
-          this.wingFlapPhase = 0;
-          this.wingFlapTimer = 0.0 + Math.random() * 5.0;
-        }
-      } else {
-        this.wingFlapTimer -= dt;
-        if (this.wingFlapTimer <= 0) {
-          this.wingFlapPhase = 0.01;
-        }
-      }
-    }
-
-    if (
-      this.isAlive &&
-      this.currentStateKey === "SLEEPING" &&
-      !this.tooYoungToWalk()
-    ) {
-      this.dreamTimer -= dt;
-      if (this.dreamTimer <= 0) {
-        const dreams = ["sketties", "ball", "block", "man", "sun"];
-        this.currentDream =
-          Math.random() < 0.75
-            ? null
-            : dreams[Math.floor(Math.random() * dreams.length)];
-        this.dreamTimer = 3.0 + Math.random() * 5.0;
-      }
-
-      this.dreamEffectTimer -= dt;
-      if (this.dreamEffectTimer <= 0) {
-        this.dreamStretch = {
-          x: 0.95 + Math.random() * 0.1,
-          y: 0.95 + Math.random() * 0.1,
-        };
-        this.dreamAngle = (Math.random() - 0.5) * 0.2;
-        this.dreamEffectTimer = 0.4;
-      }
-    } else {
-      this.currentDream = null;
-      this.dreamTimer = 0;
-      this.dreamEffectTimer = 0;
-      this.dreamStretch = { x: 1.0, y: 1.0 };
-      this.dreamAngle = 0;
-    }
+    this.renderer.updateBlinking(dt);
+    this.renderer.updatePupils(dt);
+    this.renderer.updateWingFlap(dt);
+    this.renderer.updateDreams(dt);
 
     if (this.badPoopieTimer > 0) {
       this.badPoopieTimer -= dt;
@@ -2753,77 +2607,17 @@ class Horse {
 
     this.lastPuddleReactionTime += dt;
 
-    if (this.isAlive) {
-      const shouldCry = this.isCrying();
-
-      if (shouldCry) {
-        this.tearStreakSize = Math.min(1.0, this.tearStreakSize + dt);
-      } else {
-        this.tearStreakSize = Math.max(0.0, this.tearStreakSize - dt);
-      }
-
-      if (this.tearStreakSize > 0) {
-        this.tearFlowPhase = (this.tearFlowPhase + dt * 40) % 15;
-        this.tearGapPhase = this.tearGapPhase + dt * 2;
-
-        this.tearTimer += dt;
-        if (this.tearTimer > 1.0) {
-          this.spawnTear();
-          this.tearTimer = Math.random() * 0.8;
-        }
-      }
-    }
-
-    if (this.blockCooldown > 0) {
-      this.blockCooldown -= dt;
-    }
-
-    if (this.isStacking) {
-      this.stackingTimer += dt;
-      if (
-        this.stackingTimer > 12.0 ||
-        (this.stackTargetBlock &&
-          (this.stackTargetBlock.isDragging || this.stackTargetBlock.heldBy))
-      ) {
-        this.isStacking = false;
-        this.blockCooldown = 10.0;
-        if (this.blockOnBack) {
-          this.blockOnBack.heldBy = null;
-          this.blockOnBack.x = this.x;
-          this.blockOnBack.y = this.y;
-          this.blockOnBack.groundY = this.y;
-          this.blockOnBack.clampY();
-          this.blockOnBack = null;
-        }
-        this.initBehavior("IDLE");
-      } else if (this.stackingTimer > 3.0) {
-        if (this.blockOnBack && this.stackTargetBlock) {
-          this.blockCooldown = 10.0;
-          if (Math.random() < 0.4 * this.stackTargetBlock.stackHeight()) {
-            this.failStackBlocks(this.stackTargetBlock);
-            this.speak(getDialogue(["PLAY", "BLOCK", "FAIL"], this));
-          } else {
-            let top = this.stackTargetBlock;
-            while (top.getStackedAbove()) {
-              top = top.getStackedAbove();
-            }
-            this.blockOnBack.stackedOn = top;
-            this.blockOnBack.stackXOffset = (Math.random() - 0.5) * 10;
-            this.blockOnBack.heldBy = null;
-            this.blockOnBack = null;
-            this.speak(getDialogue(["PLAY", "BLOCK"], this));
-            this.expressionOverride = "GOOD_UPSIES";
-            this.expressionOverrideTimer = 2.0;
-          }
-        }
-        this.isStacking = false;
-        this.initBehavior("IDLE");
-      }
-    }
+    this.renderer.updateTears(dt);
+    this.actionHandler.updateBlockStacking(dt);
 
     if (this.birthRotation > 0) {
       this.birthRotation = Math.max(0, this.birthRotation - dt * 2.0);
     }
+
+    if (this.physics.updateThrowFall(dt)) {
+      return;
+    }
+
     if (this.isAlive) {
       this.updateSpeed();
       if (this.ragdollRotation !== 0 && !this.isDragging) {
@@ -2831,197 +2625,9 @@ class Horse {
         if (Math.abs(this.ragdollRotation) < 0.01) this.ragdollRotation = 0;
       }
 
-      // Smarty & Aphrodisiac Chase Logic
-      if (
-        this.isAlive &&
-        (this.isSmarty() || this.isUnderAphrodisiac()) &&
-        this.chaseTarget &&
-        this.canSee()
-      ) {
-        const target = this.chaseTarget;
-        // Validation
-        if (
-          !target.isAlive ||
-          target.scene !== this.scene ||
-          target.isDragging ||
-          target.currentCage !== this.currentCage ||
-          (!this.isUnderAphrodisiac() && this.specialHuggiesCooldown > 0) ||
-          (!this.isUnderAphrodisiac() && this.isFrantic) ||
-          this.isCrawling ||
-          !this.limbs.lumps ||
-          !placedOnValidForSpecialHuggies(target.placedOn) ||
-          this.happiness <= WAN_DIE_THRESHOLD
-        ) {
-          this.chaseTarget = null;
-          this.chaseReason = null;
-        } else {
-          this.setTargetPosition(target.x, target.y);
-
-          if (!this.isMovingOrRunning() && this.attackCooldown <= 0) {
-            this.initBehavior("RUNNING");
-          }
-
-          if (this.speech.nextTime <= 0) {
-            this.speech.nextTime = 2 + Math.random();
-
-            // Smarty yells 100% of the time if target can't hear.
-            // Otherwise, regular logic: 100% if target can see, 20% if target can't.
-            const yellChance = !target.canHear()
-              ? 1.0
-              : target.canSee()
-                ? 1.0
-                : 0.2;
-            if (Math.random() < yellChance) {
-              const isTargetStallion = target.gender === "male";
-              const yellKey = isTargetStallion
-                ? ["SMARTY_CHASE", "STALLION"]
-                : ["SMARTY_CHASE", "MARE"];
-              const yellText = this.isUnderAphrodisiac()
-                ? this.getAphrodisiacDialogue()
-                : getDialogue(yellKey, this, target);
-              this.speak(yellText, this.isUnderAphrodisiac());
-
-              // Target only reacts to yelling if they can hear.
-              // If they can't see, they only react if they hear him.
-              if (
-                !target.canSee() &&
-                target.canHear() &&
-                !target.tooYoungToSpeak()
-              ) {
-                target.actionHandler.executeSmartyChaseFear(this);
-              }
-            }
-          }
-
-          const dist = Math.sqrt(
-            (this.x - target.x) ** 2 + (this.y - target.y) ** 2,
-          );
-          if (dist < 50 && this.attackCooldown <= 0) {
-            const isMaleOnMaleUnconsensual =
-              this.gender === "male" &&
-              target.gender === "male" &&
-              !isSexuallyAttractedTo(target, this);
-
-            if (this.chaseReason === "MATING" || this.isUnderAphrodisiac()) {
-              if (isMaleOnMaleUnconsensual && canFightBack(target)) {
-                this.performAttack(target, "SMARTY_VIOLENCE");
-                const attackText = this.isUnderAphrodisiac()
-                  ? this.getAphrodisiacDialogue()
-                  : getDialogue(
-                      [
-                        "ATTACK",
-                        "SMARTY",
-                        this.tooYoungToSpeak() ? "BABY" : "ADULT",
-                      ],
-                      this,
-                    );
-                this.speak(attackText, this.isUnderAphrodisiac());
-              } else if (this.mateWith(target, false, true)) {
-                this.chaseTarget = null;
-                this.chaseReason = null;
-              }
-            } else if (
-              this.chaseReason === "ATTACK" ||
-              target.gender === "male"
-            ) {
-              if (this.isSmarty()) {
-                this.performAttack(target, "SMARTY_VIOLENCE");
-                this.speak(
-                  getDialogue(
-                    [
-                      "ATTACK",
-                      "SMARTY",
-                      this.tooYoungToSpeak() ? "BABY" : "ADULT",
-                    ],
-                    this,
-                  ),
-                );
-              }
-            } else if (this.mateWith(target, false, true)) {
-              this.chaseTarget = null;
-              this.chaseReason = null;
-            }
-          }
-        }
-      }
-
-      if (getSceneConfig(this.scene).isAdoptionRoom) {
-        if (
-          !this.adopted &&
-          !this.tooYoungToSpeak() &&
-          (this.canSee() || this.canHear())
-        ) {
-          const key = this.isSmarty() ? ["ADOPTED", "SMARTY"] : ["ADOPTED"];
-          this.speak(getDialogue(key, this));
-          this.changeHappiness(1.0 - this.happiness);
-        }
-        this.adopted = true;
-      }
-
-      // Door Tapping Logic (Outdoors)
-      if (
-        getSceneConfig(this.scene).id === "OUTDOORS" &&
-        getSceneConfig(currentScene).insidePlayerQuarters
-      ) {
-        if (this.isTapping) {
-          this.tapTimer -= dt;
-          if (this.tapTimer < 1.0) {
-            this.tapOpacity = Math.max(0, this.tapTimer);
-          } else {
-            this.tapOpacity = 1.0;
-          }
-          if (this.tapTimer <= 0) {
-            this.isTapping = false;
-            this.tapText = null;
-            this.nextTapTime = 5 + Math.random() * 10;
-          }
-        } else {
-          this.nextTapTime = (this.nextTapTime || 0) - dt;
-          if (this.nextTapTime <= 0) {
-            const distToDoor = Math.sqrt(
-              (this.x - width / 2) ** 2 + (this.y - (height * 0.15 + 50)) ** 2,
-            );
-
-            if (
-              distToDoor < 300 &&
-              !this.isFrantic &&
-              !this.tooYoungToSpeak()
-            ) {
-              let text = null;
-              const recent = recentOutdoorDialogue.filter(
-                (d) => Date.now() - d.time < 10000,
-              );
-
-              let key = null;
-
-              if (this.adopted) {
-                if (this.hunger > 0.6) {
-                  key = ["DOOR_KNOCK", "ADOPTED"];
-                }
-              } else {
-                // Feral knocking
-                key = ["DOOR_KNOCK", "FERAL"];
-              }
-
-              if (key) {
-                text = getDialogue(key, this);
-              }
-
-              if (text) {
-                if (typeof addDoorMessage !== "undefined") {
-                  addDoorMessage(text);
-                }
-                this.nextTapTime = 5 + Math.random() * 10;
-              } else {
-                this.nextTapTime = 1.0;
-              }
-            } else {
-              // Retry later if conditions not met
-              this.nextTapTime = 1.0;
-            }
-          }
-        }
-      }
+      this.actionHandler.updateChase();
+      this.updateAdoptionRoom();
+      this.actionHandler.updateDoorTapping(dt);
 
       // Hunger Logic
 
@@ -3033,325 +2639,11 @@ class Horse {
       this.updateMetabolism(dt);
       if (!this.isAlive) return;
 
-      if (this.hunger <= 0) {
-        this.die(null, "Starved to death");
-      } else if (this.hunger <= 0.05 && this.currentStateKey !== "LYING") {
-        this.initBehavior("LYING");
-      }
-
-      // Bleeding Logic
-      if (this.bleedingTimer > 0) {
-        this.bleedingTimer -= dt;
-        this.health -= 8 * dt;
-        this.excreteBlood(dt);
-        this.sleepTargetSet = false;
-      }
-
-      if (this.lastAttackTimer > 0) {
-        this.lastAttackTimer -= dt;
-      }
-
-      if (this.health <= 0) {
-        if (this.lastAttackTimer > 0 && this.lastAttackerId !== null) {
-          const attackerName = fluffyNames[this.lastAttackerId] || "Fluffy";
-          this.die(null, `Killed by ${attackerName}`);
-        } else {
-          this.die(null, "Bled to death");
-        }
-      }
-
-      // Health Regeneration (Disabled if poisoned or suffering toxoplasmosis)
-      if (
-        this.health < 100 &&
-        this.bleedingTimer <= 0 &&
-        !this.isPoisoned &&
-        (!this.isToxoplasmosis ||
-          (typeof worldSettings !== "undefined" &&
-            !worldSettings.toxoplasmosis))
-      ) {
-        this.health = Math.min(100, this.health + 5 * this.growth * dt);
-      }
-
-      // Poisoning Logic: 1 damage per second forever & periodic vomiting
-      if (this.isPoisoned) {
-        this.health = Math.max(0, this.health - 1.0 * dt);
-        if (this.health <= 0) {
-          this.anatomy.die(null, "Rat poison");
-        } else {
-          this.vomitTimer -= dt;
-          if (this.vomitTimer <= 0) {
-            this.vomitTimer = 16.0 + Math.random() * 14.0;
-            this.triggerVomit();
-            this.health = Math.max(0, this.health - 20.0);
-            if (this.health <= 0) {
-              this.anatomy.die(null, "Rat poison");
-            }
-          }
-        }
-      }
-      // Toxoplasmosis Logic: 1 damage per 5 seconds forever, no regeneration, and diarrhea
-      if (this.isToxoplasmosis) {
-        if (
-          typeof worldSettings !== "undefined" &&
-          !worldSettings.toxoplasmosis
-        ) {
-          this.isToxoplasmosis = false;
-        } else if (this.isToxoVaccinated) {
-          this.isToxoplasmosis = false;
-          return;
-        } else {
-          this.health = Math.max(0, this.health - 0.2 * dt);
-
-          if (this.poopStorage > 0.2 && Math.random() < (1 / 30) * dt) {
-            this.isDiarrhea = true;
-          }
-
-          if (this.health <= 0) {
-            this.anatomy.die(null, "Toxoplasmosis");
-          } else {
-            this.vomitTimer -= dt;
-            if (this.vomitTimer <= 0) {
-              this.vomitTimer = 16.0 + Math.random() * 14.0;
-              this.triggerVomit();
-              this.health = Math.max(0, this.health - 5.0);
-              if (this.health <= 0) {
-                this.anatomy.die(null, "Toxoplasmosis");
-              }
-            }
-          }
-        }
-      }
-
-      // Diarrhea logic: Causes a fluffy to void its bowels completely, can also be used for laxative effects.
-      if (this.isDiarrhea) {
-        if (this.poopStorage <= 0.1) {
-          this.isDiarrhea = false;
-        }
-        if (this.poopStorage > 0.2 && Math.random() < (1 / 3) * dt) {
-          this.diarrheaTimer = this.poopStorage * 20;
-        }
-        if (this.diarrheaTimer > 0 && this.poopStorage > 0) {
-          this.diarrheaTimer -= 3 * dt;
-          this.poopStorage = Math.max(0, this.poopStorage - 0.3 * dt);
-          this.excretePoop(dt);
-        }
-      }
-
-      // Incontinence logic: Causes a fluffy to involuntarily urinate on the spot, can also be used for diuretics.
-      if (this.isIncontinent) {
-        if (this.peeStorage <= 0.1) {
-          this.isIncontinent = false;
-        }
-        if (this.peeStorage > 0.2 && Math.random() < (1 / 3) * dt) {
-          this.incontinenceTimer = this.peeStorage * 20;
-        }
-        if (this.incontinenceTimer > 0 && this.peeStorage > 0) {
-          this.incontinenceTimer -= 2 * dt;
-          this.peeStorage = Math.max(0, this.peeStorage - 0.2 * dt);
-          this.excretePee(dt);
-        }
-      }
-
-      // Castration Band Logic: pain dialogue every 5-10s, bloodless amputation & poof after 3 mins
-      if (
-        this.accessories &&
-        this.accessories["ABOVE_LUMPS"] &&
-        this.accessories["ABOVE_LUMPS"].id === "castration_band" &&
-        this.gender === "male" &&
-        this.limbs.lumps &&
-        !this.spayed
-      ) {
-        this.castrationBandTimer -= dt;
-        this.castrationBandPainTimer -= dt;
-
-        if (this.castrationBandPainTimer <= 0) {
-          this.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
-          if (this.happiness > WAN_DIE_THRESHOLD) {
-            this.expressionOverride = "CRYING_SHOCKED";
-            this.expressionOverrideTimer = 3.0;
-            this.speak(
-              getDialogue([
-                "CASTRATION_BAND_PAIN",
-                this.tooYoungToSpeak() ? "BABY" : "DEFAULT",
-              ]),
-            );
-          }
-        }
-
-        if (this.castrationBandTimer <= 0) {
-          // 3 minutes completed! Bloodless amputation & band poof
-          this.limbs.lumps = false;
-          const accData = this.accessories["ABOVE_LUMPS"];
-          this.spawnGib("special_lumps");
-
-          delete this.accessories["ABOVE_LUMPS"];
-          this.castrationBandTimer = CASTRATION_BAND_TIMER;
-          this.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
-
-          if (
-            typeof AccessoryItem !== "undefined" &&
-            typeof objects !== "undefined"
-          ) {
-            const droppedAcc = new AccessoryItem(this.scene, accData.id);
-            droppedAcc.x = this.x;
-            droppedAcc.y = this.y - 20;
-            droppedAcc.color = accData.color;
-            objects.push(droppedAcc);
-
-            if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
-              poofs.push(new Poof(droppedAcc.x, droppedAcc.y, this.scene));
-            }
-          }
-
-          if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
-            poofs.push(new Poof(this.x, this.y, this.scene));
-          }
-
-          if (this.happiness > WAN_DIE_THRESHOLD) {
-            this.expressionOverride = "CRYING_SHOCKED";
-            this.expressionOverrideTimer = 5.0;
-            this.changeHappiness(HAPPINESS_PENALTY_AMPUTATION);
-            this.speak(
-              getDialogue([
-                "CASTRATION_BAND_FINISH",
-                this.tooYoungToSpeak() ? "BABY" : "DEFAULT",
-              ]),
-            );
-          }
-        }
-      } else if (
-        this.accessories &&
-        this.accessories["ABOVE_LUMPS"] &&
-        (this.gender !== "male" || !this.limbs.lumps || this.spayed)
-      ) {
-        const accData = this.accessories["ABOVE_LUMPS"];
-        delete this.accessories["ABOVE_LUMPS"];
-        this.castrationBandTimer = CASTRATION_BAND_TIMER;
-        this.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
-
-        if (
-          typeof AccessoryItem !== "undefined" &&
-          typeof objects !== "undefined"
-        ) {
-          const droppedAcc = new AccessoryItem(this.scene, accData.id);
-          droppedAcc.x = this.x;
-          droppedAcc.y = this.y - 20;
-          droppedAcc.color = accData.color;
-          objects.push(droppedAcc);
-
-          if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
-            poofs.push(new Poof(droppedAcc.x, droppedAcc.y, this.scene));
-          }
-        }
-      } else {
-        this.castrationBandTimer = CASTRATION_BAND_TIMER;
-        this.castrationBandPainTimer = 5.0 + Math.random() * 5.0;
-      }
-
-      // Eating / Drinking Logic
-
-      if (this.hunger < 0.6) {
-        const isGagged =
-          this.accessories &&
-          this.accessories.mouth &&
-          this.accessories.mouth.id === "mouthgag";
-        // Bowl Eating (Not for chirpies)
-        if (
-          !isGagged &&
-          !this.tooYoungToWalk() &&
-          this.happiness > WAN_DIE_THRESHOLD && // Depressed fluffies don't eat
-          !this.isUnderAphrodisiac() && // Under aphrodisiac males don't eat
-          !(this.placedOn instanceof OperatingTable) &&
-          typeof objects !== "undefined"
-        ) {
-          const bowls = objects.filter(
-            (o) => o instanceof Bowl || o instanceof Grass,
-          );
-          for (const bowl of bowls) {
-            if (
-              (bowl instanceof Grass ||
-                (bowl.type !== "feeder" && bowl.type !== "mega_feeder")) &&
-              bowl.hasFood() &&
-              bowl.scene === this.scene
-            ) {
-              // Accessibility Check
-              if (this.currentCage !== bowl.currentCage) continue;
-
-              const dist = Math.sqrt(
-                (this.x - bowl.x) ** 2 + (this.y - bowl.y) ** 2,
-              );
-              if (dist < 50) {
-                if (bowl.eat()) {
-                  this.hunger = 1.0;
-                  this.initBehavior("EATING");
-                  let key;
-                  if (bowl.foodType === "sketties") {
-                    key = ["EAT", "SKETTIES"];
-                  } else if (bowl.foodType === "soylent_brown") {
-                    key = ["EAT", "SOYLENT_BROWN"];
-                  } else if (bowl.foodType === "rat_poison") {
-                    key = ["EAT", "RAT_POISON"];
-                  } else {
-                    key = ["EAT", "NUMMIES"];
-                  }
-
-                  if (this.isSmarty()) {
-                    if (bowl.foodType === "sketties") {
-                      key = ["EAT", "SKETTIES", "SMARTY"];
-                    } else if (bowl.foodType === "soylent_brown") {
-                      key = ["EAT", "SOYLENT_BROWN"];
-                    } else if (bowl.foodType === "rat_poison") {
-                      key = ["EAT", "RAT_POISON"];
-                    } else {
-                      key = ["EAT", "NUMMIES", "SMARTY"];
-                    }
-                    this.expressionOverride = "ANGRY_PUFFED";
-                    this.expressionOverrideTimer = 3.0;
-                  }
-                  if (bowl.foodType === "sketties") {
-                    this.changeHappiness(HAPPINESS_BONUS_SKETTIES);
-                  } else if (bowl.foodType === "soylent_brown") {
-                    this.changeHappiness(-0.03);
-                    if (!this.isSmarty()) {
-                      this.expressionOverride = "MISERABLE";
-                      this.expressionOverrideTimer = 3.0;
-                    }
-                  } else if (bowl.foodType === "rat_poison") {
-                    this.isPoisoned = true;
-                    if (this.renderer) this.renderer.tinted = null;
-                    this.vomitTimer = 4.0 + Math.random() * 6.0;
-                    this.changeHappiness(-0.1);
-                    if (!this.isSmarty()) {
-                      this.expressionOverride = "MISERABLE";
-                      this.expressionOverrideTimer = 3.0;
-                    }
-                  } else {
-                    this.changeHappiness(HAPPINESS_BONUS_NUMMIES);
-                  }
-                  this.speak(getDialogue(key, this));
-                  break;
-                }
-              }
-            }
-          }
-        }
-      }
-      // Physical Incapacitation Overrides (Labor, Severe Depression)
-      if (this.avoidStateChangerActions()) {
-        if (
-          !this.tooYoungToWalk() &&
-          this.happiness <= WAN_DIE_THRESHOLD &&
-          this.currentStateKey !== "LYING"
-        ) {
-          this.initBehavior("LYING");
-        } else if (
-          this.pregnancyTimer <= 0 &&
-          this.babiesToBirth > 0 &&
-          this.currentStateKey !== "LYING"
-        ) {
-          this.initBehavior("LYING");
-        }
-      }
+      if (!this.anatomy.updateHealth(dt)) return;
+      this.anatomy.updateBowelConditions(dt);
+      this.anatomy.updateCastrationBand(dt);
+      this.actionHandler.updateBowlEating();
+      this.updateIncapacitation();
 
       if (this.tasedTimer > 0) {
         this.tasedTimer -= dt;
@@ -3374,265 +2666,26 @@ class Horse {
         this.initBehavior("IDLE");
       }
 
-      if (this.growth < 1.0) {
-        const wasTooYoungToSpeak = this.tooYoungToSpeak();
-        this.growth = Math.min(
-          1.0,
-          this.growth + (dt / 1680.0) * debugGrowthMultiplier,
-        );
-        if (this.growth >= 1.0) {
-          for (const ownerId in relationships) {
-            if (relationships[ownerId][this.id] === "baby_child") {
-              relationships[ownerId][this.id] = "child";
-            }
-          }
-        }
-        if (wasTooYoungToSpeak && !this.tooYoungToSpeak()) {
-          this.initBehavior("IDLE");
-          this.firstWordsBabble();
-        }
-        this.updateGrowthStats();
-      }
+      this.anatomy.updateGrowth(dt);
+      this.ballCooldown = Math.max(0, this.ballCooldown - dt);
 
       this.updateRelationships(dt);
       this.isFrantic = this.calculateIsFrantic();
       this.updateFear(dt);
       this.updateMating(dt);
 
-      // Cannibalism interaction
-      if (this.cannibalTarget && !this.isDragging) {
-        // Prioritize nearby gibs over horses
-        if (
-          this.cannibalTarget instanceof Horse &&
-          typeof gibs !== "undefined"
-        ) {
-          let nearestGib = null;
-          let minGibDist = Infinity;
-          for (const gib of gibs) {
-            if (gib.scene === this.scene && gib.freeGib) {
-              const d = Math.sqrt(
-                (this.x - gib.x) ** 2 + (this.y - gib.y) ** 2,
-              );
-              if (d < 300 && d < minGibDist) {
-                minGibDist = d;
-                nearestGib = gib;
-              }
-            }
-          }
-          if (nearestGib) {
-            this.cannibalTarget = nearestGib;
-            this.setTargetPosition(nearestGib.x, nearestGib.y);
-          }
-        }
-        const target = this.cannibalTarget;
-        const isStillValid =
-          (target instanceof Gib &&
-            !target.shouldDespawn &&
-            target.scene === this.scene) ||
-          (target instanceof Horse &&
-            target.scene === this.scene &&
-            target.currentCage === this.currentCage &&
-            !target.isDestroyed);
-
-        if (!isStillValid) {
-          this.cannibalTarget = null;
-        } else {
-          const dist = Math.sqrt(
-            (this.x - target.x) ** 2 + (this.y - target.y) ** 2,
-          );
-          const isGagged =
-            this.accessories &&
-            this.accessories.mouth &&
-            this.accessories.mouth.id === "mouthgag";
-          if (dist < 50) {
-            if (target instanceof Gib) {
-              if (!isGagged) this.eatGib(target);
-              this.cannibalTarget = null;
-            } else if (target instanceof Horse) {
-              if (target.isAlive) {
-                if (this.attackCooldown <= 0) {
-                  this.performCannibalAttack(target);
-                }
-              } else {
-                if (!isGagged) this.eatCorpse(target);
-                this.cannibalTarget = null;
-              }
-            }
-          } else {
-            // Move to target is already handled by scout/targetX in positioning
-          }
-        }
-      }
-
-      // Ear Flopping
-      if (Math.random() < dt / 15.0) {
-        // Random angle avoiding 1/3 pi to 2/3 pi
-        this.limbs.targetEarFlopAngle =
-          (Math.random() < 0.5
-            ? Math.random() / 4
-            : 3 / 4 + Math.random() / 4) * Math.PI;
-      }
-      this.limbs.earFlopValue = lerpAngle(
-        this.limbs.earFlopValue || 0,
-        this.limbs.targetEarFlopAngle,
-        5 * dt,
-      );
-
-      // Poop and Pee Storage Accumulation
-      if (this.hunger > 0.5 || this.poopStorage > 0.3) {
-        this.poopStorage += Math.random() * dt * 0.005 * debugPoopMultiplier;
-        this.poopStorage = Math.min(1.0, this.poopStorage);
-      }
-      this.peeStorage += Math.random() * dt * 0.02 * debugPeeMultiplier;
-      this.peeStorage = Math.min(1.0, this.peeStorage);
-
-      // Peeing and Pooping
-      if (
-        (this.avoidStateChangerActions() ||
-          this.placedOn instanceof LitterpalBox) &&
-        !this.hasBlockOnBack()
-      ) {
-        // Pooping logic
-        if (
-          Math.max(this.poopStorage, this.peeStorage) >
-          0.6 + this.pottyTraining * 0.2
-        ) {
-          this.attemptPoop();
-        }
-      }
-
-      if (this.isPregnant) {
-        // Update stretch
-        if (this.pregnancyTimer > 0) {
-          this.pregnancyTorsoStretch = Math.max(
-            0,
-            1.0 - this.pregnancyTimer / pregnancyDuration,
-          );
-        }
-
-        if (this.pregnancyTimer > 0) {
-          this.pregnancyTimer -= dt * debugPregnancyMultiplier;
-          if (this.pregnancyTimer <= 0) {
-            if (this.hasBlockOnBack()) {
-              this.blockOnBack.heldBy = null;
-              this.blockOnBack.x = this.x;
-              this.blockOnBack.y = this.y;
-              this.blockOnBack.groundY = this.y;
-              this.blockOnBack = null;
-            }
-            if (this.babiesToBirth === 0) {
-              this.babiesToBirth = Math.floor(Math.random() * 7) + 1;
-            }
-            if (this.foalViability.length === 0) {
-              for (let i = 0; i < this.babiesToBirth; i++) {
-                this.foalViability.push(true);
-              }
-            }
-
-            const birthBed =
-              this.claimedBed &&
-              this.claimedBed.scene === this.scene &&
-              this.claimedBed.currentCage === this.currentCage
-                ? this.claimedBed
-                : null;
-            const distToBed = birthBed
-              ? Math.sqrt(
-                  (birthBed.x - this.x) ** 2 + (birthBed.y - this.y) ** 2,
-                )
-              : Infinity;
-
-            if (birthBed && distToBed > 30) {
-              this.seekingBirthBed = true;
-              this.birthBedSeekTimeout = 30.0;
-              if (!this.isMovingOrRunning()) this.initBehavior("MOVING");
-            } else {
-              this._startActiveLabor();
-            }
-          }
-        } else if (this.seekingBirthBed) {
-          this.birthBedSeekTimeout -= dt;
-          const birthBed =
-            this.claimedBed &&
-            this.claimedBed.scene === this.scene &&
-            this.claimedBed.currentCage === this.currentCage
-              ? this.claimedBed
-              : null;
-          const atBed =
-            birthBed &&
-            Math.sqrt(
-              (birthBed.x - this.x) ** 2 + (birthBed.y - this.y) ** 2,
-            ) <= 30;
-          if (atBed || this.birthBedSeekTimeout <= 0 || !birthBed) {
-            this.seekingBirthBed = false;
-            this._startActiveLabor();
-          } else if (!this.isMovingOrRunning()) {
-            this.initBehavior("MOVING");
-          }
-        } else if (this.babiesToBirth > 0) {
-          this.birthIntervalTimer -= dt;
-          if (this.birthIntervalTimer <= 0) {
-            if (this.hasBlockOnBack()) {
-              this.blockOnBack.heldBy = null;
-              this.blockOnBack.x = this.x;
-              this.blockOnBack.y = this.y;
-              this.blockOnBack.groundY = this.y;
-              this.blockOnBack = null;
-            }
-            this.speak(getDialogue(["BIRTH", "PAIN"], this), true);
-            this.initBehavior("BENDING_2");
-            this.stateTimer = 0.8;
-            const viabilityIdx = this.foalViability.length - this.babiesToBirth;
-            const isViable = this.foalViability[viabilityIdx] !== false;
-
-            this.spawnBaby(isViable);
-
-            // Reduce health per birth
-            const healthDamage = isViable ? 20 : 40;
-            this.health = Math.max(0, this.health - healthDamage);
-            if (this.health <= 0) {
-              this.die(null, "Died in childbirth");
-            }
-
-            this.babiesToBirth--;
-            if (this.babiesToBirth > 0) {
-              this.birthIntervalTimer = 3.0; // 3 second delay
-            } else {
-              this.isPregnant = false;
-              this.pregnancyTimer = 0;
-              this.pregnancyTorsoStretch = 0;
-              this.fatherGenes = null;
-              this.foalViability = [];
-              this.updateGrowthStats();
-            }
-          }
-        }
-      }
-
-      if (this.happiness <= WAN_DIE_THRESHOLD) {
-        this.isFrantic = false;
-        this.isScared = false;
-        this.scaredTimer = 0;
-      }
-
-      if (this.scaredTimer >= 0) {
-        this.scaredTimer -= dt;
-        if (this.scaredTimer <= 0) {
-          this.isScared = false;
-        }
-      }
-
-      if (this.speech.text) {
-        this.speech.timer -= dt;
-        if (this.speech.timer < 1)
-          this.speech.opacity = Math.max(0, this.speech.timer);
-        if (this.speech.timer <= 0) {
-          this.speech.text = null;
-          this.speech.nextTime = Math.random() * 10 + 10;
-        }
-      }
+      this.actionHandler.updateCannibalism();
+      this.renderer.updateEarFlop(dt);
+      this.anatomy.updateExcretionStorage(dt);
+      this.anatomy.updatePregnancy(dt);
+      this.updateScared(dt);
+      this.updateSpeechBubble(dt);
     } else {
       // Corpse logic: clear speech
-      this.speech.text = null;
+      if (this.speech) {
+        this.speech.text = null;
+        this.speech.timer = 0;
+      }
       this.deathAnim = Math.min(1, this.deathAnim + dt * 4);
     }
 
@@ -3646,70 +2699,11 @@ class Horse {
       this.bloodTolerance = Math.max(0, this.bloodTolerance - 0.001 * dt);
     }
 
-    const lerpFactor = 5.0 * dt;
-    const targetConfig = ANIMATION_STATES[this.currentStateKey];
-    let targetHeadAngle = targetConfig.headAngle;
-    if (this.currentStateKey === "LYING" && this.hunger <= 0.1) {
-      targetHeadAngle = (20 * Math.PI) / 180;
-    }
-
-    if (this.currentStateKey === "FLUFFY_BITE") {
-      const duration = BEHAVIOR_RULES.FLUFFY_BITE.getDuration(this);
-      const t = clamp(1.0 - this.stateTimer / duration, 0, 1);
-      // Swing up then down
-      if (t < 0.3) {
-        // Moving up
-        const frac = t / 0.3;
-        targetHeadAngle = lerpAngle(
-          ANIMATION_STATES.IDLE.headAngle,
-          targetConfig.headAngle,
-          frac,
-        );
-      } else {
-        // Moving down
-        const frac = (t - 0.7) / 0.7;
-        targetHeadAngle = lerpAngle(
-          targetConfig.headAngle,
-          ANIMATION_STATES.IDLE.headAngle,
-          frac,
-        );
-      }
-      this.anim.headAngle = targetHeadAngle;
-    } else {
-      this.anim.headAngle = lerpAngle(
-        this.anim.headAngle,
-        targetHeadAngle,
-        lerpFactor,
-      );
-    }
+    this.renderer.updateHeadAnimation(dt);
 
     if (this.isAlive) {
-      if (this.shouldFlail()) {
-        this.animPhase += 20.0 * dt;
-        if (
-          this.currentStateKey === "SITTING" &&
-          this.grabbedPart === "torso"
-        ) {
-          this.animPhase -= 15.0 * dt;
-        }
-        this.flailAngle = Math.sin(this.animPhase) * 0.8;
-      } else {
-        this.flailAngle = 0;
-      }
-
-      if (
-        this.currentStateKey === "DROWNING" &&
-        this.expressionOverrideTimer <= 1
-      ) {
-        this.expressionOverride = "CRYING_SHOCKED";
-        this.expressionOverrideTimer = 2.0;
-        this.facingRight = Math.random() > 0.5;
-
-        let key = this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT";
-        this.speak(getDialogue(["DROWNING", key], this));
-
-        this.speech.nextTime = 1.0 + Math.random();
-      }
+      this.physics.updateFlailing(dt);
+      this.physics.updateDrowningPanic();
     }
 
     if (this.physics.updateDragging(dt, groundYMin)) {
@@ -3717,102 +2711,10 @@ class Horse {
     }
 
     if (this.isAlive) {
-      // Mother chasing grabbed baby logic
-      if (
-        !this.isDragging &&
-        !this.placedOn &&
-        !this.tooYoungToWalk() &&
-        this.canSee()
-      ) {
-        const rels = relationships[this.id];
-
-        if (rels) {
-          const grabbedChild = fluffies.find(
-            (f) =>
-              f.isDragging &&
-              f.tooYoungToWalk() &&
-              f.isAlive &&
-              !f.isSmarty() &&
-              f.gender === "female" &&
-              f.scene === this.scene &&
-              (rels[f.id] === "baby_child" || rels[f.id] === "child"),
-          );
-          if (grabbedChild) {
-            this.setTargetPosition(grabbedChild.x, grabbedChild.y);
-
-            this.setShock(0.5); // Sustain while held
-            if (!this.isMovingOrRunning()) {
-              this.initBehavior(this.isCrawling ? "MOVING" : "RUNNING");
-            } else if (this.currentStateKey === "MOVING" && !this.isCrawling) {
-              this.currentStateKey = "RUNNING";
-            }
-          }
-        }
-      }
+      this.actionHandler.updateMotherChase();
 
       if (this.isBeingTased()) {
-        this.vx = 0;
-        this.vy = 0;
-        if (this.matingState && this.matingState.isMating) {
-          this._interruptMating();
-        }
-        this.changeHappiness(HAPPINESS_PENALTY_CATTLE_PROD * dt);
-
-        this.continuousTasedTimer = (this.continuousTasedTimer || 0) + dt;
-        this.continuousTasedSmokeTimer =
-          (this.continuousTasedSmokeTimer || 0) + dt;
-        if (this.continuousTasedSmokeTimer >= CATTLE_PROD_SMOKE_THRESHOLD) {
-          this.continuousTasedSmokeTimer -= CATTLE_PROD_SMOKE_THRESHOLD;
-          const hitPoint =
-            this.tasedPoint ||
-            (typeof mouse !== "undefined"
-              ? { x: mouse.x, y: mouse.y }
-              : { x: this.x, y: this.y });
-          const offset = this.getTorsoOffsetFromPoint(
-            hitPoint.x,
-            hitPoint.y
-          );
-          if (!this.smokePoints) this.smokePoints = [];
-          this.smokePoints.push({
-            offset: { x: offset.x, y: offset.y },
-            x: offset.x,
-            y: offset.y,
-            timer: CATTLE_PROD_SMOKE_DURATION,
-          });
-        }
-
-        const growth = this.growth !== undefined ? this.growth : 1.0;
-        const damage =
-          CATTLE_PROD_BASE_DAMAGE *
-          dt *
-          this.continuousTasedTimer *
-          (CATTLE_PROD_GROWTH_FACTOR_BASE * (1.0 - growth) + 1);
-        this.health = Math.max(0, this.health - damage);
-
-        if (this.health <= 0) {
-          this.tasedTimer = 0;
-          this.continuousTasedTimer = 0;
-          this.continuousTasedSmokeTimer = 0;
-          this.tasedPoint = null;
-          if (this.updateCrawling) this.updateCrawling();
-          this.die("cattle_prod", "Electrocuted to death");
-        }
-
-        if (this.isAlive) {
-          if (
-            this.tasedOverrideTimer === undefined ||
-            this.tasedOverrideTimer <= 0
-          ) {
-            this.tasedOverrideTimer = CATTLE_PROD_OVERRIDE_DURATION;
-            this.expressionOverride = "CRYING_SHOCKED";
-            this.expressionOverrideTimer = CATTLE_PROD_OVERRIDE_DURATION;
-            if (this.happiness > WAN_DIE_THRESHOLD && this.canTalk()) {
-              this.speak(getDialogue(["CATTLE_PROD", this.tooYoungToSpeak() ? "BABY" : "DEFAULT"], this), false, true);
-            }
-          } else {
-            this.tasedOverrideTimer -= dt;
-          }
-        }
+        this.anatomy.updateTased(dt);
       } else {
         this.continuousTasedTimer = 0;
         this.continuousTasedSmokeTimer = 0;
@@ -3834,48 +2736,175 @@ class Horse {
       }
     }
 
-    if (this.smokePoints && this.smokePoints.length > 0) {
-      this.smokeParticleTimer = (this.smokeParticleTimer || 0) - dt;
-      const shouldSpawnPoof = this.smokeParticleTimer <= 0;
-      if (shouldSpawnPoof) {
-        this.smokeParticleTimer = SMOKE_PARTICLE_FREQUENCY;
-      }
+    this.renderer.updateSmokePoints(dt);
 
-      for (let i = this.smokePoints.length - 1; i >= 0; i--) {
-        const sp = this.smokePoints[i];
-        sp.timer -= dt;
+    this.updateLayout();
+  }
 
-        if (
-          shouldSpawnPoof &&
-          typeof poofs !== "undefined" &&
-          typeof SmokePoof !== "undefined" &&
-          this.scene === currentScene
-        ) {
-          const offset = sp.offset || { x: sp.x || 0, y: sp.y || 0 };
-          const worldPos = this.getWorldPositionFromTorsoOffset(
-            offset.x,
-            offset.y
-          );
-          const jitter = (Math.random() - 0.5) * 4 * (this.scale || 1.0);
-          poofs.push(
-            new SmokePoof(
-              worldPos.x + jitter,
-              worldPos.y + jitter,
-              this.scene,
-              CATTLE_PROD_SMOKE_COLOR
-            )
-          );
-        }
+  // Sleep deprivation and bed/box sleeping comfort
+  updateSleep(dt) {
+    if (this.currentStateKey === "SLEEPING") {
+      this.sleepDeprivation = Math.max(0, this.sleepDeprivation - dt / 30); // Takes 2 mins to fully rest
 
-        if (sp.timer <= 0) {
-          this.smokePoints.splice(i, 1);
+      const inBed =
+        this.claimedBed &&
+        this.claimedBed.scene === this.scene &&
+        this.claimedBed.currentCage === this.currentCage &&
+        (this.x - this.claimedBed.x) ** 2 +
+          (this.y - this.claimedBed.y) ** 2 <
+          10000;
+
+      if (inBed && this.happiness > WAN_DIE_THRESHOLD) {
+        if (this.claimedBed.type === "cardboard_box") {
+          this.changeHappiness((HAPPINESS_BONUS_SLEEP_BOX / 60) * dt);
+
+          this.boxWhimperTimer =
+            (this.boxWhimperTimer || 5 + Math.random() * 15) - dt;
+          if (this.boxWhimperTimer <= 0) {
+            this.boxWhimperTimer = 15.0 + Math.random() * 20.0;
+            if (
+              !this.tooYoungToSpeak() &&
+              typeof getDialogue !== "undefined"
+            ) {
+              this.speak(getDialogue(["BED", "BOX_SLEEP"], this));
+            }
+          }
+        } else {
+          this.changeHappiness((HAPPINESS_BONUS_SLEEP_BED / 60) * dt);
         }
       }
     } else {
-      this.smokeParticleTimer = 0;
+      this.sleepDeprivation = Math.min(1.0, this.sleepDeprivation + dt / 120); // Takes 5 mins to get fully tired
+    }
+  }
+
+  // Passive happiness loss from hunger and confinement
+  updateHappinessPenalties(dt) {
+    // Hunger penalty: < 0.4 hunger -> -0.2 happiness per minute (not below WAN_DIE_THRESHOLD)
+    if (this.hunger < 0.4 && this.happiness > WAN_DIE_THRESHOLD + 0.05) {
+      const decrease = (0.2 / 60) * dt;
+      this.changeHappiness(-decrease);
     }
 
-    this.updateLayout();
+    // Cage penalty: -0.1 per minute (not below WAN_DIE_THRESHOLD)
+    if (
+      ((this.currentCage &&
+        !(
+          this.currentCage instanceof Cage &&
+          !this.currentCage.causesUnhappiness()
+        )) ||
+        this.placedOn instanceof LitterpalBox) &&
+      this.happiness > WAN_DIE_THRESHOLD + 0.05
+    ) {
+      const decrease = (0.1 / 60) * dt;
+      this.changeHappiness(-decrease);
+    }
+    this.changeHappiness(0); // Clamp and trigger rule logic if needed
+  }
+
+  // Tick down expression, speech, friendship and attack cooldowns
+  updateCooldowns(dt) {
+    if (this.expressionOverrideTimer > 0) {
+      this.expressionOverrideTimer -= dt;
+    }
+
+    if (this.gender === "male" && this.specialHuggiesCooldown > 0) {
+      this.specialHuggiesCooldown -= dt;
+    }
+
+    if (this.speech.nextTime > 0) {
+      this.speech.nextTime -= dt;
+    }
+
+    for (const id in this.friendshipCooldowns) {
+      this.friendshipCooldowns[id] -= dt;
+      if (this.friendshipCooldowns[id] <= 0) {
+        delete this.friendshipCooldowns[id];
+      }
+    }
+
+    if (this.attackCooldown > 0) {
+      this.attackCooldown -= dt;
+    }
+  }
+
+  // Periodic distressed lines while under aphrodisiac
+  updateAphrodisiacUtterances(dt) {
+    if (this.isUnderAphrodisiac()) {
+      if (this.aphrodisiacUtteranceTimer === undefined) {
+        this.aphrodisiacUtteranceTimer = 1.0 + Math.random() * 2.0;
+      }
+      this.aphrodisiacUtteranceTimer -= dt;
+      if (this.aphrodisiacUtteranceTimer <= 0) {
+        this.aphrodisiacUtteranceTimer = 3.0 + Math.random() * 3.0;
+        this.speak(this.getAphrodisiacDialogue(), true);
+        this.expressionOverride = "CRYING_SHOCKED";
+        this.expressionOverrideTimer = 3.0;
+      }
+    } else {
+      this.aphrodisiacUtteranceTimer = 0;
+    }
+  }
+
+  // Fluffies in the adoption room become adopted
+  updateAdoptionRoom() {
+    if (getSceneConfig(this.scene).isAdoptionRoom) {
+      if (
+        !this.adopted &&
+        !this.tooYoungToSpeak() &&
+        (this.canSee() || this.canHear())
+      ) {
+        const key = this.isSmarty() ? ["ADOPTED", "SMARTY"] : ["ADOPTED"];
+        this.speak(getDialogue(key, this));
+        this.changeHappiness(1.0 - this.happiness);
+      }
+      this.adopted = true;
+    }
+  }
+
+  // Force lying down when severely depressed or in labor
+  updateIncapacitation() {
+    // Physical Incapacitation Overrides (Labor, Severe Depression)
+    if (this.avoidStateChangerActions()) {
+      if (
+        !this.tooYoungToWalk() &&
+        this.happiness <= WAN_DIE_THRESHOLD &&
+        this.currentStateKey !== "LYING"
+      ) {
+        this.initBehavior("LYING");
+      } else if (this.isInLabor() && this.currentStateKey !== "LYING") {
+        this.initBehavior("LYING");
+      }
+    }
+  }
+
+  // Scared state timeout
+  updateScared(dt) {
+    if (this.happiness <= WAN_DIE_THRESHOLD) {
+      this.isFrantic = false;
+      this.isScared = false;
+      this.scaredTimer = 0;
+    }
+
+    if (this.scaredTimer >= 0) {
+      this.scaredTimer -= dt;
+      if (this.scaredTimer <= 0) {
+        this.isScared = false;
+      }
+    }
+  }
+
+  // Speech bubble fade out
+  updateSpeechBubble(dt) {
+    if (this.speech.text) {
+      this.speech.timer -= dt;
+      if (this.speech.timer < 1)
+        this.speech.opacity = Math.max(0, this.speech.timer);
+      if (this.speech.timer <= 0) {
+        this.speech.text = null;
+        this.speech.nextTime = Math.random() * 10 + 10;
+      }
+    }
   }
 
   consumePuddlesIfNeeded(dt) {
@@ -3892,13 +2921,8 @@ class Horse {
             const py = p.y;
             const dPt = Math.sqrt((this.x - px) ** 2 + (this.y - py) ** 2);
             if (dPt < 40) {
-              p.scale -= 0.02 * dt;
-              if (p.targetScale)
-                p.targetScale = Math.min(p.targetScale, p.scale);
-              if (p.scale < 0.05) {
-                puddle.points.splice(j, 1);
-              }
-              if (puddle.color == "#5c4033" || "#8a0303") {
+              puddle.shrinkPoint(j, 0.02 * dt, 0.05);
+              if (puddle.type === "poop" || puddle.type === "blood") {
                 this.hunger = Math.min(1.0, this.hunger + 0.015 * dt);
                 this.poopStorage = Math.min(1.0, this.poopStorage + 0.01 * dt);
                 if (this.happiness > 0.1) {
@@ -3913,7 +2937,7 @@ class Horse {
                   worldSettings.toxoplasmosis) &&
                 !this.isToxoplasmosis &&
                 Math.random() < 0.3 * dt &&
-                puddle.color == "#5c4033"
+                puddle.type === "poop"
               ) {
                 this.isToxoplasmosis = true;
               }
@@ -4204,7 +3228,7 @@ class Horse {
         this.speak(getDialogue(["POOP", "BAD"], this));
       }
 
-      const puddleColor = isPoop ? "#5c4033" : "#f1c40f"; // Brown or Yellow
+      const puddleType = isPoop ? "poop" : "pee";
       const torsoWidth = this.layout ? this.layout.torso.w : 100;
       const offsetX =
         (torsoWidth / 2) * (this.facingRight ? -1 : 1) * this.scale;
@@ -4219,7 +3243,7 @@ class Horse {
         this.scene,
         pX,
         pY,
-        puddleColor,
+        puddleType,
         5 / 200,
         baseTargetScale,
         0.02,
@@ -4287,7 +3311,7 @@ class Horse {
     const offsetX = (torsoWidth / 2) * (this.facingRight ? -1 : 1) * this.scale;
     const pX = this.x + offsetX;
     const pY = this.getBottomY() - 10;
-    const puddleColor = "#5c4033";
+    const puddleType = "poop";
 
     // Increment area-based target scale
     const targetAddedAreaPerSec = 0.05;
@@ -4300,7 +3324,7 @@ class Horse {
       this.scene,
       pX,
       pY,
-      puddleColor,
+      puddleType,
       scaleInc,
       targetScaleInc,
       0.02,
@@ -4312,7 +3336,7 @@ class Horse {
       (torsoWidth / 2) * (this.facingRight ? -0.5 : 0.5) * this.scale;
     const pX = this.x + offsetX;
     const pY = this.getBottomY() - 6;
-    const puddleColor = "#f1c40f";
+    const puddleType = "pee";
 
     // Increment area-based target scale
     const targetAddedAreaPerSec = 0.05;
@@ -4325,7 +3349,7 @@ class Horse {
       this.scene,
       pX,
       pY,
-      puddleColor,
+      puddleType,
       scaleInc,
       targetScaleInc,
       0.02,
@@ -4334,7 +3358,7 @@ class Horse {
   excreteBlood(dt) {
     const pX = this.x;
     const pY = this.getBottomY();
-    const puddleColor = "#8a0303";
+    const puddleType = "blood";
 
     // Increment area-based target scale
     const targetAddedAreaPerSec = 0.1;
@@ -4347,7 +3371,7 @@ class Horse {
       this.scene,
       pX,
       pY,
-      puddleColor,
+      puddleType,
       scaleInc,
       targetScaleInc,
       0.02,
@@ -4725,9 +3749,46 @@ class Horse {
     this.renderer.drawDream(ctx);
   }
 
+  drawShadow(ctx) {
+    if (this.renderer) {
+      this.renderer.drawShadow(ctx);
+    }
+  }
+
+  getBottomY() {
+    if (this.heldWithThrowTool || this.isFallingFromThrow) {
+      if (typeof this.throwShadowY === "number" && !isNaN(this.throwShadowY)) {
+        return this.throwShadowY;
+      }
+    }
+    if (this.positioning) {
+      const extents = this.positioning.getExtentsForCage();
+      if (extents && typeof extents.bottom === "number" && !isNaN(extents.bottom)) {
+        return extents.bottom;
+      }
+    }
+    const s = Math.abs(this.scale) || 0.5;
+    return this.y + 83.2 * s;
+  }
+
   draw(ctx, clip = null) {
+    // Assumes drowningTimer counts over a 5-second span, adjust the math if this changes
+    const drowningEffect = Math.max(
+      0,
+      Math.min(1.0, (this.drowningTimer - 1.0) / 4.0),
+    );
+    let progress = 0;
+    if (drowningEffect < 0.1) {
+      progress = (drowningEffect / 0.1) * 0.5;
+    } else if (drowningEffect < 0.9) {
+      progress = 0.5;
+      this.drowningSplashes();
+    } else {
+      progress = 0.5 + ((drowningEffect - 0.9) / 0.1) * 0.6;
+    }
+
     if (!clip && this.drowningTimer > 0) {
-      clip = { top: 1.0 - this.drowningTimer / 5 };
+      clip = { top: 1.0 - progress };
     }
     this.renderer.drawOffScreen(ctx, clip);
     if (this.placedOn instanceof ImmobilizationBoard) {
@@ -4735,12 +3796,47 @@ class Horse {
     }
   }
 
-  drawSpeechBubble(ctx) {
-    this.renderer.drawSpeechBubble(ctx);
+  drowningSplashes() {
+    if (
+      this.drowningTimer > 1 &&
+      this.isAlive &&
+      this.happiness !== WAN_DIE_THRESHOLD
+    ) {
+      this.soundTimer = (this.soundTimer || 0) - (0.025 - this.growth / 100);
+
+      if (this.soundTimer <= 0) {
+        this.soundTimer = 0.35;
+        playSound(
+          "splashing",
+          Math.max(0.1, this.growth / 5),
+          1.6 - 0.6 * this.growth + Math.random() * 0.2,
+        );
+      }
+
+      this.bubbleTimer = (this.bubbleTimer || 0) - 0.016;
+      if (this.bubbleTimer <= 0) {
+        this.bubbleTimer = 0.01;
+
+        if (typeof poofs !== "undefined" && this.scene) {
+          poofs.push(
+            new Poof(
+              this.x +
+                ((this.facingRight ? 1 : -1.5) + Math.random() * 0.5) *
+                  Math.max(20, 40 * this.growth),
+              this.y + Math.random() * 10,
+              this.scene,
+              ["#ffffff59", "#1e90ff"][Math.floor(Math.random() * 2)],
+              false,
+              Math.max(0.2, this.growth * 0.5),
+            ),
+          );
+        }
+      }
+    }
   }
 
-  drawLeg(ctx, x, y, angle) {
-    this.renderer.drawLeg(ctx, x, y, angle);
+  drawSpeechBubble(ctx) {
+    this.renderer.drawSpeechBubble(ctx);
   }
 
   proposeFriendship(other) {
@@ -4915,6 +4011,8 @@ class Horse {
       sensitiveBaby: this.sensitiveBaby,
       spayed: this.spayed,
       pregnancyTimer: this.pregnancyTimer,
+      miscarriageTimer: this.miscarriageTimer,
+      prematureGrowth: this.prematureGrowth,
       babiesToBirth: this.babiesToBirth,
       foalViability: [...this.foalViability],
       limbs: JSON.parse(JSON.stringify(this.limbs)),
@@ -4988,18 +4086,16 @@ class Horse {
     }
 
     if (typeof addPointToPuddle !== "undefined") {
-      const vomitColor = "#4b5320"; // Putrid green
       const scale = (10 * this.scale) / 200;
       const targetScale = ((25 + Math.random() * 25) * this.scale) / 200;
       addPointToPuddle(
         this.scene,
         px,
         py,
-        vomitColor,
+        "vomit",
         scale,
         targetScale,
         0.08,
-        "vomit",
       );
     }
   }
@@ -5050,6 +4146,10 @@ class Horse {
     horse.sensitiveBaby = data.sensitiveBaby || false;
     horse.spayed = data.spayed || false;
     horse.pregnancyTimer = data.pregnancyTimer;
+    horse.miscarriageTimer =
+      typeof data.miscarriageTimer === "number" ? data.miscarriageTimer : null;
+    horse.prematureGrowth =
+      typeof data.prematureGrowth === "number" ? data.prematureGrowth : 1.0;
     horse.babiesToBirth =
       data.babiesToBirth !== undefined ? data.babiesToBirth : 0;
     horse.foalViability = data.foalViability || [];
@@ -5117,7 +4217,7 @@ class Horse {
     } else {
       horse.smokePoints = [];
     }
-    horse.updateCrawling();
+    horse.updateGrowthStats(); // Also re-applies prematureGrowth and crawling
 
     // Re-calculate derived values
     horse.renderer.ensureTintedImages();

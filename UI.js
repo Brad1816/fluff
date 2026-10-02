@@ -706,7 +706,7 @@ function applyImmediateDebugAction(action) {
   switch (action) {
     case "clean_all":
       for (const puddle of puddles) {
-        puddle.points = [];
+        puddle.clear();
       }
       gibs.length = 0;
       for (const f of fluffies) {
@@ -1982,8 +1982,8 @@ function drawUI(ctx) {
             type = "cattle_prod";
         }
       } else if (obj instanceof Cage) {
-        if (images.cage) {
-          const img = images.cage;
+        if (obj.getImage()) {
+          const img = obj.getImage();
           hit = isPointInRect(
             mouse.x,
             mouse.y,
@@ -1992,7 +1992,7 @@ function drawUI(ctx) {
             img.width,
             img.height,
           );
-          if (hit) type = "cage";
+          if (hit) type = obj instanceof Enclosure ? "enclosure" : "cage";
         }
       } else if (obj instanceof Litterbox) {
         if (images.litterbox) {
@@ -3225,8 +3225,8 @@ function sellModeClick() {
       }
     } else if (obj instanceof Cage) {
       if (type) continue;
-      if (images.cage) {
-        const img = images.cage;
+      if (obj.getImage()) {
+        const img = obj.getImage();
         hit = isPointInRect(
           mouse.x,
           mouse.y,
@@ -3444,11 +3444,11 @@ function sellModeClick() {
       );
     } else if (bestType === "cage") {
       if (bestItem.isDragging) isGlobalDragging = false;
-      money += 75;
+      money += bestItem.getSellValue();
       poofs.push(
         new Poof(
           bestItem.x,
-          bestItem.y - (images.cage ? images.cage.height / 2 : 10),
+          bestItem.y - (bestItem.getImage() ? bestItem.getImage().height / 2 : 10),
           bestItem.scene,
         ),
       );
@@ -3925,9 +3925,12 @@ function actionButtonsClick() {
             g.x = width / 2;
             g.y = height / 2;
             objects.push(g);
-          } else if (action.isItem === "cage") {
+          } else if (action.isItem === "cage" || action.isItem === "enclosure") {
             if (!showDebugMenu) money -= action.cost;
-            const c = new Cage(currentScene);
+            const c =
+              action.isItem === "enclosure"
+                ? new Enclosure(currentScene)
+                : new Cage(currentScene);
             c.x = width / 2;
             c.y = height / 2;
             objects.push(c);
@@ -4078,7 +4081,11 @@ function actionButtonsClick() {
           // sx/sy might be wrong for center spawn, but poof should be at center for grinder/cage
           let poofX = sx,
             poofY = sy;
-          if (action.isItem === "grinder" || action.isItem === "cage") {
+          if (
+            action.isItem === "grinder" ||
+            action.isItem === "cage" ||
+            action.isItem === "enclosure"
+          ) {
             poofX = width / 2;
             poofY = height / 2;
           }
@@ -4209,8 +4216,8 @@ canvas.addEventListener("mousedown", (e) => {
   if (mouse.rightDown) {
     for (const obj of objects) {
       if (obj instanceof Cage && obj.scene === currentScene) {
-        if (images.cage) {
-          const img = images.cage;
+        if (obj.getImage()) {
+          const img = obj.getImage();
           const w = img.width * obj.scale;
           const h = img.height * obj.scale;
           if (
@@ -4361,6 +4368,9 @@ canvas.addEventListener("mousedown", (e) => {
     if (f.currentCage && f.currentCage instanceof FoalInACan) {
       continue;
     }
+    if (Cage.locksItem(f)) {
+      continue;
+    }
     const hitPart = f.hitTest(mouse.x, mouse.y);
     if (!hitPart) {
       continue;
@@ -4400,8 +4410,9 @@ canvas.addEventListener("mousedown", (e) => {
             mom,
           ),
         );
-        let targetX = f.x + (Math.random() - 0.5) * 100;
-        let targetY = f.y + (Math.random() - 0.5) * 50;
+        const foalPos = f.getWorldPosition();
+        let targetX = foalPos.x + (Math.random() - 0.5) * 100;
+        let targetY = foalPos.y + (Math.random() - 0.5) * 50;
         mom.setTargetPosition(targetX, targetY);
         mom.initBehavior("MOVING");
       }
@@ -4579,9 +4590,9 @@ canvas.addEventListener("mousedown", (e) => {
         );
       }
     } else if (obj instanceof Cage) {
-      if (images.cage) {
-        bw = images.cage.width;
-        bh = images.cage.height;
+      if (obj.getImage()) {
+        bw = obj.getImage().width;
+        bh = obj.getImage().height;
         hit = isPointInRect(
           mouse.x,
           mouse.y,
@@ -4629,6 +4640,9 @@ canvas.addEventListener("mousedown", (e) => {
     } else if (obj.hitTest) {
       hit = obj.hitTest(mouse.x, mouse.y);
     }
+
+    if (hit && Cage.locksItem(obj)) continue;
+    if (hit && obj instanceof Cage && obj.isCulling()) continue;
 
     if (hit) {
       if (

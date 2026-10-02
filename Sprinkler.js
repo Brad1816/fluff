@@ -32,26 +32,19 @@ class Sprinkler {
           const puddle = puddles[i];
           if (
             puddle.scene === this.scene &&
-            puddle.color !== "rgba(180, 180, 180, 0.25)" &&
-            puddle.color !== "rgba(100, 150, 255, 0.3)"
+            puddle.type !== "tears" &&
+            puddle.type !== "water"
           ) {
             // Not tears, not water
             for (let j = puddle.points.length - 1; j >= 0; j--) {
               const pt = puddle.points[j];
               const d = Math.sqrt((this.x - pt.x) ** 2 + (this.y - pt.y) ** 2);
               if (d < SPRINKLER_RADIUS) {
-                if (pt.scale) pt.scale = Math.max(0, pt.scale - 0.5 * dt);
-                if (pt.targetScale)
-                  pt.targetScale = Math.max(0, pt.targetScale - 0.5 * dt);
-
                 puddle.isGrowing = true;
-
-                if (pt.scale <= 0) {
-                  puddle.points.splice(j, 1);
-                }
+                puddle.shrinkPoint(j, 0.5 * dt, 0, true);
               }
             }
-            if (puddle.points.length === 0 && puddle.color !== "#8a0303") {
+            if (puddle.isEmpty() && puddle.type !== "blood") {
               // Don't remove the persistent blood anchor unless empty too?
               // Actually, let's remove any empty non-water/non-tear puddle.
               const idx = puddles.indexOf(puddle);
@@ -76,8 +69,7 @@ class Sprinkler {
     const pX = this.x + Math.cos(angle) * dist;
     const pY = this.y + Math.sin(angle) * dist * 0.5; // Elliptical reach
 
-    const color = "rgba(100, 150, 255, 0.3)";
-    addPointToPuddle(this.scene, pX, pY, color, 5 / 200, 20 / 200, 0.1);
+    addPointToPuddle(this.scene, pX, pY, "water", 5 / 200, 20 / 200, 0.1);
   }
 
   onDrop() {

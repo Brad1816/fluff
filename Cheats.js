@@ -40,6 +40,13 @@ function handleCheatCode(code) {
     if (typeof addUIMessage !== "undefined") {
       addUIMessage("Alley cardboard box spawn timer reset to 0!");
     }
+  } else if (first === "newgame" || first === "resetgame") {
+    if (typeof resetGameState === "function") {
+      resetGameState();
+      if (typeof addUIMessage !== "undefined") {
+        addUIMessage("Game state reset to new game!");
+      }
+    }
   } else if (first === "tpoop") {
     for (let i = 0; i < repeatCount; i++) {
       const h = new Horse(1.0, null, currentScene);
@@ -1241,7 +1248,7 @@ window.addEventListener("keydown", (e) => {
       currentScene,
       mouse.x,
       mouse.y,
-      "#8a0303",
+      "blood",
       25 / 200,
       25 / 200,
     );

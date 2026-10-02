@@ -51,7 +51,6 @@ const imageSources = {
   fluff_tv_play_time_1: "assets/fluff_tv_playtime_1.png",
   fluff_tv_play_time_2: "assets/fluff_tv_playtime_2.png",
   fluff_tv_babbehs_1: "assets/fluff_tv_babbehs_1.png",
-  fluff_tv_babbehs_2: "assets/fluff_tv_babbehs_2.png",
   fluff_tv_heavy_metal_1: "assets/fluff_tv_heavy_metal_1.png",
   fluff_tv_heavy_metal_2: "assets/fluff_tv_heavy_metal_2.png",
   fluff_tv_torture_1: "assets/fluff_tv_torture_1.png",
@@ -95,6 +94,7 @@ const imageSources = {
   accessory_partyhat: "assets/partyhat.png",
   magnifying_glass: "assets/magnifying_glass.png",
   cage: "assets/cage.png",
+  enclosure: "assets/enclosure.png",
   tail: "assets/horse_tail.png",
   tail_0: "assets/horse_tail_0.png",
   tail_1: "assets/horse_tail_1.png",
@@ -150,6 +150,8 @@ const imageSources = {
   car_2: "assets/car_2.png",
   tire_1: "assets/tire_1.png",
   tire_2: "assets/tire_2.png",
+  throw_tool_held: "assets/throw_tool_held.png",
+  throw_tool_unheld: "assets/throw_tool_unheld.png",
 };
 
 const totalImages = Object.keys(imageSources).length;

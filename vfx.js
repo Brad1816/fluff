@@ -1,11 +1,20 @@
 class Poof {
-  constructor(x, y, scene, color = "white", isSmoke = false) {
+  constructor(
+    x,
+    y,
+    scene,
+    color = "white",
+    isSmoke = false,
+    scale = 1.0,
+    life = 1.0,
+  ) {
     this.x = x;
     this.y = y;
     this.scene = scene;
     this.color = color;
     this.isSmoke = isSmoke;
-    this.life = 1.0;
+    this.scale = scale;
+    this.life = life;
     this.particles = [];
     const count = this.isSmoke ? 5 : 8;
     for (let i = 0; i < count; i++) {
@@ -36,12 +45,13 @@ class Poof {
     ctx.globalAlpha = Math.max(0, this.life);
     ctx.fillStyle = this.color;
     for (const p of this.particles) {
-      const currentR = this.isSmoke ? Math.max(0, p.r * this.life) : p.r;
+      const baseR = this.isSmoke ? Math.max(0, p.r * this.life) : p.r;
+      const currentR = baseR * this.scale;
       if (currentR <= 0) continue;
       ctx.beginPath();
       ctx.arc(
-        this.x + p.vx * (1 - this.life),
-        this.y + p.vy * (1 - this.life),
+        this.x + p.vx * (1 - this.life) * this.scale,
+        this.y + p.vy * (1 - this.life) * this.scale,
         currentR,
         0,
         Math.PI * 2,
