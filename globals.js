@@ -2170,6 +2170,7 @@ const TOOL_GRIPS = {
   suture_kit: { ax: 0.5, ay: 0.5, turn: 0 },
   lawn_mower: { ax: 0.48, ay: 0.78, turn: 0 }, // (the middle of the deck: where it cuts)
   cautery_iron: { ax: 0.5, ay: 0.02, turn: -30 }, // (the hot tip)
+  bandages: { ax: 0.4, ay: 0.5, turn: 0 },
 };
 
 // Draw a held tool's picture (after ctx.translate(tool.x, tool.y)).

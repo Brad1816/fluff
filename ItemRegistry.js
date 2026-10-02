@@ -591,6 +591,24 @@ const ITEM_TYPES = [
     },
   },
   {
+    sellType: "bandages",
+    is: (o) => typeof Bandages !== "undefined" && o instanceof Bandages,
+    inCage: "never",
+    sellable: true,
+    usedUp: (o) => 1 - (o.charges || 0) / BANDAGE_USES,
+    icon: "bandages", // (drawn at load: Bandages.js)
+    tool: {
+      className: "Bandages",
+      create: (scene) => new Bandages(scene),
+      key: "bandages",
+      name: "Bandage",
+      fullName: (t) => `Bandages (${t.charges ?? BANDAGE_USES} left)`,
+      desc: (t) => `Click a fluffy healing from surgery to wrap its wound: half as likely to get infected. ${t.charges ?? BANDAGE_USES} left.`,
+      image: () => bandageImage(),
+      multi: true,
+    },
+  },
+  {
     sellType: "lawn_mower",
     is: (o) => typeof LawnMower !== "undefined" && o instanceof LawnMower,
     inCage: "never",
@@ -784,6 +802,7 @@ const SAVED_CLASSES = {
   Sponge: (d) => new Sponge(d.scene),
   LawnMower: (d) => new LawnMower(d.scene), // (LawnMower.js)
   CauteryIron: (d) => new CauteryIron(d.scene), // (CauteryIron.js)
+  Bandages: (d) => new Bandages(d.scene), // (Bandages.js)
   Knife: (d) => new Knife(d.type, d.scene),
   SutureKit: (d) => new SutureKit(d.scene),
   TrashBag: (d) => new TrashBag(d.scene),

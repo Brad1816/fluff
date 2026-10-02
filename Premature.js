@@ -17,13 +17,24 @@
 // prematureGrowth and bornEarly, saved). The magnifying glass shows
 // "Born premature" and so on.
 //
-// Frail: a premature survivor is frail for its first days (FRAIL_DAYS:
-// 2 very premature, 1 premature; f.frailLeft, saved). While frail, cold
+// Frail: a premature survivor is frail for its first hours (FRAIL_DAYS:
+// 0.6 of a day very premature, 0.3 premature - most of its time on milk;
+// f.frailLeft, saved), and never once it's off milk. While frail, cold
 // (warmth under FRAIL_COLD) or hungry (under FRAIL_HUNGRY) it loses health
 // fast (FRAIL_HARM per game hour) and can die of it ("Too weak: born too
 // early"). In a running incubator (Incubator.js) it's kept warm and
 // tube-fed, and gets over it twice as fast. Today warns about one of yours
 // that's frail and cold or hungry.
+//
+// Mum and the incubator: a foal in the incubator is away from its mum. If
+// she doesn't come to see it (stand by the glass: INCUBATOR_VISIT_NEAR -
+// she goes over by herself now and then, Incubator.js, or carry her there)
+// for INCUBATOR_FORGET game hours, she may not know it when it comes out
+// (f.incubatorAlone, saved): she won't nurse it (a "rejected_baby": the
+// Feed-Bot's formula or a foster mum will have to). Likelier the longer it
+// was, less likely for a gentle mum.
+// Delicate for life: one born very premature catches the flu more easily
+// as a grown-up too (EARLY_FLU), one born premature a little (Illness.js).
 //
 // What brings labour on early (HorseMating.beginMiscarriage):
 //   - a stallion mating her while she's pregnant (HorseMating)
@@ -37,11 +48,14 @@ const PREMATURE_TERM = 0.9; // from this: a normal birth
 const PREMATURE_MIDWIFE = 0.15; // extra chance each foal survives with a midwife
 const PREMATURE_FALL_DAMAGE = 10; // a landing at least this hard can bring labour on...
 const PREMATURE_FALL_CHANCE = 1 / 60; // ...with this chance per point of damage (max 80%)
-const FRAIL_DAYS = { very: 2, premature: 1 };
+const FRAIL_DAYS = { very: 0.6, premature: 0.3 }; // (a foal is on milk for about 0.7 of a day)
 const FRAIL_HARM = { very: 15, premature: 8 }; // health per game hour, cold or hungry
 const FRAIL_COLD = 0.6; // warmth below this
 const FRAIL_HUNGRY = 0.4; // hunger below this
 const INCUBATOR_FEED = 0.7; // tube-fed: never hungrier than this
+const INCUBATOR_VISIT_NEAR = 140; // px: mum this close to the incubator is visiting
+const INCUBATOR_FORGET = 8; // game hours without a visit before she may not know it
+const EARLY_FLU = { very: 1.6, premature: 1.3 }; // catching the flu, x
 const prematureCareTicker = new Ticker(1);
 
 // Which stage a birth at this progress is, with what it means for a foal:
@@ -89,7 +103,7 @@ function applyPrematureBirth(baby, stage, alive) {
 }
 
 function isFrail(f) {
-  return !!(f && f.isAlive && f.frailLeft > 0);
+  return !!(f && f.isAlive && f.frailLeft > 0 && f.growth < INCUBATOR_MAX_GROWTH);
 }
 
 // In an incubator that's running?
@@ -120,7 +134,25 @@ function updatePrematureCare(dt) {
       f.warmth = 1;
       f.hunger = Math.max(f.hunger, INCUBATOR_FEED);
     }
+    // Away from mum in the incubator: does she come to see it?
+    if (typeof Incubator !== "undefined" && f.currentCage instanceof Incubator) {
+      f._inIncubator = true;
+      const mum = incubatorMum(f);
+      if (mum && mumVisiting(mum, f)) {
+        if ((f.incubatorAlone || 0) > HOUR_LENGTH && !mum.tooYoungToSpeak() && Math.random() < 0.3 && typeof getDialogue === "function") mum.speak(getDialogue(["INCUBATOR", "VISIT"], mum, f));
+        f.incubatorAlone = 0;
+      } else if (mum) f.incubatorAlone = (f.incubatorAlone || 0) + step;
+    } else if (f._inIncubator) {
+      // Out again: does she know it?
+      f._inIncubator = false;
+      maybeMumForgets(f);
+      f.incubatorAlone = 0;
+    }
     if (!(f.frailLeft > 0)) continue;
+    if (f.growth >= INCUBATOR_MAX_GROWTH) {
+      f.frailLeft = 0; // (off milk: strong enough now)
+      continue;
+    }
     f.frailLeft = Math.max(0, f.frailLeft - step * (incubated ? 2 : 1));
     if (!frailInDanger(f)) continue;
     const harm = FRAIL_HARM[f.bornEarly] || FRAIL_HARM.premature;
@@ -134,6 +166,62 @@ function updatePrematureCare(dt) {
   }
 }
 registerSystem("prematureCare", updatePrematureCare, 66);
+
+// Magnifying glass: in the incubator, and how long since mum came
+function describeIncubator(f) {
+  if (!f || !f.isAlive || typeof Incubator === "undefined" || !(f.currentCage instanceof Incubator)) return null;
+  const off = f.currentCage.isRunning() ? "" : " - no power: it's just a box!";
+  const mum = incubatorMum(f);
+  const hrs = Math.floor((f.incubatorAlone || 0) / HOUR_LENGTH);
+  if (!mum) return [`Warm and tube-fed${off}`, off ? "bad" : "ok"];
+  if (hrs < 1) return [`Warm and tube-fed; mum's been to see it${off}`, off ? "bad" : "good"];
+  const late = hrs >= INCUBATOR_FORGET;
+  return [`Warm and tube-fed; mum hasn't visited for ${hrs}h${late ? " - she may not know it" : ""}${off}`, late || off ? "bad" : "ok"];
+}
+
+// Its mum, if she's alive and could nurse it
+function incubatorMum(f) {
+  if (!f || f.motherId === null || f.motherId === undefined || typeof fluffies === "undefined") return null;
+  const m = fluffies.find((x) => x.id === f.motherId);
+  return m && m.isAlive && m.gender === "female" ? m : null;
+}
+
+// She's by the glass (awake)
+function mumVisiting(mum, f) {
+  const inc = f.currentCage;
+  if (!mum || !inc || mum.scene !== inc.scene || mum.currentStateKey === "SLEEPING" || mum.currentCage) return false;
+  return Math.hypot(mum.x - inc.x, mum.y - inc.y) < INCUBATOR_VISIT_NEAR;
+}
+
+// Out of the incubator after a long time without a visit: she may not know it
+function maybeMumForgets(f) {
+  const mum = incubatorMum(f);
+  const alone = (f.incubatorAlone || 0) / HOUR_LENGTH;
+  if (!mum || !f.isAlive || alone <= INCUBATOR_FORGET || f.growth >= INCUBATOR_MAX_GROWTH) return false;
+  const rels = (typeof relationships !== "undefined" && relationships[mum.id]) || {};
+  if (rels[f.id] === "rejected_baby") return true;
+  let p = Math.min(0.75, 0.25 + (0.5 * (alone - INCUBATOR_FORGET)) / INCUBATOR_FORGET);
+  const temper = typeof traitValue === "function" ? traitValue(mum, "temper") : 0;
+  if (temper <= -0.25) p *= 0.5; // (a gentle mum)
+  if (Math.random() >= p) return false;
+  setRelationship(mum.id, f.id, "rejected_baby");
+  const nm = (x) => (typeof fluffyDisplayName === "function" ? fluffyDisplayName(x) : "a fluffy");
+  if ((mum.adopted || f.adopted) && typeof addUIMessage === "function") addUIMessage(`${nm(mum)} doesn't know ${nm(f)} after so long in the incubator - she won't nurse it. The Feed-Bot's formula or a foster mum will have to.`);
+  if (typeof recordStory === "function") recordStory("turning", f, { x: `After so long in the incubator, ${nm(mum)} didn't know ${nm(f)} any more.` });
+  if (!mum.tooYoungToSpeak() && typeof getDialogue === "function") mum.speak(getDialogue(["INCUBATOR", "FORGOT"], mum, f), true);
+  return true;
+}
+
+// Her own foal she doesn't know any more (HorseFamily: no milk for it)
+function mumForgotFoal(mum, f) {
+  const rels = (typeof relationships !== "undefined" && relationships[mum.id]) || {};
+  return rels[f.id] === "rejected_baby";
+}
+
+// Illness.js: catching the flu, x (delicate for life when born early)
+function earlyBornFlu(f) {
+  return (f && EARLY_FLU[f.bornEarly]) || 1;
+}
 
 // Horse.handleThrowImpact: a pregnant mare landing hard may go into labour
 function maybeEarlyLabourFromFall(mare, damage) {
@@ -150,7 +238,7 @@ function describePremature(f) {
   if (!f || !f.bornEarly) return null;
   const how = PREMATURE_WORDS[f.bornEarly] || "early";
   if (!f.isAlive) return [`Born ${how}`, "bad"];
-  if (f.growth >= 1) return null; // (caught up)
+  if (f.growth >= 1) return EARLY_FLU[f.bornEarly] ? [`Born ${how}: catches the flu more easily`, "ok"] : null; // (caught up in size)
   if (isFrail(f)) {
     const hrs = Math.max(1, Math.round(f.frailLeft / HOUR_LENGTH));
     return [`Born ${how}: frail for ~${hrs} more hour${hrs === 1 ? "" : "s"}${inIncubator(f) ? " (in the incubator)" : " - keep it warm and fed"}`, "bad"];

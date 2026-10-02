@@ -436,6 +436,7 @@ function closeTrickUI() {
 function rightClickActions(f) {
   const out = [];
   if (typeof careActions === "function") out.push(...careActions(f));
+  if (typeof fearActions === "function") out.push(...fearActions(f)); // FearExposure.js
   if (typeof wishActions === "function") out.push(...wishActions(f));
   if (typeof partyActions === "function") out.push(...partyActions(f)); // SharedMemories.js
   if (typeof releaseActions === "function") out.push(...releaseActions(f)); // Runaways.js

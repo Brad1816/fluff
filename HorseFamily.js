@@ -96,6 +96,12 @@ addHorseMethods({
         key2 = "ASLEEP";
       } else if (!canSee) {
         key2 = "BLIND";
+      } else if (isMom && typeof mumForgotFoal === "function" && mumForgotFoal(mare, this)) {
+        // She doesn't know it any more (too long in the incubator: Premature.js)
+        key1 = "DENY_MILKIES";
+        key2 = "NOT_MOM";
+        this.milkCooldown = 3.0;
+        success = false;
       } else if (isMom && mareTolerant) {
         key2 = "DEFAULT";
       } else if (legless && (mare.placedOn instanceof ImmobilizationBoard || Math.random() < 0.5)) {

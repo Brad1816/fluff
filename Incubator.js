@@ -4,7 +4,9 @@
 // into it; anything bigger, or a third foal, is put down beside it, and a
 // foal that grows too big for it climbs out (Premature.js).
 // Inside: kept warm, tube-fed (it never goes hungry), and it gets over its
-// frailty twice as fast. It runs off the mains - no power (in debt, the
+// frailty twice as fast. Its mum comes to the glass now and then (or carry
+// her there): left too long without her, she may not know it after
+// (Premature.js). It runs off the mains - no power (in debt, the
 // power's cut: Pressure.js) and it's just a box. No modes, and a foal
 // doesn't mind being in it.
 // The picture is drawn here (makeIncubatorImage).
@@ -129,6 +131,54 @@ class Incubator extends Cage {
     return !(typeof powerCut === "function" && powerCut());
   }
 }
+
+// ---- Mum comes to see her foal (Premature.js: or she may forget it) ----
+const INCUBATOR_MUM_CHANCE = 0.35; // a game hour, once it's been a while (more for a gentle mum)
+const INCUBATOR_MUM_STAY = 12; // game seconds by the glass
+const incubatorVisitTicker = new Ticker(3);
+
+function _mumBusy(m) {
+  return m.currentStateKey === "SLEEPING" || m.isDragging || m.currentCage || m.placedOn || m.isFallingFromThrow || m._fostering || m._perch || m._bolt || m.trickNow || m.timeOut || (typeof m.isInLabor === "function" && m.isInLabor());
+}
+
+function updateIncubatorVisits(dt) {
+  if (typeof fluffies === "undefined") return;
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  // On her way, or by the glass
+  for (const m of fluffies) {
+    const v = m._incVisit;
+    if (!v) continue;
+    const inc = typeof objects !== "undefined" ? objects.find((o) => o.id === v.id) : null;
+    if (!inc || !m.isAlive || inc.scene !== m.scene || _mumBusy(m) || now - v.at > 60) {
+      m._incVisit = null;
+      continue;
+    }
+    const tx = inc.x + (m.x < inc.x ? -95 : 95);
+    const ty = inc.y + 30;
+    if (Math.hypot(m.x - tx, m.y - ty) > 40 && !v.arrived) {
+      if (!m.isMovingOrRunning()) m.initBehavior("MOVING");
+      m.setTargetPosition(tx, ty);
+      continue;
+    }
+    if (!v.arrived) {
+      v.arrived = now;
+      m.initBehavior("IDLE");
+      m.facingRight = inc.x > m.x;
+    }
+    if (now - v.arrived > INCUBATOR_MUM_STAY) m._incVisit = null;
+  }
+  const step = incubatorVisitTicker.step(dt);
+  if (!step) return;
+  for (const f of fluffies) {
+    if (!f.isAlive || !(f.currentCage instanceof Incubator) || (f.incubatorAlone || 0) < 2 * HOUR_LENGTH) continue;
+    const mum = typeof incubatorMum === "function" ? incubatorMum(f) : null;
+    if (!mum || mum._incVisit || mum.scene !== f.scene || _mumBusy(mum) || mum.happiness <= WAN_DIE_THRESHOLD) continue;
+    const gentle = typeof traitValue === "function" && traitValue(mum, "temper") <= -0.25;
+    const perHour = INCUBATOR_MUM_CHANCE * (gentle ? 1.7 : 1);
+    if (Math.random() < 1 - Math.pow(1 - perHour, step / HOUR_LENGTH)) mum._incVisit = { id: f.currentCage.id, at: now };
+  }
+}
+if (typeof registerSystem === "function") registerSystem("incubatorVisits", updateIncubatorVisits, 65);
 
 // Make the picture as soon as the page is up, for the shop shelf
 if (typeof window !== "undefined" && window.addEventListener) window.addEventListener("load", () => incubatorImage());

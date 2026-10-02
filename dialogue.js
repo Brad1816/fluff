@@ -1903,6 +1903,18 @@ const DIALOGUE = {
     GLIDE: ["Wingies wowk!! <Speaker> nu faww, <speaker> fwoat!", "Wook!! <Speaker> am fwyin' wike biwdie!", "Fwap fwap fwap... soft wandies!"],
     SOLO: ["<Speaker> am weaw sky-fwuffy nao!!", "Nu nee' daddeh fwow, <speaker> fwy aww by sewf!", "Wingies am stwong! <Speaker> go up up up!"],
     FLYING: ["Wheeee!! Fwyin'!!", "Up in da sky!!", "Fwap fwap fwap!!", "<Speaker> fwy dewe!"],
+    PRACTICE: ["Fwap fwap! <Speaker> pwactice fwyin'!", "Up! Up! Wingies, go up!", "Hop an' fwap! Hop an' fwap!", "One day <speaker> fwy wike biwdie!"],
+  },
+  // Facing a fear (FearExposure.js)
+  FACE_FEAR: {
+    GENTLE: ["*twembwes* ...nu so scawy wif daddeh hewe...", "Scawy fing... but daddeh gib tweat...", "<Speaker> am bwave! ...wittwe bit bwave.", "Daddeh huggy make scawy smaww."],
+    FORCED: ["NUUU!! NU MAKE <SPEAKER>!! ...huu... huu... it nu huwt?", "*shaking* ...scawy fing... nu so scawy...?", "Pwease wet go... ...oh. Oh. It okay."],
+    BACKFIRE: ["SCREEEE!!! NU NU NU!!! SCAWY!!!", "WET GO!! WET <SPEAKER> GO!!! HUU HUU!!", "*screaming and thrashing*"],
+  },
+  // Mum at the incubator (Premature.js)
+  INCUBATOR: {
+    VISIT: ["Babbeh in da wawm box... mummah hewe, babbeh.", "Mummah's babbeh... gwow stwong, okay?", "*nuzzles da gwass*", "Mummah wuv yu, babbeh. Come out soon."],
+    FORGOT: ["Who babbeh? Nu mummah's babbeh... smeww wong.", "Nu! Nu am <speaker>'s babbeh! Go 'way!", "Dat nu mummah's babbeh... mummah's babbeh in box..."],
   },
   // A wild mare taking in an orphan (Fostering.js)
   FOSTER: {

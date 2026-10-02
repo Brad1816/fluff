@@ -35,6 +35,7 @@ const STORE_AISLES = [
       "fence_gate",
       "sprinkler",
       "heater",
+      "perch",
       "roomba",
       "feedbot",
       "repair_kit",
@@ -56,6 +57,7 @@ const STORE_AISLES = [
       "spray_bottle",
       "trash_bag",
       "suture_kit",
+      "bandages",
     ],
   },
   {
@@ -528,15 +530,21 @@ function drawStoreAisle(c, aisle) {
   c.fillRect(ux, L.unitBottom + 10, uw, 8);
 
   // Stock and price tags
+  // (all the pictures first, then the tags on top: a tag never hides a price)
+  for (const s of L.slots) {
+    const owned0 = typeof isToolAlreadyOwned === "function" && isToolAlreadyOwned(s.action);
+    drawShopActionIcon(c, s.action, s.iconX, s.iconY, s.iconW, owned0, s.iconH);
+  }
   for (const s of L.slots) {
     const a = s.action;
     const owned =
       typeof isToolAlreadyOwned === "function" && isToolAlreadyOwned(a);
     const canAfford = showDebugMenu || money >= a.cost;
-    drawShopActionIcon(c, a, s.iconX, s.iconY, s.iconW, owned, s.iconH);
 
-    const tagW = Math.min(s.w - 14, 130);
-    const tagH = 30;
+    // (bigger on a phone, where the shop is drawn small: Touch.js)
+    const big = typeof touchMode !== "undefined" && touchMode;
+    const tagW = Math.min(s.w - 14, big ? 170 : 130);
+    const tagH = big ? 34 : 30;
     const tagX = s.iconX - tagW / 2;
     const tagY = s.plankY + 16;
     c.fillStyle = "#fffdf5";
@@ -549,18 +557,19 @@ function drawStoreAisle(c, aisle) {
     c.textAlign = "center";
     c.textBaseline = "middle";
     c.fillStyle = "#333";
-    c.font = "bold 11px Arial";
+    c.font = big ? "bold 14px Arial" : "bold 11px Arial";
     let name = a.name;
     while (name.length > 3 && c.measureText(name).width > tagW - 8)
       name = name.slice(0, -2) + ".";
-    c.fillText(name, s.iconX, tagY + 9);
-    c.font = "bold 12px Arial";
+    c.fillText(name, s.iconX, tagY + (big ? 10 : 9));
+    c.font = big ? "bold 15px Arial" : "bold 12px Arial";
+    const priceY = tagY + (big ? 25 : 22);
     if (owned) {
       c.fillStyle = "#888";
-      c.fillText("Owned", s.iconX, tagY + 22);
+      c.fillText("Owned", s.iconX, priceY);
     } else {
       c.fillStyle = canAfford ? "#1e8a3a" : "#c0392b";
-      c.fillText(`$${a.cost}`, s.iconX, tagY + 22);
+      c.fillText(`$${a.cost}`, s.iconX, priceY);
     }
   }
   c.textBaseline = "alphabetic";

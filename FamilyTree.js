@@ -618,6 +618,16 @@ function _buildFamilyTreeLayout(focusId) {
   const meNode = card(me, FT_TREE_W / 2, rowMe, bigW + 12, bigH + 12, "focus");
   elbow(momNode, meNode);
   elbow(dadNode, meNode);
+  // A foster mum who raised it: beside its mother, a dotted line (Fostering.js)
+  const fosterRec = me && me.fosterMotherId !== null && me.fosterMotherId !== undefined ? unknownIf(getFamilyRecord(me.fosterMotherId), me.fosterMotherId) : null;
+  if (fosterRec) {
+    const fn = card(fosterRec, FT_TREE_W * 0.385, rowP + 4, bigW, smallH, "Foster mum");
+    fn.foster = true;
+    // (down from her, then into its side: clear of its parents' line)
+    const fx = fn.x + fn.w / 2;
+    const ty = meNode.y + meNode.h / 2;
+    lines.push({ dashed: true, points: [[fx, fn.y + fn.h], [fx, ty], [meNode.x, ty]] });
+  }
 
   // Its special friend, just to the right
   const partner = getFamilyPartner(focusId);
@@ -728,13 +738,23 @@ function _renderFamilyTreeCanvas(focusId) {
   c.strokeStyle = "rgba(255, 255, 255, 0.35)";
   c.lineWidth = 2;
   for (const l of layout.lines) {
-    const midY = (l.from.bottom + l.to.top) / 2;
+    c.save();
+    if (l.dashed) {
+      c.setLineDash([5, 5]);
+      c.strokeStyle = "rgba(255, 200, 230, 0.7)";
+    }
     c.beginPath();
-    c.moveTo(l.from.x, l.from.bottom);
-    c.lineTo(l.from.x, midY);
-    c.lineTo(l.to.x, midY);
-    c.lineTo(l.to.x, l.to.top);
+    if (l.points) {
+      l.points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+    } else {
+      const midY = (l.from.bottom + l.to.top) / 2;
+      c.moveTo(l.from.x, l.from.bottom);
+      c.lineTo(l.from.x, midY);
+      c.lineTo(l.to.x, midY);
+      c.lineTo(l.to.x, l.to.top);
+    }
     c.stroke();
+    c.restore();
   }
   // Siblings hang off a faint bar at the parents' level
   const sibNodes = layout.nodes.filter((n) => n.sibling);

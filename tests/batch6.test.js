@@ -102,7 +102,7 @@ module.exports = [
     },
   },
   {
-    name: "batch6: a very premature foal is frail for days - left cold and hungry it weakens and can die; a full-term one isn't frail",
+    name: "batch6: a very premature foal is frail for hours - left cold and hungry it weakens and can die; a full-term one isn't frail",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -138,7 +138,7 @@ module.exports = [
         out.keptHealth = kept.health;
         return out;
       }, SETUP);
-      checkEqual(r.frailLeft, 2 * 1200, "very premature: frail for 2 days");
+      checkEqual(r.frailLeft, 0.6 * 1200, "very premature: frail for most of its time on milk");
       check(r.describe && /frail/i.test(r.describe[0]), `the magnifying glass says so: ${JSON.stringify(r.describe)}`);
       checkEqual(r.fineFrail, false, "a full-term foal isn't frail");
       check(r.danger, "cold and hungry: in danger");

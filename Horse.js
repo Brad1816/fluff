@@ -884,6 +884,8 @@ class Horse {
     }
     // Chubby and fat fluffies are slower (Diet.js)
     if (typeof weightSpeedMultiplier === "function") this.speed *= weightSpeedMultiplier(this);
+    // Taking it easy after surgery, or with a fever (Bandages.js)
+    if (typeof recoverySpeed === "function") this.speed *= recoverySpeed(this);
     if (this.limbs === undefined) {
       return;
     }
@@ -1303,6 +1305,8 @@ class Horse {
       if (typeof notifyViolence === "function") notifyViolence(this, false, "throw");
       // A pregnant mare may go into labour early (Premature.js)
       if (typeof maybeEarlyLabourFromFall === "function") maybeEarlyLabourFromFall(this, damage);
+      // Healing from surgery: a setback (Bandages.js)
+      if (typeof recoverySetback === "function") recoverySetback(this);
       this.speak(line, true, true);
       this.initBehavior("FLUFFY_KNOCKED_DOWN");
     }

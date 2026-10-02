@@ -104,6 +104,8 @@ addHorseMethods({
     } else {
       target.health -= 10;
     }
+    // Knocked about while it heals: a setback (Bandages.js)
+    if (typeof recoverySetback === "function") recoverySetback(target);
     if (target.health <= 0) {
       const attackerName =
         typeof fluffyDisplayName === "function" ? fluffyDisplayName(this) : fluffyNames[this.id] || "Fluffy";

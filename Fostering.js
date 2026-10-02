@@ -28,7 +28,9 @@
 // shows it ("Foster mum: ..."; the family tree keeps its birth mum), and
 // the foal's foster mum is saved (f.fosterMumId).
 // A foster bond lasts: they like each other more for life (getLiking +
-// FOSTER_BOND, Bonds.js) on top of the start it gets (FOSTER_OPINION).
+// FOSTER_BOND, Bonds.js) on top of the start it gets (FOSTER_OPINION), and
+// her own foals take to the newcomer (FOSTER_SIBLING_OPINION). The family
+// tree shows the foster mum beside its mother, with a dotted line.
 // Sell or give away one of them (FamilyTree.noteFluffyLeft ->
 // noteFosterLeft) and the other grieves: unhappy, trusts you less, and a
 // foster mum who lost her foster foal is a grieving mum again.
@@ -50,6 +52,7 @@ const FOSTER_CRY_BOOST = 4; // ...and she's this much likelier to come (at most 
 const FOSTER_CHANCE_MAX = 0.95;
 const FOSTER_CRY_EVERY = 12; // game seconds between its cries
 const FOSTER_OPINION = 0.4; // a start, each of the other
+const FOSTER_SIBLING_OPINION = 0.2; // her own foals and the newcomer, each of the other
 const FOSTER_BOND = 0.15; // liking each other, for life (Bonds.js getLiking)
 const FOSTER_LOSS_UNHAPPY = 0.3; // sold away from each other
 const fosterTicker = new Ticker(FOSTER_EVERY);
@@ -124,6 +127,11 @@ function takeInFoal(mare, foal) {
     if (sibling === foal || sibling.motherId !== mare.id) continue;
     setRelationship(foal.id, sibling.id, sibling.gender === "male" ? "brother" : "sister");
     setRelationship(sibling.id, foal.id, foal.gender === "male" ? "brother" : "sister");
+    // Foster brothers and sisters take to each other (Bonds.js)
+    if (sibling.isAlive && typeof changeOpinion === "function") {
+      changeOpinion(foal, sibling, FOSTER_SIBLING_OPINION, "grew up together");
+      changeOpinion(sibling, foal, FOSTER_SIBLING_OPINION, "grew up together");
+    }
   }
   // Her special friend: its dad
   const specialFriendId = Object.keys(rels).find((id) => rels[id] === "special_friend");

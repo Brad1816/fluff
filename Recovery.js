@@ -98,7 +98,8 @@ function describeRecovery(f) {
   if (!isRecovering(f)) return null;
   const hrs = Math.max(1, Math.round((f.recovery.until - _rcNow()) / HOUR_LENGTH));
   if (f.recovery.risk <= 0) return [`Recovering from surgery (${hrs}h): wound burnt clean`, "ok"];
-  return [`Recovering from surgery (${hrs}h): infection risk ${riskWord(f.recovery.risk)}${isResting(f) ? ", resting" : " - let it rest"}`, f.recovery.risk < 0.08 ? "ok" : "bad"];
+  const wrap = f.recovery.bandaged ? ", bandaged" : "";
+  return [`Recovering from surgery (${hrs}h): infection risk ${riskWord(f.recovery.risk)}${wrap}${isResting(f) ? ", resting" : " - let it rest"}`, f.recovery.risk < 0.08 ? "ok" : "bad"];
 }
 
 function updateRecovery(dt) {

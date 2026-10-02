@@ -169,6 +169,8 @@ function getFluffyInspectionInfo(f) {
     if (flight) about.push({ label: "Flying", value: flight[0], tone: flight[1] });
     const foster = typeof describeFoster === "function" ? describeFoster(f) : null; // Fostering.js
     if (foster) about.push({ label: "Foster mum", value: foster[0], tone: foster[1] });
+    const incub = typeof describeIncubator === "function" ? describeIncubator(f) : null; // Premature.js
+    if (incub) about.push({ label: "Incubator", value: incub[0], tone: incub[1] });
     const early = typeof describePremature === "function" ? describePremature(f) : null; // Premature.js
     if (early) about.push({ label: "Birth", value: early[0], tone: early[1] });
     const rule = typeof describeMatingRule === "function" ? describeMatingRule(f) : null; // MatingRule.js

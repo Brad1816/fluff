@@ -42,6 +42,7 @@ const FEAR_FROM_WEAPON = {
 };
 
 const MEMORY_TEXT = {
+  forced_fear: "Forced to face what it fears", // (FearExposure.js)
   stick: "Hit with the stick",
   spray: "Squirted with the spray bottle",
   thumbtack: "Poked with a tack",
@@ -64,7 +65,7 @@ const MEMORY_TEXT = {
 };
 
 // Memories of harm from you (for the story book, StoryBook.js)
-const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "took_family", "taken_away", "taken_from_mum"]);
+const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "took_family", "taken_away", "taken_from_mum", "forced_fear"]);
 
 function ensurePlayerMemory(f) {
   if (typeof f.playerTrust !== "number") f.playerTrust = f.adopted ? TRUST_START : TRUST_START_FERAL;

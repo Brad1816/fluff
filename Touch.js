@@ -60,6 +60,7 @@ function _touchToGame(x, y) {
 
 // Would a swipe starting here scroll something? (the wheel's jobs)
 function touchScrollsAt(x, y) {
+  if (touchZoomedScreen()) return "zoom";
   if (typeof helpOpen !== "undefined" && helpOpen) return "help";
   if (typeof showSaveList !== "undefined" && showSaveList) return "list";
   if (typeof showChatLog !== "undefined" && showChatLog) {
@@ -187,6 +188,7 @@ function _onTouchMove(e) {
   const p = [...e.changedTouches].find((c) => c.identifier === t.id);
   if (!p) return;
   const dy = p.clientY - t.y;
+  t.px = t.x;
   t.x = p.clientX;
   t.y = p.clientY;
   if (t.mode === "wait" && Math.hypot(t.x - t.x0, t.y - t.y0) > TOUCH_TAP_MOVE) {
@@ -209,6 +211,9 @@ function _onTouchMove(e) {
   }
   if (t.mode === "drag" || t.mode === "long" || t.mode === "carry") {
     _touchMouse("mousemove", t.x, t.y, t.mode === "long" ? 2 : 0, window);
+  } else if (t.mode === "scroll" && t.scroll === "zoom") {
+    // A zoomed screen: drag it about
+    touchZoomPan(-(p.clientX - (t.px ?? t.x0)) / scale, -dy / scale);
   } else if (t.mode === "scroll") {
     // Content follows the finger: finger up = scroll down
     const step = t.scroll === "help" ? TOUCH_HELP_STEP : TOUCH_SCROLL_STEP;
@@ -286,6 +291,162 @@ if (typeof canvas !== "undefined" && canvas.addEventListener) {
   canvas.addEventListener("touchmove", _onTouchMove, { passive: false });
   canvas.addEventListener("touchend", _onTouchEnd, { passive: false });
   canvas.addEventListener("touchcancel", _onTouchEnd, { passive: false });
+}
+
+// ---------------------------------------------------------------------------
+// Bigger screens on a phone: the magnifying glass, Today and Household are
+// drawn zoomed in (TOUCH_ZOOM_SCREENS, so their writing is a readable size)
+// and dragged about with a finger to see the rest. Taps land where they
+// look: the "mouse" is mapped into the zoomed picture while they draw and
+// while they're clicked.
+// ---------------------------------------------------------------------------
+const TOUCH_ZOOM_SCREENS = ["inspection", "today", "household"];
+const TOUCH_ZOOM_MAX = 1.5;
+const touchZoomView = { x: 0, y: 0 };
+
+// How much to zoom: enough that its writing is about as big as on a computer
+function touchZoomFactor() {
+  if (!touchMode) return 1;
+  return Math.max(1, Math.min(TOUCH_ZOOM_MAX, 0.95 / (scale || 1)));
+}
+
+// The zoomed screen on top (not one under another screen: a drag on that is its own)
+function touchZoomedScreen() {
+  if (!touchMode || touchZoomFactor() <= 1 || typeof SCREENS === "undefined") return null;
+  const open = SCREENS.filter((s) => _screenOpen(s));
+  const top = open[open.length - 1];
+  return top && top._touchZoom ? top : null;
+}
+
+function _clampZoomView() {
+  const z = touchZoomFactor();
+  touchZoomView.x = Math.max(0, Math.min(width * z - width, touchZoomView.x));
+  touchZoomView.y = Math.max(0, Math.min(height * z - height, touchZoomView.y));
+}
+
+function touchZoomPan(dx, dy) {
+  touchZoomView.x += dx;
+  touchZoomView.y += dy;
+  _clampZoomView();
+}
+
+// Run fn with the mouse where it is in the zoomed picture
+function _inZoom(fn) {
+  const z = touchZoomFactor();
+  const mx = mouse.x;
+  const my = mouse.y;
+  mouse.x = (mx + touchZoomView.x) / z;
+  mouse.y = (my + touchZoomView.y) / z;
+  try {
+    return fn(z);
+  } finally {
+    mouse.x = mx;
+    mouse.y = my;
+  }
+}
+
+function _zoomWrap(s) {
+  if (s._touchZoom) return;
+  s._touchZoom = true;
+  const draw = s.draw;
+  const click = s.click;
+  s.draw = (c) => {
+    const open = _screenOpen(s);
+    if (open && !s._zoomWasOpen) {
+      // Just opened: the top, in the middle
+      const z = touchZoomFactor();
+      touchZoomView.x = (width * z - width) / 2;
+      touchZoomView.y = 0;
+    }
+    s._zoomWasOpen = open;
+    if (!open || touchZoomFactor() <= 1 || !draw) return draw ? draw(c) : undefined;
+    return _inZoom((z) => {
+      c.save();
+      c.translate(-touchZoomView.x, -touchZoomView.y);
+      c.scale(z, z);
+      try {
+        return draw(c);
+      } finally {
+        c.restore();
+        _drawZoomHint(c);
+      }
+    });
+  };
+  if (click) {
+    s.click = () => {
+      if (!_screenOpen(s) || touchZoomFactor() <= 1) return click();
+      return _inZoom(() => click());
+    };
+  }
+}
+
+// A little "drag to see more" under the picture's edge, while there's more
+function _drawZoomHint(c) {
+  const z = touchZoomFactor();
+  const more = touchZoomView.y < height * z - height - 4;
+  if (!more) return;
+  c.save();
+  c.fillStyle = "rgba(0, 0, 0, 0.55)";
+  const w = 190;
+  if (c.roundRect) {
+    c.beginPath();
+    c.roundRect(width / 2 - w / 2, height - 30, w, 24, 12);
+    c.fill();
+  } else c.fillRect(width / 2 - w / 2, height - 30, w, 24);
+  c.fillStyle = "white";
+  c.font = "bold 13px Arial";
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  c.fillText("\u2195 drag to see more", width / 2, height - 18);
+  c.restore();
+}
+
+function setupTouchZoom() {
+  if (!touchMode || typeof SCREENS === "undefined") return;
+  for (const s of SCREENS) if (TOUCH_ZOOM_SCREENS.includes(s.name)) _zoomWrap(s);
+}
+
+// ---- Sending your game to another device ----
+// More > "Send my save": the game as it is now, as a file, through the
+// phone's share sheet (Messages, email, AirDrop, Drive...) - or downloaded
+// where sharing files isn't possible. On the other device: Save/Load >
+// Import save from file.
+async function shareCurrentGame() {
+  if (typeof buildSaveData !== "function") return false;
+  let data;
+  try {
+    data = buildSaveData(typeof capturePauseScreenshot === "function" ? capturePauseScreenshot() : null);
+  } catch (e) {
+    console.error("Couldn't make the save to send:", e);
+    if (typeof addUIMessage === "function") addUIMessage("Sorry - the save couldn't be made.");
+    return false;
+  }
+  const day = typeof getDayNumber === "function" ? getDayNumber() : 1;
+  const fileName = `fluffy-industries-day-${day}.json`;
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  let file = null;
+  try {
+    file = new File([blob], fileName, { type: "application/json" });
+  } catch (e) {}
+  try {
+    if (file && navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+      await navigator.share({ files: [file], title: "Fluffy Industries save", text: `My fluffies, day ${day}` });
+      return "shared";
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") return false; // (you closed the share sheet)
+  }
+  // No sharing here: download it instead
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  if (typeof addUIMessage === "function") addUIMessage(`Saved as ${fileName} in your downloads. On the other device: Save/Load > Import save from file.`);
+  return "downloaded";
 }
 
 // ---------------------------------------------------------------------------
@@ -370,6 +531,7 @@ const TOUCH_MORE = [
   { label: "Herds on/off", run: () => touchKey("KeyH", "h") },
   { label: "Bed names on/off", run: () => touchKey("KeyB", "b") },
   { label: "Help", run: () => touchKey("F1", "F1") },
+  { label: "Send my save to another device", run: () => shareCurrentGame() },
   { label: () => (touchLowRes ? "Sharper drawing" : "Faster drawing (less sharp)"), run: () => setTouchLowRes(!touchLowRes) },
   { label: "Full screen", run: () => touchTryFullscreen(true), show: () => !isStandaloneApp() && !!document.documentElement.requestFullscreen && !document.fullscreenElement },
 ];
@@ -543,6 +705,7 @@ if (typeof window !== "undefined" && window.addEventListener && touchMode) {
   const start = () => {
     buildTouchBar();
     _touchOrientation();
+    setupTouchZoom();
     requestAnimationFrame(_touchSpeedLoop);
   };
   if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", start);

@@ -657,6 +657,19 @@ function attemptDrop() {
         }
         if (!hitFluffy) missWithTool(obj);
         return true;
+      } else if (typeof Bandages !== "undefined" && obj instanceof Bandages) {
+        // Wrap a healing wound (Bandages.js)
+        let hitFluffy = false;
+        for (const f of fluffies) {
+          if (f.scene !== obj.scene || !f.isAlive) continue;
+          if (f.currentCage && typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan) continue;
+          if (!f.hitTestAsSeen(mouse.x, mouse.y)) continue;
+          hitFluffy = true;
+          applyBandage(f, obj);
+          break;
+        }
+        if (!hitFluffy) missWithTool(obj);
+        return true;
       } else if (obj instanceof SutureKit) {
         let kit = obj;
         let hitFluffy = false;

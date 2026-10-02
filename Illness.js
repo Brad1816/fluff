@@ -145,7 +145,7 @@ function updateIllness(dt) {
     if (!hasFlu(s)) continue;
     for (const o of fluffies) {
       if (o === s || !canCatchFlu(o) || !_fluCanReach(s, o)) continue;
-      const chance = FLU_SPREAD_CHANCE * (fluShowing(s) ? 1 : 0.5) * (step / ILLNESS_TICK);
+      const chance = FLU_SPREAD_CHANCE * (fluShowing(s) ? 1 : 0.5) * (step / ILLNESS_TICK) * (typeof earlyBornFlu === "function" ? earlyBornFlu(o) : 1);
       if (Math.random() < chance) catchFlu(o);
     }
   }

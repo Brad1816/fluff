@@ -46,11 +46,11 @@ function glideSpeed(f) {
   return 480 - 340 * ((s - FLIGHT_GLIDE) / (1 - FLIGHT_GLIDE)); // 480 -> 140 (under THROW_IMPACT_MIN_SPEED: a soft landing)
 }
 
-// It came down from a throw: a little better at it
-function learnFlight(f) {
+// It came down from a throw (or hopped on the perch, Perch.js): a little better at it
+function learnFlight(f, amount = FLIGHT_LEARN) {
   if (!canFly(f)) return 0;
   const before = f.flightSkill || 0;
-  f.flightSkill = Math.min(1, before + FLIGHT_LEARN);
+  f.flightSkill = Math.min(1, before + amount);
   for (const [at, key] of [[FLIGHT_GLIDE, "GLIDE"], [FLIGHT_SOLO, "SOLO"]]) {
     if (before < at && f.flightSkill >= at && !f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["FLIGHT", key], f), true);
   }
@@ -108,6 +108,7 @@ function describeFlight(f) {
   if (!canFly(f)) return s > 0 ? ["Can't fly any more (wings)", "bad"] : null;
   if (s >= FLIGHT_SOLO) return ["Flies by itself", "good"];
   if (s >= FLIGHT_GLIDE) return ["Glides (lands on its feet)", "good"];
+  if (typeof isPractisingFlight === "function" && isPractisingFlight(f)) return ["Practising on the perch", "good"];
   if (s > 0) return ["Flutters - getting the hang of it", "ok"];
   return ["Can't fly yet", "ok"];
 }

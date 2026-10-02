@@ -732,12 +732,8 @@ if (typeof window !== "undefined") {
   window.saveFormatVersion = saveFormatVersion;
 }
 
-async function saveGame(slotName) {
-  let screenshot = currentPauseScreenshot;
-  if (!screenshot && typeof capturePauseScreenshot === "function") {
-    screenshot = capturePauseScreenshot();
-  }
-
+// Everything in the game, ready to save or send (saveGame; Touch.js sends it)
+function buildSaveData(screenshot = null) {
   const saveData = {
     screenshot: screenshot,
     saveDate: new Date().toLocaleString(),
@@ -775,9 +771,18 @@ async function saveGame(slotName) {
     gibs: gibs.map((g) => g.serialize()),
     saveFormatVersion: saveFormatVersion,
   };
-
   // Money, timers, rooms bought, names... (SAVED_GAME_STATE above)
   writeSavedGameState(saveData);
+  return saveData;
+}
+
+async function saveGame(slotName) {
+  let screenshot = currentPauseScreenshot;
+  if (!screenshot && typeof capturePauseScreenshot === "function") {
+    screenshot = capturePauseScreenshot();
+  }
+
+  const saveData = buildSaveData(screenshot);
 
   await saveManager.save(slotName, saveData);
 

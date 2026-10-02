@@ -42,6 +42,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "prematureGrowth", fallback: 1.0 }, // born early: smaller (Premature.js)
   { name: "bornEarly", fallback: null }, // ...and how early
   { name: "frailLeft", fallback: 0 }, // game seconds still frail (Premature.js)
+  { name: "incubatorAlone", fallback: 0 }, // game seconds in the incubator since mum came (Premature.js)
   { name: "recovery", fallback: null, clone: true }, // after surgery (Recovery.js)
   { name: "infection", fallback: null, clone: true },
   { name: "flightSkill", fallback: 0 }, // learnt from being thrown (Flight.js)
