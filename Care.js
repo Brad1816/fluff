@@ -124,7 +124,7 @@ function _sitWithTick(f, step) {
   const d = Math.min(step, s.left);
   s.left -= d;
   const share = d / SIT_WITH_TIME;
-  f.changeHappiness(SIT_WITH_JOY * share);
+  f.changeHappiness(SIT_WITH_JOY * share, "You sat with it");
   if (f.separation && typeof f.separation.grief === "number") {
     f.separation.grief = Math.max(0, f.separation.grief - SIT_WITH_GRIEF * share);
     // ...and the ache it grows back towards eases too, so it lasts
@@ -148,7 +148,7 @@ function praiseFluffy(f) {
   if (t.praise >= PRAISE_PER_DAY) return false;
   t.praise++;
   if (typeof giveAffection === "function") giveAffection(f, "praised", 2);
-  f.changeHappiness(0.03);
+  f.changeHappiness(0.03, "Praised");
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 1.5;
   _caSay(f, "PRAISED");
@@ -186,7 +186,7 @@ function scoldFluffy(f) {
   const k = misdeed ? 1 : 3;
   if (typeof loseAffection === "function") loseAffection(f, "scolded", 0.01 * k);
   if (typeof changePlayerFear === "function") changePlayerFear(f, 0.01 * k);
-  f.changeHappiness(-0.03 * k);
+  f.changeHappiness(-0.03 * k, "Scolded");
   if (typeof recordStory === "function") recordStory("scolded", f);
   if (typeof noteTitleHarm === "function") noteTitleHarm(f, 0.1 * k, "scolded"); // (Titles.js; a stick hit is 1)
   if (misdeed && typeof noteTitleCare === "function") noteTitleCare(f, "scolded"); // (firm care for a Spoiled one)
@@ -214,7 +214,7 @@ function timeOut(f) {
     }
   }
   if (typeof loseAffection === "function") loseAffection(f, "time_out", 0.02);
-  f.changeHappiness(-0.05);
+  f.changeHappiness(-0.05, "Time-out");
   if (typeof recordStory === "function") recordStory("scolded", f);
   if (typeof noteTitleHarm === "function") noteTitleHarm(f, 0.5, "time_out");
   _caSay(f, "TIME_OUT");
@@ -274,7 +274,7 @@ function noteConditionBrush(f) {
   c.brush = (c.brush || 0) + 1;
   if (c.brush >= CONDITION_AT) {
     // Brushing before bed calms it
-    f.changeHappiness(0.02);
+    f.changeHappiness(0.02, "Brushed before bed");
     if (typeof fearsOf === "function" && typeof changeFear === "function") {
       const fears = fearsOf(f);
       for (const k of Object.keys(fears)) if (fears[k] > 0) changeFear(f, k, -0.01);

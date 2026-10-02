@@ -350,14 +350,14 @@ function updatePuddles(dt) {
 // ---------------------------------------------------------------------------
 // Mess fades by itself, and rain washes it away outside.
 //   Poop, pee and sick slowly dry up and fade (MESS_FADE: how much of a
-//   puddle's size goes per game day - a normal poop is gone in about a day
+//   puddle's size goes per game day - a normal poop lasts a few days
 //   indoors, pee sooner). Outside it goes twice as fast.
-//   Rain (and storms) outside wash poop, pee, sick and blood away within a
-//   minute or so at full strength (RAIN_WASH per second x rain amount).
+//   Rain (and storms) outside wash poop, pee, sick and blood away slowly -
+//   it takes a long downpour (RAIN_WASH per second x rain amount).
 //   Blood doesn't fade by itself indoors - it needs the sponge (or rain).
 // ---------------------------------------------------------------------------
-const MESS_FADE = { poop: 0.6, pee: 1.5, vomit: 0.9, blood: 0 }; // size per game day
-const RAIN_WASH = 0.02; // size per second in full rain
+const MESS_FADE = { poop: 0.25, pee: 0.6, vomit: 0.4, blood: 0 }; // size per game day (poop lasts a few days)
+const RAIN_WASH = 0.003; // size per second in full rain (a downpour takes a good while)
 
 // Poop, pee, sick or blood (what a starving fluffy will eat - HorseToilet.js).
 // Takes a puddle type or (older code) a colour.

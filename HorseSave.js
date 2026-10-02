@@ -50,6 +50,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "pastHerds", fallback: null, clone: true }, // herds it used to be in (Herds.js)
   { name: "smartyKind", fallback: undefined }, // "good" or "bad" (Intelligence.js)
   { name: "limbState", fallback: null, clone: true }, // mangled legs, wings, horn (Injuries.js)
+  { name: "alicornIndifferent", fallback: false }, // born not caring about alicorns (AlicornAcceptance.js)
+  { name: "deformities", fallback: null, clone: true }, // born deformed: inbred (Inbreeding.js)
+  { name: "breedWear", fallback: 0 }, // a sensitive one worn out from breeding (Inbreeding.js)
   { name: "lostFoalAt", fallback: null }, // when she last lost a foal (Fostering.js)
   { name: "fosterMumId", fallback: null }, // the wild mare who took it in
   { name: "litterSize", fallback: null },

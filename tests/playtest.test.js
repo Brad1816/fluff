@@ -373,8 +373,18 @@ module.exports = [
         timid.traitShift = { bravery: -2 };
         out.range = alicornFearRange(timid);
         out.seen = timid.positioning.findScaryAlicorn() === a;
+        // A grown one isn't really scared of a grown alicorn: it steers clear
+        timid.x = 350;
+        out.timidStance = alicornStance(timid, a);
         timid.positioning.attemptAlicornFear(a, false);
         out.timidScared = timid.isScared;
+        out.timidWalks = timid.currentStateKey;
+        // A foal runs
+        const little = __mk(380, { growth: 0.5 });
+        little.positioning.attemptAlicornFear(a, false);
+        out.littleScared = little.isScared;
+        // (a brave one only goes for a weak one: hurt, lame or a foal)
+        a.health = 55;
         // A brave one goes for it, three blows, then leaves it be
         const brave = __mk(230);
         brave.traitShift = { bravery: 2 };
@@ -402,7 +412,9 @@ module.exports = [
       checkEqual(r.ali, 0, "400 unicorns and pegasi: no alicorns");
       check(r.wild <= 3, `random fluffies: alicorns very rare (${r.wild} in 1500)`);
       check(r.range >= 400 && r.seen, `run from on sight (${r.range}px)`);
-      check(r.timidScared, "a timid one runs");
+      checkEqual(r.timidStance, "avoid", "a grown timid one steers clear");
+      check(!r.timidScared && r.timidWalks === "MOVING", `...walking off, not scared (${r.timidWalks})`);
+      check(r.littleScared, "a foal runs");
       checkEqual(r.stance, "attack", "a brave one goes for it");
       checkEqual(r.blows, r.BLOWS, "three blows");
       check(r.hurt && !r.braveScared, "it hurt the alicorn and wasn't scared");

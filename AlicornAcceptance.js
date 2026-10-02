@@ -41,7 +41,9 @@ const ALICORN_INTRO_TRUST = 0.7; // how much it must trust you for introductions
 const ALICORN_FORGET_TIME = 6000; // seconds apart to lose it all again (5 game days)
 const ALICORN_TICK = 1;
 const ALICORN_FEAR_RANGE = 450; // they run from one this close (about as far as they see)
-const ALICORN_BRAVE_AT = 0.35; // bravery (traitValue) to go for one instead
+const ALICORN_BRAVE_AT = 0.35; // bravery (traitValue) to go for a weak one instead
+const ALICORN_AVOID_NEAR = 220; // a grown one walks off when one comes this close
+const ALICORN_INDIFFERENT = 0.08; // fluffies born that simply don't care about alicorns
 const ALICORN_BRAVE_BLOWS = 3; // ...this many blows to see it off
 const ALICORN_BRAVE_REST = 600; // ...then leaves it alone this long (half a game day)
 
@@ -66,19 +68,29 @@ function alicornFearRange(f) {
   return ALICORN_FEAR_RANGE * (1 - 0.4 * getAlicornComfort(f));
 }
 
-// What a scared fluffy does about alicorn a: "flee", "attack" (a brave
-// grown one that can get at it) or "ignore" (a brave one that has already
-// seen it off lately)
+// What a fluffy that doesn't accept alicorns does about alicorn a:
+//   "flee"   foals, and anyone weak, worn out or in labour: it runs
+//   "attack" a grown one with fight in it (brave or bad-tempered, or a bad
+//            smarty), when the alicorn is weak - a foal, or hurt - and it
+//            can get at it
+//   "avoid"  any other grown one: it isn't really a threat, so it just
+//            steers clear - walks off if it comes close (ALICORN_AVOID_NEAR)
+//   "ignore" far enough away, behind bars, or already seen off
 function alicornStance(f, a) {
   if (!f || !a) return "flee";
-  const brave = typeof traitValue === "function" ? traitValue(f, "bravery") : 0;
-  if (brave < ALICORN_BRAVE_AT || f.growth < 1 || f.health < 50) return "flee";
+  if (f.growth < 1 || f.health < 50) return "flee";
   if (f.happiness <= WAN_DIE_THRESHOLD + 0.1 || f.isInLabor()) return "flee";
   if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(f, a)) return "ignore"; // (behind bars: just glares)
-  const now = typeof timePlayed === "number" ? timePlayed : 0;
-  const b = f._alicornBlows;
-  if (b && b.id === a.id && now - b.at < ALICORN_BRAVE_REST) return b.n >= ALICORN_BRAVE_BLOWS ? "ignore" : "attack";
-  return "attack";
+  const tv = (k) => (typeof traitValue === "function" ? traitValue(f, k) : 0);
+  const fierce = tv("bravery") >= ALICORN_BRAVE_AT || tv("temper") >= 0.4 || (f.isSmarty && f.isSmarty());
+  const weak = a.growth < 1 || a.health < 60 || (typeof mangledLegCount === "function" && mangledLegCount(a) > 0);
+  if (fierce && weak) {
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
+    const b = f._alicornBlows;
+    if (b && b.id === a.id && now - b.at < ALICORN_BRAVE_REST) return b.n >= ALICORN_BRAVE_BLOWS ? "ignore" : "attack";
+    return "attack";
+  }
+  return Math.hypot(f.x - a.x, f.y - a.y) < ALICORN_AVOID_NEAR ? "avoid" : "ignore";
 }
 
 // A brave one landed a blow on alicorn a
@@ -89,10 +101,28 @@ function noteAlicornBlow(f, a) {
   else f._alicornBlows = { id: a.id, n: 1, at: now };
 }
 
+// Does o shrug off the death of `dead` because it was an alicorn it never
+// accepted? (no grief, no shock: most fluffies hate them)
+function shrugsOffAlicornDeath(o, dead) {
+  if (!o || !dead || !_alicornIntoleranceOn()) return false;
+  const looks = typeof dead.typeVisibleToOthers === "function" ? dead.typeVisibleToOthers() : dead.type;
+  return looks === "alicorn" && !(o.tolerantOfAlicorns && o.tolerantOfAlicorns());
+}
+
+// A new fluffy (born, or found): one of the few that just don't care?
+function rollAlicornIndifference(f) {
+  if (!f || f.alicornTolerance || f.type === "alicorn") return;
+  if (Math.random() < ALICORN_INDIFFERENT) {
+    f.alicornTolerance = true;
+    f.alicornIndifferent = true;
+  }
+}
+
 // Magnifying glass row: [text, tone], or null if it doesn't apply
 function describeAlicornFeeling(f) {
   if (!_alicornIntoleranceOn() || !f || f.type === "alicorn") return null;
   // (always with a %, so you can watch it move)
+  if (f.alicornIndifferent) return ["Doesn't care about them", "good"];
   if (f.tolerantOfAlicorns()) return ["Accepts them (100%)", "good"];
   const c = getAlicornComfort(f);
   if (c < 0.05) return [`Afraid (${Math.round(c * 100)}% accepting)`, "bad"];

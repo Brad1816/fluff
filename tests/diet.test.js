@@ -9,7 +9,7 @@ const SETUP = `() => {
   timePlayed = 5 * DAY_LENGTH + 2 * HOUR_LENGTH;
   window.__setTrait = (h, key, sum) => {
     const i = TRAITS.findIndex((q) => q.key === key);
-    for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[TRAIT_GENE_START + i * TRAIT_GENES_EACH + k] = k < sum ? 1 : 0;
+    for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[traitGeneStart(i) + k] = k < sum ? 1 : 0;
   };
   window.__mk = (x, y = 520, growth = 1) => {
     const h = new Horse(growth, null, "INDOORS", "earthy", null, 0.5, 0.5, "female");

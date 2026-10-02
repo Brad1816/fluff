@@ -55,8 +55,39 @@ function sleepRefusal() {
   return null;
 }
 
+// Skip ahead: the same as sleeping, just for a set time, anywhere (the moon
+// button offers +1, +6 and +12 hours; away from home only these)
+const SKIP_CHOICES = [1, 6, 12]; // game hours
+
+// Why you can't skip ahead now, or null
+function skipRefusal() {
+  const why = sleepRefusal();
+  return why === "You can only sleep at home." ? null : why;
+}
+
+function startSkip(hours) {
+  if (skipRefusal()) return false;
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  sleepState = { from: now, until: now + hours * HOUR_LENGTH, skip: hours };
+  if (typeof setGameSpeed === "function") setGameSpeed(1);
+  return true;
+}
+
+function _skipButtons() {
+  return SKIP_CHOICES.map((h) => ({ label: `+${h} hour${h === 1 ? "" : "s"}`, kind: "ok", run: () => startSkip(h) }));
+}
+
 function askSleep() {
   const why = sleepRefusal();
+  if (why === "You can only sleep at home." && !skipRefusal()) {
+    // Away from home: you can still skip ahead
+    openChoice({
+      title: "Skip ahead?",
+      lines: ["Time runs on, fast: they eat, sleep, grow and squabble as usual. (You can only sleep until morning at home.)"],
+      buttons: [..._skipButtons(), { label: "Cancel", cancel: true, run: () => {} }],
+    });
+    return true;
+  }
   if (why) {
     if (why.length > 12 && typeof addUIMessage === "function") addUIMessage(why);
     return false;
@@ -69,9 +100,11 @@ function askSleep() {
     lines: [
       `Skip to ${SLEEP_WAKE_HOUR} AM on Day ${day} (${hrs} hour${hrs === 1 ? "" : "s"}).`,
       "Everything carries on while you sleep: they eat, sleep, grow, have foals and squabble. The morning report tells you what happened.",
+      "Or just skip ahead a few hours.",
     ],
     buttons: [
       { label: "Sleep", kind: "ok", run: () => startSleep() },
+      ..._skipButtons(),
       { label: "Not yet", cancel: true, run: () => {} },
     ],
   });
@@ -88,8 +121,9 @@ function startSleep() {
 
 function wakeUp(early = false) {
   if (!sleepState) return false;
+  const skipped = sleepState.skip;
   sleepState = null;
-  if (typeof addUIMessage === "function") addUIMessage(early ? "You got up early." : "Good morning!");
+  if (typeof addUIMessage === "function") addUIMessage(early ? (skipped ? "You stopped skipping ahead." : "You got up early.") : skipped ? `${skipped} hour${skipped === 1 ? "" : "s"} later...` : "Good morning!");
   return true;
 }
 
@@ -125,8 +159,8 @@ function drawSleepButton(b) {
     ctx.lineWidth = 3;
     ctx.strokeStyle = "black";
     ctx.fillStyle = "white";
-    ctx.strokeText("Sleep until morning", b.x + b.w / 2, b.y + b.h + 30);
-    ctx.fillText("Sleep until morning", b.x + b.w / 2, b.y + b.h + 30);
+    ctx.strokeText("Sleep / skip ahead", b.x + b.w / 2, b.y + b.h + 30);
+    ctx.fillText("Sleep / skip ahead", b.x + b.w / 2, b.y + b.h + 30);
     ctx.restore();
   }
 }
@@ -155,7 +189,7 @@ function drawSleep(c) {
   c.textAlign = "center";
   c.fillStyle = "#cfd6ff";
   c.font = "bold 22px Arial";
-  c.fillText("☾  Zzz...", L.x + L.w / 2, L.y + 36);
+  c.fillText(sleepState.skip ? "\u23e9  Skipping ahead..." : "☾  Zzz...", L.x + L.w / 2, L.y + 36);
   c.font = "15px Arial";
   c.fillStyle = "white";
   c.fillText(typeof describeWorldTime === "function" ? describeWorldTime() : "", L.x + L.w / 2, L.y + 62);
@@ -163,7 +197,7 @@ function drawSleep(c) {
   fillRoundRect(c, L.x + 30, L.y + 76, L.w - 60, 8, 4, "rgba(255,255,255,0.15)");
   fillRoundRect(c, L.x + 30, L.y + 76, (L.w - 60) * p, 8, 4, "#9fb0ff");
   c.restore();
-  drawGlassButton(L.wake.x, L.wake.y, L.wake.w, L.wake.h, "Wake up", { fontSize: 15, borderRadius: 9 });
+  drawGlassButton(L.wake.x, L.wake.y, L.wake.w, L.wake.h, sleepState.skip ? "Stop" : "Wake up", { fontSize: 15, borderRadius: 9 });
 }
 
 function handleSleepClick() {

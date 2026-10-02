@@ -438,6 +438,8 @@ class HorseGenetics {
     if (typeof scarPriceMultiplier === "function") price *= scarPriceMultiplier(this.horse);
     // Mangled legs, wings, horn: -15% each (Injuries.js)
     if (typeof mangledPriceMultiplier === "function") price *= mangledPriceMultiplier(this.horse);
+    // Born deformed (inbred): -15% each (Inbreeding.js)
+    if (typeof deformityPriceMultiplier === "function") price *= deformityPriceMultiplier(this.horse);
     // Titles: Cherished x1.1, Broken x0.8... (Titles.js)
     if (typeof titlePriceMultiplier === "function") price *= titlePriceMultiplier(this.horse);
 

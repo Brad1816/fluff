@@ -27,7 +27,12 @@ const soundSources = {
 };
 
 let isMuted = false;
-let masterVolume = 1.0;
+// Starts at 20%; the slider (pause menu) is remembered on this device
+let masterVolume = 0.2;
+try {
+  const v = parseFloat(localStorage.getItem("fluffyVolume"));
+  if (isFinite(v) && v >= 0 && v <= 1) masterVolume = v;
+} catch (e) {}
 
 function initAudioContext() {
   if (!audioCtx) {

@@ -4,7 +4,7 @@ const { check, checkEqual } = require("./helpers");
 // Page helper: set one trait's 5 genes to `sum` ones
 const SET_TRAIT = `(h, key, sum) => {
   const i = TRAITS.findIndex((t) => t.key === key);
-  for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[TRAIT_GENE_START + i * TRAIT_GENES_EACH + k] = k < sum ? 1 : 0;
+  for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[traitGeneStart(i) + k] = k < sum ? 1 : 0;
 }`;
 
 module.exports = [
@@ -19,7 +19,7 @@ module.exports = [
         const tooOld = h.genes.slice(0, 95); // before gradients: left alone
         ensureTraitGenes(tooOld);
         // (fancy mane genes come after the trait genes: ManePatterns.js)
-        return { len: h.genes.length, oldLen: old.genes.length, tooOld: tooOld.length, total: MANE_GENE_TOTAL };
+        return { len: h.genes.length, oldLen: old.genes.length, tooOld: tooOld.length, total: TRAIT_GENE_TOTAL }; // (wits come after the mane genes)
       });
       checkEqual(r.len, r.total, "new fluffy's genes");
       checkEqual(r.oldLen, r.total, "older fluffy's genes after processGenes");
@@ -44,21 +44,21 @@ module.exports = [
         let sums = new Set();
         for (let k = 0; k < 200; k++) {
           const g = mum.genetics.combineGenes(dad.genes);
-          if (g.length !== MANE_GENE_TOTAL) bad++; // traits, then fancy mane genes
-          for (let i = TRAIT_GENE_START; i < TRAIT_GENE_TOTAL; i++) if (g[i] !== mum.genes[i] && g[i] !== dad.genes[i]) bad++;
+          if (g.length !== TRAIT_GENE_TOTAL) bad++; // traits, fancy mane genes, then wits
+          for (let t = 0; t < TRAITS.length; t++) for (let i = traitGeneStart(t); i < traitGeneStart(t) + TRAIT_GENES_EACH; i++) if (g[i] !== mum.genes[i] && g[i] !== dad.genes[i]) bad++;
           sums.add(traitGeneSum(g, "bravery"));
         }
         // A father from before traits (103 genes): foals still get full genes
         const oldDad = dad.genes.slice(0, 103);
         const withOld = mum.genetics.combineGenes(oldDad);
-        return { labels, bad, sums: [...sums].sort(), withOldLen: withOld.length, withOldOk: withOld.slice(103, TRAIT_GENE_TOTAL).every((x) => x === 0 || x === 1) };
+        return { labels, bad, sums: [...sums].sort(), withOldLen: withOld.length, withOldOk: TRAITS.every((_, t) => withOld.slice(traitGeneStart(t), traitGeneStart(t) + TRAIT_GENES_EACH).every((x) => x === 0 || x === 1)) };
       }, SET_TRAIT);
       check(r.labels.mumBrave, "a fluffy with 5 bravery genes isn't Brave");
       check(r.labels.dadTimid, "a fluffy with 0 bravery genes isn't Timid");
       check(!r.labels.mumSocialLabel, "an average fluffy got a social label");
       checkEqual(r.bad, 0, "foal genes that came from neither parent");
       checkEqual(JSON.stringify(r.sums), JSON.stringify([0, 1, 2, 3, 4, 5]), "bravery sums seen in foals of a 5 x 0 pair");
-      checkEqual(r.withOldLen, 139, "foal of a pre-traits father (traits and fancy mane genes filled in)");
+      checkEqual(r.withOldLen, 144, "foal of a pre-traits father (traits and fancy mane genes filled in)");
       check(r.withOldOk, "foal of a pre-traits father has bad trait genes");
     },
   },

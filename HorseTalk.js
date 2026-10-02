@@ -146,6 +146,9 @@ addHorseMethods({
       }
     }
 
+    // Not right in the head (Inbreeding.js)
+    if (!text && typeof oddBabble === "function") text = oddBabble(this);
+
     // Something bad that happened to it (traumaMemory: a miscarriage, lost
     // legs, its lumps): it talks about it now and then for a few days
     if (!text && !this.tooYoungToSpeak() && Array.isArray(this.traumaMemory) && this.traumaMemory.length) {

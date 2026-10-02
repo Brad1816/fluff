@@ -58,6 +58,7 @@ function smartsOf(f) {
   if (!f) return 0;
   let s = BREED_SMARTS[_breedOf(f)] ?? 0;
   if (typeof traitValue === "function") s += WITS_WEIGHT * traitValue(f, "wits");
+  if (typeof hasDeformity === "function" && hasDeformity(f, "dim")) s -= 0.35; // simple-minded (Inbreeding.js)
   if (isGoodSmarty(f)) s += SMARTY_SMARTS.good;
   else if (f.isSmarty && f.isSmarty()) s += SMARTY_SMARTS.bad;
   return Math.max(-1, Math.min(1, s));
@@ -128,7 +129,7 @@ function updateSmartLeaders(dt) {
     if (lead.isSmarty && lead.isSmarty()) {
       // Leading them to ruin: bossy and harsh
       for (const m of members) {
-        if (m.happiness > WAN_DIE_THRESHOLD + 0.15) m.changeHappiness(-BAD_LEADER_GLOOM * hours);
+        if (m.happiness > WAN_DIE_THRESHOLD + 0.15) m.changeHappiness(-BAD_LEADER_GLOOM * hours, "Bossy leader");
         if (typeof changeOpinion === "function") {
           changeOpinion(m, lead, -BAD_LEADER_RESENT * hours, "bossy leader");
           const other = members[Math.floor(Math.random() * members.length)];
@@ -137,7 +138,7 @@ function updateSmartLeaders(dt) {
       }
     } else if (isGoodSmarty(lead)) {
       for (const m of members) {
-        if (m.happiness < 0.9) m.changeHappiness(GOOD_LEADER_CHEER * hours);
+        if (m.happiness < 0.9) m.changeHappiness(GOOD_LEADER_CHEER * hours, "A good leader");
         if (typeof changeOpinion === "function") changeOpinion(m, lead, 0.01 * hours, "a good leader");
       }
     }

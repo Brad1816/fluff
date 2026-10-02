@@ -86,7 +86,7 @@ addHorseMethods({
         if (this.matingState && this.matingState.isMating) {
           this._interruptMating();
         }
-        this.changeHappiness(HAPPINESS_PENALTY_CATTLE_PROD * dt);
+        this.changeHappiness(HAPPINESS_PENALTY_CATTLE_PROD * dt, "Cattle prod");
 
         this.continuousTasedTimer = (this.continuousTasedTimer || 0) + dt;
         this.continuousTasedSmokeTimer = (this.continuousTasedSmokeTimer || 0) + dt;
@@ -286,7 +286,8 @@ addHorseMethods({
           this.stateTimer = 0.8;
           const viabilityIdx = this.foalViability.length - this.babiesToBirth;
           // (born early, it may not live: Premature.js)
-          const isViable = this.spawnBaby(this.foalViability[viabilityIdx] !== false) !== false;
+          const v = this.foalViability[viabilityIdx];
+          const isViable = this.spawnBaby(v !== false, v === "flawed") !== false;
 
           // Each birth costs her health: less with good care or a midwife
           // (Pregnancy.js)
@@ -500,9 +501,9 @@ addHorseMethods({
                   this.expressionOverrideTimer = 3.0;
                 }
                 if (bowl.foodType === "sketties") {
-                  this.changeHappiness(HAPPINESS_BONUS_SKETTIES);
+                  this.changeHappiness(HAPPINESS_BONUS_SKETTIES, "Sketties!");
                 } else if (bowl.foodType === "scrap_kibble") {
-                  this.changeHappiness(-0.03);
+                  this.changeHappiness(-0.03, "Food it hates");
                   if (!this.isSmarty()) {
                     this.expressionOverride = "MISERABLE";
                     this.expressionOverrideTimer = 3.0;
@@ -511,14 +512,14 @@ addHorseMethods({
                   this.isPoisoned = true;
                   if (this.renderer) this.renderer.tinted = null;
                   this.vomitTimer = 4.0 + Math.random() * 6.0;
-                  this.changeHappiness(-0.1);
+                  this.changeHappiness(-0.1, "Food it hates");
                   if (!this.isSmarty()) {
                     this.expressionOverride = "MISERABLE";
                     this.expressionOverrideTimer = 3.0;
                   }
                 } else {
                   // How much it likes it (Diet.js)
-                  this.changeHappiness(typeof mealHappiness === "function" ? mealHappiness(this, foodType) : HAPPINESS_BONUS_NUMMIES);
+                  this.changeHappiness(typeof mealHappiness === "function" ? mealHappiness(this, foodType) : HAPPINESS_BONUS_NUMMIES, "A good meal");
                 }
                 if (typeof onFluffyAte === "function") onFluffyAte(this, foodType);
                 this.speak(getDialogue(key, this));
@@ -583,7 +584,7 @@ addHorseMethods({
         if (this.happiness > WAN_DIE_THRESHOLD) {
           this.expressionOverride = "CRYING_SHOCKED";
           this.expressionOverrideTimer = 5.0;
-          this.changeHappiness(HAPPINESS_PENALTY_AMPUTATION);
+          this.changeHappiness(HAPPINESS_PENALTY_AMPUTATION, "Lost a body part");
           this.speak(getDialogue(["CASTRATION_BAND_FINISH", this.tooYoungToSpeak() ? "BABY" : "DEFAULT"]));
         }
       }
@@ -774,7 +775,9 @@ addHorseMethods({
       !(typeof fluShowing === "function" && fluShowing(this)) &&
       (!this.isToxoplasmosis || (typeof worldSettings !== "undefined" && !worldSettings.toxoplasmosis))
     ) {
-      this.health = Math.min(100, this.health + 5 * this.growth * dt);
+      // (a sensitive one worn out from breeding heals only so far: Inbreeding.js)
+      const cap = typeof healthCapOf === "function" ? healthCapOf(this) : 100;
+      if (this.health < cap) this.health = Math.min(cap, this.health + 5 * this.growth * dt);
     }
     return false;
   },
@@ -1165,7 +1168,7 @@ addHorseMethods({
 
         if (inBed && this.happiness > WAN_DIE_THRESHOLD) {
           if (this.claimedBed.type === "cardboard_box") {
-            this.changeHappiness((HAPPINESS_BONUS_SLEEP_BOX / 60) * dt);
+            this.changeHappiness((HAPPINESS_BONUS_SLEEP_BOX / 60) * dt, "Slept somewhere cosy");
 
             this.boxWhimperTimer = (this.boxWhimperTimer || 5 + Math.random() * 15) - dt;
             if (this.boxWhimperTimer <= 0) {
@@ -1175,7 +1178,7 @@ addHorseMethods({
               }
             }
           } else {
-            this.changeHappiness((HAPPINESS_BONUS_SLEEP_BED / 60) * dt);
+            this.changeHappiness((HAPPINESS_BONUS_SLEEP_BED / 60) * dt, "Slept in a bed");
           }
         }
       } else {
@@ -1189,7 +1192,7 @@ addHorseMethods({
       // knock, like one forced mating, did, and a caged mill starved in a day)
       if (this.hunger < 0.4 && this.happiness > HUNGER_CAGE_FLOOR) {
         const decrease = (0.2 / 60) * dt;
-        this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR));
+        this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR), "Hungry");
       }
 
       // Cage penalty: -0.1 per minute (not below HUNGER_CAGE_FLOOR)
@@ -1197,7 +1200,7 @@ addHorseMethods({
       const penned = this.currentCage && !(this.currentCage instanceof Cage && !this.currentCage.causesUnhappiness());
       if ((penned || this.placedOn instanceof LitterpalBox) && this.happiness > HUNGER_CAGE_FLOOR) {
         const decrease = (0.1 / 60) * dt;
-        this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR));
+        this.changeHappiness(-Math.min(decrease, this.happiness - HUNGER_CAGE_FLOOR), "Shut in");
       }
       this.changeHappiness(0); // Clamp and trigger rule logic if needed
 

@@ -161,7 +161,7 @@ function addTrauma(f, type) {
     if (typeof changePlayerFear === "function") changePlayerFear(f, 0.3 * def.severity);
     if (typeof changePlayerTrust === "function") changePlayerTrust(f, -0.3 * def.severity);
   }
-  f.changeHappiness(-0.15 * def.severity);
+  f.changeHappiness(-0.15 * def.severity, "Taken away");
   return true;
 }
 
@@ -206,7 +206,7 @@ function onFluffyTakenAway(f, fromScene) {
     young,
   };
   // Crying out as it's carried off
-  f.changeHappiness(-0.05 * bond);
+  f.changeHappiness(-0.05 * bond, "Taken from family");
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 3;
   _sepSay(f, f.growth < 1 ? "TAKEN_FOAL" : "TAKEN", top[0].f);
@@ -215,7 +215,7 @@ function onFluffyTakenAway(f, fromScene) {
     if (o.currentStateKey === "SLEEPING" || !o.canSee()) continue;
     const w = attachmentTo(o, f);
     if (w <= 0) continue;
-    o.changeHappiness(-0.08 * w);
+    o.changeHappiness(-0.08 * w, "Saw one taken away");
     // (tiny foals won't remember who did it)
     if (remembersBeingTaken(o)) {
       if (typeof changePlayerFear === "function") changePlayerFear(o, 0.08 * w);
@@ -258,7 +258,7 @@ function updateSeparations(dt) {
     const found = _reunited(f);
     if (found) {
       if (s.grief > 0.15) {
-        f.changeHappiness(0.1 + 0.1 * s.grief);
+        f.changeHappiness(0.1 + 0.1 * s.grief, "Back with family");
         _sepSay(f, "REUNITED", found);
         if (found.canSee() && Math.random() < 0.7) _sepSay(found, "REUNITED", f);
       }
@@ -274,7 +274,7 @@ function updateSeparations(dt) {
       s.grief = Math.max(0, s.grief - step / (s.young ? GRIEF_FADE / 5 : GRIEF_FADE));
     }
     // Missing them hurts
-    if (s.grief > 0.05 && f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0012 * s.grief * step);
+    if (s.grief > 0.05 && f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0012 * s.grief * step, "Misses family");
     if (s.grief > 0.2 && Math.random() < 0.01 * s.grief * step) _sepSay(f, f.growth < 1 ? "MISS_FOAL" : "MISS");
     // Deep grief: it blames you
     if (!s.traumatised && !s.young && s.grief >= TRAUMA_AT) {
@@ -283,7 +283,7 @@ function updateSeparations(dt) {
       if (typeof changePlayerTrust === "function") changePlayerTrust(f, -0.2 * s.grief);
       if (typeof rememberPlayerEvent === "function")
         rememberPlayerEvent(f, f.growth < 1 ? "taken_from_mum" : "taken_away");
-      f.changeHappiness(-0.1);
+      f.changeHappiness(-0.1, "Taken away by you");
       // A foal torn from its living mum carries it for life
       if (s.how === "peaceful" && f.growth < 1 && s.ids.includes(f.motherId) && _isDeadParent(f.motherId) === false)
         addTrauma(f, "torn_from_mum");
@@ -304,7 +304,7 @@ function updateSeparations(dt) {
 function _traumaEffects(f, step) {
   const load = traumaLoad(f);
   const blame = traumaLoad(f, true);
-  if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0004 * load * step);
+  if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0004 * load * step, "Trauma");
   if (blame > 0 && typeof ensurePlayerMemory === "function") {
     ensurePlayerMemory(f);
     f.playerFear = Math.max(f.playerFear, 0.5 * blame);
@@ -314,7 +314,7 @@ function _traumaEffects(f, step) {
   if (f.currentStateKey === "SLEEPING" && Math.random() < 0.004 * load * step) {
     f.expressionOverride = "CRYING_SHOCKED";
     f.expressionOverrideTimer = 2.5;
-    f.changeHappiness(-0.02);
+    f.changeHappiness(-0.02, "Nightmare");
     if (!f.tooYoungToSpeak() && typeof getDialogue === "function")
       f.speak(getDialogue(["SEPARATION", "NIGHTMARE"], f), true);
   }

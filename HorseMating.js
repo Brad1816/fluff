@@ -4,10 +4,41 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+// The breeding cage (a stick, spray or tack on the stallion, script.js): why
+// it wouldn't make foals with this mare, in a sentence for you - or null
+function forcedBreedingProblem(male, mare) {
+  const n = (f) => (typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It");
+  if (!mare) return "There's no grown mare in the cage with him.";
+  if (male.isSensitive && male.isSensitive() && !(typeof sensitiveCanBreed === "function" && sensitiveCanBreed(male)))
+    return `${n(male)} is too poorly to breed again yet.`;
+  if ((male.specialHuggiesCooldown || 0) > 0) return `${n(male)} needs a rest before he can again.`;
+  if (male.accessories && male.accessories["ABOVE_LUMPS"] && male.accessories["ABOVE_LUMPS"].id === "castration_band") return `${n(male)} has a castration band on.`;
+  if (typeof canFluffiesMate === "function" && !canFluffiesMate(male, mare, true)) return `${n(male)} isn't interested in mares.`;
+  if (mare.isPregnant) return `${n(mare)} is already pregnant - forcing him on her would make her lose the foals.`;
+  if (mare.spayed) return `${n(mare)} is spayed: no foals.`;
+  if (typeof tooOldToBreed === "function" && tooOldToBreed(mare)) return `${n(mare)} is too old for foals.`;
+  if (typeof restingAfterBirth === "function" && restingAfterBirth(mare)) {
+    const r = typeof describeBreedingRest === "function" ? describeBreedingRest(mare) : null;
+    return `${n(mare)} is ${r ? r[0].charAt(0).toLowerCase() + r[0].slice(1) : "resting after her litter"} - no foals yet.`;
+  }
+  if (mare.isSensitive && mare.isSensitive() && !(typeof sensitiveCanBreed === "function" && sensitiveCanBreed(mare)))
+    return `${n(mare)} is too poorly to breed again yet.`;
+  return null;
+}
+
+let _breedingCageSaidAt = -1e9;
+function sayBreedingCageProblem(text) {
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  if (now - _breedingCageSaidAt < 2500) return;
+  _breedingCageSaidAt = now;
+  if (typeof addUIMessage === "function") addUIMessage(text);
+}
+
 addHorseMethods({
   mateWith(friend, maleForced = false, femaleForced = false) {
     if (this.gender === "male" && this.specialHuggiesCooldown > 0) return false;
-    if (this.gender === "male" && this.isSensitive()) return false;
+    // (a sensitive stallion can't by himself; you can breed him - Inbreeding.js)
+    if (this.gender === "male" && this.isSensitive() && !(maleForced && typeof sensitiveCanBreed === "function" && sensitiveCanBreed(this))) return false;
     const force = maleForced || femaleForced;
     if (
       !friend ||
@@ -96,16 +127,16 @@ addHorseMethods({
         : ["SPECIAL_HUGGIES", "BAD_ENFIES", "MARE"];
 
     if (!maleForced && !femaleForced) {
-      this.changeHappiness(HAPPINESS_BONUS_MATE_SUCCESS);
-      friend.changeHappiness(HAPPINESS_BONUS_MATE_SUCCESS);
+      this.changeHappiness(HAPPINESS_BONUS_MATE_SUCCESS, "Special huggies");
+      friend.changeHappiness(HAPPINESS_BONUS_MATE_SUCCESS, "Special huggies");
       this.expressionOverride = "GOOD_UPSIES";
       this.expressionOverrideTimer = 3.0;
       friend.expressionOverride = "GOOD_UPSIES";
       friend.expressionOverrideTimer = 3.0;
       friend.speak(getDialogue(["SPECIAL_HUGGIES", "IP"], friend));
     } else if (!maleForced && femaleForced) {
-      this.changeHappiness(HAPPINESS_BONUS_MATE_SUCCESS);
-      friend.changeHappiness(HAPPINESS_PENALTY_MATE_FORCED_MARE);
+      this.changeHappiness(HAPPINESS_BONUS_MATE_SUCCESS, "Special huggies");
+      friend.changeHappiness(HAPPINESS_PENALTY_MATE_FORCED_MARE, "Forced");
       if (!this.isUnderAphrodisiac()) {
         this.expressionOverride = "SMUG";
         this.expressionOverrideTimer = 3.0;
@@ -115,8 +146,8 @@ addHorseMethods({
         friend.speak(getDialogue(badEnfiesKey, friend, this));
       }
     } else if (maleForced && femaleForced) {
-      this.changeHappiness(HAPPINESS_PENALTY_MATE_BAD_ENFIES);
-      friend.changeHappiness(HAPPINESS_PENALTY_MATE_BAD_ENFIES);
+      this.changeHappiness(HAPPINESS_PENALTY_MATE_BAD_ENFIES, "Bad enfies");
+      friend.changeHappiness(HAPPINESS_PENALTY_MATE_BAD_ENFIES, "Bad enfies");
       this.expressionOverride = "BAD_UPSIES";
       this.expressionOverrideTimer = 3.0;
       friend.setShock(3.0);
@@ -204,6 +235,11 @@ addHorseMethods({
       friend.beginMiscarriage();
     } else if (friend.gender === "female" && this.gender === "male" && !friend.spayed && !hasCastrationBand) {
       friend.triggerPregnancy(this);
+      // Sensitive ones are worn out by it (Inbreeding.js)
+      if (typeof noteSensitiveBred === "function") {
+        noteSensitiveBred(this);
+        noteSensitiveBred(friend);
+      }
     }
   },
 
@@ -221,7 +257,7 @@ addHorseMethods({
         timer: 30 + Math.random() * 60,
       });
     }
-    this.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE);
+    this.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE, "Lost its foals");
   },
 
   // Labor is due once the pregnancy has run its course or a miscarriage has

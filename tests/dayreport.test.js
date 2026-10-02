@@ -148,7 +148,8 @@ module.exports = [
       check(r.report.died.length === 1 && r.report.died[0].startsWith("Grandma"), `died: ${r.report.died}`);
       checkEqual(r.report.sold.count, 1, "sold");
       checkEqual(r.report.orders.money, 900, "order money");
-      checkEqual(r.report.news.length, 1, "news");
+      // (plus, some days, the market's news: "Buyers are out in force today.")
+      checkEqual(r.report.news.filter((t) => /herd/.test(t)).length, 1, `news: ${JSON.stringify(r.report.news)}`);
       checkEqual(r.speed, 1, "fast forward stops for the report");
       checkEqual(r.newDay, 1, "new day started");
       checkEqual(r.freshBorn, 0, "new day starts empty");

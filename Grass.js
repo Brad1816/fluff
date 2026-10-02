@@ -1,3 +1,7 @@
+// How fast grass grows back (game seconds for one bite's worth) and spreads
+const GRASS_REGROW = 360;
+const GRASS_SPREAD_EVERY = 45;
+
 class Grass {
   constructor(x, y, scene = "OUTDOORS", growth = 0.0) {
     this.id = nextObjectId++;
@@ -67,7 +71,7 @@ class Grass {
     // grows from 0 to 2, grows by 1 every two minutes (120 seconds)
     // Faster in spring and in the rain, hardly at all in winter (WorldTime.js)
     const season = typeof growthMultiplier === "function" ? growthMultiplier("grass") : 1;
-    this.growth = Math.min(2, this.growth + (dt / 120) * season);
+    this.growth = Math.min(2, this.growth + (dt / GRASS_REGROW) * season);
 
     // In the park, grass only grows back in meadows (ParkLife.js does that)
     if (typeof PARK_SCENE !== "undefined" && this.scene === PARK_SCENE) return;
@@ -76,7 +80,7 @@ class Grass {
     // if there are fewer than 5 grass in a radius around it
     if (this.growth >= 0.4) {
       this.spawnTimer += dt;
-      if (this.spawnTimer >= 15) {
+      if (this.spawnTimer >= GRASS_SPREAD_EVERY) {
         this.spawnTimer = 0;
         const radius = 200;
 

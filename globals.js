@@ -1845,7 +1845,7 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Lawn Mower",
-    desc: "Hold it and sweep it over long grass outside (garden, river, backyard, park) to mow it. It grows back.",
+    desc: "Hold it and sweep it over long grass outside (garden, river, backyard, park) to mow it. It grows back. Mind the foals: a small one that goes under the blades is shredded.",
     cost: 150,
     isItem: "lawn_mower",
   },

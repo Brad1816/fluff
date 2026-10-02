@@ -244,6 +244,9 @@ function drawPauseMenu() {
       masterVolume = (mouse.x - (btnX + 20)) / (btnW - 40);
       if (masterVolume < 0) masterVolume = 0;
       if (masterVolume > 1) masterVolume = 1;
+      try {
+        localStorage.setItem("fluffyVolume", String(masterVolume));
+      } catch (e) {}
     }
   }
 

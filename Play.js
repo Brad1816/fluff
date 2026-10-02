@@ -160,7 +160,7 @@ class ChaseHeldBallDesire extends Desire {
 function playedWithYou(f) {
   f._playedWithYouAt = timePlayed;
   onFluffyPlayed(f, "you");
-  f.changeHappiness(0.06);
+  f.changeHappiness(0.06, "Played");
   if (typeof giveAffection === "function") giveAffection(f, "played");
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 2;
@@ -205,7 +205,7 @@ function boredMischief(f) {
     f.initBehavior("FLUFFY_JAB");
     f.stateTimer = 0.5;
     f.facingRight = victim.x > f.x;
-    victim.changeHappiness(-0.05);
+    victim.changeHappiness(-0.05, "Picked on");
     victim.expressionOverride = "CRYING_SHOCKED";
     victim.expressionOverrideTimer = 1.5;
     if (!f.tooYoungToSpeak()) f.speak(getDialogue(["PLAY", "MISCHIEF_PICK"], f), true);
@@ -251,7 +251,7 @@ function updatePlay(dt) {
     if (f.happiness > cap) f.happiness = cap;
 
     if (f.boredom >= BOREDOM_VERY) {
-      f.changeHappiness(-0.1 * hours);
+      f.changeHappiness(-0.1 * hours, "Bored");
       if (typeof f._nextMischief !== "number") f._nextMischief = now + 300 + Math.random() * 300;
       if (now >= f._nextMischief && !f.trickNow && f.currentStateKey !== "EATING" && (typeof canBeMovedExternally !== "function" || canBeMovedExternally(f))) {
         f._nextMischief = now + 480 + Math.random() * 420; // about twice a game day

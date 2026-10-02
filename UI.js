@@ -1148,6 +1148,8 @@ canvas.addEventListener("mousedown", (e) => {
         return;
       }
 
+      // A cull or eject cage with fluffies in: a tap does its job (Cage.js)
+      if (typeof Cage !== "undefined" && obj instanceof Cage && typeof obj.tapAction === "function" && obj.tapAction()) return;
       cancelPendingConnections();
       obj.isDragging = true;
       isGlobalDragging = true;

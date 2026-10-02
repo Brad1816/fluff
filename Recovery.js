@@ -120,7 +120,7 @@ function updateRecovery(dt) {
       f.infection.t += step;
       const rate = (INFECTION_HEALTH_PER_DAY * (f.growth < 1 ? 1.5 : 1) * step) / DAY_LENGTH;
       f.health -= rate;
-      if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness((-0.04 * step) / HOUR_LENGTH);
+      if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness((-0.04 * step) / HOUR_LENGTH, "Sore after surgery");
       if (!f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && Math.random() < 0.003 * step && (!f.speech || !f.speech.text))
         f.speak(getDialogue(["INFECTION", "DEFAULT"], f));
       if (f.health <= 0) {

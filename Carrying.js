@@ -19,8 +19,12 @@ const FOAL_WRIGGLE_SPEED = 22; // px a second, a newborn off its mum's back
 const RIDE_REACH = 70; // px: close enough to climb on
 const RIDE_MAX = 4; // on one mum's back at once
 
+// (a sensitive foal never really crawls: it rides on mum's back, or
+// wriggles, as long as it's a foal)
 function cantCrawlYet(f) {
-  return !!(f && f.isAlive && f.growth < FOAL_CRAWL_AT && !(f.isSensitive && f.isSensitive()));
+  if (!f || !f.isAlive) return false;
+  if (f.isSensitive && f.isSensitive()) return f.growth < 1;
+  return f.growth < FOAL_CRAWL_AT;
 }
 
 // Its mum, if she can carry it right now

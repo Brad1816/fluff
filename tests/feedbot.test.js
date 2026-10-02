@@ -171,7 +171,7 @@ module.exports = [
         const calm = __mk(410);
         calm.boredom = 0;
         calm.hunger = 1;
-        for (let i = 0; i < TRAITS.length; i++) for (let k = 0; k < TRAIT_GENES_EACH; k++) calm.genes[TRAIT_GENE_START + i * TRAIT_GENES_EACH + k] = 0;
+        for (let i = 0; i < TRAITS.length; i++) for (let k = 0; k < TRAIT_GENES_EACH; k++) calm.genes[traitGeneStart(i) + k] = 0;
         out.calmRowdy = feedBotRowdiness(calm);
         for (let i = 0; i < 6000 && bot.state !== "tipped" && bot.state !== "broken"; i++) bot._checkTipping();
         out.calmTipped = bot.state === "tipped" || bot.state === "broken";

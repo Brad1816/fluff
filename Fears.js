@@ -166,7 +166,7 @@ function startFright(f, key) {
   if (f.currentStateKey === "SLEEPING" && typeof f.initBehavior === "function") f.initBehavior("IDLE"); // wakes up
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 2.5;
-  f.changeHappiness(-0.03 * fear);
+  f.changeHappiness(-0.03 * fear, "A fright");
   _fSay(f, key.toUpperCase());
   if (typeof fluffySound === "function") fluffySound(f, "sad");
   return true;
@@ -201,7 +201,7 @@ function onComfortedByYou(f, how = "held") {
   const key = f.fright.key;
   f.fright = null;
   changeFear(f, key, -FEAR_COMFORT);
-  f.changeHappiness(0.03);
+  f.changeHappiness(0.03, "Comforted");
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 2;
   _fSay(f, "COMFORTED");
@@ -520,7 +520,7 @@ function updateFears(dt) {
     if (dark >= FEAR_MIN && isDarkFor(f)) {
       const asleep = f.currentStateKey === "SLEEPING";
       if (Math.random() < DARK_FRIGHT_CHANCE * dark * step * (asleep ? 0.3 : 1)) startFright(f, "dark");
-      else if (asleep) f.changeHappiness((-0.01 * dark * step) / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50)); // restless sleep
+      else if (asleep) f.changeHappiness((-0.01 * dark * step) / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50), "Scared of the dark"); // restless sleep
     }
     // The Fluff-Bot driving about nearby
     const botFear = fearOf(f, "bot");

@@ -209,8 +209,8 @@ class HorseAnatomy {
 
             if (aliveFoals.length === 0 && allChildren.length > 1) {
               // (only a mum who's there knows: Acquaintance.js)
-              if (weaponType && mother.scene === this.horse.scene) {
-                mother.changeHappiness(-0.35);
+              if (weaponType && mother.scene === this.horse.scene && !(typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(mother, this.horse))) {
+                mother.changeHappiness(-0.35, "Lost its foals");
               }
             }
           }
@@ -596,6 +596,11 @@ class HorseAnatomy {
         const dadGene =
           Math.random() < 0.5 ? father.genes[dadIdx] : father.genes[dadIdx + 1];
         if (momGene === dadGene) {
+          // Kin's foals sometimes pull through - deformed (Inbreeding.js)
+          if (typeof inbredPullsThrough === "function" && inbredPullsThrough(this.horse, father)) {
+            viable = "flawed";
+            continue;
+          }
           viable = false;
           break;
         }
@@ -604,7 +609,8 @@ class HorseAnatomy {
     }
   }
 
-  spawnBaby(isViable = true) {
+  // flawed: it pulled through a bad gene pair its kin parents shared (Inbreeding.js)
+  spawnBaby(isViable = true, flawed = false) {
     // She rests before another litter (Population.js)
     this.horse.lastBirthAt = typeof timePlayed === "number" ? timePlayed : 0;
     if (!this.horse.fatherGenes) return;
@@ -641,19 +647,16 @@ class HorseAnatomy {
     baby.hunger = 0.4;
     if (isViable && typeof fluffySound === "function") fluffySound(baby, "peep"); // a newborn's first peep (FluffySounds.js)
 
+    const sire = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === this.horse.babyDaddyId) : null;
     if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
-      let chance = this.horse.isSensitive() ? 0.175 : 0.04;
-
-      if (babyGenes) {
-        if (babyGenes[65] === babyGenes[66]) chance *= 4;
-        if (babyGenes[67] === babyGenes[68]) chance *= 4;
-        if (babyGenes[69] === babyGenes[70]) chance *= 4;
-      }
-
+      // It runs in families: mum or dad sensitive makes it likelier (Inbreeding.js)
+      let chance = typeof sensitiveBirthChance === "function" ? sensitiveBirthChance(this.horse, sire, babyGenes) : 0.04;
       if (Math.random() < chance) {
         baby.sensitiveBaby = true;
       }
     }
+    // Kin's foals: deformities (Inbreeding.js)
+    if (isViable && typeof rollDeformities === "function") rollDeformities(baby, this.horse, sire, flawed);
 
     // A foal of its own (Wishes.js)
     if (isViable && typeof noteWishEvent === "function") {
@@ -879,8 +882,9 @@ class HorseAnatomy {
     }
   }
 
-  explodeFromCar(car) {
-    this.die("car");
+  // (also the lawn mower: weapon "mower", LawnMower.js)
+  explodeFromCar(car, weapon = "car", cause = null) {
+    this.die(weapon, cause);
     this.horse.isDestroyed = true;
     if (!this.horse.tinted) return;
     const s = this.horse.scale;

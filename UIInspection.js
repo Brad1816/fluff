@@ -161,6 +161,10 @@ function getFluffyInspectionInfo(f) {
     // What its life has done to it, and what it loves most (Personality.js)
     const shifts = typeof describeTraitShifts === "function" ? describeTraitShifts(f) : null;
     if (shifts) about.push({ label: "Life made it", value: shifts });
+    const deformed = typeof describeDeformities === "function" ? describeDeformities(f) : null; // Inbreeding.js
+    if (deformed) about.push({ label: "Deformities", value: deformed[0], tone: deformed[1] });
+    const wear = typeof describeBreedWear === "function" ? describeBreedWear(f) : null; // Inbreeding.js
+    if (wear) about.push({ label: "Worn out", value: wear[0], tone: wear[1] });
     const hurt = typeof describeInjuries === "function" ? describeInjuries(f) : null; // Injuries.js
     if (hurt) about.push({ label: "Injuries", value: hurt[0], tone: hurt[1] });
     const scars = typeof describeScars === "function" ? describeScars(f) : null; // Scars.js
@@ -218,6 +222,8 @@ function getFluffyInspectionInfo(f) {
   // Which herd it's in (Herds.js)
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
+    const feud = typeof describeHerdFeud === "function" ? describeHerdFeud(f) : null; // HerdWars.js
+    if (feud) about.push({ label: "Feud", value: feud[0], tone: feud[1] });
   }
   // Taken away from its herd/family (Separation.js)
   const misses = typeof describeSeparation === "function" ? describeSeparation(f) : null;
@@ -393,15 +399,17 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Resting", "Breeding", "Spayed"] },
+      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Resting", "Breeding", "Worn out", "Spayed"] },
       { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Injuries", "Settling in", "Sells for"] },
     ],
   },
+  // What's making it happy or unhappy (Mood.js)
+  { id: "mood", name: "Mood", cols: [] },
   {
     id: "family",
     name: "Family & friends",
     cols: [
-      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Line", "Born", "Named by", "Herd"] },
+      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Line", "Born", "Named by", "Herd", "Feud"] },
       { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Misses"] },
     ],
   },
@@ -409,7 +417,7 @@ const INSPECTION_TABS = [
     id: "looks",
     name: "Looks & nature",
     cols: [
-      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Scars", "Ribbons"] },
+      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Deformities", "Scars", "Ribbons"] },
       { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
     ],
   },
@@ -449,7 +457,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries"]);
+  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries", "Deformities"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;
@@ -680,6 +688,7 @@ function drawInspectionModal(ctx) {
     }
     drawLifeStoryTab(ctx, f, inspectionStoryArea(L));
   }
+  if (tab.id === "mood" && typeof drawMoodTab === "function") drawMoodTab(ctx, f, inspectionStoryArea(L));
   tab.cols.forEach((col, i) => {
     drawInspectionColumn(ctx, col.title, col.rows, L.listX + 25 + i * (colW + 20), L.contentY, colW - 10, maxY);
   });

@@ -218,12 +218,15 @@ addHorseMethods({
       if (pRel.state === "unmet" && other && typeof haveMet === "function" && haveMet(this, other)) pRel.state = other.scene === this.scene ? "current" : "unmet";
       if (other && other.scene === this.scene) {
         if (!other.isAlive) {
-          if (pRel.state !== "dead") {
+          if (pRel.state !== "dead" && typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(this, other)) {
+            pRel.state = "dead"; // (a munstah: good riddance - AlicornAcceptance.js)
+            if (!this.tooYoungToSpeak() && Math.random() < 0.5) this.speak(getDialogue(["CORPSE", "ALICORN"], this));
+          } else if (pRel.state !== "dead") {
             pRel.state = "dead";
             if (relation === "special_friend") {
               rels[otherId] = "forgotten_special_friend";
             }
-            this.changeHappiness(HAPPINESS_PENALTY_CORPSE_FEAR_RELATION);
+            this.changeHappiness(HAPPINESS_PENALTY_CORPSE_FEAR_RELATION, "Saw family dead");
             this.expressionOverride = "CRYING_SHOCKED";
             this.expressionOverrideTimer = 3.0;
             if (!this.tooYoungToSpeak()) {
@@ -304,7 +307,7 @@ addHorseMethods({
         }
 
         if (this.happiness > HAPPINESS_MISERABLE_THRESHOLD) {
-          this.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE);
+          this.changeHappiness(HAPPINESS_PENALTY_LOST_RELATIVE, "Lost family");
         }
 
         this.expressionOverride = "MISERABLE";
@@ -406,7 +409,7 @@ addHorseMethods({
 
     if (relation && !this.tooYoungToSpeak()) {
       this.speak(getDialogue([key1, key2, key3], this, other));
-      this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
+      this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE, "Family chatter");
     }
   },
 

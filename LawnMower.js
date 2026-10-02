@@ -86,6 +86,24 @@ function mowAround(scene, x, y, r = MOW_RADIUS) {
   return cut;
 }
 
+// Foals small enough to go under the blades (growth): run over, they're
+// shredded like the grinder does (HorseAnatomy.explodeFromCar)
+const MOW_FOAL_BELOW = 0.5;
+function mowFoalsAround(scene, x, y, r = MOW_RADIUS) {
+  if (typeof fluffies === "undefined") return 0;
+  let n = 0;
+  for (const f of [...fluffies]) {
+    if (!f.isAlive || f.scene !== scene || f.isDragging || f.currentCage || f.placedOn || f._riding) continue;
+    if (f.growth >= MOW_FOAL_BELOW) continue;
+    if (Math.hypot(f.x - x, (f.y - y) * 2) > r + 10) continue;
+    f.anatomy.explodeFromCar({ vx: Math.random() < 0.5 ? -1 : 1 }, "mower", "Run over by the lawn mower");
+    if (typeof addPointToPuddle === "function") addPointToPuddle(scene, f.x, f.y, "blood", 0.3, 0.6, 0.05);
+    if (typeof playSound === "function") playSound("thud", 0.7, 0.8);
+    n++;
+  }
+  return n;
+}
+
 class LawnMower {
   constructor(scene = "OUTDOORS") {
     this.id = nextObjectId++;
@@ -109,7 +127,7 @@ class LawnMower {
     this.mowTimer -= dt;
     if (this.mowTimer <= 0) {
       this.mowTimer = MOW_EVERY;
-      const n = mowAround(this.scene, this.x, this.y);
+      const n = mowAround(this.scene, this.x, this.y) + mowFoalsAround(this.scene, this.x, this.y);
       if (n) {
         this.cutTotal += n;
         this.whackTimer = 0.15;

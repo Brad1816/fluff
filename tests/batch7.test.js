@@ -52,7 +52,7 @@ module.exports = [
         out.saved = createItemFromSave(perch.serialize()) instanceof Perch;
         out.sellable = !!findSellableItemAt(perch.x, perch.y - 40);
         const peg = __mk(600, { type: "pegasus" });
-        const earthy = __mk(650);
+        const earthy = __mk(650, { type: "unicorn" }); // (a wingless one: an "earthy" with random genes can come out with wings)
         // Make it go now
         const real = Math.random;
         Math.random = () => 0;

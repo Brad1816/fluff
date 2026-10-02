@@ -224,7 +224,7 @@ module.exports = [
           const f = __mk(400, { type, gender: "male" });
           f.traitShift = { wits: 0 };
           // neutral wits genes
-          for (let i = 0; i < TRAIT_GENES_EACH; i++) f.genes[TRAIT_GENE_START + TRAITS.findIndex((t) => t.key === "wits") * TRAIT_GENES_EACH + i] = i < 2.5 ? 1 : 0;
+          for (let i = 0; i < TRAIT_GENES_EACH; i++) f.genes[traitGeneStart(TRAITS.findIndex((t) => t.key === "wits")) + i] = i < 2.5 ? 1 : 0;
           return f;
         };
         const types = ["alicorn", "unicorn", "earthy", "pegasus"].map((t) => {

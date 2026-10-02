@@ -10,7 +10,7 @@ const MAKE = `(n, xs) => {
     const h = new Horse(1, null, "INDOORS", "earthy", null, null, null, "female");
     const set = (key, sum) => {
       const k = TRAITS.findIndex((t) => t.key === key);
-      for (let g = 0; g < TRAIT_GENES_EACH; g++) h.genes[TRAIT_GENE_START + k * TRAIT_GENES_EACH + g] = g < sum ? 1 : 0;
+      for (let g = 0; g < TRAIT_GENES_EACH; g++) h.genes[traitGeneStart(k) + g] = g < sum ? 1 : 0;
     };
     for (const t of TRAITS) set(t.key, 3);
     h.adopted = true;

@@ -71,7 +71,7 @@ function notifyViolence(
       key2 = weaponType.toUpperCase();
       key3 = other.adopted ? "ADOPTED" : "FERAL";
     }
-    other.changeHappiness(HAPPINESS_PENALTY_WITNESS_VIOLENCE);
+    other.changeHappiness(HAPPINESS_PENALTY_WITNESS_VIOLENCE, "Saw you hurt one");
     other.speak(getDialogue([key1, key2, key3], other, victim));
   }
 }
@@ -503,6 +503,9 @@ class Horse {
     if (this.type === "unicorn") {
       this.limbs.horn = true;
     }
+    // A few simply don't care about alicorns (AlicornAcceptance.js; ones
+    // found in the park or the shelter are rolled where they're made)
+    if (motherId !== null && !horseBeingLoaded && typeof rollAlicornIndifference === "function") rollAlicornIndifference(this);
     // A foal born a smarty: good or bad? (Intelligence.js; ones found in the
     // park or the shelter are rolled where they're made)
     if (motherId !== null && !horseBeingLoaded && typeof rollSmartyKind === "function") rollSmartyKind(this);
@@ -658,7 +661,8 @@ class Horse {
     this.expressionOverrideTimer = duration;
   }
 
-  changeHappiness(amount) {
+  // cause: a few words for the Mood tab (Mood.js), e.g. "Hungry"
+  changeHappiness(amount, cause = null) {
     const oldHappiness = this.happiness;
     let newHappiness = clamp(this.happiness + amount, 0, 1);
 
@@ -668,6 +672,7 @@ class Horse {
     }
 
     this.happiness = newHappiness;
+    if (amount && typeof noteMood === "function") noteMood(this, cause, newHappiness - oldHappiness, amount);
   }
 
   isNearRunningGrinder() {
@@ -912,8 +917,8 @@ class Horse {
     this.speed /= 1 + limbsMissing;
     // A mangled leg: half as bad as none (Injuries.js)
     if (typeof mangledLegCount === "function") this.speed /= 1 + 0.5 * mangledLegCount(this);
-    if (this.isSensitive()) {
-      this.speed /= 4;
+    if (this.isSensitive() && !(typeof cantCrawlYet === "function" && cantCrawlYet(this))) {
+      this.speed /= 4; // (a sensitive foal wriggles at a newborn's pace: Carrying.js)
     }
 
     this.speed *= Math.max(WALKY_THRESHOLD, this.growth);

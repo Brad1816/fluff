@@ -178,14 +178,14 @@ function scrubFluffy(f) {
     reaction = "happy";
     f.expressionOverride = "GOOD_UPSIES";
     f.expressionOverrideTimer = 2.5;
-    f.changeHappiness(0.04 + 0.04 * like);
+    f.changeHappiness(0.04 + 0.04 * like, "A bath it liked");
     if (typeof giveAffection === "function") giveAffection(f, "bathed");
     if (talk) f.speak(getDialogue(["BATH", "LOVE"], f), true);
   } else {
     reaction = "hates";
     f.expressionOverride = "CRYING_SHOCKED";
     f.expressionOverrideTimer = 2.5;
-    f.changeHappiness(-0.04 * -like);
+    f.changeHappiness(-0.04 * -like, "A bath it hated");
     if (typeof changePlayerFear === "function") changePlayerFear(f, 0.02 * -like);
     if (talk) f.speak(getDialogue(["BATH", "HATE"], f), true);
   }
@@ -321,7 +321,7 @@ function updateBath(dt) {
     f.dirt = Math.min(1, dirtOf(f) + add);
 
     if (dirtLevel(f) === "filthy") {
-      f.changeHappiness(-0.05 * hours);
+      f.changeHappiness(-0.05 * hours, "Dirty");
       if (f.scene !== currentScene) continue;
       if (typeof f._nextDirtTalk !== "number") f._nextDirtTalk = now + 60 + Math.random() * 120;
       if (now < f._nextDirtTalk) continue;

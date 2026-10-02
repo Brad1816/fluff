@@ -27,10 +27,18 @@ const TRAITS = [
   { key: "appetite", high: "Greedy", low: "Picky eater", highCode: "GREEDY", lowCode: "PICKY" },
   { key: "energy", high: "Playful", low: "Lazy", highCode: "PLAYFUL", lowCode: "LAZY" },
   { key: "temper", high: "Grumpy", low: "Gentle", highCode: "GRUMPY", lowCode: "GENTLE" },
-  { key: "wits", high: "Clever", low: "Dim", highCode: "CLEVER", lowCode: "DIM" }, // (Intelligence.js)
+  // (after the fancy-mane genes, 128-138: ManePatterns.js)
+  { key: "wits", high: "Clever", low: "Dim", highCode: "CLEVER", lowCode: "DIM", start: 139 }, // (Intelligence.js)
 ];
 
-const TRAIT_GENE_TOTAL = TRAIT_GENE_START + TRAITS.length * TRAIT_GENES_EACH;
+// Where trait i's genes start: one after another from TRAIT_GENE_START,
+// unless the trait says otherwise (wits, added after the mane genes)
+function traitGeneStart(i) {
+  const t = TRAITS[i];
+  return t && typeof t.start === "number" ? t.start : TRAIT_GENE_START + i * TRAIT_GENES_EACH;
+}
+
+const TRAIT_GENE_TOTAL = Math.max(...TRAITS.map((t, i) => traitGeneStart(i) + TRAIT_GENES_EACH));
 
 // How traits change what fluffies want to do. For each desire (names from
 // HorseBrain.js): [trait, strength]. The desire's score is multiplied by
@@ -65,7 +73,12 @@ const TRAIT_DESIRE_EFFECTS = {
 // Only touches lists that already have all the older genes.
 function ensureTraitGenes(genes) {
   if (!Array.isArray(genes) || genes.length < TRAIT_GENE_START) return genes;
-  while (genes.length < TRAIT_GENE_TOTAL) genes.push(Math.random() < 0.5 ? 0 : 1);
+  for (let i = 0; i < TRAITS.length; i++) {
+    const s = traitGeneStart(i);
+    // (a gap before it - the mane genes: those get filled in properly)
+    if (genes.length < s && typeof ensureManeGenes === "function" && typeof MANE_GENE_START === "number" && s >= MANE_GENE_START) ensureManeGenes(genes);
+    while (genes.length < s + TRAIT_GENES_EACH) genes.push(Math.random() < 0.5 ? 0 : 1);
+  }
   return genes;
 }
 
@@ -78,7 +91,7 @@ function traitGeneSum(horseOrGenes, key) {
   const genes = _traitGenes(horseOrGenes);
   const i = TRAITS.findIndex((t) => t.key === key);
   if (!genes || i < 0) return null;
-  const start = TRAIT_GENE_START + i * TRAIT_GENES_EACH;
+  const start = traitGeneStart(i);
   if (genes.length < start + TRAIT_GENES_EACH) return null;
   let sum = 0;
   for (let k = 0; k < TRAIT_GENES_EACH; k++) sum += genes[start + k] ? 1 : 0;

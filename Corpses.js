@@ -13,9 +13,9 @@
 // area you're in and your own rooms.
 // ---------------------------------------------------------------------------
 
-const ROT_START = 240; // 4 game minutes
-const ROT_FULL = 600; // 10
-const ROT_GONE = 780; // 13
+const ROT_START = 100; // game seconds after death (2 game hours)
+const ROT_FULL = 300; // (6 hours)
+const ROT_GONE = 720; // (about 14 hours)
 
 const corpsesTicker = new Ticker(1);
 

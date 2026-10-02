@@ -96,7 +96,7 @@ function _shGenes(kind) {
   if (typeof TRAITS !== "undefined" && typeof TRAIT_GENE_START !== "undefined") {
     const setTrait = (key, on) => {
       const i = TRAITS.findIndex((t) => t.key === key);
-      if (i >= 0) _shSetBits(genes, TRAIT_GENE_START + i * TRAIT_GENES_EACH, TRAIT_GENES_EACH, Math.max(0, Math.min(TRAIT_GENES_EACH, on)));
+      if (i >= 0) _shSetBits(genes, traitGeneStart(i), TRAIT_GENES_EACH, Math.max(0, Math.min(TRAIT_GENES_EACH, on)));
     };
     const n = TRAIT_GENES_EACH;
     if (kind.goodNature) {
@@ -176,6 +176,7 @@ function makeShelterResident(dayNumber = typeof getDayNumber === "function" ? ge
   if (typeof setSpawnAge === "function") setSpawnAge(h, 3, origin === "surrendered" ? 60 : 36);
   // How it's been treated
   h.personalities = (h.personalities || []).filter((p) => p !== "smarty");
+  if (typeof rollAlicornIndifference === "function") rollAlicornIndifference(h);
   if (!kind.goodNature && growth >= 1 && Math.random() < SHELTER_SMARTY_CHANCE) {
     h.personalities.push("smarty");
     if (typeof rollSmartyKind === "function") rollSmartyKind(h);
@@ -384,15 +385,53 @@ function canGiveUpToShelter() {
   return shelter.residents.length < SHELTER_CAGES;
 }
 
-// Returns the new resident, or null (full / not yours)
-function giveUpToShelter(f) {
-  if (!f || !f.isAlive || !f.adopted) return null;
+// The after-hours drop box: set a fluffy down on it and the shelter takes it
+// in. One of yours: it asks first (it's giving it up). A stray: no questions.
+function overShelterDropBox(x, y) {
+  if (typeof currentScene === "undefined" || currentScene !== SHELTER_FRONT_SCENE) return false;
+  const D = shelterFrontLayout().dropBox;
+  return x >= D.x - 30 && x <= D.x + D.w + 30 && y >= D.y - 30 && y <= D.y + D.h + 60;
+}
+
+function dropInShelterBox(f) {
+  if (!f || !f.isAlive) return false;
+  if (!canGiveUpToShelter()) {
+    if (typeof addUIMessage === "function") addUIMessage("The drop box is full: the shelter has no free kennel today.");
+    return false;
+  }
+  const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "it";
+  if (!f.adopted) {
+    giveUpToShelter(f, { stray: true });
+    return true;
+  }
+  if (typeof openChoice !== "function") return !!giveUpToShelter(f);
+  // (held still while you decide)
+  if (f.isDragging) {
+    f.isDragging = false;
+    isGlobalDragging = false;
+  }
+  openChoice({
+    title: `Leave ${name} in the drop box?`,
+    lines: ["The shelter takes it in and finds it a new home - if it can.", "It will miss you."],
+    buttons: [
+      { label: "Leave it", kind: "danger", run: () => giveUpToShelter(f) },
+      { label: "Keep it", cancel: true, run: () => {} },
+    ],
+  });
+  return true;
+}
+
+// Returns the new resident, or null (full / not yours). opts.stray: a stray
+// someone left in the drop box (not yours: no questions, no missing you)
+function giveUpToShelter(f, opts = {}) {
+  if (!f || !f.isAlive || (!f.adopted && !opts.stray)) return null;
   if (!canGiveUpToShelter()) {
     if (typeof addUIMessage === "function") addUIMessage("The shelter has no free kennel today.");
     return null;
   }
   const today = typeof getDayNumber === "function" ? getDayNumber() : 1;
-  if (typeof noteFluffyLeft === "function") noteFluffyLeft(f, "given up");
+  const stray = !f.adopted;
+  if (!stray && typeof noteFluffyLeft === "function") noteFluffyLeft(f, "given up");
   if (f.isDragging) {
     isGlobalDragging = false;
     f.isDragging = false;
@@ -403,9 +442,11 @@ function giveUpToShelter(f) {
   const i = fluffies.indexOf(f);
   if (i >= 0) fluffies.splice(i, 1);
   // It misses you, more the more it loved you (Abandoned.js)
-  if (!f.personalities.includes("abandoned")) f.personalities.push("abandoned");
-  f._abandonedSetUp = true;
-  f.missingOwner = Math.max(0.3, Math.min(1, (f.playerTrust || 0) + 0.2));
+  if (!stray) {
+    if (!f.personalities.includes("abandoned")) f.personalities.push("abandoned");
+    f._abandonedSetUp = true;
+    f.missingOwner = Math.max(0.3, Math.min(1, (f.playerTrust || 0) + 0.2));
+  }
   f.adopted = false;
   const data = f.serialize();
   data.type = f.type;
@@ -414,8 +455,8 @@ function giveUpToShelter(f) {
     id: f.id,
     data,
     name,
-    origin: "surrendered",
-    byYou: true,
+    origin: stray ? "stray" : "surrendered",
+    byYou: !stray,
     notes: _shNotes(f),
     arrivedDay: today,
     timesUpDay: today + Math.round(_shRand(SHELTER_GIVE_UP_STAY)),
@@ -426,8 +467,9 @@ function giveUpToShelter(f) {
   };
   shelter.residents.push(r);
   _shelterPortraits = {};
-  if (typeof addUIMessage === "function") addUIMessage(`You gave ${name} up to the shelter.`);
-  if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `You gave ${name} up to the shelter.` });
+  const said = stray ? `You left a stray in the shelter's drop box: they'll call it ${name}.` : `You gave ${name} up to the shelter.`;
+  if (typeof addUIMessage === "function") addUIMessage(said);
+  if (typeof noteDayEvent === "function") noteDayEvent("news", { text: said });
   return r;
 }
 
@@ -767,7 +809,8 @@ function shelterFrontLayout() {
     walk: { y: wallH, h: 64 },
     aframe: { x: doorRect.x + doorRect.w + 30, y: wallH + 70, w: 120, h: 118 },
     board: { x: doorRect.x - 250, y: wallH + 18, w: 210, h: 150 },
-    dropBox: { x: width - 250, y: wallH + 40, w: 96, h: 112 },
+    // (right of the A-frame, never off the edge)
+    dropBox: { x: Math.min(width - 110, Math.max(doorRect.x + doorRect.w + 30 + 120 + 24, width - 250)), y: wallH + 40, w: 96, h: 112 },
   };
 }
 
@@ -915,7 +958,7 @@ function drawShelterFront(c) {
 
   // After-hours drop box
   const D = L.dropBox;
-  if (D.x > L.aframe.x + L.aframe.w + 20) {
+  {
     c.fillStyle = "#44535e";
     c.fillRect(D.x, D.y, D.w, D.h);
     c.fillStyle = "#1c2328";

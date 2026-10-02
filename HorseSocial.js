@@ -118,7 +118,7 @@ addHorseMethods({
     if (!target.tooYoungToSpeak()) {
       if (intent === "SMARTY_VIOLENCE") {
         target.speak(getDialogue(["HURT", "SMARTY"], target));
-      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY" || intent === "CROWDED" || intent === "BULLY") {
+      } else if (intent === "RETALIATION" || intent === "GRUDGE" || intent === "TERRITORY" || intent === "WAR" || intent === "CROWDED" || intent === "BULLY") {
         target.speak(getDialogue(["HURT"], this));
       } else {
         target.speak(getDialogue(["HURT", "ALICORN_BABY"], target));
@@ -248,7 +248,7 @@ addHorseMethods({
     setHuggingExpression(this);
     setHuggingExpression(other);
 
-    this.changeHappiness(0.075);
-    other.changeHappiness(0.075);
+    this.changeHappiness(0.075, "Hugs");
+    other.changeHappiness(0.075, "Hugs");
   },
 });

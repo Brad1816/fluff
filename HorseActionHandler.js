@@ -50,7 +50,7 @@ class HorseActionHandler {
           this.horse.ballCooldown = Math.random() * 10 + 10;
           this.horse.expressionOverride = "GOOD_UPSIES";
           this.horse.expressionOverrideTimer = 2.0;
-          this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
+          this.horse.changeHappiness(HAPPINESS_BONUS_PLAY, "Played");
         }
         this.horse.ballTarget = false;
       } else if (this.horse.blockTarget) {
@@ -76,7 +76,7 @@ class HorseActionHandler {
             this.horse.speak(getDialogue(["PLAY", "BLOCK"], this.horse));
             this.horse.expressionOverride = "GOOD_UPSIES";
             this.horse.expressionOverrideTimer = 2.0;
-            this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
+            this.horse.changeHappiness(HAPPINESS_BONUS_PLAY, "Played");
             if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "block"); // Play.js
           } else {
             // Start Stacking
@@ -116,7 +116,7 @@ class HorseActionHandler {
         if (block) {
           this.horse.expressionOverride = "GOOD_UPSIES";
           this.horse.expressionOverrideTimer = 2.0;
-          this.horse.changeHappiness(HAPPINESS_BONUS_PLAY);
+          this.horse.changeHappiness(HAPPINESS_BONUS_PLAY, "Played");
           this.horse.initBehavior("FLUFFY_JAB");
           if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "block"); // Play.js
           this.horse.speak(getDialogue(["PLAY", "BLOCK_KNOCK_DOWN"]));
@@ -338,6 +338,15 @@ class HorseActionHandler {
 
   executeCorpseReaction(closestCorpse) {
     let key = closestCorpse.tooYoungToWalk() ? ["CORPSE", "BABY"] : "CORPSE";
+    // A dead alicorn it never accepted: no grief (AlicornAcceptance.js)
+    if (typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(this.horse, closestCorpse)) {
+      this.horse.bloodReactionTimer = 5.0;
+      if (!this.horse.tooYoungToSpeak() && this.horse.speech.nextTime <= 0) {
+        this.horse.speak(getDialogue(["CORPSE", "ALICORN"], this.horse, closestCorpse));
+        this.horse.speech.nextTime = 4 + Math.random() * 2;
+      }
+      return true;
+    }
 
     const rels =
       typeof relationships !== "undefined"
@@ -379,7 +388,7 @@ class HorseActionHandler {
 
     let penalty = HAPPINESS_PENALTY_CORPSE_FEAR_GENERAL;
 
-    this.horse.changeHappiness(penalty);
+    this.horse.changeHappiness(penalty, "Saw a body");
     if (!this.horse.tooYoungToSpeak()) {
       this.horse.speak(getDialogue(key, this.horse, closestCorpse));
       this.horse.speech.nextTime = 2 + Math.random();
@@ -398,7 +407,7 @@ class HorseActionHandler {
       closestBloodPoint.x,
       closestBloodPoint.y,
     );
-    this.horse.changeHappiness(HAPPINESS_PENALTY_BLOOD_FEAR);
+    this.horse.changeHappiness(HAPPINESS_PENALTY_BLOOD_FEAR, "Saw blood");
 
     this.horse.initBehavior("MOVING");
     this.horse.setTargetPosition(target.x, target.y);
@@ -446,7 +455,7 @@ class HorseActionHandler {
     if (!this.horse.hasBlockOnBack() && !friend.hasBlockOnBack()) {
       if (!(this.horse.limbs.legs[1] && this.horse.limbs.legs[2])) {
         if (this.horse.speech.nextTime <= 0) {
-          this.horse.changeHappiness(HAPPINESS_PENALTY_CANT_HUG);
+          this.horse.changeHappiness(HAPPINESS_PENALTY_CANT_HUG, "Hug turned down");
           this.horse.speak(
             getDialogue(["SPECIAL_HUGGIES", "NO_LEGS"], this.horse),
           );
@@ -454,7 +463,7 @@ class HorseActionHandler {
         }
       } else if (!this.horse.limbs.lumps) {
         if (this.horse.speech.nextTime <= 0) {
-          this.horse.changeHappiness(HAPPINESS_PENALTY_CANT_HUG);
+          this.horse.changeHappiness(HAPPINESS_PENALTY_CANT_HUG, "Hug turned down");
           this.horse.speak(
             getDialogue(["SPECIAL_HUGGIES", "NO_LUMPS"], this.horse),
           );
@@ -509,8 +518,8 @@ class HorseActionHandler {
         acceptKey = ["PROPOSE", "ACCEPT", "MARE"];
       }
       target.speak(getDialogue(acceptKey, target, this.horse));
-      this.horse.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT);
-      target.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT);
+      this.horse.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT, "A new friend");
+      target.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT, "A new friend");
       if (!relationships[this.horse.id]) relationships[this.horse.id] = {};
       if (!relationships[target.id]) relationships[target.id] = {};
       relationships[this.horse.id][target.id] = "special_friend";
@@ -643,7 +652,7 @@ class HorseActionHandler {
               this.horse.expressionOverrideTimer = 3.0;
             }
             this.horse.speak(getDialogue(key, this.horse));
-            this.horse.changeHappiness(HAPPINESS_PENALTY_DIRTY_PUDDLE);
+            this.horse.changeHappiness(HAPPINESS_PENALTY_DIRTY_PUDDLE, "Dirty puddle");
             this.horse.lastPuddleReactionTime = 0;
             return true;
           }

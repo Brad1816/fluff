@@ -105,6 +105,10 @@ const DIALOGUE = {
   // Herds (Herds.js)
   HERD: {
     FORGET: ["<Speaker> wiww stiww wub owd fwens... but dis am home nao.", "Nu need owd hewd. Hab new famiwy!", "Bye-bye owd hewd..."],
+    // A war with a feuding herd (HerdWars.js)
+    WAR: ["Get dummeh hewd! Make dem go 'way fowebah!", "Dey huwt hewd befowe! Nu mowe!", "Hewd! Fight! Fight fow meadow!", "Bad hewd am back! Get dem!"],
+    // A clever one taking a dead body away from the herd
+    BODY: ["Nu weave fwiend hewe... make hewd sickies. <Speaker> take away.", "Stinky... bad fow hewd. Hab tu take faw away.", "<Speaker> take sweepy fwiend faw away, so nu make sickies."],
     NEW_HERD: [
       "Aww fwens stay togedda! Am hewd nao!",
       "<Speaker> wiww be bestest hewd weadew!",
@@ -1444,7 +1448,9 @@ const DIALOGUE = {
       "HUU HUU HUUU... NU NUM <SPEAKER>!!",
       "MUNSTAH GON NUM <SPEAKER>!! WUN WAY!! WUN WAY!!",
     ],
-    // A brave one goes for it instead (AlicornAcceptance alicornStance)
+    // A grown one just keeps away from it (AlicornAcceptance alicornStance)
+    ALICORN_AVOID: ["Nu come cwose, munstah...", "<Speaker> nu wike munstah. Gu 'way.", "Hmph. Stay ober dewe.", "Munstah fwuffy... <speaker> wawk 'way."],
+    // A fierce one goes for a weak one (AlicornAcceptance alicornStance)
     ALICORN_BRAVE: [
       "BAD MUNSTAH!! GU 'WAY!!",
       "<SPEAKER> NU SCAWED OB MUNSTAH!!",
@@ -1537,7 +1543,11 @@ const DIALOGUE = {
     ],
   },
   // [this][Corpse][i am your xyz]
+  // Not right in the head (inbred: Inbreeding.js)
+  ODD: ["Wawws am tawkin' to <speaker>...", "Hehe... hehe... whewe <speaker> pwt da nummies?", "Sky am upside-down todai.", "<Speaker> am a bwock. Bwock nu tawk.", "Shhh... da cownew am wistening.", "Hab twu tails? Nu? Hehe."],
   CORPSE: {
+    // A dead alicorn, to one that never accepted them (AlicornAcceptance.js)
+    ALICORN: ["Munstah nu mowe... gud.", "Munstah fowebah sweepies. <Speaker> nu sad.", "Hmph. Bad munstah gone.", "Nu cwy fow munstah."],
     DEFAULT: [
       "SCREEE! FWUFFY AM FOWEBAH SWEEPIES!",
       "EEEEEEK!!! WAI FWUFFY NU WAKIES?!!!",

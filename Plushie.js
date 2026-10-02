@@ -254,7 +254,7 @@ function updatePlushies(dt) {
       f._plushieId = p.id;
       if (p.scene === f.scene && !p.isDragging) {
         if (f._plushieMissing) {
-          f.changeHappiness(0.15);
+          f.changeHappiness(0.15, "Got its plushie back");
           if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["PLUSHIE", "BACK"], f), true);
         }
         f._plushieLostAt = undefined;
@@ -273,7 +273,7 @@ function updatePlushies(dt) {
       continue;
     }
     f._plushieMissing = true;
-    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness((-PLUSHIE_MISS_UNHAPPY * step) / HOUR_LENGTH);
+    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness((-PLUSHIE_MISS_UNHAPPY * step) / HOUR_LENGTH, "Misses its plushie");
     if (!f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && Math.random() < 0.002 * step && (!f.speech || !f.speech.text) && typeof getDialogue === "function") f.speak(getDialogue(["PLUSHIE", "MISS"], f));
   }
 }

@@ -1429,6 +1429,21 @@ class HorsePositioning {
       this.horse.isScared = false;
       return;
     }
+    // A grown one: not scared of it as such - it just walks off, muttering
+    if (stance === "avoid") {
+      const h = this.horse;
+      h.isScared = false;
+      const away = this.getRunawayTarget(alicorn.x, alicorn.y);
+      const already = h.isMovingOrRunning();
+      if (!already) h.initBehavior("MOVING");
+      h.setTargetPosition(away.x, away.y);
+      if (!already) h.currentStateKey = "MOVING"; // (a walk, not a run: initBehavior runs to far targets)
+      if (h.speech.nextTime <= 0 && !h.tooYoungToSpeak() && Math.random() < 0.3) {
+        h.speak(getDialogue(["FEAR", "ALICORN_AVOID"], h));
+        h.speech.nextTime = 6 + Math.random() * 4;
+      }
+      return;
+    }
     if (stance === "attack") {
       const h = this.horse;
       const d = Math.hypot(h.x - alicorn.x, h.y - alicorn.y);

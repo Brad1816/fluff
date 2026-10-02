@@ -123,7 +123,7 @@ function updateIllness(dt) {
     // Symptoms
     const frail = f.growth < 0.5 || (typeof isElderly === "function" && isElderly(f));
     f.health = Math.max(0, (f.health ?? 100) - ((FLU_HEALTH_PER_DAY * (frail ? 2 : 1)) / DAY_LENGTH) * step);
-    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness(-0.004 * (step / ILLNESS_TICK));
+    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness(-0.004 * (step / ILLNESS_TICK), "Sick");
     if (f.health <= 0) {
       f.anatomy.die(null, "Fluffy flu");
       continue;
@@ -141,7 +141,8 @@ function updateIllness(dt) {
     if (!hasFlu(s)) continue;
     for (const o of fluffies) {
       if (o === s || !canCatchFlu(o) || !_fluCanReach(s, o)) continue;
-      const chance = FLU_SPREAD_CHANCE * (fluShowing(s) ? 1 : 0.5) * (step / ILLNESS_TICK) * (typeof earlyBornFlu === "function" ? earlyBornFlu(o) : 1);
+      const chance =
+        FLU_SPREAD_CHANCE * (fluShowing(s) ? 1 : 0.5) * (step / ILLNESS_TICK) * (typeof earlyBornFlu === "function" ? earlyBornFlu(o) : 1) * (typeof hasDeformity === "function" && hasDeformity(o, "sickly") ? 2 : 1);
       if (Math.random() < chance) catchFlu(o);
     }
   }

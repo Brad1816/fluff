@@ -81,14 +81,14 @@ function updateAbandoned(dt) {
     if (!f.isAlive || !(f.missingOwner > 0)) continue;
     // Happiness settles lower: shifts the 0.6 it drifts to (Horse.update)
     // down to 0.6 - 0.3 x missing
-    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness(((-0.3 * f.missingOwner) / 180) * step);
+    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness(((-0.3 * f.missingOwner) / 180) * step, "Misses its old owner");
     // Now and then it asks after its old owner
     if (f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak() && Math.random() < 0.004 * step)
       f.speak(getDialogue(["ABANDONED", "MISS"], f));
     f.missingOwner = Math.max(0, f.missingOwner - abandonedRecoveryRate(f) * step);
     if (f.missingOwner <= 0) {
       f.missingOwner = 0;
-      f.changeHappiness(0.1);
+      f.changeHappiness(0.1, "Over its old owner");
       if (!f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(["ABANDONED", "OVER_IT"], f));
       if (f.adopted) {
         const text = `${fluffyDisplayName(f)} has got over its old owner.`;

@@ -292,7 +292,7 @@ function updateAffection(dt) {
     }
     // Loves you: happier with you around, and says so now and then
     if (lovesYou(f) && f.scene === currentScene && f.currentStateKey !== "SLEEPING") {
-      if (f.happiness < 1) f.changeHappiness(0.0005 * step);
+      if (f.happiness < 1) f.changeHappiness(0.0005 * step, "Loves you");
       if (typeof f._nextLoveTalk !== "number") f._nextLoveTalk = now + 60 + Math.random() * 180;
       if (now >= f._nextLoveTalk) {
         f._nextLoveTalk = now + 150 + Math.random() * 200;

@@ -150,7 +150,7 @@ function updateWarmth(dt) {
     f.warmth = Math.max(0, Math.min(1, f.warmth));
     const w = f.warmth;
     if (w < CHILLY_BELOW) {
-      if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness((-0.0008 * step * (CHILLY_BELOW - w)) / CHILLY_BELOW);
+      if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness((-0.0008 * step * (CHILLY_BELOW - w)) / CHILLY_BELOW, "Cold");
       if (f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak() && Math.random() < 0.004 * step && typeof getDialogue === "function")
         f.speak(getDialogue(["WEATHER", "COLD"], f));
     }

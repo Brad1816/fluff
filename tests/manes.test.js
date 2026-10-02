@@ -52,7 +52,7 @@ module.exports = [
       check(r.fancy > 0.045 && r.fancy < 0.08, `about 1 in 16 have a fancy mane (${r.fancy})`);
       check(r.rainbow > 0.001 && r.rainbow < 0.01, `rainbow about 1 in 200 (${r.rainbow})`);
       check(r.streaked > r.tipped && r.tipped > r.rainbow, `streaked commonest, rainbow rarest ${JSON.stringify(r)}`);
-      checkEqual(r.len, 139, "gene count");
+      checkEqual(r.len, 144, "gene count");
       check(r.gradientShare < 0.1, `gradients are rare now (${r.gradientShare})`);
       check(r.plainShare > 0.65, `most fluffies are plain (${r.plainShare})`);
     },
@@ -91,7 +91,7 @@ module.exports = [
       check(r.sp.plain > 850, `streaked x plain: mostly plain ${JSON.stringify(r.sp)}`);
       check(r.sp.plain < 1000, "but it can come through (it's carried)");
       checkEqual(r.old.pattern, null, "an older fluffy has a plain mane");
-      checkEqual(r.old.len, 139, "its genes are filled in");
+      checkEqual(r.old.len, 144, "its genes are filled in");
       checkEqual(r.oldFoals, 1000, "and its foals with a plain fluffy are plain");
       checkEqual(r.saved, "rainbow", "kept after saving");
     },

@@ -243,7 +243,7 @@ function rewardTrick(f, kind, key) {
   }
   const got = _trLearn(f, key, (TRICK_LEARN[kind] || 0) * trickLearnRate(f));
   if (typeof giveAffection === "function") giveAffection(f, kind === "treat" ? "treat" : "praised");
-  f.changeHappiness(kind === "treat" ? 0.05 : 0.03);
+  f.changeHappiness(kind === "treat" ? 0.05 : 0.03, "Rewarded");
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 1.5;
   _trSay(f, kind === "treat" ? "TREAT" : "PRAISED");

@@ -136,6 +136,7 @@ function refusesFriendshipFrom(other, from) {
 // performAttack (Horse.js): `attacker` hit `victim`
 function noteFluffyAttack(attacker, victim, intent) {
   if (!attacker || !victim || attacker === victim) return;
+  if (typeof noteHerdFight === "function") noteHerdFight(attacker, victim); // herd feuds (HerdWars.js)
   const hitBack = intent === "RETALIATION";
   changeOpinion(victim, attacker, hitBack ? -0.1 : -0.35, hitBack ? "hit back" : "attacked it");
   // The one that got hit back doesn't love the one who started it either
@@ -225,7 +226,7 @@ function _grudgeNear(a, b, now, step) {
   const liking = getLiking(a, b);
   if (liking > OPINION_DISLIKE || !_canNotice(a)) return;
   // Being near someone you can't stand isn't nice
-  if (a.happiness > HAPPINESS_MISERABLE_THRESHOLD) a.changeHappiness(-0.002 * step);
+  if (a.happiness > HAPPINESS_MISERABLE_THRESHOLD) a.changeHappiness(-0.002 * step, "A rival nearby");
   if (!a._lastGrumble || now - a._lastGrumble > 25) {
     a._lastGrumble = now;
     if (!a.tooYoungToSpeak() && Math.random() < 0.5) a.speak(getDialogue(["BOND", "GRUMBLE"], a, b));

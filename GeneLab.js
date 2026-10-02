@@ -220,7 +220,7 @@ function geneLabViability(momGenes, dadGenes) {
 
 // Everything the lab shows for a pair. momSensitive: is the mother a
 // sensitive fluffy (raises the sensitive-baby chance, like spawnBaby).
-function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = false) {
+function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = false, dadSensitive = false) {
   const rnd = _labRandom(seed);
   const n = GENE_LAB_SAMPLES;
   const count = {
@@ -258,7 +258,11 @@ function computeLitterPrediction(momGenes, dadGenes, seed = 1, momSensitive = fa
       if (d.size >= 2) count.big++;
       else if (d.size <= -2) count.small++;
       else count.average++;
-      sbTotal += Math.min(1, (momSensitive ? 0.175 : 0.04) * Math.pow(4, d.sbPairs));
+      // (it runs in families: Inbreeding.js)
+      sbTotal +=
+        typeof sensitiveBirthChance === "function"
+          ? sensitiveBirthChance({ isSensitive: () => momSensitive }, { isSensitive: () => dadSensitive }, genes)
+          : Math.min(1, (momSensitive ? 0.175 : 0.04) * Math.pow(4, d.sbPairs));
       // Personality traits (Traits.js)
       if (typeof TRAITS !== "undefined") {
         for (const t of TRAITS) {
@@ -390,6 +394,7 @@ function _glMouse() {
 
 const GL_BUTTONS = {
   close: { x: GL_W - 110, y: 18, w: 90, h: 34, label: "Close" },
+  plan: { x: GL_W - 250, y: 18, w: 130, h: 34, label: "Planner" }, // (GenePlanner.js)
 };
 
 // Your living fluffies of one gender, by name
@@ -493,6 +498,10 @@ function _geneLabPrediction() {
         pair.dadGenes,
         seed,
         pair.mom.isSensitive && pair.mom.isSensitive(),
+        (() => {
+          const dad = fluffies.find((f) => f.id === pair.dadId);
+          return !!(dad && dad.isSensitive && dad.isSensitive());
+        })(),
       ),
       relation: describeFamilyRelation(pair.mom.id, pair.dadId),
     };
@@ -672,16 +681,27 @@ function _drawGeneLabPrediction(c) {
   _glBar(c, "Small", result.pct.small, col2, ry, "#d0b0b0"); ry += 27;
   canvasText(c, "LITTER", col2, ry, "#f7d774", "bold 13px Arial");
   ry += 20;
-  const aliveColor = result.alive >= 0.8 ? "#7dff8a" : result.alive >= 0.5 ? "#ffe066" : "#ff6b6b";
+  // Kin: more pull through, but deformed (Inbreeding.js)
+  const kin = typeof relatedness === "function" && pair.dadId !== null && pair.dadId !== undefined ? relatedness(pair.mom.id, pair.dadId) : 0;
+  const inbred = typeof INBRED_KIN === "number" && kin >= INBRED_KIN;
+  const alive = inbred ? result.alive + (1 - result.alive) * INBRED_PULL_THROUGH : result.alive;
+  const aliveColor = alive >= 0.8 ? "#7dff8a" : alive >= 0.5 ? "#ffe066" : "#ff6b6b";
   canvasText(c, "Born alive:", col2, ry, "#cfcfcf", "13px Arial");
-  canvasText(c, `${Math.round(result.alive * 100)}% of foals`, col2 + 90, ry, aliveColor, "bold 13px Arial");
+  canvasText(c, `${Math.round(alive * 100)}% of foals`, col2 + 90, ry, aliveColor, "bold 13px Arial");
   ry += 19;
+  if (inbred) {
+    const deformed = Math.min(1, ((1 - result.alive) * INBRED_PULL_THROUGH + result.alive * Math.min(1, DEFORM_PER_KIN * kin)) / Math.max(0.01, alive));
+    canvasText(c, "Deformed:", col2, ry, "#cfcfcf", "13px Arial");
+    canvasText(c, `~${Math.round(deformed * 100)}% of those (inbred)`, col2 + 90, ry, "#ffb86b", "bold 13px Arial");
+    ry += 19;
+  }
   if (pair.pregnancy) {
     const mom = pair.mom;
     const total = mom.foalViability ? mom.foalViability.length : mom.babiesToBirth;
     const dead = (mom.foalViability || []).filter((v) => v === false).length;
+    const flawed = (mom.foalViability || []).filter((v) => v === "flawed").length;
     canvasText(c, "Scan:", col2, ry, "#cfcfcf", "13px Arial");
-    canvasText(c, `${total} foal${total === 1 ? "" : "s"} on the way${dead ? `, ${dead} won't make it` : ", all healthy"}`, col2 + 90, ry, dead ? "#ff6b6b" : "#7dff8a", "bold 13px Arial");
+    canvasText(c, `${total} foal${total === 1 ? "" : "s"} on the way${dead ? `, ${dead} won't make it` : ""}${flawed ? `, ${flawed} deformed` : ""}${!dead && !flawed ? ", all healthy" : ""}`, col2 + 90, ry, dead ? "#ff6b6b" : flawed ? "#ffb86b" : "#7dff8a", "bold 13px Arial");
   } else {
     canvasText(c, "Litter size:", col2, ry, "#cfcfcf", "13px Arial");
     canvasText(c, "1 to 7 foals", col2 + 90, ry, "white", "13px Arial");
@@ -747,11 +767,16 @@ function drawGeneLab(c) {
 
   drawGeneLabMachine(c, 60, 62, 0.42, typeof timePlayed === "number" ? timePlayed : 0);
   canvasText(c, "Gene Lab", 96, 46, "white", "bold 28px Arial");
-  canvasText(c, "Pick a mother and a father to see what their foals could be like.", 240, 44, "#cfcfcf", "15px Arial");
+  const planning = typeof drawGenePlanner === "function" && genePlannerOn;
+  canvasText(c, planning ? "Say what you want: it finds which of yours can give it." : "Pick a mother and a father to see what their foals could be like.", 240, 44, "#cfcfcf", "15px Arial");
 
-  _drawGeneLabList(c, "female", m);
-  _drawGeneLabList(c, "male", m);
-  _drawGeneLabPrediction(c);
+  if (planning) drawGenePlanner(c, m);
+  else {
+    _drawGeneLabList(c, "female", m);
+    _drawGeneLabList(c, "male", m);
+    _drawGeneLabPrediction(c);
+  }
+  if (typeof drawGenePlanner === "function") _glButton(c, { ...GL_BUTTONS.plan, label: planning ? "\u25c0 Pairs" : "Planner" }, m);
   _glButton(c, GL_BUTTONS.close, m);
   c.restore();
 }
@@ -764,6 +789,15 @@ function handleGeneLabClick() {
 
   if (inRect(GL_BUTTONS.close)) {
     closeGeneLab();
+    return true;
+  }
+  if (typeof drawGenePlanner === "function" && inRect(GL_BUTTONS.plan)) {
+    genePlannerOn = !genePlannerOn;
+    return true;
+  }
+  if (typeof genePlannerOn !== "undefined" && genePlannerOn) {
+    if (handleGenePlannerClick(m)) return true;
+    if (m.x < 0 || m.y < 0 || m.x > GL_W || m.y > GL_H) closeGeneLab();
     return true;
   }
   for (const gender of ["female", "male"]) {

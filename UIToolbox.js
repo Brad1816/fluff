@@ -744,13 +744,11 @@ function drawShopActionIcon(c, action, cx, cy, size, disabled = false, sizeH = s
   const brand = action.foodType && typeof FOODS !== "undefined" ? FOODS[action.foodType] : null;
   if (brand && brand.filter) c.filter = brand.filter;
   if (disabled) c.globalAlpha = 0.3;
-  if (
-    imgKey &&
-    typeof images !== "undefined" &&
-    images[imgKey] &&
-    images[imgKey].complete &&
-    images[imgKey].width > 0
-  ) {
+  // (a loaded picture, or one drawn at start-up on a canvas - the mower,
+  // incubator, bandages... - which has no .complete: globals.js isDrawableImage)
+  const pic = imgKey && typeof images !== "undefined" ? images[imgKey] : null;
+  const drawable = pic && (typeof isDrawableImage === "function" ? isDrawableImage(pic) : pic.complete) && pic.width > 0;
+  if (drawable) {
     const img = images[imgKey];
     const scale = Math.min(size / img.width, sizeH / img.height);
     c.translate(cx, cy);

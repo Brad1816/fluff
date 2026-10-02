@@ -175,6 +175,7 @@ function mournersOf(dead) {
   const close = ["mother", "father", "baby_child", "child", "sister", "brother", "special_friend"];
   return fluffies.filter((o) => {
     if (o === dead || !o.isAlive || !o.adopted) return false;
+    if (typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(o, dead)) return false; // (an alicorn: AlicornAcceptance.js)
     const r = rels[o.id] && rels[o.id][dead.id];
     if (close.includes(r)) return true;
     return typeof getOpinion === "function" && getOpinion(o, dead) >= MOURN_FRIEND;
@@ -206,7 +207,7 @@ function _mmSay(f, key) {
 function memorialVisit(f) {
   if (!isMourning(f)) return false;
   const now = timePlayed;
-  f.changeHappiness(MOURN_VISIT_JOY);
+  f.changeHappiness(MOURN_VISIT_JOY, "Visited the memorial");
   f.mourning.until = now + (f.mourning.until - now) * (1 - MOURN_VISIT_EASE);
   if (!f.mourning.visited) {
     f.mourning.visited = true;
@@ -261,7 +262,7 @@ function updateMemorial(dt) {
       continue;
     }
     // Missing it
-    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness((-MOURN_UNHAPPY * step) / HOUR_LENGTH);
+    if (f.happiness > WAN_DIE_THRESHOLD + 0.1) f.changeHappiness((-MOURN_UNHAPPY * step) / HOUR_LENGTH, "Mourning");
     if (f.currentStateKey !== "SLEEPING" && Math.random() < 0.002 * step && (!f.speech || !f.speech.text)) _mmSay(f, "MISSING");
     // Carried (or walked) to the tree: a visit
     const at = trees.find((t) => t.scene === f.scene && Math.hypot(t.x - f.x, t.y - f.y) < MOURN_VISIT_NEAR);

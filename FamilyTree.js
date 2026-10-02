@@ -495,7 +495,19 @@ function _ftMouse() {
 const FT_BUTTONS = {
   back: { x: 20, y: 18, w: 90, h: 34, label: "Back" },
   close: { x: FT_W - 110, y: 18, w: 90, h: 34, label: "Close" },
+  ties: { x: FT_W - 260, y: 18, w: 140, h: 34, label: "Relationships" }, // (RelationshipMap.js)
 };
+
+// "Relationships": the relationship map, with this fluffy picked if it's one
+// of yours here
+function familyTreeToRelationships() {
+  const id = familyTreeFocusId;
+  closeFamilyTree();
+  if (typeof openRelationshipMap !== "function") return;
+  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => String(x.id) === String(id) && x.isAlive && x.adopted) : null;
+  openRelationshipMap(f || null);
+  if (f) relMapSel = f.id;
+}
 
 // A fluffy to draw portraits with. Living fluffies draw themselves; for the
 // rest a stand-in is made from the saved genes (without touching the game).
@@ -1059,7 +1071,7 @@ function drawFamilyTree(c) {
     "center",
   );
 
-  for (const key of ["back", "close"]) {
+  for (const key of ["back", "ties", "close"]) {
     const b = FT_BUTTONS[key];
     if (key === "back" && familyTreeHistory.length === 0) continue;
     const over = m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h;
@@ -1082,6 +1094,10 @@ function handleFamilyTreeClick() {
 
   if (inRect(FT_BUTTONS.close)) {
     closeFamilyTree();
+    return true;
+  }
+  if (inRect(FT_BUTTONS.ties)) {
+    familyTreeToRelationships();
     return true;
   }
   if (familyTreeHistory.length > 0 && inRect(FT_BUTTONS.back)) {

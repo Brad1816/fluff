@@ -81,6 +81,8 @@ module.exports = [
         out.greedier = f.traitShift.appetite;
         // A fear it gets over
         f.fears = { thunder: 0.6, dark: 0, bot: 0 };
+        for (const fe of FEARS) if (fe.key !== "thunder") f.fears[fe.key] = 0;
+        if (f.growthProgress) f.growthProgress.fears = {}; // (only thunder: not a fear it was born with, too)
         timePlayed += DAY_LENGTH;
         updatePersonality(5);
         f.fears.thunder = 0;

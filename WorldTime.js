@@ -235,7 +235,7 @@ function updateWorldTime(dt) {
           continue;
         f.expressionOverride = "CRYING_SHOCKED";
         f.expressionOverrideTimer = 2;
-        f.changeHappiness(-0.02);
+        f.changeHappiness(-0.02, "Thunder");
         _fluffySays(f, "THUNDER");
       }
     }
@@ -252,10 +252,10 @@ function updateWorldTime(dt) {
     if (!f.isAlive || !isOutdoorScene(f.scene) || f.currentCage) continue;
     const asleep = f.currentStateKey === "SLEEPING";
     if (rain > 0.3 && !_sheltered(f)) {
-      if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0012 * rain);
+      if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0012 * rain, "Rained on");
       if (!asleep && Math.random() < 0.012) _fluffySays(f, "RAIN");
     } else if (snow > 0.3) {
-      if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0006 * snow);
+      if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness(-0.0006 * snow, "Snowed on");
       if (!asleep && Math.random() < 0.008) _fluffySays(f, "SNOW");
     } else if (!asleep && weatherState.type === "clear" && hour > 9 && hour < 17 && Math.random() < 0.002) {
       _fluffySays(f, "SUNNY");

@@ -221,7 +221,7 @@ function grantWish(f) {
   f.wish = null;
   f.wishCooldownUntil = timePlayed + WISH_COOLDOWN_DAYS * DAY_LENGTH;
   f.contentUntil = timePlayed + WISH_CONTENT_DAYS * DAY_LENGTH;
-  f.changeHappiness(WISH_JOY);
+  f.changeHappiness(WISH_JOY, "Wish came true");
   if (w.promisedAt !== undefined && typeof changePlayerTrust === "function") changePlayerTrust(f, 0.05); // a promise kept
   if (typeof recordStory === "function") recordStory("wish_granted", f, { x: line });
   if (typeof noteTurningPoint === "function") noteTurningPoint(f, `${fluffyDisplayName(f)}'s wish came true!`, { record: false });
@@ -236,7 +236,7 @@ function denyWish(f, why) {
   if (!w) return false;
   f.wish = null;
   f.wishCooldownUntil = timePlayed + 2 * WISH_COOLDOWN_DAYS * DAY_LENGTH;
-  f.changeHappiness(-0.15);
+  f.changeHappiness(-0.15, "Wish taken away");
   if (typeof rememberPlayerEvent === "function") rememberPlayerEvent(f, "wish_denied");
   if (typeof changePlayerTrust === "function") changePlayerTrust(f, -0.1);
   if (typeof recordStory === "function") recordStory("wish_denied", f, { x: why });
@@ -383,7 +383,7 @@ function updateWish(f, step) {
     const p = _wP(f);
     if (typeof rememberPlayerEvent === "function") rememberPlayerEvent(f, "broken_promise");
     if (typeof changePlayerTrust === "function") changePlayerTrust(f, -0.12);
-    f.changeHappiness(-0.1);
+    f.changeHappiness(-0.1, "Broken promise");
     if (typeof recordStory === "function") recordStory("wish_denied", f, { x: `You promised ${p.obj} ${def.text(f, w).toLowerCase()}, and it never came.` });
   }
   // Aching
@@ -391,7 +391,7 @@ function updateWish(f, step) {
     const per = WISH_ACHE_PER_HOUR * (w.broken ? 2 : 1);
     const amount = Math.min(WISH_ACHE_MAX - w.ache, (per * step) / HOUR_LENGTH);
     w.ache += amount;
-    f.changeHappiness(-amount);
+    f.changeHappiness(-amount, "Longing for its wish");
   }
   // Giving up
   if (days >= WISH_GIVE_UP_DAYS) {

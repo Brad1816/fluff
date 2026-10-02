@@ -9,7 +9,7 @@ const SETUP = `() => {
   window.__mk = (x, gender = "female", scene = "INDOORS", grumpy = false) => {
     const h = new Horse(1, null, scene, "earthy", null, 0.5, 0.5, gender);
     const i = TRAITS.findIndex((q) => q.key === "temper");
-    if (grumpy) for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[TRAIT_GENE_START + i * TRAIT_GENES_EACH + k] = 1;
+    if (grumpy) for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[traitGeneStart(i) + k] = 1;
     h.personalities = (h.personalities || []).filter((p) => p !== "smarty");
     h.adopted = scene !== "PARK";
     h.x = x;
@@ -31,9 +31,9 @@ module.exports = [
         eval(setup)();
         const out = {};
         const few = [];
-        for (let i = 0; i < 8; i++) few.push(__mk(100 + i * 60));
+        for (let i = 0; i < 16; i++) few.push(__mk(100 + i * 60));
         out.fine = crowding("INDOORS");
-        for (let i = 0; i < 7; i++) few.push(__mk(120 + i * 60, "female", "INDOORS", true));
+        for (let i = 0; i < 14; i++) few.push(__mk(120 + i * 60, "female", "INDOORS", true));
         out.load = [roomLoad("INDOORS"), roomSpace("INDOORS"), +crowding("INDOORS").toFixed(2)];
         out.lines = crowdedRoomLines();
         const h0 = few[0].happiness;
@@ -70,9 +70,9 @@ module.exports = [
         out.park = roomSpace("PARK");
         return out;
       }, SETUP);
-      checkEqual(r.fine, 0, "8 fluffies: fine");
-      checkEqual(JSON.stringify(r.load), JSON.stringify([15, 10, 0.5]), "15 in a room for 10");
-      check(r.lines.length === 1 && /Living room: crowded \(15\/10\)/.test(r.lines[0]), `Household line ${r.lines}`);
+      checkEqual(r.fine, 0, "16 fluffies: fine");
+      checkEqual(JSON.stringify(r.load), JSON.stringify([30, 20, 0.5]), "30 in a room for 20");
+      check(r.lines.length === 1 && /Living room: crowded \(30\/20\)/.test(r.lines[0]), `Household line ${r.lines}`);
       check(r.unhappier > 0.1, `unhappier over 20 game minutes ${r.unhappier}`);
       check(r.attacks >= 1, `grumpy ones scuffle (${r.attacks})`);
       checkEqual(r.intent, "CROWDED", "as a crowded scuffle");

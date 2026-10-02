@@ -120,10 +120,23 @@ function scarFromFight(victim, attacker, move) {
   return addScar(victim, _scPick(kinds), `${verb} by ${who} in a fight on day ${getDayNumber()}`);
 }
 
+// The sorry stick only scars from a beating: STICK_SCAR_HITS or more hits
+// on the same fluffy within STICK_SITTING game seconds (one sitting)
+const STICK_SCAR_HITS = 4;
+const STICK_SITTING = 40;
+function _stickBeating(victim) {
+  const now = timePlayed;
+  victim._stickHits = (Array.isArray(victim._stickHits) ? victim._stickHits : []).filter((t) => now - t >= 0 && now - t < STICK_SITTING);
+  victim._stickHits.push(now);
+  return victim._stickHits.length >= STICK_SCAR_HITS;
+}
+
 // Memory.notePlayerViolence: you hurt it
 function scarFromYou(victim, weaponType) {
   const p = SCAR_WEAPON_CHANCE[weaponType];
-  if (!victim || !p || Math.random() > p) return null;
+  if (!victim || !p) return null;
+  if (weaponType === "stick" && !_stickBeating(victim)) return null; // (a whack or two leaves no mark)
+  if (Math.random() > p) return null;
   return addScar(victim, _scPick(SCAR_FROM[weaponType]), `${SCAR_WEAPON_WORDS[weaponType]} on day ${getDayNumber()}`);
 }
 

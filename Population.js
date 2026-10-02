@@ -22,7 +22,7 @@
 // PARK_WILD_MAX (ParkLife.js). So winters and a crowded park mean fewer foals.
 // ---------------------------------------------------------------------------
 
-const ROOM_SPACE = { house: 10, BACKYARD: 16 };
+const ROOM_SPACE = { house: 20, BACKYARD: 30 }; // (a family or two per room)
 const CROWD_UNHAPPY = 0.04; // happiness a game hour, x how far over (1 = double)
 const CROWD_SCUFFLE = 0.0015; // a second, x how far over, x (1 + temper), per grumpy grown-up
 const MARE_REST_DAYS = 2; // about 2 months (a game day ~ a month, Aging.js)
@@ -136,7 +136,7 @@ function updatePopulation(dt) {
     if (over <= 0) continue;
     const here = fluffies.filter((f) => f.isAlive && f.scene === scene && !f.isDragging);
     for (const f of here) {
-      if (f.happiness > 0.05) f.changeHappiness(-CROWD_UNHAPPY * over * hours);
+      if (f.happiness > 0.05) f.changeHappiness(-CROWD_UNHAPPY * over * hours, "Crowded room");
       // Grumbling
       if (scene === currentScene && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") {
         if (typeof f._nextCrowdGrumble !== "number") f._nextCrowdGrumble = now + 60 + Math.random() * 240;

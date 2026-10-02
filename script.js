@@ -171,6 +171,8 @@ function attemptDrop() {
   }
   for (const f of fluffies) {
     if (f.isDragging) {
+      // Set down on the shelter's drop box: the shelter takes it (Shelter.js)
+      if (typeof overShelterDropBox === "function" && overShelterDropBox(mouse.x, mouse.y) && dropInShelterBox(f)) return true;
       // One of yours set down outside: putting it out - ask first (Strays.js)
       if (typeof wouldPutOut === "function" && wouldPutOut(f)) {
         askPutOut(f, "drop");
@@ -222,13 +224,22 @@ function attemptDrop() {
               f.currentCage &&
               f.currentCage.tag === "breeding"
             ) {
-              const mare = fluffies.find(
+              // (a mare it can breed with, if there is one: HorseMating.js)
+              const mares = fluffies.filter(
                 (m) =>
                   m.gender === "female" &&
                   m.growth >= 1.0 &&
                   m.currentCage === f.currentCage &&
                   m.isAlive,
               );
+              const mare = mares.find((m) => !forcedBreedingProblem(f, m)) || mares[0];
+              const problem = mare ? forcedBreedingProblem(f, mare) : null;
+              if (mare && problem) {
+                // Nothing to gain from hurting him: say why, and leave him be
+                sayBreedingCageProblem(problem);
+                hitFluffy = true;
+                break;
+              }
               if (mare) {
                 if (isSpray) {
                   obj.sprayTimer = 0.2;
@@ -337,7 +348,7 @@ function attemptDrop() {
                 f.stateTimer = 0.5;
               }
 
-              f.changeHappiness(HAPPINESS_PENALTY_STICK_WHACK * (isSpray ? 0.35 : 1));
+              f.changeHappiness(HAPPINESS_PENALTY_STICK_WHACK * (isSpray ? 0.35 : 1), "Hurt by you");
               f.expressionOverride = "CRYING_SHOCKED";
               f.expressionOverrideTimer = isSpray ? 1.5 : 3.0;
 
@@ -484,14 +495,14 @@ function attemptDrop() {
                 let key = f.adopted ? ["UPSIES"] : ["UPSIES", "FERAL"];
                 f.speak(getDialogue(key, f));
                 if (f.happiness > WAN_DIE_THRESHOLD) {
-                  f.changeHappiness(HAPPINESS_BONUS_UPSIES);
+                  f.changeHappiness(HAPPINESS_BONUS_UPSIES, "Picked up gently");
                   f.expressionOverride = "GOOD_UPSIES";
                   f.expressionOverrideTimer = 2.0;
                 }
               } else {
                 let key = f.adopted ? ["UPSIES", "BAD"] : ["UPSIES", "BAD", "FERAL"];
                 f.speak(getDialogue(key, f));
-                f.changeHappiness(HAPPINESS_PENALTY_BAD_UPSIES);
+                f.changeHappiness(HAPPINESS_PENALTY_BAD_UPSIES, "Picked up roughly");
                 f.expressionOverride = null;
                 f.expressionOverrideTimer = 0;
               }
@@ -592,6 +603,7 @@ function attemptDrop() {
             f.changeHappiness(
               HAPPINESS_BONUS_BRUSH *
                 (typeof brushHappinessMultiplier === "function" ? brushHappinessMultiplier(f) : 1),
+              "Brushed",
             );
             // Builds trust in you (Memory.js)
             if (typeof onFluffyBrushed === "function") onFluffyBrushed(f);
@@ -744,7 +756,10 @@ function spawnFeralGroup(targetScene, forcedScenario = null, opts = {}) {
   const before = fluffies.length;
   _spawnFeralGroup(targetScene, forcedScenario);
   // Good smarty or bad? (Intelligence.js)
-  for (let i = before; i < fluffies.length; i++) if (fluffies[i].smartyKind === undefined && typeof rollSmartyKind === "function") rollSmartyKind(fluffies[i]);
+  for (let i = before; i < fluffies.length; i++) {
+    if (fluffies[i].smartyKind === undefined && typeof rollSmartyKind === "function") rollSmartyKind(fluffies[i]);
+    if (typeof rollAlicornIndifference === "function") rollAlicornIndifference(fluffies[i]); // (a few don't care about alicorns)
+  }
   // Through the broken fence: not yours - you're asked (Strays.js)
   if (targetScene === "BACKYARD" && typeof noteBackyardStrays === "function") noteBackyardStrays(fluffies.slice(before));
   if (opts.walkIn) {

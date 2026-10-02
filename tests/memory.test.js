@@ -3,7 +3,7 @@ const { check, checkEqual } = require("./helpers");
 
 const SET_TRAIT = `(h, key, sum) => {
   const i = TRAITS.findIndex((t) => t.key === key);
-  for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[TRAIT_GENE_START + i * TRAIT_GENES_EACH + k] = k < sum ? 1 : 0;
+  for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[traitGeneStart(i) + k] = k < sum ? 1 : 0;
 }`;
 
 // Two mares, average personality, standing apart in the main room

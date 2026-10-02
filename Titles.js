@@ -281,7 +281,7 @@ function _tiDaily(f) {
   const tally = _tiRecentTally(f, SPOIL_DAYS + 1);
   // Spoiled demands: a day without a treat, it sulks
   if (t === "Spoiled" && !(tally.yesterday.treat > 0)) {
-    f.changeHappiness(-0.05);
+    f.changeHappiness(-0.05, "No treat yesterday");
     f.expressionOverride = "ANGRY_PUFFED";
     f.expressionOverrideTimer = 2;
   }

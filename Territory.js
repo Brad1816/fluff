@@ -327,6 +327,7 @@ function _takeOver(winner, loser, idx) {
   _tellPlayer(loser, text);
   if (!ws.concat(ls).some((f) => f.adopted)) _parkNews(text);
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text }); // morning report
+  if (typeof noteHerdFeud === "function") noteHerdFeud(winner, loser, FEUD_TAKEOVER); // a feud (HerdWars.js)
 }
 
 // ---- Desires (added in the Horse constructor) ----
@@ -381,7 +382,7 @@ class DefendTerritoryDesire extends Desire {
     t._keepOut = { idx, until: timePlayed + KEEP_OUT_TIME };
     _say(horse, ["TERRITORY", "CHASE"], t);
     const temper = traitValue(horse, "temper");
-    const chance = (_isChallenger(t, idx) ? 0.5 : 0.12) * (1 + 0.5 * temper);
+    const chance = (_isChallenger(t, idx) ? 0.5 : 0.25) * (1 + 0.5 * temper);
     if (
       horse.attackCooldown <= 0 &&
       horse.canFightBack() &&

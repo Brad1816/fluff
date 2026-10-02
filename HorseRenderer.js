@@ -424,6 +424,8 @@ class HorseRenderer {
     for (let idx = 0; idx < 4; idx++) {
       if (this.horse.isCrawling) {
         let crawlAngle = idx === 0 || idx === 3 ? Math.PI / 2 : -Math.PI / 2;
+        // Paddling along (not a slide), when it's going somewhere
+        if (this.horse.isMovingOrRunning && this.horse.isMovingOrRunning()) crawlAngle += Math.sin(this.horse.animPhase * 1.2 + (idx % 2) * Math.PI) * 0.35;
         if (this.horse.isBeingTased && this.horse.isBeingTased()) {
           crawlAngle += (Math.random() - 0.5) * 0.45;
         }

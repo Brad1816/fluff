@@ -2507,7 +2507,9 @@ Through the door in Shelter Alley (the scene is still `DAY_CARE`, the alley
   of it, a sidewalk with paw prints to the door, an "Adopt a fluffy!" A-frame
   (fee, last-day half price), a notice board (who's on their last day -
   `shelterLastDayNames` - how many are waiting, "Found a stray? Bring it
-  in.") and an after-hours drop box. Scenery only; nothing to click.
+  in.") and an after-hours drop box: set a fluffy down on it
+  (`overShelterDropBox` / `dropInShelterBox`) and the shelter takes it in -
+  a stray at once, one of yours after asking (`giveUpToShelter`).
 - Tests: `tests/shelter.test.js`.
 
 ### The story book (Phase 0, stage 3)
@@ -2548,3 +2550,52 @@ from. Nothing player-facing reads it yet except the debug view.
   placeholders for room climate (phase 3) and titles (phase 4). J picks the
   fluffy in the magnifying glass (and closes it), otherwise your first.
 - Tests: `tests/storybook.test.js`.
+
+### Batch 10: playtest observations
+- **Defaults and pacing:** `masterVolume` starts at 0.2 (saved in
+  localStorage "fluffyVolume"); `ROOM_SPACE` house 20 / backyard 30
+  (Population.js); grass regrows slower (`GRASS_REGROW` 360,
+  `GRASS_SPREAD_EVERY` 45, `MEADOW_SEED_EVERY` 45); mess lasts longer
+  (`MESS_FADE` poop 0.25 a day, `RAIN_WASH` 0.003); bodies rot faster
+  (`ROT_START` 100, `ROT_FULL` 300, `ROT_GONE` 720).
+- **Alicorns** (`AlicornAcceptance.js alicornStance`): "flee" (foals, hurt,
+  miserable, in labour), "attack" (fierce - brave, grumpy or a Smarty - and
+  the alicorn is weak: a foal, under 60 health, or lame), "avoid" (within
+  `ALICORN_AVOID_NEAR`: walks away, `FEAR.ALICORN_AVOID`), "ignore".
+  `ALICORN_INDIFFERENT` (8%) of new fluffies don't care at all
+  (`rollAlicornIndifference`, `alicornIndifferent`, saved).
+  `shrugsOffAlicornDeath`: no grief, shock or memorial mourning for an
+  alicorn they never accepted (`CORPSE.ALICORN`).
+- **Mood tab** (`Mood.js`): `changeHappiness(amount, cause)` logs causes
+  (`noteMood`, fading over `MOOD_MEMORY`); `moodFactors` / `drawMoodTab`.
+- **Family tree** "Relationships" button (`familyTreeToRelationships`).
+- **Breeding cage** (script.js): picks the first grown mare in the cage
+  with no `forcedBreedingProblem`; with a problem it says why
+  (`sayBreedingCageProblem`) instead of hitting him.
+- **Cull / eject cages** act on a tap (`Cage.tapAction`, UI.js).
+- **Stick scars** only from a beating: `STICK_SCAR_HITS` within
+  `STICK_SITTING` (`_stickBeating`, Scars.js).
+- **Mower** shreds foals under `MOW_FOAL_BELOW` (`mowFoalsAround`).
+- **Skip ahead** (Sleep.js): `SKIP_CHOICES` 1/6/12 hours (`startSkip`),
+  also away from home.
+- **Inbreeding** (`Inbreeding.js`): kin foals may be deformed (dim,
+  crooked, sickly, odd: `f.deformities`, saved); a foal with a bad gene pair
+  pulls through (`inbredPullsThrough`) when its parents are kin, always
+  deformed. Sensitive babies run in families (`sensitiveBirthChance`) and
+  can be bred in a cage, wearing them out (`breedWear`, `healthCapOf`).
+- **Gene planner** (`GenePlanner.js`): targets -> who has it now and the
+  best pairs (`runGenePlan`, sampled with `combineGenes`).
+- **Shelter drop box** takes fluffies set down on it.
+- **Shop icons**: canvas-drawn pictures (mower, incubator...) show
+  (`drawShopActionIcon` uses `isDrawableImage`).
+- **Sensitive foals** ride on mum until grown (`cantCrawlYet`).
+- **Wits genes** moved to 139-143 (`traitGeneStart`), clear of the fancy
+  mane genes (128-138); `TRAIT_GENE_TOTAL` 144.
+- **Herd feuds and wars, and the dead** (`HerdWars.js`): `h.feuds` grow on
+  takeovers, fights and kills between rival herds, fade daily; at `WAR_AT`
+  two herds in the same place can go to war (`startHerdWar`, fighters
+  charge with `performAttack(.., "WAR")`). Rotting bodies give nearby
+  fluffies flu (`_hwBodySickness`); a herd with a clever member
+  (`BODY_SMARTS`) carries its dead away (`_hwBodyCare`, `_hwCarry`).
+  Magnifying glass "Feud" row. The territory scuffle chance is 0.25.
+- Tests: `tests/batch10.test.js`.

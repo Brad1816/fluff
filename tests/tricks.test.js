@@ -12,7 +12,7 @@ const SETUP = `() => {
     const h = new Horse(growth, null, "INDOORS", "earthy", null, 0.5, 0.5, "female");
     for (const t of TRAITS) {
       const i = TRAITS.findIndex((q) => q.key === t.key);
-      for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[TRAIT_GENE_START + i * TRAIT_GENES_EACH + k] = k < 2 ? 1 : 0;
+      for (let k = 0; k < TRAIT_GENES_EACH; k++) h.genes[traitGeneStart(i) + k] = k < 2 ? 1 : 0;
     }
     h.personalities = (h.personalities || []).filter((p) => p !== "smarty");
     h.adopted = true;

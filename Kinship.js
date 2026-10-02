@@ -129,6 +129,7 @@ function describeKinship(a, b) {
 function notRightInTheHead(f) {
   if (!f) return null;
   if (typeof f.isSmarty === "function" && f.isSmarty()) return "a Smarty";
+  if (typeof hasDeformity === "function" && hasDeformity(f, "odd")) return "odd"; // (Inbreeding.js)
   if (typeof f.isUnderAphrodisiac === "function" && f.isUnderAphrodisiac()) return "drugged";
   if (typeof titleOf === "function" && titleOf(f) === "Broken") return "Broken";
   if ((f.hasKilled || 0) > 0) return "a killer";

@@ -144,6 +144,23 @@ class Cage {
     }
   }
 
+  // Tapped (UI.js, before picking it up): a cull or eject cage with
+  // fluffies in it does its job at once - one tap, no need to put it back
+  // down in the same spot. Empty, it's just picked up and moved.
+  tapAction() {
+    if (this.cullPhase) return true; // (sealed: can't be moved now)
+    if (!this.getOccupants().length) return false;
+    if (this.tag === "cull") {
+      this.askCull();
+      return true;
+    }
+    if (this.tag === "eject") {
+      this.ejectContents();
+      return true;
+    }
+    return false;
+  }
+
   // Cull mode, clicked: it can't be undone, so ask first (Choices.js)
   askCull() {
     if (this.cullPhase) return;
@@ -377,23 +394,16 @@ class Cage {
       this.drawGlass(ctx, w, h);
     }
 
-    // Draw Tag
+    // Draw Tag (with what a tap does, for cull and eject)
     if (this.tag && this.tag !== "none") {
+      const hint = { cull: " \u00b7 tap to seal", eject: " \u00b7 tap to empty" }[this.tag];
+      const label = this.tag.toUpperCase() + (hint && !this.cullPhase && this.getOccupants().length ? hint : "");
       ctx.font = "bold 12px Arial";
       ctx.textAlign = "center";
       ctx.fillStyle = CAGE_TAG_COLORS[this.tag] || "#4CAF50";
-      ctx.fillRect(
-        -w / 2 + 5,
-        -h / 2 + 5,
-        ctx.measureText(this.tag.toUpperCase()).width + 10,
-        20,
-      );
+      ctx.fillRect(-w / 2 + 5, -h / 2 + 5, ctx.measureText(label).width + 10, 20);
       ctx.fillStyle = "white";
-      ctx.fillText(
-        this.tag.toUpperCase(),
-        -w / 2 + 5 + (ctx.measureText(this.tag.toUpperCase()).width + 10) / 2,
-        -h / 2 + 19,
-      );
+      ctx.fillText(label, -w / 2 + 5 + (ctx.measureText(label).width + 10) / 2, -h / 2 + 19);
     }
     ctx.restore();
   }

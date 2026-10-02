@@ -29,13 +29,17 @@ const LIMB_PART_WORDS = {
   horn: "its horn",
 };
 
+// Mangled by a throw, or crooked from birth (Inbreeding.js): drawn, and
+// slows it, the same
 function isMangled(f, part) {
-  return !!(f && f.limbState && f.limbState[part] === "mangled");
+  const v = f && f.limbState && f.limbState[part];
+  return v === "mangled" || v === "crooked";
 }
 
-function mangledParts(f) {
+// Parts mangled by throws (onlyThrown), or crooked from birth too
+function mangledParts(f, onlyThrown = false) {
   if (!f || !f.limbState) return [];
-  return Object.keys(f.limbState).filter((k) => f.limbState[k] === "mangled" && _partStillThere(f, k));
+  return Object.keys(f.limbState).filter((k) => (f.limbState[k] === "mangled" || (!onlyThrown && f.limbState[k] === "crooked")) && _partStillThere(f, k));
 }
 
 function _partStillThere(f, part) {
@@ -88,12 +92,12 @@ function injureFromThrow(f, speed, minSpeed) {
 
 // HorseGenetics price
 function mangledPriceMultiplier(f) {
-  return Math.pow(MANGLED_PRICE, mangledParts(f).length);
+  return Math.pow(MANGLED_PRICE, mangledParts(f, true).length); // (crooked from birth: a deformity's price)
 }
 
 // Magnifying glass: [text, tone] or null
 function describeInjuries(f) {
-  const parts = mangledParts(f);
+  const parts = mangledParts(f, true);
   if (!parts.length) return null;
   const words = parts.map((p) => {
     if (p === "horn") return "broken horn";
