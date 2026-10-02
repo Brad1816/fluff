@@ -1773,13 +1773,13 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Knife",
-    desc: "Used for amputation.",
+    desc: "Operate on fluffies: click one to open the surgery chart (front, side, back, underside), pick a part, and confirm. Cuts bleed - have a suture kit.",
     cost: 50,
     isItem: "knife",
   },
   {
     name: "Scalpel",
-    desc: "Amputation with this will not make fluffies bleed.\n\nAfter the second Finno-Korean hyperwar, medical steel has become extremely scarce.",
+    desc: "Operate with this and fluffies don't bleed. Click one to open the surgery chart, pick a part, and confirm.\n\nAfter the second Finno-Korean hyperwar, medical steel has become extremely scarce.",
     cost: 25000,
     isItem: "scalpel",
   },

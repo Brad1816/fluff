@@ -28,7 +28,7 @@
 //
 // Layers so far: 5 magnifying glass, 6 trick menu, 10 family tree, 11 Gene Lab,
 // 12 orders screen, 13 shelter boarding, 14 shelter plaque, 20 goals, 21 help, 22 breeding records,
-// 23 vet, 29 show results, 30 morning report, 31 naming pop-up.
+// 23 vet, 24 surgery, 29 show results, 30 morning report, 31 naming pop-up.
 // ---------------------------------------------------------------------------
 
 const SCREENS = [];
