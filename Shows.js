@@ -174,14 +174,10 @@ function showConditionPenalty(f) {
 
 // ---- Grooming (the brush) ----
 
-function _showNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 // Brushed within the last game day
 function isFreshlyGroomed(f) {
   if (!f || typeof f.groomedAt !== "number") return false;
-  const since = _showNow() - f.groomedAt;
+  const since = timePlayed - f.groomedAt;
   return since >= 0 && since <= DAY_LENGTH;
 }
 
@@ -189,7 +185,7 @@ function isFreshlyGroomed(f) {
 function onFluffyGroomed(f) {
   if (!f) return;
   const was = isFreshlyGroomed(f);
-  f.groomedAt = _showNow();
+  f.groomedAt = timePlayed;
   if (!was && showState && showState.entryId === f.id && typeof addUIMessage === "function") {
     const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
     addUIMessage(`${name} is groomed for the show (+${SHOW_GROOM_BONUS} points for a day).`);
@@ -512,44 +508,44 @@ function drawShowsPage(c, theme, m) {
   const headColor = ordersScreenMode === "board" ? "#fbe7b5" : theme.cardText;
   const L = showsLayout();
   if (!L.show) {
-    _osText(c, "The next show will be announced soon.", 20, 140, headColor, "15px Arial");
+    canvasText(c, "The next show will be announced soon.", 20, 140, headColor, "15px Arial");
     return;
   }
   const t = L.theme;
   // The next show
   c.fillStyle = theme.card;
-  _osRR(c, 20, 84, 700, 140, 8);
+  roundRectPath(c, 20, 84, 700, 140, 8);
   c.fill();
-  _osText(c, `Next show: ${t.name}`, 36, 114, theme.cardText, "bold 20px Arial");
-  _osText(c, describeShowTime(L.show), 700, 114, theme.sub, "bold 14px Arial", "right");
-  _osText(c, t.about, 36, 138, theme.sub, "italic 13px Arial");
+  canvasText(c, `Next show: ${t.name}`, 36, 114, theme.cardText, "bold 20px Arial");
+  canvasText(c, describeShowTime(L.show), 700, 114, theme.sub, "bold 14px Arial", "right");
+  canvasText(c, t.about, 36, 138, theme.sub, "italic 13px Arial");
   const [p1, p2, p3] = L.show.prizes;
-  _osText(c, `Prizes: 1st $${p1.toLocaleString()} · 2nd $${p2.toLocaleString()} · 3rd $${p3.toLocaleString()} · plus reputation and a ribbon`, 36, 162, theme.cardText, "13px Arial");
-  _osText(c, `Entry fee $${L.show.fee}${t.hard ? " · The best breeders enter this one" : ""}`, 36, 184, theme.cardText, "bold 13px Arial");
+  canvasText(c, `Prizes: 1st $${p1.toLocaleString()} · 2nd $${p2.toLocaleString()} · 3rd $${p3.toLocaleString()} · plus reputation and a ribbon`, 36, 162, theme.cardText, "13px Arial");
+  canvasText(c, `Entry fee $${L.show.fee}${t.hard ? " · The best breeders enter this one" : ""}`, 36, 184, theme.cardText, "bold 13px Arial");
   const entry = showState.entryId !== null ? fluffies.find((f) => f.id === showState.entryId) : null;
   if (entry) {
-    _osText(c, `Entered: ${fluffyDisplayName(entry)} (judges' view ${showScore(entry, t)})`, 36, 208, "#1e8a3a", "bold 14px Arial");
+    canvasText(c, `Entered: ${fluffyDisplayName(entry)} (judges' view ${showScore(entry, t)})`, 36, 208, "#1e8a3a", "bold 14px Arial");
     _osButton(c, L.withdraw, m, theme);
-  } else _osText(c, "Not entered yet: pick one of your fluffies below.", 36, 208, theme.sub, "13px Arial");
+  } else canvasText(c, "Not entered yet: pick one of your fluffies below.", 36, 208, theme.sub, "13px Arial");
 
   // Your fluffies that can enter
-  _osText(c, "Your fluffies that can enter (judges' view out of 100)", 20, 242, headColor, "bold 15px Arial");
-  _osText(c, `Brushed within a day: +${SHOW_GROOM_BONUS} · each trick it knows: +${typeof TRICK_SHOW_BONUS === "number" ? TRICK_SHOW_BONUS : 2}`, 720, 242, headColor, "italic 12px Arial", "right");
-  if (!L.rows.length) _osText(c, "None of yours can enter this one.", 20, 280, headColor, "14px Arial");
+  canvasText(c, "Your fluffies that can enter (judges' view out of 100)", 20, 242, headColor, "bold 15px Arial");
+  canvasText(c, `Brushed within a day: +${SHOW_GROOM_BONUS} · each trick it knows: +${typeof TRICK_SHOW_BONUS === "number" ? TRICK_SHOW_BONUS : 2}`, 720, 242, headColor, "italic 12px Arial", "right");
+  if (!L.rows.length) canvasText(c, "None of yours can enter this one.", 20, 280, headColor, "14px Arial");
   for (const r of L.rows) {
     c.fillStyle = theme.card;
-    _osRR(c, r.x, r.y, r.w, r.h, 8);
+    roundRectPath(c, r.x, r.y, r.w, r.h, 8);
     c.fill();
     const p = typeof _ordersPortrait === "function" ? _ordersPortrait(r.f, 42) : null;
     if (p) c.drawImage(p, r.x + 4, r.y + 2);
-    _osText(c, fitText(c, fluffyDisplayName(r.f), 250), r.x + 54, r.y + 20, theme.cardText, "bold 14px Arial");
-    _osText(c, fitText(c, showComment(r.f, t), 300), r.x + 54, r.y + 38, theme.sub, "italic 12px Arial");
+    canvasText(c, fitText(c, fluffyDisplayName(r.f), 250), r.x + 54, r.y + 20, theme.cardText, "bold 14px Arial");
+    canvasText(c, fitText(c, showComment(r.f, t), 300), r.x + 54, r.y + 38, theme.sub, "italic 12px Arial");
     // Score bar
     c.fillStyle = "rgba(0,0,0,0.12)";
     c.fillRect(r.x + 380, r.y + 17, 150, 12);
     c.fillStyle = r.score >= 70 ? "#1e8a3a" : r.score >= 45 ? "#d4a017" : "#c0392b";
     c.fillRect(r.x + 380, r.y + 17, 1.5 * r.score, 12);
-    _osText(c, String(r.score), r.x + 540, r.y + 28, theme.cardText, "bold 14px Arial");
+    canvasText(c, String(r.score), r.x + 540, r.y + 28, theme.cardText, "bold 14px Arial");
     const isEntry = showState.entryId === r.f.id;
     _osButton(c, { ...r.enter, label: isEntry ? "Entered" : `Enter $${L.show.fee}` }, m, theme, isEntry);
   }
@@ -561,30 +557,30 @@ function drawShowsPage(c, theme, m) {
   // Right side: last show and your ribbons
   const rx = 750;
   c.fillStyle = theme.card;
-  _osRR(c, rx, 84, 390, 560, 8);
+  roundRectPath(c, rx, 84, 390, 560, 8);
   c.fill();
-  _osText(c, "Last show", rx + 16, 112, theme.cardText, "bold 17px Arial");
+  canvasText(c, "Last show", rx + 16, 112, theme.cardText, "bold 17px Arial");
   const last = showState.last;
   if (canReplayShow()) _osButton(c, L.replay, m, theme);
   let y = 136;
-  if (!last) _osText(c, "No shows yet.", rx + 16, y, theme.sub, "13px Arial");
+  if (!last) canvasText(c, "No shows yet.", rx + 16, y, theme.sub, "13px Arial");
   else {
-    _osText(c, `${last.themeName} (day ${last.day})`, rx + 16, y, theme.sub, "13px Arial");
+    canvasText(c, `${last.themeName} (day ${last.day})`, rx + 16, y, theme.sub, "13px Arial");
     y += 22;
     for (const e of last.placings.slice(0, 8)) {
-      _osText(c, `${_placeText(e.place)}`, rx + 16, y, e.place <= 3 ? "#b8860b" : theme.sub, "bold 13px Arial");
-      _osText(c, fitText(c, e.name, 250), rx + 56, y, e.you ? "#1e8a3a" : theme.cardText, e.you ? "bold 13px Arial" : "13px Arial");
-      _osText(c, String(e.score), rx + 370, y, theme.sub, "13px Arial", "right");
+      canvasText(c, `${_placeText(e.place)}`, rx + 16, y, e.place <= 3 ? "#b8860b" : theme.sub, "bold 13px Arial");
+      canvasText(c, fitText(c, e.name, 250), rx + 56, y, e.you ? "#1e8a3a" : theme.cardText, e.you ? "bold 13px Arial" : "13px Arial");
+      canvasText(c, String(e.score), rx + 370, y, theme.sub, "13px Arial", "right");
       y += 19;
     }
   }
   y += 18;
-  _osText(c, "Your ribbon winners", rx + 16, y, theme.cardText, "bold 15px Arial");
+  canvasText(c, "Your ribbon winners", rx + 16, y, theme.cardText, "bold 15px Arial");
   y += 22;
   const winners = fluffies.filter((f) => f.adopted && f.isAlive && describeRibbons(f));
-  if (!winners.length) _osText(c, "None yet.", rx + 16, y, theme.sub, "13px Arial");
+  if (!winners.length) canvasText(c, "None yet.", rx + 16, y, theme.sub, "13px Arial");
   for (const f of winners.slice(0, 8)) {
-    _osText(c, fitText(c, `${fluffyDisplayName(f)}: ${describeRibbons(f)}`, 360), rx + 16, y, theme.cardText, "13px Arial");
+    canvasText(c, fitText(c, `${fluffyDisplayName(f)}: ${describeRibbons(f)}`, 360), rx + 16, y, theme.cardText, "13px Arial");
     y += 19;
   }
 }

@@ -58,13 +58,10 @@ function freshDarkMarket() {
 }
 let darkMarket = freshDarkMarket();
 
-function _dmDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
 function darkMarketDue() {
   if (!darkMarket || typeof darkMarket !== "object") darkMarket = freshDarkMarket();
   const gap = typeof darkRepGapDays === "function" ? darkRepGapDays() : DARK_MARKET_GAP_DAYS; // (sooner with a dark name, Reputation.js)
-  return _dmDay() - (darkMarket.lastDay ?? -99) >= gap;
+  return getDayNumber() - (darkMarket.lastDay ?? -99) >= gap;
 }
 
 // 0..1: what the dealer is after
@@ -235,7 +232,7 @@ function makeSellRequest(candidates, rnd = Math.random) {
     }
   }
   const { offer, maxPay, like } = buyerOffer(kind, target, level, rnd);
-  if (kind.dark) darkMarket.lastDay = _dmDay(); // (he won't be back for a while)
+  if (kind.dark) darkMarket.lastDay = getDayNumber(); // (he won't be back for a while)
   return {
     fluffyId: target.id,
     fluffy: target, // for drawing

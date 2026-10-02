@@ -42,15 +42,6 @@ const TOYS = [
 
 const playTicker = new Ticker(2);
 
-function _plNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _plTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
-}
-function _plName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
-}
 
 function boredomOf(f) {
   return typeof f.boredom === "number" ? f.boredom : 0;
@@ -61,7 +52,7 @@ function toyLike(f, key) {
   if (!f.toyLikes || typeof f.toyLikes !== "object") f.toyLikes = {};
   if (typeof f.toyLikes[key] !== "number") f.toyLikes[key] = Math.round(Math.random() * 100) / 100;
   let v = f.toyLikes[key];
-  const e = _plTrait(f, "energy"); // playful +, lazy -
+  const e = traitValue(f, "energy"); // playful +, lazy -
   if (key === "ball") v += 0.35 * e;
   if (key === "tv") v -= 0.35 * e;
   return v;
@@ -141,9 +132,9 @@ class ChaseHeldBallDesire extends Desire {
     const ball = _heldBall(h.scene);
     if (!ball) return 0;
     if (Math.hypot(ball.x - h.x, ball.y - h.y) > 450) return 0;
-    const keen = boredomOf(h) >= 0.2 || _plTrait(h, "energy") > 0 || h.growth < 1;
+    const keen = boredomOf(h) >= 0.2 || traitValue(h, "energy") > 0 || h.growth < 1;
     if (!keen) return 0;
-    if (h._playedWithYouAt && _plNow() - h._playedWithYouAt < PLAY_WITH_YOU_COOLDOWN) return 0;
+    if (h._playedWithYouAt && timePlayed - h._playedWithYouAt < PLAY_WITH_YOU_COOLDOWN) return 0;
     return 55 + 20 * boredomOf(h);
   }
   execute(h) {
@@ -167,7 +158,7 @@ class ChaseHeldBallDesire extends Desire {
 }
 
 function playedWithYou(f) {
-  f._playedWithYouAt = _plNow();
+  f._playedWithYouAt = timePlayed;
   onFluffyPlayed(f, "you");
   f.changeHappiness(0.06);
   if (typeof giveAffection === "function") giveAffection(f, "played");
@@ -206,7 +197,7 @@ function boredMischief(f) {
     f.stateTimer = 0.5;
     if (typeof poofs !== "undefined") poofs.push(new Poof(bowl.x, bowl.y - 10, bowl.scene, "#8b5a2b"));
     if (!f.tooYoungToSpeak()) f.speak(getDialogue(["PLAY", "MISCHIEF_BOWL"], f), true);
-    if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${_plName(f)} knocked a bowl of food over - it's bored.`);
+    if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} knocked a bowl of food over - it's bored.`);
     f.boredom = Math.max(0, boredomOf(f) - 0.1);
     return "bowl";
   }
@@ -219,7 +210,7 @@ function boredMischief(f) {
     victim.expressionOverrideTimer = 1.5;
     if (!f.tooYoungToSpeak()) f.speak(getDialogue(["PLAY", "MISCHIEF_PICK"], f), true);
     if (!victim.tooYoungToSpeak()) victim.speak(getDialogue(["PLAY", "PICKED_ON"], victim));
-    if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${_plName(f)} is picking on ${_plName(victim)} - it's bored.`);
+    if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} is picking on ${fluffyDisplayName(victim)} - it's bored.`);
     f.boredom = Math.max(0, boredomOf(f) - 0.1);
     return "pick";
   }
@@ -231,7 +222,7 @@ function boredMischief(f) {
 function updatePlay(dt) {
   const step = playTicker.step(dt);
   if (!step) return;
-  const now = _plNow();
+  const now = timePlayed;
   const hours = step / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted || f.tooYoungToWalk()) continue;
@@ -247,7 +238,7 @@ function updatePlay(dt) {
       f.boredom = Math.max(0, f.boredom - 0.2 * hours);
       continue;
     }
-    let rate = BOREDOM_PER_HOUR * (1 + 0.4 * _plTrait(f, "energy"));
+    let rate = BOREDOM_PER_HOUR * (1 + 0.4 * traitValue(f, "energy"));
     if (f.growth < 1) rate *= 1.3;
     if (typeof lifeStage === "function" && lifeStage(f) === "elderly") rate *= 0.6;
     const friend = fluffies.some(

@@ -906,7 +906,6 @@ const DIALOGUE = {
       "<Target> dwink miwkies... <target> wub miwkies...",
       "Wub yu' suuu much <target>! Wan' <target> tu hab biggest heawt happies!",
       "<Target> make speakies soon? Mummah gib yu' bestest miwkies! Say mummah??",
-      "<Target> wan' mowe miwkies?",
       "Mummah wub yu', <target>... neba fowget...",
       "Can <target> make speakies? Say baww! Say baww, <target>!!",
       "<Target> gon' dwink miwkies an' gwow up an' be bestest fwuffy fo' mummah!",

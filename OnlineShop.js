@@ -96,46 +96,46 @@ function drawFoodShopPage(c, theme, m) {
   const L = foodShopLayout();
   for (const r of L.rows) {
     c.fillStyle = theme.card;
-    _osRR(c, r.x, r.y, r.w, r.h, 8);
+    roundRectPath(c, r.x, r.y, r.w, r.h, 8);
     c.fill();
-    _osText(c, r.a.name, r.x + 16, r.y + 26, theme.cardText, "bold 16px Arial");
-    _osText(c, `$${r.a.cost} a bag`, r.x + 16, r.y + 48, theme.sub, "13px Arial");
+    canvasText(c, r.a.name, r.x + 16, r.y + 26, theme.cardText, "bold 16px Arial");
+    canvasText(c, `$${r.a.cost} a bag`, r.x + 16, r.y + 48, theme.sub, "13px Arial");
     const about = String(r.a.desc || "").split(". ")[0].replace(/\.$/, "");
-    _osText(c, typeof fitText === "function" ? fitText(c, about, 370) : about, r.x + 140, r.y + 48, theme.sub, "italic 12px Arial");
+    canvasText(c, typeof fitText === "function" ? fitText(c, about, 370) : about, r.x + 140, r.y + 48, theme.sub, "italic 12px Arial");
     const q = foodBasket[r.a.name] || 0;
     _osButton(c, r.minus, m, theme, q <= 0);
-    _osText(c, String(q), r.x + 607, r.y + 41, theme.cardText, "bold 18px Arial", "center");
+    canvasText(c, String(q), r.x + 607, r.y + 41, theme.cardText, "bold 18px Arial", "center");
     _osButton(c, r.plus, m, theme, q >= FOOD_MAX_EACH);
   }
   // The basket
   const t = foodBasketTotal();
   c.fillStyle = theme.card;
-  _osRR(c, 750, 90, 400, 340, 8);
+  roundRectPath(c, 750, 90, 400, 340, 8);
   c.fill();
-  _osText(c, "Your basket", 770, 122, theme.cardText, "bold 18px Arial");
+  canvasText(c, "Your basket", 770, 122, theme.cardText, "bold 18px Arial");
   let y = 150;
   const items = onlineFoods().filter((a) => foodBasket[a.name]);
-  if (!items.length) _osText(c, "Empty. Use + to add bags.", 770, y, theme.sub, "14px Arial");
+  if (!items.length) canvasText(c, "Empty. Use + to add bags.", 770, y, theme.sub, "14px Arial");
   for (const a of items.slice(0, 6)) {
-    _osText(c, `${foodBasket[a.name]} × ${a.name}`, 770, y, theme.cardText, "14px Arial");
-    _osText(c, `$${foodBasket[a.name] * a.cost}`, 1130, y, theme.cardText, "14px Arial", "right");
+    canvasText(c, `${foodBasket[a.name]} × ${a.name}`, 770, y, theme.cardText, "14px Arial");
+    canvasText(c, `$${foodBasket[a.name] * a.cost}`, 1130, y, theme.cardText, "14px Arial", "right");
     y += 22;
   }
-  _osText(c, t.bags ? (t.fee ? `Delivery $${t.fee} (free from $${FOOD_FREE_DELIVERY})` : "Delivery: free") : `Delivery $${FOOD_DELIVERY_FEE}, free from $${FOOD_FREE_DELIVERY}`, 770, 296, theme.sub, "13px Arial");
-  _osText(c, `Total $${t.total}`, 1130, 318, theme.cardText, "bold 16px Arial", "right");
+  canvasText(c, t.bags ? (t.fee ? `Delivery $${t.fee} (free from $${FOOD_FREE_DELIVERY})` : "Delivery: free") : `Delivery $${FOOD_DELIVERY_FEE}, free from $${FOOD_FREE_DELIVERY}`, 770, 296, theme.sub, "13px Arial");
+  canvasText(c, `Total $${t.total}`, 1130, 318, theme.cardText, "bold 16px Arial", "right");
   const short = t.total > money && !(typeof showDebugMenu !== "undefined" && showDebugMenu);
   _osButton(c, { ...L.order, label: t.bags ? `Order for $${t.total}` : "Order" }, m, theme, !t.bags || short);
-  if (short && t.bags) _osText(c, "Not enough money", 950, 438, "#c0392b", "bold 13px Arial", "center");
+  if (short && t.bags) canvasText(c, "Not enough money", 950, 438, "#c0392b", "bold 13px Arial", "center");
   else if (t.bags) _osButton(c, L.clear, m, theme);
   // On its way
-  _osText(c, "On its way", 760, 470, theme.cardText, "bold 16px Arial");
-  if (!foodDeliveries.length) _osText(c, `Nothing ordered. Deliveries take about ${FOOD_DELIVERY_HOURS} hours.`, 760, 494, theme.sub, "13px Arial");
+  canvasText(c, "On its way", 760, 470, theme.cardText, "bold 16px Arial");
+  if (!foodDeliveries.length) canvasText(c, `Nothing ordered. Deliveries take about ${FOOD_DELIVERY_HOURS} hours.`, 760, 494, theme.sub, "13px Arial");
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   foodDeliveries.slice(0, 6).forEach((d, i) => {
     const mins = Math.max(0, Math.ceil(((d.due - now) / HOUR_LENGTH) * 60));
     const when = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
-    _osText(c, typeof fitText === "function" ? fitText(c, _foodItemsText(d.items), 280) : _foodItemsText(d.items), 760, 494 + i * 22, theme.cardText, "13px Arial");
-    _osText(c, `in ${when}`, 1140, 494 + i * 22, theme.sub, "13px Arial", "right");
+    canvasText(c, typeof fitText === "function" ? fitText(c, _foodItemsText(d.items), 280) : _foodItemsText(d.items), 760, 494 + i * 22, theme.cardText, "13px Arial");
+    canvasText(c, `in ${when}`, 1140, 494 + i * 22, theme.sub, "13px Arial", "right");
   });
 }
 

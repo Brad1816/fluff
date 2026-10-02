@@ -31,9 +31,6 @@ function _hAny(test) {
     }
   });
 }
-function _hName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 
 const HINTS = [
   {
@@ -90,7 +87,7 @@ const HINTS = [
     when: () => typeof titleOf === "function" && _hAny((f) => titleOf(f)),
     text: () => {
       const f = _hOwn().find((x) => titleOf(x));
-      return `${_hName(f)} is now ${titleOf(f)}. Titles come from how a fluffy has been treated, and change how it behaves and what it's worth.`;
+      return `${fluffyDisplayName(f)} is now ${titleOf(f)}. Titles come from how a fluffy has been treated, and change how it behaves and what it's worth.`;
     },
   },
   {
@@ -198,9 +195,6 @@ function setHintsOn(on) {
   hints.off = !on;
   if (!on) currentHint = null;
   _saveHints();
-}
-function hintSeen(key) {
-  return !!hints.seen[key];
 }
 // Forget what's been seen (all of them come back)
 function resetHints() {

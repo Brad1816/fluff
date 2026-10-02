@@ -31,10 +31,6 @@ const PARK_MIN_BIRTHS = 0.1;
 
 const populationTicker = new Ticker(2);
 
-function _popNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 function _isHouseRoomScene(scene) {
   return typeof scene === "string" && /^INDOORS/.test(scene);
 }
@@ -79,7 +75,7 @@ function crowdedRoomLines() {
 
 function restingAfterBirth(f) {
   if (!f || f.gender !== "female" || typeof f.lastBirthAt !== "number") return false;
-  const since = _popNow() - f.lastBirthAt;
+  const since = timePlayed - f.lastBirthAt;
   if (since < 0) {
     f.lastBirthAt = null; // (clock went back: new game or load)
     return false;
@@ -90,7 +86,7 @@ function restingAfterBirth(f) {
 // Magnifying glass: [text, tone] or null
 function describeBreedingRest(f) {
   if (!restingAfterBirth(f)) return null;
-  const left = (MARE_REST_DAYS * DAY_LENGTH - (_popNow() - f.lastBirthAt)) / DAY_LENGTH;
+  const left = (MARE_REST_DAYS * DAY_LENGTH - (timePlayed - f.lastBirthAt)) / DAY_LENGTH;
   const t = typeof fluffyAgeText === "function" ? fluffyAgeText(left) : `${left.toFixed(1)} days`;
   return [`Resting after her litter (${t === "newborn" ? "a few days" : t} left)`, ""];
 }
@@ -132,7 +128,7 @@ function updatePopulation(dt) {
   const step = populationTicker.step(dt);
   if (!step) return;
   const hours = step / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
-  const now = _popNow();
+  const now = timePlayed;
   const scenes = new Set();
   for (const f of fluffies) if (f.isAlive && roomSpace(f.scene)) scenes.add(f.scene);
   for (const scene of scenes) {

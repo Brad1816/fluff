@@ -36,15 +36,6 @@ const RUN_UNHAPPY = 0.3;
 const LORE_KIND = 0.15;
 const LORE_HARM = 0.15;
 
-function _raNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _raDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
-function _raName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 
 function isYourFormerPet(f) {
   return !!(f && f.formerPet && !f.adopted);
@@ -69,7 +60,7 @@ function _canSlipAway(f) {
 
 function _goWild(f, how) {
   const name = (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || null;
-  f.formerPet = { how, day: _raDay(), name };
+  f.formerPet = { how, day: getDayNumber(), name };
   f.adopted = false;
   f.trickNow = null;
   f.sitWith = null;
@@ -79,7 +70,7 @@ function _goWild(f, how) {
 }
 
 function runAway(f, how = null) {
-  const n = _raName(f);
+  const n = fluffyDisplayName(f);
   f._bolt = null;
   const at = typeof _parkEdgeSpot === "function" ? _parkEdgeSpot() : { x: 400, y: 600 };
   _goWild(f, "ran away");
@@ -122,9 +113,9 @@ function _boltTarget(f) {
 
 function startBolt(f) {
   const hour = typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50;
-  if (typeof f.lastKindnessAt !== "number") f.lastKindnessAt = _raNow(); // (as Affection.js would)
-  f._bolt = { since: _raNow(), until: _raNow() + BOLT_HOURS * hour, kind0: f.lastKindnessAt };
-  const n = _raName(f);
+  if (typeof f.lastKindnessAt !== "number") f.lastKindnessAt = timePlayed; // (as Affection.js would)
+  f._bolt = { since: timePlayed, until: timePlayed + BOLT_HOURS * hour, kind0: f.lastKindnessAt };
+  const n = fluffyDisplayName(f);
   if (typeof addUIMessage === "function") addUIMessage(`${n} is making for the door! Pick it up or comfort it to stop it.`);
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `${n} tried to run away` });
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function" && typeof currentScene !== "undefined" && f.scene === currentScene) f.speak(getDialogue(["RUNAWAY", "BOLT"], f), true);
@@ -155,7 +146,7 @@ function _updateBolt(f) {
   if (why) {
     f._bolt = null;
     if (why === "held") {
-      if (typeof addUIMessage === "function") addUIMessage(`${_raName(f)} stays - for now.`);
+      if (typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} stays - for now.`);
       if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["RUNAWAY", "STAYED"], f), true);
     }
     return;
@@ -180,7 +171,7 @@ function _updateBolt(f) {
     }
     if (!b.atDoor) _boltHead(f);
   }
-  if (_raNow() >= b.until) {
+  if (timePlayed >= b.until) {
     f._bolt = null;
     runAway(f, seen && f.scene === "INDOORS" ? "slipped out of the front door" : null);
   }
@@ -194,7 +185,7 @@ function releaseActions(f) {
 
 function releaseFluffy(f) {
   if (!f || !f.adopted) return false;
-  const n = _raName(f);
+  const n = fluffyDisplayName(f);
   _goWild(f, "let go");
   if (typeof addUIMessage === "function") addUIMessage(`You let ${n} go. It's wild now.`);
   if (typeof recordStory === "function") recordStory("turning", f, { x: `You let ${n} go in the park.` });
@@ -206,7 +197,7 @@ function releaseFluffy(f) {
 // HorseUpdate._updateAdoptionRoom: it came back
 function onFormerPetHome(f) {
   if (!f || !f.formerPet) return;
-  const n = _raName(f);
+  const n = fluffyDisplayName(f);
   if (typeof recordStory === "function") recordStory("turning", f, { x: `${n} came home again.` });
   if (typeof addUIMessage === "function") addUIMessage(`${n} is home again.`);
   f.formerPet = null;
@@ -215,11 +206,11 @@ function onFormerPetHome(f) {
 // ---- Seeing it again in the park ----
 function _raMeet(f) {
   const fp = f.formerPet;
-  const day = _raDay();
+  const day = getDayNumber();
   if (fp.metDay === day) return false;
   fp.metDay = day;
   const ago = Math.max(0, day - fp.day);
-  const n = fp.name || _raName(f);
+  const n = fp.name || fluffyDisplayName(f);
   if (typeof addUIMessage === "function") addUIMessage(`You spot ${n} in the park - it ${{ "let go": "was let go", "put out": "was put out" }[fp.how] || "ran away"} ${ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago} days ago`}.`);
   const trust = f.playerTrust || 0;
   const fear = f.playerFear || 0;
@@ -282,7 +273,7 @@ function updateRunaways(dt) {
     }
   }
   if (!runawaysTicker.step(dt)) return;
-  const day = _raDay();
+  const day = getDayNumber();
   const hour = typeof gameHour === "function" ? gameHour() : 12;
   // Once a day: anyone had enough?
   if (_raDayChecked !== day && hour >= RUN_FROM_HOUR && hour < RUN_TO_HOUR) {

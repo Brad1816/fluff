@@ -106,20 +106,16 @@ function freshRoomClimate() {
 let roomClimate = freshRoomClimate(); // scene -> { w, t, f, g, at, why: {kind: amount}, trend: {at, score, prev} }
 let _climateCache = null; // { at, map: scene -> result }
 
-function _clNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 function _clRoom(scene, create) {
   if (!roomClimate || typeof roomClimate !== "object") roomClimate = freshRoomClimate();
   let r = roomClimate[scene];
   if (!r || typeof r !== "object") {
     if (!create) return null;
-    r = roomClimate[scene] = { w: 0, t: 0, f: 0, g: 0, at: _clNow(), why: {} };
+    r = roomClimate[scene] = { w: 0, t: 0, f: 0, g: 0, at: timePlayed, why: {} };
   }
   if (!r.why || typeof r.why !== "object") r.why = {};
   // Fade since last time (and start again if the clock went back)
-  const now = _clNow();
+  const now = timePlayed;
   if (!(now >= r.at)) r.at = now;
   const dt = now - r.at;
   if (dt > 0) {
@@ -154,7 +150,7 @@ function noteClimateStory(kind, ids, opts = {}) {
   // Everyone watching one beating: together they count for at most
   // CLIMATE_WITNESS_MAX (a full room used to make it Fearful in one go)
   if (kind === "harmed" && seen < 1) {
-    const now = _clNow();
+    const now = timePlayed;
     if (!(now - (r.wAt || -1e9) < CLIMATE_WITNESS_WINDOW)) {
       r.wAt = now;
       r.wSum = 0;
@@ -212,7 +208,7 @@ function _clElder(scene) {
 function climateOf(scene) {
   if (!scene || typeof scene !== "string") return { label: "Calm", colour: CLIMATE_LABELS.Calm.colour, score: 0, trend: 0, reasons: [] };
   // (worked out once a game second: it's asked for all the time)
-  const now = Math.floor(_clNow());
+  const now = Math.floor(timePlayed);
   if (_climateCache && _climateCache.at === now && _climateCache.map[scene]) return _climateCache.map[scene];
   if (!_climateCache || _climateCache.at !== now) _climateCache = { at: now, map: {} };
   const r = _clRoom(scene, false) || { w: 0, t: 0, f: 0, g: 0, why: {} };
@@ -354,7 +350,7 @@ function climateGreetFluffy(f, scene) {
 
 // ---- Flinching from your hand ----
 function _clFlinch(f) {
-  const now = _clNow();
+  const now = timePlayed;
   if (f._flinchAt !== undefined && now >= f._flinchAt && now - f._flinchAt < CLIMATE_FLINCH_REST) return false;
   f._flinchAt = now;
   f.expressionOverride = "CRYING_SHOCKED";

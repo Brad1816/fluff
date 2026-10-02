@@ -562,16 +562,6 @@ function _familyPortrait(rec, size) {
   return canvas;
 }
 
-function _ftRoundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.arcTo(x + w, y, x + w, y + h, r);
-  c.arcTo(x + w, y + h, x, y + h, r);
-  c.arcTo(x, y + h, x, y, r);
-  c.arcTo(x, y, x + w, y, r);
-  c.closePath();
-}
-
 // Work out where every card goes for the fluffy in the middle
 function _buildFamilyTreeLayout(focusId) {
   const me = getFamilyRecord(focusId);
@@ -677,7 +667,7 @@ function _drawFamilyCard(c, n, focusId) {
     c.setLineDash([6, 5]);
     c.strokeStyle = "rgba(255,255,255,0.35)";
     c.lineWidth = 2;
-    _ftRoundRect(c, n.x, n.y, n.w, n.h, 10);
+    roundRectPath(c, n.x, n.y, n.w, n.h, 10);
     c.stroke();
     c.restore();
     c.fillStyle = "rgba(255,255,255,0.45)";
@@ -692,7 +682,7 @@ function _drawFamilyCard(c, n, focusId) {
   const male = rec.gender === "male";
   const edge = isFocus ? "#f7d774" : male ? "#6fa8dc" : "#e69ac1";
   c.fillStyle = rec.status === "alive" ? "rgba(30, 30, 45, 0.95)" : "rgba(45, 40, 40, 0.95)";
-  _ftRoundRect(c, n.x, n.y, n.w, n.h, 10);
+  roundRectPath(c, n.x, n.y, n.w, n.h, 10);
   c.fill();
   c.strokeStyle = edge;
   c.lineWidth = isFocus ? 4 : 2;
@@ -841,13 +831,6 @@ function _familyNodeAt(mx, my) {
 
 // ---- The genetics panel on the right ----
 
-function _ftText(c, text, x, y, color = "white", font = "14px Arial", align = "left") {
-  c.font = font;
-  c.fillStyle = color;
-  c.textAlign = align;
-  c.fillText(text, x, y);
-}
-
 function _ftSwatch(c, color, x, y, size = 16) {
   c.fillStyle = color;
   c.fillRect(x, y - size + 3, size, size);
@@ -880,7 +863,7 @@ function _geneVerdict(have, needed) {
 
 function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
   c.fillStyle = "rgba(255,255,255,0.06)";
-  _ftRoundRect(c, px, py, pw, FT_H - py - 20, 10);
+  roundRectPath(c, px, py, pw, FT_H - py - 20, 10);
   c.fill();
   if (!rec) return;
 
@@ -893,73 +876,73 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
   c.restore();
 
   const tx = x + 100;
-  _ftText(c, getFamilyName(rec), tx, y + 24, "white", "bold 20px Arial");
+  canvasText(c, getFamilyName(rec), tx, y + 24, "white", "bold 20px Arial");
   const male = rec.gender === "male";
-  _ftText(c, `${male ? "♂ Male" : "♀ Female"} ${rec.type || ""}`, tx, y + 46, male ? "#9cc4ec" : "#f1b6d4", "bold 14px Arial");
+  canvasText(c, `${male ? "♂ Male" : "♀ Female"} ${rec.type || ""}`, tx, y + 46, male ? "#9cc4ec" : "#f1b6d4", "bold 14px Arial");
   let status = FAMILY_STATUS_TEXT[rec.status] || rec.status;
   if (rec.status === "dead" && rec.causeOfDeath) status += ` (${rec.causeOfDeath})`;
-  _ftText(c, status, tx, y + 66, "#cfcfcf", "13px Arial");
+  canvasText(c, status, tx, y + 66, "#cfcfcf", "13px Arial");
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   if (rec.bornAt !== null && rec.bornAt !== undefined) {
     const ago = Math.max(0, Math.round((now - rec.bornAt) / 60));
-    _ftText(c, ago < 1 ? "Born just now" : `Born ${ago} min ago`, tx, y + 84, "#cfcfcf", "13px Arial");
+    canvasText(c, ago < 1 ? "Born just now" : `Born ${ago} min ago`, tx, y + 84, "#cfcfcf", "13px Arial");
   } else if (rec.boughtFrom) {
     // Bought stock (StockMarket.js)
-    _ftText(c, `From ${rec.boughtFrom}`, tx, y + 84, "#cfcfcf", "13px Arial");
+    canvasText(c, `From ${rec.boughtFrom}`, tx, y + 84, "#cfcfcf", "13px Arial");
   }
   // Its line, and how related it is to the one in the middle (Kinship.js)
   const focusId = typeof familyTreeFocusId !== "undefined" ? familyTreeFocusId : null;
   if (typeof relatedness === "function" && focusId !== null && focusId !== rec.id) {
     const r = relatedness(focusId, rec.id);
-    if (r >= 0.01) _ftText(c, `${Math.round(r * 1000) / 10}% related to ${getFamilyName(getFamilyRecord(focusId))}`, tx, y + 102, "#f7d774", "12px Arial");
+    if (r >= 0.01) canvasText(c, `${Math.round(r * 1000) / 10}% related to ${getFamilyName(getFamilyRecord(focusId))}`, tx, y + 102, "#f7d774", "12px Arial");
   } else if (typeof lineReputation === "function" && typeof lineRootOf === "function") {
     const rep = lineReputation(lineRootOf(rec.id));
-    if (rep) _ftText(c, `Line: ${rep}`, tx, y + 102, "#9fe0a8", "12px Arial");
+    if (rep) canvasText(c, `Line: ${rep}`, tx, y + 102, "#9fe0a8", "12px Arial");
   }
   y += 116;
 
   const nameOf = (id) => (id === null || id === undefined ? "Unknown" : getFamilyName(getFamilyRecord(id) || { id }));
-  _ftText(c, `Mother: ${nameOf(rec.motherId)}`, x, y, "#e0e0e0", "13px Arial");
+  canvasText(c, `Mother: ${nameOf(rec.motherId)}`, x, y, "#e0e0e0", "13px Arial");
   y += 18;
-  _ftText(c, `Father: ${nameOf(rec.fatherId)}`, x, y, "#e0e0e0", "13px Arial");
+  canvasText(c, `Father: ${nameOf(rec.fatherId)}`, x, y, "#e0e0e0", "13px Arial");
   y += 18;
   if (rec.fosterMotherId !== null && rec.fosterMotherId !== undefined) {
-    _ftText(c, `Raised by: ${nameOf(rec.fosterMotherId)}`, x, y, "#e0e0e0", "13px Arial");
+    canvasText(c, `Raised by: ${nameOf(rec.fosterMotherId)}`, x, y, "#e0e0e0", "13px Arial");
     y += 18;
   }
   const kids = getFamilyChildren(rec.id).length;
-  _ftText(c, `Foals: ${kids}`, x, y, "#e0e0e0", "13px Arial");
+  canvasText(c, `Foals: ${kids}`, x, y, "#e0e0e0", "13px Arial");
   y += 26;
 
   const g = describeGenes(rec.genes);
   if (!g) {
-    _ftText(c, "No genes recorded.", x, y, "#cfcfcf", "13px Arial");
+    canvasText(c, "No genes recorded.", x, y, "#cfcfcf", "13px Arial");
     return;
   }
 
-  _ftText(c, "LOOKS", x, y, "#f7d774", "bold 13px Arial");
+  canvasText(c, "LOOKS", x, y, "#f7d774", "bold 13px Arial");
   y += 22;
   const coat = describeRecordCoat(rec);
   _ftSwatch(c, g.body, x, y);
-  _ftText(c, "Coat", x + 24, y, "#cfcfcf", "13px Arial");
+  canvasText(c, "Coat", x + 24, y, "#cfcfcf", "13px Arial");
   const toneColor = { good: "#7dff8a", ok: "#ffe066", bad: "#ff6b6b" }[coat.tone] || "white";
-  _ftText(c, `${coat.name ? coat.name + " - " : ""}${coat.quality}`, x + 80, y, toneColor, "bold 13px Arial");
+  canvasText(c, `${coat.name ? coat.name + " - " : ""}${coat.quality}`, x + 80, y, toneColor, "bold 13px Arial");
   y += 22;
   _ftSwatch(c, g.mane, x, y);
-  _ftText(c, "Mane", x + 24, y, "#cfcfcf", "13px Arial");
+  canvasText(c, "Mane", x + 24, y, "#cfcfcf", "13px Arial");
   const fancy = g.manePattern ? `, ${g.manePattern.kind}` : "";
-  _ftText(c, `style ${g.maneStyle + 1}${fancy}, tail style ${g.tailStyle + 1}`, x + 80, y, "white", "13px Arial");
+  canvasText(c, `style ${g.maneStyle + 1}${fancy}, tail style ${g.tailStyle + 1}`, x + 80, y, "white", "13px Arial");
   y += 22;
   const t = 1 - g.eyeDark / 4;
   const eb = g.eyeBase.match(/\d+/g).map(Number).map((v) => Math.floor(v * t));
   _ftSwatch(c, `rgb(${eb[0]}, ${eb[1]}, ${eb[2]})`, x, y);
-  _ftText(c, "Eyes", x + 24, y, "#cfcfcf", "13px Arial");
+  canvasText(c, "Eyes", x + 24, y, "#cfcfcf", "13px Arial");
   const sizeText = g.size >= 2 ? "Big" : g.size <= -2 ? "Small" : g.size === 0 ? "Average" : g.size > 0 ? "A bit big" : "A bit small";
-  _ftText(c, `Size: ${sizeText}`, x + 80, y, "white", "13px Arial");
+  canvasText(c, `Size: ${sizeText}`, x + 80, y, "white", "13px Arial");
   y += 30;
 
   y -= 6; // (room for the fancy mane row)
-  _ftText(c, "GENES (what foals can inherit)", x, y, "#f7d774", "bold 13px Arial");
+  canvasText(c, "GENES (what foals can inherit)", x, y, "#f7d774", "bold 13px Arial");
   y += 22;
   const geneRows = [
     ["Wings", g.wings, 5, 4, "#9cc4ec"],
@@ -970,35 +953,35 @@ function drawFamilyGeneticsPanel(c, rec, px, py, pw) {
     ["Fancy mane", g.maneFancy, 4, 4, g.maneColor2],
   ];
   for (const [label, have, total, needed, color] of geneRows) {
-    _ftText(c, label, x, y, "#cfcfcf", "13px Arial");
+    canvasText(c, label, x, y, "#cfcfcf", "13px Arial");
     _ftGeneDots(c, have, total, needed, x + 82, y, color);
     const [verdict, vColor] = _geneVerdict(have, needed);
-    _ftText(c, verdict, x + 82 + total * 15 + 10, y, vColor, "bold 13px Arial");
+    canvasText(c, verdict, x + 82 + total * 15 + 10, y, vColor, "bold 13px Arial");
     y += 20;
   }
   if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
     const risk = ["Low", "Raised", "High", "Very high"][g.sbPairs];
-    _ftText(c, "Sensitive baby risk", x, y, "#cfcfcf", "13px Arial");
-    _ftText(c, risk, x + 150, y, g.sbPairs >= 2 ? "#ff6b6b" : g.sbPairs === 1 ? "#ffe066" : "#9fe0a8", "bold 13px Arial");
+    canvasText(c, "Sensitive baby risk", x, y, "#cfcfcf", "13px Arial");
+    canvasText(c, risk, x + 150, y, g.sbPairs >= 2 ? "#ff6b6b" : g.sbPairs === 1 ? "#ffe066" : "#9fe0a8", "bold 13px Arial");
     y += 21;
   }
   // Personality traits (Traits.js): low label, 5 gene dots, high label
   if (typeof TRAITS !== "undefined" && typeof traitGeneSum === "function") {
     y += 4;
-    _ftText(c, "PERSONALITY TRAITS", x, y, "#f7d774", "bold 13px Arial");
+    canvasText(c, "PERSONALITY TRAITS", x, y, "#f7d774", "bold 13px Arial");
     y += 19;
     for (const t of TRAITS) {
       const sum = traitGeneSum(rec.genes, t.key);
       const lowOn = sum !== null && sum <= 1;
       const highOn = sum !== null && sum >= 4;
-      _ftText(c, t.low, x + 78, y, lowOn ? "#ffe066" : "#8a8a8a", lowOn ? "bold 13px Arial" : "13px Arial", "right");
+      canvasText(c, t.low, x + 78, y, lowOn ? "#ffe066" : "#8a8a8a", lowOn ? "bold 13px Arial" : "13px Arial", "right");
       for (let i = 0; i < TRAIT_GENES_EACH; i++) {
         c.beginPath();
         c.arc(x + 92 + i * 14, y - 5, 5, 0, Math.PI * 2);
         c.fillStyle = sum === null ? "rgba(255,255,255,0.06)" : i < sum ? "#e0c0ff" : "rgba(255,255,255,0.12)";
         c.fill();
       }
-      _ftText(c, sum === null ? "unknown" : t.high, x + 92 + TRAIT_GENES_EACH * 14 + 4, y, highOn ? "#ffe066" : "#8a8a8a", highOn ? "bold 13px Arial" : "13px Arial");
+      canvasText(c, sum === null ? "unknown" : t.high, x + 92 + TRAIT_GENES_EACH * 14 + 4, y, highOn ? "#ffe066" : "#8a8a8a", highOn ? "bold 13px Arial" : "13px Arial");
       y += 18;
     }
   }
@@ -1041,17 +1024,17 @@ function drawFamilyTree(c) {
   c.scale(s, s);
 
   c.fillStyle = "rgb(18, 14, 26)";
-  _ftRoundRect(c, 0, 0, FT_W, FT_H, 14);
+  roundRectPath(c, 0, 0, FT_W, FT_H, 14);
   c.fill();
   c.strokeStyle = "rgba(255,255,255,0.4)";
   c.lineWidth = 2;
   c.stroke();
 
-  _ftText(c, `${getFamilyName(focus)}'s family`, FT_W / 2, 44, "white", "bold 28px Arial", "center");
+  canvasText(c, `${getFamilyName(focus)}'s family`, FT_W / 2, 44, "white", "bold 28px Arial", "center");
   // The family line's name, if it's earned one (FamilyLines.js)
   if (typeof describeLine === "function") {
     const line = describeLine({ id: focus.id });
-    if (line && line[0]) _ftText(c, line[0], FT_W / 2, 66, line[1] === "good" ? "#9fe0a8" : "#f7d774", "bold 14px Arial", "center");
+    if (line && line[0]) canvasText(c, line[0], FT_W / 2, 66, line[1] === "good" ? "#9fe0a8" : "#f7d774", "bold 14px Arial", "center");
   }
 
   c.drawImage(cache.canvas, 10, 0);
@@ -1060,13 +1043,13 @@ function drawFamilyTree(c) {
   if (hover) {
     c.strokeStyle = "white";
     c.lineWidth = 3;
-    _ftRoundRect(c, hover.x + 10 - 3, hover.y - 3, hover.w + 6, hover.h + 6, 12);
+    roundRectPath(c, hover.x + 10 - 3, hover.y - 3, hover.w + 6, hover.h + 6, 12);
     c.stroke();
   }
 
   drawFamilyGeneticsPanel(c, hover ? hover.rec : focus, FT_TREE_W + 20, 70, FT_W - FT_TREE_W - 40);
 
-  _ftText(
+  canvasText(
     c,
     "Click a fluffy to see its family. Hover to see its genes.",
     FT_TREE_W / 2 + 10,
@@ -1081,12 +1064,12 @@ function drawFamilyTree(c) {
     if (key === "back" && familyTreeHistory.length === 0) continue;
     const over = m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h;
     c.fillStyle = over ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)";
-    _ftRoundRect(c, b.x, b.y, b.w, b.h, 8);
+    roundRectPath(c, b.x, b.y, b.w, b.h, 8);
     c.fill();
     c.strokeStyle = "rgba(255,255,255,0.7)";
     c.lineWidth = 1.5;
     c.stroke();
-    _ftText(c, b.label, b.x + b.w / 2, b.y + 23, "white", "bold 16px Arial", "center");
+    canvasText(c, b.label, b.x + b.w / 2, b.y + 23, "white", "bold 16px Arial", "center");
   }
   c.restore();
 }

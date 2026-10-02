@@ -55,9 +55,6 @@ function _ecOk() {
   if (!Array.isArray(economy.rentLog)) economy.rentLog = [];
   return economy;
 }
-function _ecDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
 function _ecFree() {
   return typeof showDebugMenu !== "undefined" && showDebugMenu;
 }
@@ -104,8 +101,8 @@ function reviewRent() {
   else if (target < old) rent = Math.max(target, Math.round(old - Math.max(old * RENT_FALL, (old - target) / 2)), RENT_BASE);
   rent = Math.max(RENT_BASE, Math.round(rent));
   e.rent = rent;
-  e.nextReview = _ecDay() + RENT_REVIEW_DAYS;
-  e.rentLog.push({ day: _ecDay(), rent, income: Math.round(weeklyIncome()) });
+  e.nextReview = getDayNumber() + RENT_REVIEW_DAYS;
+  e.rentLog.push({ day: getDayNumber(), rent, income: Math.round(weeklyIncome()) });
   if (e.rentLog.length > 12) e.rentLog.shift();
   if (rent > old) _ecSay(`The landlord has seen how well you're doing: rent goes up to $${rent} a day (was $${old}).`);
   else if (rent < old) _ecSay(`A quieter week: the landlord brings the rent down to $${rent} a day (was $${old}).`);
@@ -115,7 +112,7 @@ function reviewRent() {
 // Each morning, before the bill (Bills.chargeDailyBills)
 function economyMorning() {
   const e = _ecOk();
-  const day = _ecDay();
+  const day = getDayNumber();
   if (e.lastMorning === day) return;
   e.lastMorning = day;
   e.week.push({ day: day - 1, amount: Math.round(e.today) });
@@ -172,7 +169,7 @@ function onVetPlan() {
 }
 function planCovers() {
   const p = _ecOk().plan;
-  return !!p && _ecDay() > p.since;
+  return !!p && getDayNumber() > p.since;
 }
 function planPremium() {
   if (typeof fluffies === "undefined") return PLAN_BASE;
@@ -196,7 +193,7 @@ function joinVetPlan() {
     money -= paid;
     if (first > paid && typeof billsOwed === "number") billsOwed += first - paid;
   }
-  e.plan = { since: _ecDay() };
+  e.plan = { since: getDayNumber() };
   _ecSay(`You joined the FluffVet plan: $${first} now, then $${planPremium()} a day with the bills. It covers you from tomorrow.`);
   return true;
 }
@@ -234,7 +231,7 @@ function takeLoan(amount) {
     return false;
   }
   const total = Math.round(amount * (1 + LOAN_INTEREST));
-  e.loan = { amount, total, left: total, perDay: Math.ceil(total / LOAN_DAYS), day: _ecDay() };
+  e.loan = { amount, total, left: total, perDay: Math.ceil(total / LOAN_DAYS), day: getDayNumber() };
   if (!_ecFree()) money += amount;
   _ecSay(`The landlord lent you $${amount.toLocaleString()}. You'll pay back $${total.toLocaleString()} over ${LOAN_DAYS} days with the bills.`);
   return true;

@@ -119,10 +119,6 @@ function _shAge(f) {
   return y <= 1 ? "about a year old" : `about ${y} years old`;
 }
 
-function _shTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
-}
-
 // The staff's notes: kind about the truth, and sometimes just wrong
 const SHELTER_NOTES = {
   grumpy: ["Spirited!", "Has a big personality", "Needs an experienced owner"],
@@ -140,14 +136,14 @@ const SHELTER_NOTES = {
 
 function _shNotes(f) {
   const truth = [];
-  const temper = _shTrait(f, "temper");
+  const temper = traitValue(f, "temper");
   if (f.isSmarty && f.isSmarty()) truth.push("smarty");
   if (temper > 0.3) truth.push("grumpy");
   else if (temper < -0.3) truth.push("gentle");
-  const brave = _shTrait(f, "bravery");
+  const brave = traitValue(f, "bravery");
   if (brave < -0.3) truth.push("timid");
   else if (brave > 0.4) truth.push("brave");
-  const social = _shTrait(f, "social");
+  const social = traitValue(f, "social");
   if (social < -0.4) truth.push("loner");
   else if (social > 0.4) truth.push("social");
   if ((f.playerFear || 0) > 0.25 || (f.playerTrust || 0) < 0.2) truth.push("wary");
@@ -745,16 +741,6 @@ function handleShelterCardClick() {
 
 const SHELTER_FRONT_SCENE = "ALLEY_DAY_CARE";
 
-function _shRound(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.arcTo(x + w, y, x + w, y + h, r);
-  c.arcTo(x + w, y + h, x, y + h, r);
-  c.arcTo(x, y + h, x, y, r);
-  c.arcTo(x, y, x + w, y, r);
-  c.closePath();
-}
-
 function _shPaw(c, x, y, s, colour) {
   c.fillStyle = colour;
   c.beginPath();
@@ -831,7 +817,7 @@ function drawShelterFront(c) {
   // The sign
   const S = L.sign;
   c.fillStyle = "#2f5d50";
-  _shRound(c, S.x, S.y, S.w, S.h, 10);
+  roundRectPath(c, S.x, S.y, S.w, S.h, 10);
   c.fill();
   c.strokeStyle = "#f4e3b5";
   c.lineWidth = 3;
@@ -874,7 +860,7 @@ function drawShelterFront(c) {
   c.strokeStyle = "#5b3b27";
   c.stroke();
   c.fillStyle = "#26302b";
-  _shRound(c, A.x, A.y, A.w, A.h - 22, 6);
+  roundRectPath(c, A.x, A.y, A.w, A.h - 22, 6);
   c.fill();
   c.strokeStyle = "#5b3b27";
   c.lineWidth = 4;

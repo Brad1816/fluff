@@ -502,58 +502,41 @@ function _geneLabPrediction() {
 
 // ---- Drawing ----
 
-function _glText(c, text, x, y, color = "white", font = "14px Arial", align = "left") {
-  c.font = font;
-  c.fillStyle = color;
-  c.textAlign = align;
-  c.fillText(text, x, y);
-}
-
-function _glRoundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.arcTo(x + w, y, x + w, y + h, r);
-  c.arcTo(x + w, y + h, x, y + h, r);
-  c.arcTo(x, y + h, x, y, r);
-  c.arcTo(x, y, x + w, y, r);
-  c.closePath();
-}
-
 function _glButton(c, b, m, disabled = false) {
   const over = !disabled && m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h;
   c.fillStyle = over ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)";
-  _glRoundRect(c, b.x, b.y, b.w, b.h, 8);
+  roundRectPath(c, b.x, b.y, b.w, b.h, 8);
   c.fill();
   c.strokeStyle = disabled ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.7)";
   c.lineWidth = 1.5;
   c.stroke();
-  _glText(c, b.label, b.x + b.w / 2, b.y + b.h / 2 + 6, disabled ? "rgba(255,255,255,0.3)" : "white", "bold 16px Arial", "center");
+  canvasText(c, b.label, b.x + b.w / 2, b.y + b.h / 2 + 6, disabled ? "rgba(255,255,255,0.3)" : "white", "bold 16px Arial", "center");
 }
 
 // A labelled percentage bar
 function _glBar(c, label, frac, x, y, color, barW = 150) {
-  _glText(c, label, x, y, "#cfcfcf", "13px Arial");
+  canvasText(c, label, x, y, "#cfcfcf", "13px Arial");
   const bx = x + 78;
   c.fillStyle = "rgba(255,255,255,0.1)";
   c.fillRect(bx, y - 11, barW, 13);
   c.fillStyle = color;
   c.fillRect(bx, y - 11, Math.round(barW * frac), 13);
-  _glText(c, `${Math.round(frac * 100)}%`, bx + barW + 8, y, "white", "bold 13px Arial");
+  canvasText(c, `${Math.round(frac * 100)}%`, bx + barW + 8, y, "white", "bold 13px Arial");
 }
 
 function _drawGeneLabList(c, gender, m) {
   const x = GL_COLS[gender];
-  _glText(c, gender === "female" ? "Mother ♀" : "Father ♂", x, 98, gender === "female" ? "#f1b6d4" : "#9cc4ec", "bold 17px Arial");
+  canvasText(c, gender === "female" ? "Mother ♀" : "Father ♂", x, 98, gender === "female" ? "#f1b6d4" : "#9cc4ec", "bold 17px Arial");
   const rows = _geneLabVisibleRows(gender);
   if (rows.length === 0) {
-    _glText(c, `No ${gender === "female" ? "mares" : "stallions"} of yours yet.`, x, GL_LIST_TOP + 24, "#999", "13px Arial");
+    canvasText(c, `No ${gender === "female" ? "mares" : "stallions"} of yours yet.`, x, GL_LIST_TOP + 24, "#999", "13px Arial");
   }
   const selected = gender === "female" ? geneLabMotherId : geneLabFatherId;
   for (const r of rows) {
     const isSel = r.id === selected;
     const over = m.x >= r.x && m.x <= r.x + r.w && m.y >= r.y && m.y <= r.y + r.h;
     c.fillStyle = isSel ? "rgba(247, 215, 116, 0.18)" : over ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.05)";
-    _glRoundRect(c, r.x, r.y, r.w, r.h, 8);
+    roundRectPath(c, r.x, r.y, r.w, r.h, 8);
     c.fill();
     if (isSel) {
       c.strokeStyle = "#f7d774";
@@ -564,8 +547,8 @@ function _drawGeneLabList(c, gender, m) {
       const mom = r.pregnancyOf;
       const dadRec = getFamilyRecord(mom.babyDaddyId);
       const dadName = dadRec ? getFamilyName(dadRec) : fluffyNames[mom.babyDaddyId] || "unknown father";
-      _glText(c, "This pregnancy", r.x + 12, r.y + 20, "#f7d774", "bold 14px Arial");
-      _glText(c, `by ${dadName}`, r.x + 12, r.y + 38, "#cfcfcf", "12px Arial");
+      canvasText(c, "This pregnancy", r.x + 12, r.y + 20, "#f7d774", "bold 14px Arial");
+      canvasText(c, `by ${dadName}`, r.x + 12, r.y + 38, "#cfcfcf", "12px Arial");
       continue;
     }
     const f = r.fluffy;
@@ -574,11 +557,11 @@ function _drawGeneLabList(c, gender, m) {
     let name = fluffyDisplayNameById(f.id);
     c.font = "bold 14px Arial";
     while (name.length > 3 && c.measureText(name).width > r.w - 60) name = name.slice(0, -2) + ".";
-    _glText(c, name, r.x + 52, r.y + 20, "white", "bold 14px Arial");
+    canvasText(c, name, r.x + 52, r.y + 20, "white", "bold 14px Arial");
     const coat = describeRecordCoat({ genes: f.genes });
     let sub = `${f.growth < 1 ? "foal " : ""}${f.type}`;
     if (f.gender === "female" && f.isPregnant) sub += " · pregnant";
-    _glText(c, sub, r.x + 52, r.y + 38, "#cfcfcf", "12px Arial");
+    canvasText(c, sub, r.x + 52, r.y + 38, "#cfcfcf", "12px Arial");
     const toneColor = { good: "#7dff8a", ok: "#ffe066", bad: "#ff6b6b" }[coat.tone] || "#ccc";
     c.fillStyle = toneColor;
     c.beginPath();
@@ -590,7 +573,7 @@ function _drawGeneLabList(c, gender, m) {
     const btns = _geneLabPageButtons(gender);
     _glButton(c, btns.prev, m, geneLabPages[gender] === 0);
     _glButton(c, btns.next, m, geneLabPages[gender] >= pages - 1);
-    _glText(c, `${geneLabPages[gender] + 1} / ${pages}`, x + GL_LIST_W / 2, btns.prev.y + 21, "#cfcfcf", "13px Arial", "center");
+    canvasText(c, `${geneLabPages[gender] + 1} / ${pages}`, x + GL_LIST_W / 2, btns.prev.y + 21, "#cfcfcf", "13px Arial", "center");
   }
 }
 
@@ -598,22 +581,22 @@ function _drawGeneLabPrediction(c) {
   const px = GL_PANEL_X;
   const pw = GL_W - px - 20;
   c.fillStyle = "rgba(255,255,255,0.06)";
-  _glRoundRect(c, px, 72, pw, GL_H - 92, 10);
+  roundRectPath(c, px, 72, pw, GL_H - 92, 10);
   c.fill();
 
   const pred = _geneLabPrediction();
   if (!pred) {
-    _glText(c, "Pick a mother and a father", px + pw / 2, 300, "white", "bold 22px Arial", "center");
-    _glText(c, "to see what their foals could be like.", px + pw / 2, 328, "#cfcfcf", "16px Arial", "center");
-    _glText(c, "(Only your own fluffies are listed. The dot shows coat colour: green nice, yellow drab, red poopie.)", px + pw / 2, 360, "#999", "12px Arial", "center");
+    canvasText(c, "Pick a mother and a father", px + pw / 2, 300, "white", "bold 22px Arial", "center");
+    canvasText(c, "to see what their foals could be like.", px + pw / 2, 328, "#cfcfcf", "16px Arial", "center");
+    canvasText(c, "(Only your own fluffies are listed. The dot shows coat colour: green nice, yellow drab, red poopie.)", px + pw / 2, 360, "#999", "12px Arial", "center");
     return;
   }
   const { pair, result, relation } = pred;
   const x = px + 18;
   let y = 104;
   const momName = fluffyDisplayNameById(pair.mom.id);
-  _glText(c, `${momName} ♀  +  ${pair.dadName} ♂`, x, y, "white", "bold 20px Arial");
-  if (pair.pregnancy) _glText(c, "(her current pregnancy)", x + c.measureText(`${momName} ♀  +  ${pair.dadName} ♂`).width + 12, y, "#f7d774", "13px Arial");
+  canvasText(c, `${momName} ♀  +  ${pair.dadName} ♂`, x, y, "white", "bold 20px Arial");
+  if (pair.pregnancy) canvasText(c, "(her current pregnancy)", x + c.measureText(`${momName} ♀  +  ${pair.dadName} ♂`).width + 12, y, "#f7d774", "13px Arial");
   y += 22;
   if (relation) {
     // How close, and whether they'd do it on their own (Kinship.js)
@@ -624,14 +607,14 @@ function _drawGeneLabPrediction(c) {
       const dad = fluffies.find((f) => f.id === pair.dadId);
       if (!pair.pregnancy && dad && typeof kinBlocksMating === "function" && kinBlocksMating(dad, pair.mom) && kinBlocksMating(pair.mom, dad)) extra += " - they won't mate on their own";
     }
-    _glText(c, `⚠ These two are related: ${relation}${extra}.`, x, y, "#ffb86b", "bold 13px Arial");
+    canvasText(c, `⚠ These two are related: ${relation}${extra}.`, x, y, "#ffb86b", "bold 13px Arial");
   } else {
-    _glText(c, "Not related (as far as the family records know).", x, y, "#9fe0a8", "13px Arial");
+    canvasText(c, "Not related (as far as the family records know).", x, y, "#9fe0a8", "13px Arial");
   }
   y += 12;
 
   // Example foals
-  _glText(c, "EXAMPLE FOALS (how they'd look grown up)", x, y + 16, "#f7d774", "bold 13px Arial");
+  canvasText(c, "EXAMPLE FOALS (how they'd look grown up)", x, y + 16, "#f7d774", "bold 13px Arial");
   y += 24;
   const shown = geneLabExampleFoals(result, 7);
   shown.forEach((s, i) => {
@@ -639,36 +622,36 @@ function _drawGeneLabPrediction(c) {
     const p = _geneLabPortrait(key, () => makeStandInFluffy(s.genes, { gender: i % 2 ? "male" : "female" }), 78);
     const fx = x + i * 84;
     c.fillStyle = "rgba(0,0,0,0.25)";
-    _glRoundRect(c, fx, y, 78, 78, 8);
+    roundRectPath(c, fx, y, 78, 78, 8);
     c.fill();
     if (p) c.drawImage(p, fx, y);
-    _glText(c, s.type, fx + 39, y + 92, "#cfcfcf", "11px Arial", "center");
+    canvasText(c, s.type, fx + 39, y + 92, "#cfcfcf", "11px Arial", "center");
   });
   y += 116;
 
   // Left column: type and patterns
   const col2 = x + 300;
   let ly = y;
-  _glText(c, "FOAL TYPE", x, ly, "#f7d774", "bold 13px Arial");
+  canvasText(c, "FOAL TYPE", x, ly, "#f7d774", "bold 13px Arial");
   ly += 20;
   _glBar(c, "Earthy", result.pct.earthy, x, ly, "#c8b48a"); ly += 19;
   _glBar(c, "Unicorn", result.pct.unicorn, x, ly, "#c9a0ff"); ly += 19;
   _glBar(c, "Pegasus", result.pct.pegasus, x, ly, "#9cc4ec"); ly += 19;
   _glBar(c, "Alicorn", result.pct.alicorn, x, ly, "#f7d774"); ly += 27;
-  _glText(c, "PATTERNS", x, ly, "#f7d774", "bold 13px Arial");
+  canvasText(c, "PATTERNS", x, ly, "#f7d774", "bold 13px Arial");
   ly += 20;
   _glBar(c, "Spots", result.pct.spots, x, ly, "#e8a0a0"); ly += 19;
   _glBar(c, "Stripes", result.pct.stripes, x, ly, "#a0a0e8"); ly += 19;
   _glBar(c, "Gradient", result.pct.gradient, x, ly, "#a0e8c8"); ly += 19;
   _glBar(c, "Fancy mane", result.pct.fancyMane || 0, x, ly, "#f0a0e0"); ly += 27;
-  _glText(c, "HIDDEN CARRIERS (can pass it on)", x, ly, "#f7d774", "bold 13px Arial");
+  canvasText(c, "HIDDEN CARRIERS (can pass it on)", x, ly, "#f7d774", "bold 13px Arial");
   ly += 20;
   _glBar(c, "Wings", result.pct.wingCarrier, x, ly, "#6f8fae"); ly += 19;
   _glBar(c, "Horn", result.pct.hornCarrier, x, ly, "#8f73b8");
 
   // Right column: coat, size, litter
   let ry = y;
-  _glText(c, "COAT COLOURS", col2, ry, "#f7d774", "bold 13px Arial");
+  canvasText(c, "COAT COLOURS", col2, ry, "#f7d774", "bold 13px Arial");
   ry += 20;
   _glBar(c, "Nice", result.pct.nice, col2, ry, "#7dff8a"); ry += 19;
   _glBar(c, "Drab", result.pct.drab, col2, ry, "#ffe066"); ry += 19;
@@ -682,49 +665,49 @@ function _drawGeneLabPrediction(c) {
   c.lineWidth = 1;
   c.strokeRect(col2 - 1, ry - 1, 16 * 16, 16);
   ry += 34;
-  _glText(c, "SIZE", col2, ry, "#f7d774", "bold 13px Arial");
+  canvasText(c, "SIZE", col2, ry, "#f7d774", "bold 13px Arial");
   ry += 20;
   _glBar(c, "Big", result.pct.big, col2, ry, "#b0d0b0"); ry += 19;
   _glBar(c, "Average", result.pct.average, col2, ry, "#b0b0b0"); ry += 19;
   _glBar(c, "Small", result.pct.small, col2, ry, "#d0b0b0"); ry += 27;
-  _glText(c, "LITTER", col2, ry, "#f7d774", "bold 13px Arial");
+  canvasText(c, "LITTER", col2, ry, "#f7d774", "bold 13px Arial");
   ry += 20;
   const aliveColor = result.alive >= 0.8 ? "#7dff8a" : result.alive >= 0.5 ? "#ffe066" : "#ff6b6b";
-  _glText(c, "Born alive:", col2, ry, "#cfcfcf", "13px Arial");
-  _glText(c, `${Math.round(result.alive * 100)}% of foals`, col2 + 90, ry, aliveColor, "bold 13px Arial");
+  canvasText(c, "Born alive:", col2, ry, "#cfcfcf", "13px Arial");
+  canvasText(c, `${Math.round(result.alive * 100)}% of foals`, col2 + 90, ry, aliveColor, "bold 13px Arial");
   ry += 19;
   if (pair.pregnancy) {
     const mom = pair.mom;
     const total = mom.foalViability ? mom.foalViability.length : mom.babiesToBirth;
     const dead = (mom.foalViability || []).filter((v) => v === false).length;
-    _glText(c, "Scan:", col2, ry, "#cfcfcf", "13px Arial");
-    _glText(c, `${total} foal${total === 1 ? "" : "s"} on the way${dead ? `, ${dead} won't make it` : ", all healthy"}`, col2 + 90, ry, dead ? "#ff6b6b" : "#7dff8a", "bold 13px Arial");
+    canvasText(c, "Scan:", col2, ry, "#cfcfcf", "13px Arial");
+    canvasText(c, `${total} foal${total === 1 ? "" : "s"} on the way${dead ? `, ${dead} won't make it` : ", all healthy"}`, col2 + 90, ry, dead ? "#ff6b6b" : "#7dff8a", "bold 13px Arial");
   } else {
-    _glText(c, "Litter size:", col2, ry, "#cfcfcf", "13px Arial");
-    _glText(c, "1 to 7 foals", col2 + 90, ry, "white", "13px Arial");
+    canvasText(c, "Litter size:", col2, ry, "#cfcfcf", "13px Arial");
+    canvasText(c, "1 to 7 foals", col2 + 90, ry, "white", "13px Arial");
   }
   ry += 19;
   if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
-    _glText(c, "Sensitive baby:", col2, ry, "#cfcfcf", "13px Arial");
+    canvasText(c, "Sensitive baby:", col2, ry, "#cfcfcf", "13px Arial");
     const sb = result.sensitive;
-    _glText(c, `${Math.round(sb * 100)}% chance each`, col2 + 110, ry, sb >= 0.25 ? "#ff6b6b" : sb >= 0.1 ? "#ffe066" : "#7dff8a", "bold 13px Arial");
+    canvasText(c, `${Math.round(sb * 100)}% chance each`, col2 + 110, ry, sb >= 0.25 ? "#ff6b6b" : sb >= 0.1 ? "#ffe066" : "#7dff8a", "bold 13px Arial");
   }
 
   // Personality traits (Traits.js): chance of each label, two columns
   if (result.traits && typeof TRAITS !== "undefined") {
     let ty = Math.max(ly, ry) + 30;
-    _glText(c, "PERSONALITY TRAITS (chance for each foal)", x, ty, "#f7d774", "bold 13px Arial");
+    canvasText(c, "PERSONALITY TRAITS (chance for each foal)", x, ty, "#f7d774", "bold 13px Arial");
     ty += 19;
     TRAITS.forEach((t, i) => {
       const tr = result.traits[t.key] || { high: 0, low: 0 };
       const tx = i % 2 === 0 ? x : col2;
       const rowY = ty + Math.floor(i / 2) * 18;
-      _glText(c, `${t.high} ${Math.round(tr.high * 100)}%`, tx, rowY, "white", "13px Arial");
-      _glText(c, `·  ${t.low} ${Math.round(tr.low * 100)}%`, tx + 110, rowY, "#cfcfcf", "13px Arial");
+      canvasText(c, `${t.high} ${Math.round(tr.high * 100)}%`, tx, rowY, "white", "13px Arial");
+      canvasText(c, `·  ${t.low} ${Math.round(tr.low * 100)}%`, tx + 110, rowY, "#cfcfcf", "13px Arial");
     });
   }
 
-  _glText(
+  canvasText(
     c,
     `Worked out from ${GENE_LAB_SAMPLES} pretend foals using the game's own inheritance rules.`,
     px + pw / 2,
@@ -756,15 +739,15 @@ function drawGeneLab(c) {
   c.translate(ox, oy);
   c.scale(s, s);
   c.fillStyle = "rgb(16, 22, 28)";
-  _glRoundRect(c, 0, 0, GL_W, GL_H, 14);
+  roundRectPath(c, 0, 0, GL_W, GL_H, 14);
   c.fill();
   c.strokeStyle = "rgba(255,255,255,0.4)";
   c.lineWidth = 2;
   c.stroke();
 
   drawGeneLabMachine(c, 60, 62, 0.42, typeof timePlayed === "number" ? timePlayed : 0);
-  _glText(c, "Gene Lab", 96, 46, "white", "bold 28px Arial");
-  _glText(c, "Pick a mother and a father to see what their foals could be like.", 240, 44, "#cfcfcf", "15px Arial");
+  canvasText(c, "Gene Lab", 96, 46, "white", "bold 28px Arial");
+  canvasText(c, "Pick a mother and a father to see what their foals could be like.", 240, 44, "#cfcfcf", "15px Arial");
 
   _drawGeneLabList(c, "female", m);
   _drawGeneLabList(c, "male", m);

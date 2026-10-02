@@ -312,34 +312,17 @@ function _osIn(m, b) {
   return m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h;
 }
 
-function _osRR(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.arcTo(x + w, y, x + w, y + h, r);
-  c.arcTo(x + w, y + h, x, y + h, r);
-  c.arcTo(x, y + h, x, y, r);
-  c.arcTo(x, y, x + w, y, r);
-  c.closePath();
-}
-
-function _osText(c, text, x, y, color, font, align = "left") {
-  c.font = font;
-  c.fillStyle = color;
-  c.textAlign = align;
-  c.fillText(text, x, y);
-}
-
 function _osButton(c, b, m, theme, disabled = false) {
   const over = !disabled && _osIn(m, b);
   c.fillStyle = disabled ? "rgba(128,128,128,0.35)" : over ? b.hover || theme.accent : b.color || theme.accent;
-  _osRR(c, b.x, b.y, b.w, b.h, 7);
+  roundRectPath(c, b.x, b.y, b.w, b.h, 7);
   c.fill();
   if (over) {
     c.strokeStyle = "white";
     c.lineWidth = 2;
     c.stroke();
   }
-  _osText(c, b.label, b.x + b.w / 2, b.y + b.h / 2 + 5, disabled ? "rgba(255,255,255,0.7)" : "white", "bold 14px Arial", "center");
+  canvasText(c, b.label, b.x + b.w / 2, b.y + b.h / 2 + 5, disabled ? "rgba(255,255,255,0.7)" : "white", "bold 14px Arial", "center");
 }
 
 // The two tabs in the header
@@ -383,16 +366,16 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   const o = card.order;
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   c.fillStyle = "rgba(0,0,0,0.25)";
-  _osRR(c, card.x + 3, card.y + 4, card.w, card.h, 8);
+  roundRectPath(c, card.x + 3, card.y + 4, card.w, card.h, 8);
   c.fill();
   c.fillStyle = theme.card;
-  _osRR(c, card.x, card.y, card.w, card.h, 8);
+  roundRectPath(c, card.x, card.y, card.w, card.h, 8);
   c.fill();
   // Commissions (Commissions.js): a gold border
   if (o.commission) {
     c.strokeStyle = o.source === "web" ? "#8e44ad" : "#d4a017";
     c.lineWidth = 3;
-    _osRR(c, card.x + 1.5, card.y + 1.5, card.w - 3, card.h - 3, 7);
+    roundRectPath(c, card.x + 1.5, card.y + 1.5, card.w - 3, card.h - 3, 7);
     c.stroke();
   }
   if (ordersScreenMode === "board") {
@@ -406,27 +389,27 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   c.font = "bold 20px Arial";
   const priceW = c.measureText(`$${o.reward.toLocaleString()}`).width;
   c.font = "bold 16px Arial";
-  _osText(c, fitText(c, o.customer, card.w - 40 - priceW), x, card.y + 26, theme.cardText, "bold 16px Arial");
-  _osText(c, `$${o.reward.toLocaleString()}`, card.x + card.w - 14, card.y + 27, "#1e8a3a", "bold 20px Arial", "right");
+  canvasText(c, fitText(c, o.customer, card.w - 40 - priceW), x, card.y + 26, theme.cardText, "bold 16px Arial");
+  canvasText(c, `$${o.reward.toLocaleString()}`, card.x + card.w - 14, card.y + 27, "#1e8a3a", "bold 20px Arial", "right");
   // A regular customer (Commissions.js), then their note
   const badge = typeof describeClientBadge === "function" ? describeClientBadge(o.customer) : "";
   let noteX = x;
   if (badge) {
     c.font = "bold 11px Arial";
-    _osText(c, badge, x, card.y + 45, "#b8860b", "bold 11px Arial");
+    canvasText(c, badge, x, card.y + 45, "#b8860b", "bold 11px Arial");
     noteX += c.measureText(badge).width + 8;
   }
   const noteRight = card.x + card.w - 14 - (o.commission ? 80 : 0);
-  if (o.commission) _osText(c, o.source === "web" ? "EXCLUSIVE" : "COMMISSION", card.x + card.w - 14, card.y + 45, o.source === "web" ? "#8e44ad" : "#b8860b", "bold 11px Arial", "right");
+  if (o.commission) canvasText(c, o.source === "web" ? "EXCLUSIVE" : "COMMISSION", card.x + card.w - 14, card.y + 45, o.source === "web" ? "#8e44ad" : "#b8860b", "bold 11px Arial", "right");
   c.font = "italic 12px Arial";
-  _osText(c, fitText(c, `"${o.note}"`, noteRight - noteX), noteX, card.y + 45, theme.sub, "italic 12px Arial");
+  canvasText(c, fitText(c, `"${o.note}"`, noteRight - noteX), noteX, card.y + 45, theme.sub, "italic 12px Arial");
 
   let y = card.y + 67;
   const matching = countFluffiesForOrder(o);
   for (const r of o.reqs) {
     const anyone = orderCandidates(o).some((f) => orderReqMatches(r, f));
-    _osText(c, anyone ? "•" : "•", x, y, anyone ? "#1e8a3a" : theme.sub, "bold 15px Arial");
-    _osText(c, orderReqLabel(r), x + 12, y, theme.cardText, "13px Arial");
+    canvasText(c, anyone ? "•" : "•", x, y, anyone ? "#1e8a3a" : theme.sub, "bold 15px Arial");
+    canvasText(c, orderReqLabel(r), x + 12, y, theme.cardText, "13px Arial");
     y += 17;
   }
 
@@ -435,14 +418,14 @@ function _drawOrderCard(c, card, theme, m, isActive) {
   if (isActive) {
     const left = o.dueAt - now;
     const late = o.commission ? left < DAY_LENGTH / 2 : left < 180;
-    _osText(c, `Due in ${fmt(left)}`, x, footY, late ? "#c0392b" : theme.cardText, "bold 13px Arial");
+    canvasText(c, `Due in ${fmt(left)}`, x, footY, late ? "#c0392b" : theme.cardText, "bold 13px Arial");
   } else {
-    _osText(c, `Leaves the board in ${fmt(o.leavesAt - now)}`, x, footY, theme.sub, "12px Arial");
+    canvasText(c, `Leaves the board in ${fmt(o.leavesAt - now)}`, x, footY, theme.sub, "12px Arial");
   }
   let foot2 = matching ? `You have ${matching} that fit${matching === 1 ? "s" : ""}` : "None of yours fit yet";
   if (o.commission && !isActive) foot2 = `Deposit $${o.deposit} · ${fmt(o.timeAllowed)} to deliver`;
   else if (o.commission && !matching) foot2 = "Breed one: pair up in the Gene Lab";
-  _osText(c, foot2, x, footY + 17, matching ? "#1e8a3a" : o.commission ? "#b8860b" : theme.sub, "bold 12px Arial");
+  canvasText(c, foot2, x, footY + 17, matching ? "#1e8a3a" : o.commission ? "#b8860b" : theme.sub, "bold 12px Arial");
 
   if (isActive) {
     _osButton(c, card.giveUp, m, theme);
@@ -490,24 +473,24 @@ function _drawDeliverPicker(c, order, theme, m) {
   c.fillStyle = "rgba(0,0,0,0.45)";
   c.fillRect(0, 0, OS_W, OS_H);
   c.fillStyle = theme.card;
-  _osRR(c, D.panel.x, D.panel.y, D.panel.w, D.panel.h, 12);
+  roundRectPath(c, D.panel.x, D.panel.y, D.panel.w, D.panel.h, 12);
   c.fill();
-  _osText(c, `Deliver to ${order.customer}`, D.panel.x + 20, D.panel.y + 36, theme.cardText, "bold 22px Arial");
-  _osText(c, `Pick one of your fluffies. Only ones with a tick for everything can go. Reward: $${order.reward.toLocaleString()}`, D.panel.x + 20, D.panel.y + 58, theme.sub, "13px Arial");
+  canvasText(c, `Deliver to ${order.customer}`, D.panel.x + 20, D.panel.y + 36, theme.cardText, "bold 22px Arial");
+  canvasText(c, `Pick one of your fluffies. Only ones with a tick for everything can go. Reward: $${order.reward.toLocaleString()}`, D.panel.x + 20, D.panel.y + 58, theme.sub, "13px Arial");
   _osButton(c, D.cancel, m, theme);
 
   if (!D.rows.length) {
-    _osText(c, "You don't have any fluffies right now.", D.panel.x + D.panel.w / 2, D.panel.y + 200, theme.sub, "16px Arial", "center");
+    canvasText(c, "You don't have any fluffies right now.", D.panel.x + D.panel.w / 2, D.panel.y + 200, theme.sub, "16px Arial", "center");
   }
   for (const row of D.rows) {
     const fits = fluffyFitsOrder(order, row.f);
     c.fillStyle = fits ? "rgba(30, 138, 58, 0.12)" : "rgba(0,0,0,0.05)";
-    _osRR(c, row.x, row.y, row.w, row.h, 8);
+    roundRectPath(c, row.x, row.y, row.w, row.h, 8);
     c.fill();
     const p = _ordersPortrait(row.f, 52);
     if (p) c.drawImage(p, row.x + 4, row.y + 2);
-    _osText(c, fluffyDisplayNameById(row.f.id), row.x + 64, row.y + 24, theme.cardText, "bold 15px Arial");
-    _osText(c, `${row.f.gender === "male" ? "♂" : "♀"} ${row.f.growth < 1 ? "foal " : ""}${row.f.type}`, row.x + 64, row.y + 43, theme.sub, "12px Arial");
+    canvasText(c, fluffyDisplayNameById(row.f.id), row.x + 64, row.y + 24, theme.cardText, "bold 15px Arial");
+    canvasText(c, `${row.f.gender === "male" ? "♂" : "♀"} ${row.f.growth < 1 ? "foal " : ""}${row.f.type}`, row.x + 64, row.y + 43, theme.sub, "12px Arial");
     // One tick or cross per requirement
     let cx = row.x + 210;
     c.font = "12px Arial";
@@ -516,9 +499,9 @@ function _drawDeliverPicker(c, order, theme, m) {
       const label = `${ok ? "✓" : "✗"} ${orderReqLabel(r)}`;
       const w = c.measureText(label).width + 16;
       c.fillStyle = ok ? "rgba(30, 138, 58, 0.18)" : "rgba(192, 57, 43, 0.15)";
-      _osRR(c, cx, row.y + 16, w, 24, 12);
+      roundRectPath(c, cx, row.y + 16, w, 24, 12);
       c.fill();
-      _osText(c, label, cx + 8, row.y + 32, ok ? "#1e6b30" : "#a3342a", "bold 12px Arial");
+      canvasText(c, label, cx + 8, row.y + 32, ok ? "#1e6b30" : "#a3342a", "bold 12px Arial");
       cx += w + 6;
     }
     if (fits) _osButton(c, row.send, m, theme);
@@ -526,7 +509,7 @@ function _drawDeliverPicker(c, order, theme, m) {
   if (D.pages > 1) {
     _osButton(c, D.prev, m, theme, ordersDeliverPage === 0);
     _osButton(c, D.next, m, theme, ordersDeliverPage >= D.pages - 1);
-    _osText(c, `${ordersDeliverPage + 1} / ${D.pages}`, D.next.x + D.next.w + 14, D.next.y + 20, theme.sub, "13px Arial");
+    canvasText(c, `${ordersDeliverPage + 1} / ${D.pages}`, D.next.x + D.next.w + 14, D.next.y + 20, theme.sub, "13px Arial");
   }
 }
 
@@ -550,17 +533,17 @@ function drawOrdersScreen(c) {
   c.scale(s, s);
 
   c.fillStyle = theme.bg;
-  _osRR(c, 0, 0, OS_W, OS_H, 14);
+  roundRectPath(c, 0, 0, OS_W, OS_H, 14);
   c.fill();
   c.save();
-  _osRR(c, 0, 0, OS_W, OS_H, 14);
+  roundRectPath(c, 0, 0, OS_W, OS_H, 14);
   c.clip();
   c.fillStyle = theme.header;
   c.fillRect(0, 0, OS_W, 70);
   c.restore();
 
-  _osText(c, theme.title, 24, 40, "white", "bold 26px Arial");
-  _osText(c, theme.subtitle, 24, 60, "rgba(255,255,255,0.75)", "12px Arial");
+  canvasText(c, theme.title, 24, 40, "white", "bold 26px Arial");
+  canvasText(c, theme.subtitle, 24, 60, "rgba(255,255,255,0.75)", "12px Arial");
   for (const t of _ordersTabs()) {
     _osButton(c, t, m, theme);
     if (t.id === ordersTab) c.fillRect(t.x + 10, t.y + t.h - 3, t.w - 20, 3);
@@ -570,14 +553,14 @@ function drawOrdersScreen(c) {
   const rep = getOrderLevelInfo();
   const web = ordersScreenMode === "web";
   const bx = web ? 716 : 630; // (after the Food tab)
-  _osText(c, `${rep.name} (level ${rep.level})`, bx, 30, "white", "bold 15px Arial");
+  canvasText(c, `${rep.name} (level ${rep.level})`, bx, 30, "white", "bold 15px Arial");
   const barW = web ? 190 : 250;
   c.fillStyle = "rgba(255,255,255,0.25)";
   c.fillRect(bx, 38, barW, 12);
   const frac = rep.to === null ? 1 : (rep.points - rep.from) / (rep.to - rep.from);
   c.fillStyle = "#f7d774";
   c.fillRect(bx, 38, barW * clamp(frac, 0, 1), 12);
-  _osText(c, rep.to === null ? `${rep.points} rep (top level!)` : `${rep.points} / ${rep.to} rep`, bx + barW + 10, 49, "white", "12px Arial");
+  canvasText(c, rep.to === null ? `${rep.points} rep (top level!)` : `${rep.points} / ${rep.to} rep`, bx + barW + 10, 49, "white", "12px Arial");
 
   _osButton(c, L.close, m, theme);
 
@@ -602,16 +585,16 @@ function drawOrdersScreen(c) {
 
   // Wanted (posted) and yours (accepted)
   const headColor = ordersScreenMode === "board" ? "#fbe7b5" : theme.cardText;
-  _osText(c, `Wanted (${ordersList("posted").length})`, 20, 100, headColor, "bold 17px Arial");
-  _osText(c, `Your orders (${ordersList("active").length}/${ORDER_MAX_ACTIVE})`, 720, 100, headColor, "bold 17px Arial");
+  canvasText(c, `Wanted (${ordersList("posted").length})`, 20, 100, headColor, "bold 17px Arial");
+  canvasText(c, `Your orders (${ordersList("active").length}/${ORDER_MAX_ACTIVE})`, 720, 100, headColor, "bold 17px Arial");
   if (!L.posted.length)
-    _osText(c, "Nothing wanted right now. New orders are posted every few minutes.", 20, 140, headColor, "14px Arial");
+    canvasText(c, "Nothing wanted right now. New orders are posted every few minutes.", 20, 140, headColor, "14px Arial");
   if (!L.active.length)
-    _osText(c, "Accept an order, then deliver a fluffy that fits before it's due.", 720, 140, headColor, "14px Arial");
+    canvasText(c, "Accept an order, then deliver a fluffy that fits before it's due.", 720, 140, headColor, "14px Arial");
   for (const card of L.posted) _drawOrderCard(c, card, theme, m, false);
   for (const card of L.active) _drawOrderCard(c, card, theme, m, true);
 
-  _osText(
+  canvasText(
     c,
     `Filled ${customerOrders.filled || 0} · Missed ${customerOrders.missed || 0} · Filled orders raise your reputation; missing one costs ${ORDER_REP_MISSED}, giving up costs ${ORDER_REP_GIVE_UP}.`,
     OS_W / 2,

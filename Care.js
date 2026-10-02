@@ -49,14 +49,8 @@ Object.assign(MEMORY_TEXT, {
 });
 if (typeof AFFECTION_ACTS !== "undefined") AFFECTION_ACTS.sat_with = { amount: 0.05, perDay: 2 };
 
-function _caNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _caDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_caNow() / DAY_LENGTH) + 1;
-}
-function _caName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(timePlayed / DAY_LENGTH) + 1;
 }
 function _caSay(f, key) {
   if (f && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && typeof getDialogue === "function") f.speak(getDialogue(["CARE", key], f), true);
@@ -80,7 +74,7 @@ function needsSitWith(f) {
 
 // What it just did that a scolding could be for (null: nothing)
 function recentMisdeed(f) {
-  const now = _caNow();
+  const now = timePlayed;
   const recent = (t) => typeof t === "number" && now >= t && now - t <= SCOLD_RECENT;
   if (recent(f._lastAttackAt) || (f.chaseTarget && f.chaseReason && f.chaseReason !== "MATING")) return "fight";
   if (recent(f._mischiefAt)) return "mischief";
@@ -94,7 +88,7 @@ function careActions(f) {
   if (!f || !f.isAlive || !f.adopted) return [];
   const out = [];
   const why = needsSitWith(f);
-  const now = _caNow();
+  const now = timePlayed;
   if (why && !(f.sitWith && now < f.sitWith.until) && !(typeof f._sitWithAt === "number" && now >= f._sitWithAt && now - f._sitWithAt < SIT_WITH_REST)) {
     out.push({ key: "sitwith", name: "Sit with", sub: why, run: (x) => sitWith(x) });
   }
@@ -112,7 +106,7 @@ function careActions(f) {
 function sitWith(f) {
   const why = needsSitWith(f);
   if (!why) return false;
-  const now = _caNow();
+  const now = timePlayed;
   f._sitWithAt = now;
   f.sitWith = { until: now + SIT_WITH_TIME, why, left: SIT_WITH_TIME };
   if (typeof isFrightened === "function" && isFrightened(f) && typeof onComfortedByYou === "function") onComfortedByYou(f, "sat");
@@ -120,7 +114,7 @@ function sitWith(f) {
   f.expressionOverride = "RELIEF";
   f.expressionOverrideTimer = 2;
   _caSay(f, "SIT_WITH");
-  if (typeof addUIMessage === "function") addUIMessage(`You sit with ${_caName(f)} for a while.`);
+  if (typeof addUIMessage === "function") addUIMessage(`You sit with ${fluffyDisplayName(f)} for a while.`);
   return true;
 }
 
@@ -137,7 +131,7 @@ function _sitWithTick(f, step) {
     if (typeof f.separation.bond === "number") f.separation.bond = Math.max(0, f.separation.bond - SIT_WITH_GRIEF * share * 0.5);
   }
   if (typeof f.missingOwner === "number") f.missingOwner = Math.max(0, f.missingOwner - 0.1 * share);
-  if (s.left <= 0 || _caNow() >= s.until) {
+  if (s.left <= 0 || timePlayed >= s.until) {
     f.sitWith = null;
     if (typeof giveAffection === "function") giveAffection(f, "sat_with");
     if (typeof noteTitleCare === "function") noteTitleCare(f, "sat_with"); // healing (Titles.js; sat_with isn't an affection act)
@@ -184,7 +178,7 @@ function scoldFluffy(f) {
     if (f.isSmarty && f.isSmarty()) f.smartyReform = Math.min(0.95, (f.smartyReform || 0) + 0.03);
     if (typeof f.smartyProvokedUntil === "number") f.smartyProvokedUntil = 0;
   } else if (misdeed === "mischief") {
-    f._nextMischief = _caNow() + DAY_LENGTH;
+    f._nextMischief = timePlayed + DAY_LENGTH;
   } else if (misdeed === "accident") {
     f.pottyTraining = Math.min(1, (f.pottyTraining || 0) + 0.05);
   }
@@ -202,7 +196,7 @@ function scoldFluffy(f) {
 
 function timeOut(f) {
   if (!f || !f.isAlive) return false;
-  const now = _caNow();
+  const now = timePlayed;
   // The nearest corner
   const w = typeof sceneW === "function" ? sceneW(f.scene) : 1280;
   const top = typeof sceneTop === "function" ? sceneTop(f.scene) + 50 : 200;
@@ -228,7 +222,7 @@ function timeOut(f) {
 }
 
 function inTimeOut(f) {
-  return !!(f && f.timeOut && _caNow() < f.timeOut.until && _caNow() >= f.timeOut.until - TIME_OUT_TIME - 1);
+  return !!(f && f.timeOut && timePlayed < f.timeOut.until && timePlayed >= f.timeOut.until - TIME_OUT_TIME - 1);
 }
 
 // Holds it in the corner, or by you while you sit with it
@@ -239,7 +233,7 @@ class CareDesire extends Desire {
   evaluate(h) {
     if (!h.isAlive || h.isDragging || h.placedOn) return 0;
     if (inTimeOut(h)) return 80;
-    if (h.sitWith && _caNow() < h.sitWith.until) return 75;
+    if (h.sitWith && timePlayed < h.sitWith.until) return 75;
     return 0;
   }
   execute(h) {
@@ -285,7 +279,7 @@ function noteConditionBrush(f) {
       const fears = fearsOf(f);
       for (const k of Object.keys(fears)) if (fears[k] > 0) changeFear(f, k, -0.01);
     }
-    f._calmBedtime = _caNow();
+    f._calmBedtime = timePlayed;
   }
 }
 
@@ -294,7 +288,7 @@ function noteConditionBrush(f) {
 function noteConditionFeed(bowl) {
   if (!bowl || typeof fluffies === "undefined") return;
   // (holding the bag over a bowl only counts once a minute)
-  const now = _caNow();
+  const now = timePlayed;
   if (typeof bowl._condAt === "number" && now >= bowl._condAt && now - bowl._condAt < 60) return;
   bowl._condAt = now;
   for (const f of fluffies) {
@@ -352,7 +346,7 @@ function updateCare(dt) {
       if (!f.adopted) f.sitWith = null;
       else _sitWithTick(f, step);
     }
-    if (f.timeOut && _caNow() >= f.timeOut.until) {
+    if (f.timeOut && timePlayed >= f.timeOut.until) {
       f.timeOut = null;
       f.expressionOverride = "MISERABLE";
       f.expressionOverrideTimer = 2;

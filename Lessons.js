@@ -229,7 +229,7 @@ function giveLesson(f, key) {
     if (typeof noteTitleCare === "function") noteTitleCare(f, "lesson"); // a firm hand (Titles.js)
     _lsSay(f, smarty ? "SMARTY_LISTENS" : key.toUpperCase());
     if (cured) {
-      if (lesson.doneMsg && typeof addUIMessage === "function") addUIMessage(lesson.doneMsg(_trName(f)));
+      if (lesson.doneMsg && typeof addUIMessage === "function") addUIMessage(lesson.doneMsg(fluffyDisplayName(f)));
       if (key !== "smarty") if (typeof recordStory === "function") recordStory("lesson_done", f, { x: { colours: "stopped caring about colours", alicorns: "stopped fearing alicorns", litter: "became litter trained", brave: "stopped being scared", table: "got over its fear of the operating table", calm: "stopped being scared of you" }[key] });
       return "done";
     }
@@ -287,7 +287,7 @@ function drawLessonChip(c, f, ch, hover) {
 }
 
 function lessonResultMessage(f, res, key) {
-  const n = _trName(f);
+  const n = fluffyDisplayName(f);
   return (
     {
       asleep: `${n} is asleep.`,

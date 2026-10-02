@@ -41,9 +41,6 @@ const GOSSIP_PAIR_GAP = HOUR_LENGTH;
 const GOSSIP_SAY = 0.35; // chance it says it out loud
 const GOSSIP_TRAIL = 3; // who it heard from, remembered
 
-function _gNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _gName(f) {
   return (typeof fluffyNames !== "undefined" && f && fluffyNames[f.id]) || null;
 }
@@ -52,10 +49,10 @@ function _gossipOf(f, create) {
   let g = f.gossip;
   if (!g || typeof g !== "object") {
     if (!create) return null;
-    g = f.gossip = { harm: 0, kind: 0, t: _gNow(), feared: 0, trusted: 0 };
+    g = f.gossip = { harm: 0, kind: 0, t: timePlayed, feared: 0, trusted: 0 };
   }
   // Hearsay fades
-  const now = _gNow();
+  const now = timePlayed;
   if (!(now >= g.t)) g.t = now;
   if (now > g.t) {
     const k = Math.exp(-(now - g.t) / GOSSIP_FADE);
@@ -69,7 +66,7 @@ function _gossipOf(f, create) {
 // What it saw for itself: the strongest harm memory it has (recent ones count most)
 function _gFirstHandHarm(f) {
   const mems = Array.isArray(f.playerMemories) ? f.playerMemories : [];
-  const now = _gNow();
+  const now = timePlayed;
   let best = 0;
   let about = null;
   for (const m of mems) {
@@ -100,11 +97,11 @@ function gossipTales(f) {
 function _gIsNewcomer(f) {
   if (f.settling) return true;
   const since = typeof f.adoptedAt === "number" ? f.adoptedAt : null;
-  if (since !== null) return _gNow() - since < GOSSIP_NEW_DAYS * DAY_LENGTH;
+  if (since !== null) return timePlayed - since < GOSSIP_NEW_DAYS * DAY_LENGTH;
   // (no record of when: its story knows when it came)
   if (typeof storyOf === "function") {
     const e = storyOf(f).find((x) => x.k === "arrived" && x.w[0] === f.id);
-    if (e) return _gNow() - e.t < GOSSIP_NEW_DAYS * DAY_LENGTH;
+    if (e) return timePlayed - e.t < GOSSIP_NEW_DAYS * DAY_LENGTH;
   }
   return false;
 }
@@ -174,7 +171,7 @@ function passGossip(from, to) {
   // Who told whom (RelationshipMap.js draws the paths): the last few
   if (told) {
     const trail = Array.isArray(gt.from) ? gt.from.filter((x) => x && x.id !== from.id) : [];
-    trail.push({ id: from.id, kind: told, t: _gNow() });
+    trail.push({ id: from.id, kind: told, t: timePlayed });
     gt.from = trail.slice(-GOSSIP_TRAIL);
   }
   // Saying it out loud (now and then)
@@ -188,7 +185,7 @@ function passGossip(from, to) {
 // Bonds.onFluffiesChatted
 function onGossipChat(a, b) {
   if (!a || !b) return;
-  const now = _gNow();
+  const now = timePlayed;
   const key = a.id < b.id ? `${a.id}:${b.id}` : `${b.id}:${a.id}`;
   if (!_gossipPairs) _gossipPairs = new Map();
   const last = _gossipPairs.get(key);

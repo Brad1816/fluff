@@ -38,15 +38,6 @@ function _lvOk() {
   if (typeof livesBook.nextPhoto !== "number") livesBook.nextPhoto = livesBook.photos.length + 1;
   return livesBook;
 }
-function _lvNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _lvDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
-function _lvName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 function _lvHe(f) {
   return f.gender === "male" ? { sub: "he", obj: "him", poss: "his", Sub: "He", Poss: "His" } : { sub: "she", obj: "her", poss: "her", Sub: "She", Poss: "Her" };
 }
@@ -57,7 +48,7 @@ function _lvList(a) {
 // ---- Lives ----
 
 function lifeEpilogue(f, cause) {
-  const n = _lvName(f);
+  const n = fluffyDisplayName(f);
   const p = _lvHe(f);
   const days = typeof ageDays === "function" ? ageDays(f) : (f.age || 0) / DAY_LENGTH;
   const age = typeof fluffyAgeText === "function" ? fluffyAgeText(days) : `${Math.round(days)} days`;
@@ -84,15 +75,17 @@ function recordLife(f, cause) {
   if (b.lives.some((l) => l.id === f.id)) return null;
   const life = {
     id: f.id,
-    name: _lvName(f),
+    name: fluffyDisplayName(f),
     gender: f.gender,
     motherId: f.motherId ?? null,
     fatherId: f.fatherId ?? null,
-    bornAt: _lvNow() - (f.age || 0),
-    diedAt: _lvNow(),
-    day: _lvDay(),
+    bornAt: timePlayed - (f.age || 0),
+    diedAt: timePlayed,
+    day: getDayNumber(),
     title: typeof titleOf === "function" ? titleOf(f) : null,
     epilogue: lifeEpilogue(f, cause),
+    cause: cause || "", // (the memorial tree's plaque shows it)
+    foal: f.growth < 1,
   };
   b.lives.push(life);
   if (b.lives.length > LIVES_MAX) b.lives.shift();
@@ -101,13 +94,13 @@ function recordLife(f, cause) {
 
 // A stand-in for LifeStory.js to read a life that's over
 function _lifeStub(life) {
-  return { id: life.id, gender: life.gender, motherId: life.motherId, fatherId: life.fatherId, age: Math.max(0, life.diedAt - life.bornAt) + (_lvNow() - life.diedAt), adopted: true, isAlive: false, growth: 1 };
+  return { id: life.id, gender: life.gender, motherId: life.motherId, fatherId: life.fatherId, age: Math.max(0, life.diedAt - life.bornAt) + (timePlayed - life.diedAt), adopted: true, isAlive: false, growth: 1 };
 }
 
 // ---- Photos ----
 
 function _lvCaption(f) {
-  const n = _lvName(f);
+  const n = fluffyDisplayName(f);
   const state = f.currentStateKey;
   const near = typeof fluffies !== "undefined" ? fluffies.filter((o) => o !== f && o.isAlive && o.scene === f.scene && Math.hypot(o.x - f.x, o.y - f.y) < 130) : [];
   const nearName = near.map((o) => fluffyNames[o.id]).filter(Boolean)[0];
@@ -149,7 +142,7 @@ function _lvGrab(f) {
 
 function photoActions(f) {
   if (!f || !f.isAlive || !f.adopted) return [];
-  const now = _lvNow();
+  const now = timePlayed;
   if (typeof f._photoAt === "number" && now >= f._photoAt && now - f._photoAt < PHOTO_REST) return [];
   return [{ key: "photo", name: "Take a photo", sub: "for the book", run: (x) => takePhoto(x) }];
 }
@@ -157,8 +150,8 @@ function photoActions(f) {
 function takePhoto(f) {
   if (!f || !f.isAlive) return null;
   const b = _lvOk();
-  f._photoAt = _lvNow();
-  const photo = { id: b.nextPhoto++, fid: f.id, name: _lvName(f), day: _lvDay(), caption: _lvCaption(f), data: f.scene === currentScene ? _lvGrab(f) : null };
+  f._photoAt = timePlayed;
+  const photo = { id: b.nextPhoto++, fid: f.id, name: fluffyDisplayName(f), day: getDayNumber(), caption: _lvCaption(f), data: f.scene === currentScene ? _lvGrab(f) : null };
   b.photos.push(photo);
   while (b.photos.length > PHOTO_MAX) b.photos.shift();
   if (typeof recordStory === "function") recordStory("photo", f, { x: photo.id });

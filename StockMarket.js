@@ -352,57 +352,57 @@ function stockMarketLayout() {
 function drawStockMarketPage(c, theme, m) {
   const headColor = ordersScreenMode === "board" ? "#fbe7b5" : theme.cardText;
   const level = typeof getOrderLevel === "function" ? getOrderLevel() : 1;
-  _osText(c, `Breeding stock (${stockMarket.listings.length})`, 20, 100, headColor, "bold 17px Arial");
+  canvasText(c, `Breeding stock (${stockMarket.listings.length})`, 20, 100, headColor, "bold 17px Arial");
   const unlock =
     level < 2
       ? "Reach Known breeder for unicorns and pegasi"
       : level < 4
         ? "Reach Renowned breeder for more stock (and the odd alicorn)"
         : "New stock every morning";
-  _osText(c, `Pedigree fluffies from other breeders · ${unlock}`, OS_W - 20, 100, headColor, "13px Arial", "right");
+  canvasText(c, `Pedigree fluffies from other breeders · ${unlock}`, OS_W - 20, 100, headColor, "13px Arial", "right");
   if (!stockMarket.listings.length)
-    _osText(c, "Sold out. The breeders bring new stock every morning.", 20, 140, headColor, "14px Arial");
+    canvasText(c, "Sold out. The breeders bring new stock every morning.", 20, 140, headColor, "14px Arial");
 
   for (const card of stockMarketLayout()) {
     const l = card.l;
     c.fillStyle = "rgba(0,0,0,0.25)";
-    _osRR(c, card.x + 3, card.y + 4, card.w, card.h, 8);
+    roundRectPath(c, card.x + 3, card.y + 4, card.w, card.h, 8);
     c.fill();
     c.fillStyle = theme.card;
-    _osRR(c, card.x, card.y, card.w, card.h, 8);
+    roundRectPath(c, card.x, card.y, card.w, card.h, 8);
     c.fill();
     const p = _stockPortrait(l, 120);
     if (p) c.drawImage(p, card.x + 8, card.y + 8);
     const tx = card.x + 138;
     const age = l.growth >= 1 ? "adult" : "young";
-    _osText(c, l.name, tx, card.y + 30, theme.cardText, "bold 18px Arial");
-    _osText(c, `${l.gender === "male" ? "♂ stallion" : "♀ mare"} · ${l.type} · ${age}`, tx, card.y + 50, theme.cardText, "13px Arial");
+    canvasText(c, l.name, tx, card.y + 30, theme.cardText, "bold 18px Arial");
+    canvasText(c, `${l.gender === "male" ? "♂ stallion" : "♀ mare"} · ${l.type} · ${age}`, tx, card.y + 50, theme.cardText, "13px Arial");
     const coat = typeof describeRecordCoat === "function" ? describeRecordCoat({ genes: l.genes }).name : "";
     const colour = (typeof COLOUR_WORDS !== "undefined" && COLOUR_WORDS[coat]) || coat;
-    _osText(c, [`${colour} coat`, ...stockVisibleFeatures(l.genes)].join(", "), tx, card.y + 68, theme.sub, "13px Arial");
-    _osText(c, `Bred by ${l.breeder}`, tx, card.y + 90, theme.sub, "italic 12px Arial");
-    _osText(c, `(known for ${l.about})`, tx, card.y + 106, theme.sub, "italic 12px Arial");
-    _osText(c, `Litter trained ${Math.round((l.pottyTraining || 0) * 100)}%`, tx, card.y + 124, theme.sub, "12px Arial");
+    canvasText(c, [`${colour} coat`, ...stockVisibleFeatures(l.genes)].join(", "), tx, card.y + 68, theme.sub, "13px Arial");
+    canvasText(c, `Bred by ${l.breeder}`, tx, card.y + 90, theme.sub, "italic 12px Arial");
+    canvasText(c, `(known for ${l.about})`, tx, card.y + 106, theme.sub, "italic 12px Arial");
+    canvasText(c, `Litter trained ${Math.round((l.pottyTraining || 0) * 100)}%`, tx, card.y + 124, theme.sub, "12px Arial");
 
     let y = card.y + 150;
-    _osText(c, "Pedigree", card.x + 14, y, theme.cardText, "bold 13px Arial");
+    canvasText(c, "Pedigree", card.x + 14, y, theme.cardText, "bold 13px Arial");
     y += 18;
     c.save();
     c.beginPath();
     c.rect(card.x + 10, card.y, card.w - 20, card.h);
     c.clip();
-    _osText(c, `Mum: ${_looksOf(l.mum)}`, card.x + 14, y, theme.cardText, "12px Arial");
+    canvasText(c, `Mum: ${_looksOf(l.mum)}`, card.x + 14, y, theme.cardText, "12px Arial");
     y += 16;
-    _osText(c, `Dad: ${_looksOf(l.dad)}`, card.x + 14, y, theme.cardText, "12px Arial");
+    canvasText(c, `Dad: ${_looksOf(l.dad)}`, card.x + 14, y, theme.cardText, "12px Arial");
     y += 16;
-    _osText(c, `Grandparents: ${_grandSummary(l.grand)}`, card.x + 14, y, theme.cardText, "12px Arial");
+    canvasText(c, `Grandparents: ${_grandSummary(l.grand)}`, card.x + 14, y, theme.cardText, "12px Arial");
     c.restore();
 
     const afford = (typeof showDebugMenu !== "undefined" && showDebugMenu) || money >= l.price;
-    _osText(c, `$${l.price.toLocaleString()}`, card.x + 14, card.y + card.h - 18, afford ? "#1e8a3a" : "#c0392b", "bold 22px Arial");
+    canvasText(c, `$${l.price.toLocaleString()}`, card.x + 14, card.y + card.h - 18, afford ? "#1e8a3a" : "#c0392b", "bold 22px Arial");
     _osButton(c, card.buy, m, theme, !afford);
   }
-  _osText(
+  canvasText(
     c,
     `Bought ${stockMarket.bought || 0} · Prices are about ${STOCK_MARKUP}x what a buyer would pay: you buy stock to breed from, not to sell on.`,
     OS_W / 2,

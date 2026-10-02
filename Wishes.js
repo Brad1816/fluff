@@ -44,12 +44,6 @@ const WISH_SAY_CHANCE = 0.03; // per wishing fluffy per 30s check
 const wishTicker = new Ticker(2);
 const wishTalkTicker = new Ticker(30);
 
-function _wNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _wName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
-}
 function _wById(id) {
   return typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) || null : null;
 }
@@ -122,7 +116,7 @@ const WISHES = {
       }
       w.target = best ? best.id : null;
     },
-    text: (f, w) => (w.target !== null && w.target !== undefined ? `A special friend (it has its eye on ${_wName(_wById(w.target) || { id: w.target })})` : "A special friend"),
+    text: (f, w) => (w.target !== null && w.target !== undefined ? `A special friend (it has its eye on ${fluffyDisplayName(_wById(w.target) || { id: w.target })})` : "A special friend"),
     done: (f) => _wRel(f, "special_friend").length > 0,
     line: (f, p) => `${p.Poss} wish came true: ${p.sub} found a special friend.`,
     say: "SPECIAL_FRIEND",
@@ -149,7 +143,7 @@ const WISHES = {
       const o = fluffies.find((x) => x !== f && x.isAlive && x.scene === f.scene && _wHat(x));
       w.target = o ? o.id : null;
     },
-    text: (f, w) => (w.target !== null && w.target !== undefined ? `A hat like ${_wName(_wById(w.target) || { id: w.target })}'s` : "A hat"),
+    text: (f, w) => (w.target !== null && w.target !== undefined ? `A hat like ${fluffyDisplayName(_wById(w.target) || { id: w.target })}'s` : "A hat"),
     done: (f) => _wHat(f),
     line: (f, p) => `${p.Poss} wish came true: a hat of ${p.poss} own.`,
     say: "HAT",
@@ -204,7 +198,7 @@ function pickWish(f) {
   if (!options.length) return null;
   // A name comes first
   const id = options.includes("name") && Math.random() < 0.7 ? "name" : options[Math.floor(Math.random() * options.length)];
-  const w = { id, since: _wNow(), ache: 0 };
+  const w = { id, since: timePlayed, ache: 0 };
   if (WISHES[id].start) WISHES[id].start(f, w);
   f.wish = w;
   return w;
@@ -216,7 +210,7 @@ function wishText(f) {
 }
 
 function _wDays(w) {
-  return (_wNow() - w.since) / DAY_LENGTH;
+  return (timePlayed - w.since) / DAY_LENGTH;
 }
 
 function grantWish(f) {
@@ -225,12 +219,12 @@ function grantWish(f) {
   const p = _wP(f);
   const line = WISHES[w.id].line(f, p, w);
   f.wish = null;
-  f.wishCooldownUntil = _wNow() + WISH_COOLDOWN_DAYS * DAY_LENGTH;
-  f.contentUntil = _wNow() + WISH_CONTENT_DAYS * DAY_LENGTH;
+  f.wishCooldownUntil = timePlayed + WISH_COOLDOWN_DAYS * DAY_LENGTH;
+  f.contentUntil = timePlayed + WISH_CONTENT_DAYS * DAY_LENGTH;
   f.changeHappiness(WISH_JOY);
   if (w.promisedAt !== undefined && typeof changePlayerTrust === "function") changePlayerTrust(f, 0.05); // a promise kept
   if (typeof recordStory === "function") recordStory("wish_granted", f, { x: line });
-  if (typeof noteTurningPoint === "function") noteTurningPoint(f, `${_wName(f)}'s wish came true!`, { record: false });
+  if (typeof noteTurningPoint === "function") noteTurningPoint(f, `${fluffyDisplayName(f)}'s wish came true!`, { record: false });
   if (typeof noteGoalEvent === "function") noteGoalEvent("wish");
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["WISH_GRANTED"], f), true);
   return true;
@@ -241,7 +235,7 @@ function denyWish(f, why) {
   const w = f.wish;
   if (!w) return false;
   f.wish = null;
-  f.wishCooldownUntil = _wNow() + 2 * WISH_COOLDOWN_DAYS * DAY_LENGTH;
+  f.wishCooldownUntil = timePlayed + 2 * WISH_COOLDOWN_DAYS * DAY_LENGTH;
   f.changeHappiness(-0.15);
   if (typeof rememberPlayerEvent === "function") rememberPlayerEvent(f, "wish_denied");
   if (typeof changePlayerTrust === "function") changePlayerTrust(f, -0.1);
@@ -264,7 +258,7 @@ function noteWishEvent(f, kind, info = {}) {
     for (const o of fluffies) {
       if (!o.isAlive || !o.adopted || !o.wish || o.wish.target !== gone.id) continue;
       if (typeof haveMet === "function" && !haveMet(o, gone)) continue; // (Acquaintance.js)
-      const n = _wName(gone);
+      const n = fluffyDisplayName(gone);
       const id = o.wish.id;
       if (!verb) {
         o.wish = null; // not your doing
@@ -279,8 +273,8 @@ function noteWishEvent(f, kind, info = {}) {
   }
   if (!f) return;
   if (kind === "hatOff") {
-    if (f.hatWishGrantedAt !== undefined && _wNow() - f.hatWishGrantedAt < DAY_LENGTH) {
-      f.wish = { id: "hat", since: _wNow(), ache: 0 };
+    if (f.hatWishGrantedAt !== undefined && timePlayed - f.hatWishGrantedAt < DAY_LENGTH) {
+      f.wish = { id: "hat", since: timePlayed, ache: 0 };
       f.hatWishGrantedAt = undefined;
       denyWish(f, `You took away the hat ${_wP(f).sub} had wished for.`);
     }
@@ -300,7 +294,7 @@ function canPromiseWish(f) {
 
 function promiseWish(f) {
   if (!canPromiseWish(f)) return false;
-  f.wish.promisedAt = _wNow();
+  f.wish.promisedAt = timePlayed;
   if (typeof recordStory === "function") recordStory("turning", f, { x: `You promised ${_wP(f).obj} ${wishText(f).toLowerCase()} if ${_wP(f).sub} was good.` });
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["WISH_PROMISED"], f), true);
   return true;
@@ -310,7 +304,7 @@ function promiseWish(f) {
 function wishPromiseBoost(f) {
   const w = f && f.wish;
   if (!w || w.promisedAt === undefined) return 1;
-  return _wNow() - w.promisedAt < WISH_PROMISE_DAYS * DAY_LENGTH ? WISH_PROMISE_BOOST : 1;
+  return timePlayed - w.promisedAt < WISH_PROMISE_DAYS * DAY_LENGTH ? WISH_PROMISE_BOOST : 1;
 }
 
 // The right-click menu's actions row (Tricks.js rightClickActions)
@@ -322,7 +316,7 @@ function wishActions(f) {
 // ---- Its happiness settles higher while content (Horse.update) ----
 
 function wishHappinessTarget(f) {
-  return f && f.contentUntil !== undefined && _wNow() < f.contentUntil ? WISH_CONTENT_TARGET : 0;
+  return f && f.contentUntil !== undefined && timePlayed < f.contentUntil ? WISH_CONTENT_TARGET : 0;
 }
 
 // ---- Magnifying glass / Household ----
@@ -331,7 +325,7 @@ function describeWish(f) {
   if (!f || !f.adopted || !f.isAlive) return null;
   const t = wishText(f);
   if (!t) {
-    if (f.contentUntil !== undefined && _wNow() < f.contentUntil) return ["Content: a wish came true", "good"];
+    if (f.contentUntil !== undefined && timePlayed < f.contentUntil) return ["Content: a wish came true", "good"];
     return null;
   }
   const days = _wDays(f.wish);
@@ -343,7 +337,7 @@ function describeWish(f) {
 // ---- Every couple of seconds ----
 
 function updateWish(f, step) {
-  const now = _wNow();
+  const now = timePlayed;
   if (f.scene === "PARK") f.seenPark = true;
   if (!f.wish) {
     if (f.wishCooldownUntil !== undefined && now < f.wishCooldownUntil) return;

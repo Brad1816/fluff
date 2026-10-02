@@ -75,12 +75,6 @@ const NIGHT_LIGHT_PRICE = 30;
 
 const fearsTicker = new Ticker(1);
 
-function _fNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _fTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
-}
 function getFear(key) {
   // (a nightmare is a fright, not a fear it has: Dreams.js)
   return FEARS.find((x) => x.key === key) || (key === "nightmare" ? { key, name: "a bad dream" } : null);
@@ -89,7 +83,7 @@ function getFear(key) {
 // { thunder, dark, bot }, made the first time
 function fearsOf(f) {
   if (!f.fears || typeof f.fears !== "object") {
-    const brave = _fTrait(f, "bravery"); // -1 timid .. 1 brave
+    const brave = traitValue(f, "bravery"); // -1 timid .. 1 brave
     const chance = Math.max(0.04, Math.min(0.65, 0.25 - 0.3 * brave));
     const fears = {};
     for (const fe of FEARS) {
@@ -125,7 +119,7 @@ function realFears(f) {
 function isFrightened(f) {
   const fr = f && f.fright;
   if (!fr) return false;
-  const now = _fNow();
+  const now = timePlayed;
   // (the game clock jumps back on a new game or load)
   if (fr.until < now || fr.until - now > 120) {
     f.fright = null;
@@ -153,7 +147,7 @@ function startFright(f, key) {
       (typeof titleFrightMultiplier === "function" ? titleFrightMultiplier(f) : 1), // (Titles.js)
   );
   if (fear < FEAR_MIN) return false;
-  const now = _fNow();
+  const now = timePlayed;
   const seconds = (FRIGHT_TIME[key] || 15) * (0.5 + fear);
   // Just had one of these: not again straight away (thunder always)
   if (!f._frightAt) f._frightAt = {};
@@ -394,7 +388,7 @@ class FrightDesire extends Desire {
   execute(h) {
     h.expressionOverride = "CRYING_SHOCKED";
     h.expressionOverrideTimer = 1.5;
-    const left = Math.max(0.5, h.fright.until - _fNow());
+    const left = Math.max(0.5, h.fright.until - timePlayed);
     const buddy = !h.currentCage && !h.tooYoungToWalk() && frightComforter(h);
     if (buddy && Math.hypot(buddy.x - h.x, buddy.y - h.y) > 70) {
       if (!h.isMovingOrRunning()) {
@@ -431,7 +425,7 @@ class FrightDesire extends Desire {
 function beginFrightShake(c, f) {
   if (!f.isAlive || !isFrightened(f)) return false;
   c.save();
-  c.translate(Math.sin(_fNow() * 55 + f.id) * 1.6, 0);
+  c.translate(Math.sin(timePlayed * 55 + f.id) * 1.6, 0);
   return true;
 }
 
@@ -461,7 +455,7 @@ function describeFright(f) {
 function updateFears(dt) {
   const step = fearsTicker.step(dt);
   if (!step) return;
-  const now = _fNow();
+  const now = timePlayed;
   const irons = typeof CauteryIron !== "undefined" ? objects.filter((o) => o instanceof CauteryIron && o.isDragging) : [];
   const heaters = typeof Heater !== "undefined" ? objects.filter((o) => o instanceof Heater && o.heating) : [];
   const cullCages = typeof Cage !== "undefined" ? objects.filter((o) => o instanceof Cage && (o.tag === "cull" || o.isCulling())) : [];

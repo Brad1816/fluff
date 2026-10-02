@@ -33,14 +33,10 @@ const BESTEST_RESENT_DENIED = 0.05; // ...and each time they're turned away
 const BESTEST_TALK_CHANCE = 0.02; // a second: coos and grumbles
 const bestestTicker = new Ticker(5);
 
-function _favTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
-}
-
 // Is she the sort to pick a favourite?
 function favouringMum(m) {
   if (!m || !m.isAlive || m.gender !== "female" || m.growth < 1) return false;
-  return _favTrait(m, "temper") >= BESTEST_TEMPER || (m.coloristDegree || 0) >= BESTEST_COLORIST;
+  return traitValue(m, "temper") >= BESTEST_TEMPER || (m.coloristDegree || 0) >= BESTEST_COLORIST;
 }
 
 // Her foals still on milk (anywhere)

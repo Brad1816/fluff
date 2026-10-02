@@ -30,12 +30,9 @@ const NIGHTMARES_PER_DAY = 2;
 const NIGHTMARE_REST = 2 * HOUR_LENGTH;
 const BAD_DREAMS_PER_DAY = 0.05; // happiness
 
-function _dNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 // Counted from 08:00 on purpose: one night's dreams stay in one count even though the night crosses midnight
 function _dDay() {
-  return Math.floor(_dNow() / DAY_LENGTH);
+  return Math.floor(timePlayed / DAY_LENGTH);
 }
 function _dName(id) {
   const n = typeof fluffyNames !== "undefined" ? fluffyNames[id] : null;
@@ -153,7 +150,7 @@ function badDream(f) {
     b.hurt = (b.hurt || 0) + 0.01;
     f.changeHappiness(-0.01);
   }
-  const now = _dNow();
+  const now = timePlayed;
   if (b.nightmares >= NIGHTMARES_PER_DAY) return;
   if (f._lastNightmareAt !== undefined && now - f._lastNightmareAt < NIGHTMARE_REST) return;
   if (Math.random() > NIGHTMARE_WAKE) return;
@@ -164,7 +161,7 @@ function badDream(f) {
 
 // It wakes up frightened: cuddle it (Fears.js onComfortedByYou)
 function wakeFromNightmare(f) {
-  const now = _dNow();
+  const now = timePlayed;
   f.currentDream = null;
   if (typeof f.initBehavior === "function") f.initBehavior("IDLE");
   f.fright = { key: "nightmare", until: now + 12, start: now };

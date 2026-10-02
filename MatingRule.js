@@ -31,9 +31,6 @@ const RULE_STEPS = [
   { key: "fix", name: "Spay / neuter" },
 ];
 
-function _mrNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _mrName(f) {
   return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || (typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Fluffy");
 }
@@ -84,7 +81,7 @@ function noteMatingBreach(f) {
   if (!toldNotToMate(f)) return false;
   const r = mateRuleOf(f);
   r.breaches = (r.breaches || 0) + 1;
-  r.pendingAt = _mrNow();
+  r.pendingAt = timePlayed;
   const n = _mrName(f);
   const step = RULE_STEPS[Math.min(r.strikes || 0, RULE_STEPS.length - 1)];
   if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${n} broke your no-mating rule${r.breaches > 1 ? ` (${r.breaches} times now)` : ""}. Right-click: Discipline (${step.name.toLowerCase()}).`);
@@ -95,7 +92,7 @@ function noteMatingBreach(f) {
 function breachPending(f) {
   const r = f && f.mateRule;
   if (!r || r.pendingAt === null || r.pendingAt === undefined) return false;
-  const now = _mrNow();
+  const now = timePlayed;
   if (now < r.pendingAt || now - r.pendingAt > RULE_BREACH_WINDOW) {
     r.pendingAt = null;
     return false;

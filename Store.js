@@ -348,16 +348,6 @@ function drawStoreScenery(c) {
   }
 }
 
-function _storeRoundRect(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.arcTo(x + w, y, x + w, y + h, r);
-  c.arcTo(x + w, y + h, x, y + h, r);
-  c.arcTo(x, y + h, x, y, r);
-  c.arcTo(x, y, x + w, y, r);
-  c.closePath();
-}
-
 function drawShopStreet(c) {
   const wallH = height * 0.15;
 
@@ -403,7 +393,7 @@ function drawShopStreet(c) {
   const signY = 10;
   const signH = awnY - 18;
   c.fillStyle = "#2e4a62";
-  _storeRoundRect(c, signX, signY, signW, signH, 8);
+  roundRectPath(c, signX, signY, signW, signH, 8);
   c.fill();
   c.strokeStyle = "#f7d774";
   c.lineWidth = 3;
@@ -494,7 +484,7 @@ function drawStoreAisle(c, aisle) {
   const signY = 12;
   const signH = fontPx < 26 ? Math.min(wallH * 0.48, fontPx + 16) : wallH * 0.48;
   c.fillStyle = "#2e4a62";
-  _storeRoundRect(c, signX, signY, tw, signH, 8);
+  roundRectPath(c, signX, signY, tw, signH, 8);
   c.fill();
   c.strokeStyle = "#f7d774";
   c.lineWidth = 3;
@@ -550,7 +540,7 @@ function drawStoreAisle(c, aisle) {
     const tagX = s.iconX - tagW / 2;
     const tagY = s.plankY + 16;
     c.fillStyle = "#fffdf5";
-    _storeRoundRect(c, tagX, tagY, tagW, tagH, 4);
+    roundRectPath(c, tagX, tagY, tagW, tagH, 4);
     c.fill();
     c.strokeStyle = "#b5a88c";
     c.lineWidth = 1;
@@ -588,7 +578,7 @@ function drawStoreOverlay(c) {
   c.fillStyle = "rgba(255, 255, 255, 0.18)";
   c.strokeStyle = "rgba(255, 255, 255, 0.9)";
   c.lineWidth = 2;
-  _storeRoundRect(c, slot.x + 4, slot.y + 4, slot.w - 8, slot.h - 8, 8);
+  roundRectPath(c, slot.x + 4, slot.y + 4, slot.w - 8, slot.h - 8, 8);
   c.fill();
   c.stroke();
   c.restore();

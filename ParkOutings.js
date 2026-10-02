@@ -61,12 +61,6 @@ function _poOk() {
   if (!outings || typeof outings !== "object") outings = freshOutings();
   return outings;
 }
-function _poNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _poName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 function _poSay(t) {
   if (typeof addUIMessage === "function") addUIMessage(t);
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: t });
@@ -142,7 +136,7 @@ function startOuting(home) {
   const walkers = outingCandidates(home);
   if (!walkers.length) return false;
   const who = [...walkers, ..._outingBabies(walkers).filter((b) => b.scene === home)];
-  o.outing = { ids: who.map((f) => f.id), home, start: _poNow(), memory: false };
+  o.outing = { ids: who.map((f) => f.id), home, start: timePlayed, memory: false };
   if (typeof changeScene === "function") changeScene(PARK_SCENE);
   const mid = _poMiddle();
   who.forEach((f, i) => {
@@ -155,7 +149,7 @@ function startOuting(home) {
   });
   if (typeof inspectedFluffy !== "undefined") inspectedFluffy = null;
   if (typeof closeTrickUI === "function") closeTrickUI();
-  _poSay(`You take ${who.length === 1 ? _poName(who[0]) : `${who.length} fluffies`} to the park.`);
+  _poSay(`You take ${who.length === 1 ? fluffyDisplayName(who[0]) : `${who.length} fluffies`} to the park.`);
   const talker = who.find((f) => !f.tooYoungToSpeak());
   if (talker && typeof getDialogue === "function") talker.speak(getDialogue(["PARK", "OUTING"], talker), true);
   return true;
@@ -175,7 +169,7 @@ function endOuting(why = "home") {
       who.push(b);
     }
   }
-  const minutes = (_poNow() - o.outing.start) / 60;
+  const minutes = (timePlayed - o.outing.start) / 60;
   let n = 0;
   for (const f of who) {
     if (f.scene !== PARK_SCENE) continue;
@@ -229,7 +223,7 @@ function _updateOuting(step) {
         f._outingSlipChecked = true;
         const p = typeof runAwayChance === "function" ? runAwayChance(f) * OUTING_SLIP : 0;
         if (p > 0 && Math.random() < p && typeof _goWild === "function") {
-          const n = _poName(f);
+          const n = fluffyDisplayName(f);
           _goWild(f, "ran away");
           _poSay(`${n} slipped away during the outing. It's wild now.`);
           if (typeof recordStory === "function") recordStory("turning", f, { x: `${n} slipped away on a trip to the park.` });
@@ -268,8 +262,8 @@ function _reunions(who) {
       old.setTargetPosition(friend.x + 50, friend.y);
     }
     if (!friend.tooYoungToSpeak() && typeof getDialogue === "function") friend.speak(getDialogue(["PARK", "REUNION"], friend, old), true);
-    _poSay(`${_poName(friend)} found ${old.formerPet.name || "an old friend"} in the park!`);
-    if (typeof makeSharedMemory === "function") makeSharedMemory("party", `${_poName(friend)} and ${old.formerPet.name || "an old friend"} meet again`, [friend, old], { key: `reunion:${old.id}:${friend.id}`, good: true, scene: PARK_SCENE });
+    _poSay(`${fluffyDisplayName(friend)} found ${old.formerPet.name || "an old friend"} in the park!`);
+    if (typeof makeSharedMemory === "function") makeSharedMemory("party", `${fluffyDisplayName(friend)} and ${old.formerPet.name || "an old friend"} meet again`, [friend, old], { key: `reunion:${old.id}:${friend.id}`, good: true, scene: PARK_SCENE });
   }
 }
 
@@ -284,7 +278,7 @@ function formerPetRightClick() {
 }
 
 function bringFormerPetHome(f) {
-  const n = f.formerPet ? f.formerPet.name || _poName(f) : _poName(f);
+  const n = f.formerPet ? f.formerPet.name || fluffyDisplayName(f) : fluffyDisplayName(f);
   if ((f.playerTrust || 0) < 0.4 || (f.playerFear || 0) >= 0.5) {
     if (typeof addUIMessage === "function") addUIMessage(`${n} won't come with you. It doesn't trust you any more.`);
     if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["RUNAWAY", "MEET_SCARED"], f), true);
@@ -294,7 +288,7 @@ function bringFormerPetHome(f) {
   if (typeof onFormerPetHome === "function") onFormerPetHome(f);
   const o = _poOk();
   if (o.outing) o.outing.ids.push(f.id);
-  else o.outing = { ids: [f.id], home: "INDOORS", start: _poNow(), memory: false };
+  else o.outing = { ids: [f.id], home: "INDOORS", start: timePlayed, memory: false };
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["RUNAWAY", "MEET_HAPPY"], f), true);
   if (typeof addUIMessage === "function") addUIMessage(`${n} is coming home with you.`);
   return true;
@@ -305,7 +299,7 @@ function bringFormerPetHome(f) {
 const _loreGreetAt = {}; // herd id -> game time
 function _updateLore() {
   if (typeof currentScene === "undefined" || currentScene !== PARK_SCENE || typeof herdState === "undefined" || typeof herdLore !== "function") return;
-  const now = _poNow();
+  const now = timePlayed;
   const mid = _poMiddle();
   const mine = outingMembers();
   for (const h of herdState.list || []) {
@@ -392,7 +386,7 @@ function startRaid(force = false) {
     f.setTargetPosition(200 + Math.random() * 600, height * 0.45 + Math.random() * 250);
     f.raiding = true;
   });
-  _raid = { ids: raiders.map((f) => f.id), until: _poNow() + RAID_HOURS * (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50), from, herd: r.h.id, leaderName: (r.leader.formerPet && r.leader.formerPet.name) || _poName(r.leader), herdName: typeof getHerdName === "function" ? getHerdName(r.h) : "a herd" };
+  _raid = { ids: raiders.map((f) => f.id), until: timePlayed + RAID_HOURS * (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50), from, herd: r.h.id, leaderName: (r.leader.formerPet && r.leader.formerPet.name) || fluffyDisplayName(r.leader), herdName: typeof getHerdName === "function" ? getHerdName(r.h) : "a herd" };
   _poOk().raids++;
   if (typeof addRoomClimate === "function") addRoomClimate("BACKYARD", { f: 2, t: 1 });
   _poSay(`Raiders! The ${_raid.herdName}, led by ${_raid.leaderName} (who used to live with you), got into the backyard.`);
@@ -420,7 +414,7 @@ function endRaid(why = "morning") {
         const home = r.from[r.ids[0]] || { x: 400, y: 600 };
         f.x = home.x + 60;
         f.y = home.y;
-        left.push(_poName(f));
+        left.push(fluffyDisplayName(f));
         if (typeof noteWeekRanAway === "function") noteWeekRanAway();
       }
     }
@@ -446,20 +440,20 @@ function endRaid(why = "morning") {
 function _updateRaid(step) {
   if (!_raid) return;
   const raiders = _raid.ids.map(_poById).filter((f) => f && f.isAlive && !f.adopted && f.scene === "BACKYARD");
-  if (!raiders.length || _poNow() >= _raid.until) {
+  if (!raiders.length || timePlayed >= _raid.until) {
     endRaid(raiders.length ? "morning" : "gone");
     return;
   }
   // You came out: they run
   if (typeof currentScene !== "undefined" && currentScene === "BACKYARD") {
-    if (!_raid.seenAt) _raid.seenAt = _poNow();
+    if (!_raid.seenAt) _raid.seenAt = timePlayed;
     for (const f of raiders) {
       if (f.currentStateKey !== "RUNNING") {
         f.initBehavior("RUNNING");
         f.setTargetPosition(-80, f.y);
       }
     }
-    if (_poNow() - _raid.seenAt > 4) endRaid("you");
+    if (timePlayed - _raid.seenAt > 4) endRaid("you");
     return;
   }
   // Trouble: a scuffle now and then - up close, not with sleepers or

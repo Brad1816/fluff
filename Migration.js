@@ -37,10 +37,6 @@ const _MIG_OPPOSITE = { left: "right", right: "left", up: "down", down: "up" };
 const migrateTicker = new Ticker(1);
 let _migrateClock = 0;
 
-function _migNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 function canMigrate(f) {
   if (!f || !f.isAlive || f.adopted || f.isDragging || f.currentCage || f.placedOn || f.raiding) return false;
   if (f.currentStateKey === "SLEEPING" || f.tooYoungToWalk()) return false;
@@ -125,7 +121,7 @@ function startMigration(f, to, why) {
   const side = MIGRATE_LINKS[f.scene] && MIGRATE_LINKS[f.scene][to];
   if (!side) return 0;
   const group = migrateGroup(f);
-  const now = _migNow();
+  const now = timePlayed;
   for (const g of group) {
     const spot = _edgeSpot(g.scene, side);
     g._migrate = { to, side, x: spot.x, y: spot.y, at: now };
@@ -166,7 +162,7 @@ function arriveMigration(f) {
 function updateMigration(dt) {
   const step = migrateTicker.step(dt);
   if (!step || typeof fluffies === "undefined") return;
-  const now = _migNow();
+  const now = timePlayed;
   // On their way: keep heading for the edge; through it when there
   for (const f of fluffies) {
     const m = f._migrate;

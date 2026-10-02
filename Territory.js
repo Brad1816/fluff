@@ -99,7 +99,7 @@ function unwelcomeOnLand(f, host) {
   const idx = herdTerritory(h);
   if (idx === null || herdOf(f) === h) return false;
   if (f.scene === PARK_SCENE && inTerritoryZone(idx, f.x, f.y)) return true;
-  return !!f._keepOut && f._keepOut.idx === idx && f._keepOut.until > _now();
+  return !!f._keepOut && f._keepOut.idx === idx && f._keepOut.until > timePlayed;
 }
 
 // For the herd line in the magnifying glass panel
@@ -119,10 +119,6 @@ function territoryFoodBias(horse, food) {
 
 // ---- Who can do what ----
 
-function _tv(f, k) {
-  return typeof traitValue === "function" ? traitValue(f, k) : 0;
-}
-
 function _grownUp(f) {
   return f.isAlive && f.growth >= 1 && !f.tooYoungToWalk();
 }
@@ -137,17 +133,13 @@ function _canDefend(f) {
     f.currentStateKey !== "SLEEPING" &&
     f.hunger >= 0.2 &&
     f.canSee() &&
-    _tv(f, "bravery") > -0.4
+    traitValue(f, "bravery") > -0.4
   );
 }
 
 // Brave and grumpy: doesn't run when chased
 function _standsGround(f) {
-  return _tv(f, "bravery") > 0.5 && _tv(f, "temper") > 0.5;
-}
-
-function _now() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
+  return traitValue(f, "bravery") > 0.5 && traitValue(f, "temper") > 0.5;
 }
 
 function _parkNews(text) {
@@ -160,7 +152,7 @@ function updateTerritories(dt) {
   if (typeof _herdList !== "function" || typeof PARK_MEADOWS === "undefined") return;
   const step = territoryTicker.step(dt); // seconds since last time, or 0 (Systems.js)
   if (!step) return;
-  const now = _now();
+  const now = timePlayed;
   rebuildFluffyGrid();
 
   const herds = _herdList();
@@ -347,7 +339,7 @@ class DefendTerritoryDesire extends Desire {
   }
   _target(horse) {
     const d = horse._defend;
-    if (!d || d.until <= _now()) return null;
+    if (!d || d.until <= timePlayed) return null;
     const t = fluffies.find((f) => f.id === d.id);
     if (!t || !t.isAlive || t.scene !== horse.scene || t.isDragging) return null;
     if (!inTerritoryZone(d.idx, t.x, t.y) || territoryOwner(d.idx) !== herdOf(horse)) return null;
@@ -376,19 +368,19 @@ class DefendTerritoryDesire extends Desire {
       horse.initBehavior("MOVING");
       horse.setTargetPosition(t.x + (horse.x < t.x ? -40 : 40), t.y);
       horse.currentStateKey = "RUNNING";
-      if (!horse._lastChaseLine || _now() - horse._lastChaseLine > 6) {
-        horse._lastChaseLine = _now();
+      if (!horse._lastChaseLine || timePlayed - horse._lastChaseLine > 6) {
+        horse._lastChaseLine = timePlayed;
         _say(horse, ["TERRITORY", "CHASE"], t);
       }
       return true;
     }
     // Caught up: shout them off, and maybe a scuffle
     const idx = horse._defend.idx;
-    t._chasedOff = { idx, by: horse.id, until: _now() + 8 };
+    t._chasedOff = { idx, by: horse.id, until: timePlayed + 8 };
     // ...and it'll stay away for a while
-    t._keepOut = { idx, until: _now() + KEEP_OUT_TIME };
+    t._keepOut = { idx, until: timePlayed + KEEP_OUT_TIME };
     _say(horse, ["TERRITORY", "CHASE"], t);
-    const temper = _tv(horse, "temper");
+    const temper = traitValue(horse, "temper");
     const chance = (_isChallenger(t, idx) ? 0.5 : 0.12) * (1 + 0.5 * temper);
     if (
       horse.attackCooldown <= 0 &&
@@ -412,7 +404,7 @@ class LeaveTerritoryDesire extends Desire {
     this.lastTime = -Infinity;
   }
   _active(horse) {
-    const now = _now();
+    const now = timePlayed;
     for (const key of ["_chasedOff", "_keepOut"]) {
       const c = horse[key];
       if (!c) continue;
@@ -453,8 +445,8 @@ class LeaveTerritoryDesire extends Desire {
     horse.setTargetPosition(x, y);
     if (a.running) {
       horse.currentStateKey = "RUNNING";
-      if (!horse._lastLeaveLine || _now() - horse._lastLeaveLine > 8) {
-        horse._lastLeaveLine = _now();
+      if (!horse._lastLeaveLine || timePlayed - horse._lastLeaveLine > 8) {
+        horse._lastLeaveLine = timePlayed;
         const chaser = fluffies.find((f) => f.id === a.c.by);
         _say(horse, ["TERRITORY", "LEAVE"], chaser);
       }

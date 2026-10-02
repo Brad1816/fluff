@@ -44,9 +44,6 @@ function _prOk() {
   if (typeof pressure.debtDays !== "number") pressure.debtDays = 0;
   return pressure;
 }
-function _prName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 
 function powerCut() {
   return _prOk().debtDays >= POWER_CUT_DAY && typeof billsOwed === "number" && billsOwed > 0;
@@ -112,7 +109,7 @@ function sendBailiffs() {
   const covers = grown.filter((g) => Math.round(price(g) * BAILIFF_SHARE) >= billsOwed);
   const f = covers.length ? covers[covers.length - 1] : grown[0];
   const worth = Math.round(price(f) * BAILIFF_SHARE);
-  const n = _prName(f);
+  const n = fluffyDisplayName(f);
   // ...and any change comes back to you
   const change = Math.max(0, worth - billsOwed);
   billsOwed = Math.max(0, billsOwed - worth);
@@ -174,11 +171,3 @@ function vetOnCredit(amount) {
   return false;
 }
 
-function describePressure() {
-  const p = _prOk();
-  const parts = [];
-  if (p.debtDays > 0) parts.push(`${p.debtDays} day${p.debtDays === 1 ? "" : "s"} in debt${powerCut() ? ", power cut" : ""}`);
-  if (p.market === "slow") parts.push("a slow day for sales");
-  if (p.market === "busy") parts.push("a busy day for sales");
-  return parts.join(" · ");
-}

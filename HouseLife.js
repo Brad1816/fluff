@@ -47,9 +47,6 @@ let roomTintsOn = true;
 let _tint = { scene: null, w: {} }; // shown weight of each label (0-1)
 let _tintLast = 0;
 
-function _hlNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _hlRealNow() {
   return typeof performance !== "undefined" ? performance.now() / 1000 : Date.now() / 1000;
 }
@@ -159,12 +156,8 @@ function huddlePartner(f) {
   return best;
 }
 
-function isHuddling(f) {
-  return !!(f && f._huddle && f._huddle.until > _hlNow());
-}
-
 function _startHuddle(f, o) {
-  const now = _hlNow();
+  const now = timePlayed;
   f._huddle = { with: o.id, until: now + HUDDLE_TIME };
   const side = f.x < o.x ? -1 : 1;
   const tx = o.x + side * (40 + Math.random() * 12);
@@ -181,7 +174,7 @@ function updateHuddles(dt) {
   _huddleT += dt;
   if (_huddleT < HUDDLE_CHECK || typeof fluffies === "undefined") return;
   _huddleT = 0;
-  const now = _hlNow();
+  const now = timePlayed;
   const labels = {};
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted || f.isDragging) continue;
@@ -346,7 +339,7 @@ function _hlHour() {
 
 // SharedMemories.throwParty
 function decorateParty(host, guests) {
-  const now = _hlNow();
+  const now = timePlayed;
   const scene = host.scene;
   const colours = PARTY_COLOURS.slice().sort(() => Math.random() - 0.5);
   partyDecor[scene] = { until: now + PARTY_BUNTING_TIME * _hlHour(), start: now, colours };
@@ -372,11 +365,11 @@ function decorateParty(host, guests) {
 }
 
 function hasPartyHat(f) {
-  return !!(f && f.partyHat && f.partyHat.until > _hlNow());
+  return !!(f && f.partyHat && f.partyHat.until > timePlayed);
 }
 
 function updatePartyDecor(dt) {
-  const now = _hlNow();
+  const now = timePlayed;
   for (const [s, d] of Object.entries(partyDecor)) if (!d || d.until <= now) delete partyDecor[s];
   if (typeof fluffies !== "undefined") for (const f of fluffies) if (f.partyHat && (f.partyHat.until <= now || !f.isAlive)) f.partyHat = null;
   for (const p of _confetti) {
@@ -452,7 +445,7 @@ function drawPartyHat(ctx, renderer, layout = renderer && renderer.layout) {
 function drawPartyBunting(c) {
   if (typeof currentScene === "undefined") return;
   const d = partyDecor[currentScene];
-  if (!d || d.until <= _hlNow()) return;
+  if (!d || d.until <= timePlayed) return;
   const w = typeof sceneW === "function" ? sceneW(currentScene) : width;
   const wall = typeof sceneTop === "function" ? sceneTop(currentScene) : height * 0.15;
   const t = _hlRealNow();

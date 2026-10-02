@@ -47,9 +47,6 @@ function isTodayOpen() {
   return todayOpen;
 }
 
-function _tdName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 function _tdRoom(scene) {
   if (typeof houseRoomName === "function" && houseRoomName(scene)) return houseRoomName(scene);
   if (scene === "BACKYARD") return "The backyard";
@@ -89,7 +86,7 @@ function todayItems() {
     add("urgent", "The welfare inspector is coming tomorrow morning. (They don't look in back rooms or cages.)");
   }
   for (const f of own) {
-    const n = _tdName(f);
+    const n = fluffyDisplayName(f);
     if (f.hunger < 0.25) add("urgent", `${n} is starving.`, f);
     // "Wan die": it's given up and won't eat (for good); close to it
     const drip = typeof ivStandFeeding === "function" ? ivStandFeeding(f) : null;
@@ -133,7 +130,7 @@ function todayItems() {
       f.typeVisibleToOthers() === "alicorn" &&
       typeof mum.tolerantOfAlicorns === "function" &&
       !mum.tolerantOfAlicorns();
-    if (colour || alicorn) add("urgent", `${_tdName(mum)} goes for ${_tdName(f)} over ${colour ? "its coat colour" : "being an alicorn"} - keep them apart.`, f);
+    if (colour || alicorn) add("urgent", `${fluffyDisplayName(mum)} goes for ${fluffyDisplayName(f)} over ${colour ? "its coat colour" : "being an alicorn"} - keep them apart.`, f);
   }
   if (typeof shelter !== "undefined" && shelter && Array.isArray(shelter.residents) && typeof shelterDaysLeft === "function") {
     for (const r of shelter.residents) if (r.byYou && shelterDaysLeft(r) <= 0) add("urgent", `It's ${r.name}'s last day at the shelter.`);
@@ -142,7 +139,7 @@ function todayItems() {
   // ---- Chances ----
   const parties = [];
   for (const f of own) {
-    const n = _tdName(f);
+    const n = fluffyDisplayName(f);
     const wish = typeof wishText === "function" ? wishText(f) : null;
     if (wish) add("chance", `${n} wishes for: ${wish.charAt(0).toLowerCase()}${wish.slice(1)}.`, f);
     const party = typeof partyOccasion === "function" ? partyOccasion(f) : null;

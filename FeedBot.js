@@ -59,17 +59,11 @@ const FEEDBOT_MODES = [
 ];
 const FOOD_SPILL_LIFE = 300; // seconds before a spill is trodden in and gone
 
-function _fbNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _fbHour() {
   return typeof gameHour === "function" ? gameHour() : 12;
 }
 function _fbDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_fbNow() / 1200);
-}
-function _fbTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(timePlayed / 1200);
 }
 function _fbSay(f, key) {
   if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(["FEEDBOT", key], f));
@@ -78,8 +72,8 @@ function _fbSay(f, key) {
 // How likely this fluffy is to knock the Feed-Bot over (0 = never)
 function feedBotRowdiness(f) {
   let r = 0;
-  r += 0.5 * Math.max(0, _fbTrait(f, "energy"));
-  r += 0.6 * Math.max(0, _fbTrait(f, "temper")); // (bad-tempered)
+  r += 0.5 * Math.max(0, traitValue(f, "energy"));
+  r += 0.6 * Math.max(0, traitValue(f, "temper")); // (bad-tempered)
   r += 0.8 * (f.boredom || 0);
   if (f.hunger < 0.3) r += 0.5;
   if (f.isSmarty && f.isSmarty()) r += 1;
@@ -358,7 +352,7 @@ class FeedBot {
   // Knocked over (by a fluffy, or null). Returns "tipped" or "broken".
   tipOver(f = null) {
     if (this.state === "tipped" || this.state === "broken" || this.state === "away") return this.state;
-    const now = _fbNow();
+    const now = timePlayed;
     const again = now - this.lastTipAt < FEEDBOT_RETIP;
     this.lastTipAt = now;
     this._job = null;
@@ -687,11 +681,11 @@ class FoodSpill extends Bowl {
     this.foodType = foodType;
     this.food = amount;
     this.maxFood = amount;
-    this.bornAt = _fbNow();
+    this.bornAt = timePlayed;
   }
 
   update(dt) {
-    const now = _fbNow();
+    const now = timePlayed;
     if (this.food <= 0 || now - this.bornAt > FOOD_SPILL_LIFE || now < this.bornAt - 60) {
       const i = objects.indexOf(this);
       if (i >= 0) objects.splice(i, 1);
@@ -732,7 +726,7 @@ class FoodSpill extends Bowl {
     this.food = data.food || 0;
     this.maxFood = Math.max(1, this.food);
     this.foodType = data.foodType || "kibble";
-    this.bornAt = typeof data.bornAt === "number" ? data.bornAt : _fbNow();
+    this.bornAt = typeof data.bornAt === "number" ? data.bornAt : timePlayed;
   }
 
   drawOffScreen(c) {

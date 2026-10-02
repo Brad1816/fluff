@@ -47,12 +47,6 @@ function _inOk() {
   for (const [k, v] of Object.entries(freshInspector())) if (inspector[k] === undefined) inspector[k] = v;
   return inspector;
 }
-function _inDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
-function _inName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 function _inSay(t) {
   if (typeof addUIMessage === "function") addUIMessage(t);
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: t });
@@ -80,7 +74,7 @@ function inspectHouse() {
   };
   for (const f of typeof fluffies !== "undefined" ? fluffies : []) {
     if (!f.isAlive || !f.adopted || !scenes.includes(f.scene) || f.currentCage) continue;
-    const n = _inName(f);
+    const n = fluffyDisplayName(f);
     if (f.hunger < 0.2) add(serious, f, `${n} is starving`, 3);
     if (typeof titleOf === "function" && titleOf(f) === "Broken") add(serious, f, `${n} is broken in spirit`, 3);
     const missing = typeof f.getMissingBodyParts === "function" ? f.getMissingBodyParts() : [];
@@ -102,7 +96,7 @@ function inspectHouse() {
 function inspectorVisit() {
   const I = _inOk();
   I.visits++;
-  I.lastDay = _inDay();
+  I.lastDay = getDayNumber();
   I.warned = null;
   const r = inspectHouse();
   const out = { ...r, fine: 0, seized: [] };
@@ -131,7 +125,7 @@ function inspectorVisit() {
 
 // Taken to the shelter (or away, if there's no room there)
 function seizeFluffy(f) {
-  const n = _inName(f);
+  const n = fluffyDisplayName(f);
   if (typeof recordStory === "function") recordStory("turning", f, { x: `${n} was taken away by the welfare inspector.` });
   let res = null;
   if (typeof giveUpToShelter === "function" && typeof canGiveUpToShelter === "function" && canGiveUpToShelter()) {
@@ -153,7 +147,7 @@ function seizeFluffy(f) {
 // Each morning: maybe a letter, maybe a visit
 function _inMorning() {
   const I = _inOk();
-  const day = _inDay();
+  const day = getDayNumber();
   if (I.warned !== null && day > I.warned) return inspectorVisit();
   const chance = _badName() ? INSPECT_CHANCE_BAD : INSPECT_CHANCE;
   if (I.warned === null && day - I.lastDay > 2 && Math.random() < chance) {
@@ -173,7 +167,7 @@ function _sellCageMates(f) {
 function wholesaleActions(f) {
   const I = _inOk();
   const lot = _sellCageMates(f);
-  if (lot.length < 2 || I.wholesaleDay === _inDay()) return [];
+  if (lot.length < 2 || I.wholesaleDay === getDayNumber()) return [];
   const total = lot.reduce((s, o) => s + Math.round(o.calculatePrice() * WHOLESALE_SHARE), 0);
   return [{ key: "wholesale", name: "Sell the lot", sub: `${lot.length} for $${total}`, harsh: true, run: (x) => sellWholesale(x) }];
 }
@@ -182,7 +176,7 @@ function sellWholesale(f) {
   const I = _inOk();
   const lot = _sellCageMates(f);
   if (!lot.length) return 0;
-  I.wholesaleDay = _inDay();
+  I.wholesaleDay = getDayNumber();
   let total = 0;
   for (const o of lot) {
     const price = Math.round(o.calculatePrice() * WHOLESALE_SHARE);
@@ -205,7 +199,7 @@ function noteRehab(f, from, to) {
   const I = _inOk();
   I.rehabbed++;
   if (typeof keeperRep !== "undefined" && keeperRep) keeperRep.family = Math.min(40, (keeperRep.family || 0) + REHAB_REP);
-  const n = _inName(f);
+  const n = fluffyDisplayName(f);
   _inSay(`${n} has come back from being Broken. Word gets round: families hear you rehabilitate fluffies.`);
   if (typeof noteGoalEvent === "function") noteGoalEvent("rehab", {});
 }
@@ -214,7 +208,7 @@ const inspectorTicker = new Ticker(10);
 let _inCheckedDay = null;
 function updateInspector(dt) {
   if (!inspectorTicker.step(dt)) return;
-  const day = _inDay();
+  const day = getDayNumber();
   if (_inCheckedDay === day) return;
   const first = _inCheckedDay === null;
   _inCheckedDay = day;

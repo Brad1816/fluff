@@ -71,10 +71,6 @@ const BOND_WEIGHT = {
 
 const separationTicker = new Ticker(1);
 
-function _sepNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 function _relationTo(a, b) {
   const r = typeof relationships !== "undefined" && relationships[a.id] && relationships[a.id][b.id];
   return r || null;
@@ -141,7 +137,7 @@ function _isDeadParent(id) {
 
 // How was `f` taken? "family_killed" | "violent" | "orphaned" | "peaceful"
 function howTaken(f, fromScene = f.scene) {
-  const now = _sepNow();
+  const now = timePlayed;
   const recent = (t) => typeof t === "number" && now - t < RECENT_VIOLENCE;
   const fam = _family(f);
   if (fam.some((o) => !o.isAlive && o.killedByPlayer && (o.deathTimer || 0) < RECENT_VIOLENCE && o.scene === fromScene)) return "family_killed"; // (killed where it was: it saw)
@@ -158,7 +154,7 @@ function addTrauma(f, type) {
   if (!def || !f || !remembersBeingTaken(f)) return false;
   if (!Array.isArray(f.traumas)) f.traumas = [];
   if (f.traumas.some((t) => t.type === type)) return false;
-  f.traumas.push({ type, text: def.text, severity: def.severity, blames: def.blames, at: _sepNow() });
+  f.traumas.push({ type, text: def.text, severity: def.severity, blames: def.blames, at: timePlayed });
   if (typeof recordStory === "function") recordStory("scarred", f, { x: def.text });
   if (typeof noteDayEvent === "function") noteDayEvent("scarred", { name: _sepName(f) }); // morning report
   if (def.blames) {
@@ -203,7 +199,7 @@ function onFluffyTakenAway(f, fromScene) {
     names: top.map((l) => _sepName(l.f)),
     bond,
     grief: 0,
-    since: _sepNow(),
+    since: timePlayed,
     traumatised: false,
     herdId: h && top.some((l) => herdOf(l.f) === h) ? h.id : null,
     how,
@@ -247,7 +243,7 @@ function _anyAlive(s) {
 function updateSeparations(dt) {
   const step = separationTicker.step(dt); // seconds since last time, or 0 (Systems.js)
   if (!step) return;
-  const now = _sepNow();
+  const now = timePlayed;
   for (const f of fluffies) {
     if (f.isAlive && Array.isArray(f.traumas) && f.traumas.length) _traumaEffects(f, step);
   }

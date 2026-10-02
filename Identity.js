@@ -54,12 +54,6 @@ let _lastTurningMsgAt = -Infinity;
 const identityTicker = new Ticker(2);
 const namePrideTicker = new Ticker(30);
 
-function _idNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _idName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 function _idHe(f) {
   return f.gender === "male" ? { sub: "he", obj: "him", poss: "his" } : { sub: "she", obj: "her", poss: "her" };
 }
@@ -70,7 +64,7 @@ function noteTurningPoint(f, text, opts = {}) {
   if (!f || !text) return false;
   if (opts.record !== false && typeof recordStory === "function") recordStory("turning", f, { x: text });
   if (!f.adopted || opts.pop === false) return true;
-  const now = _idNow();
+  const now = timePlayed;
   if (now - _lastTurningMsgAt < TURNING_MIN_GAP) return true;
   if (f.lastTurningAt !== undefined && now - f.lastTurningAt < TURNING_GAP) return true;
   f.lastTurningAt = now;
@@ -98,7 +92,7 @@ function checkMilestones(f) {
     return [];
   }
   const m = f.milestones;
-  const n = _idName(f);
+  const n = fluffyDisplayName(f);
   const p = _idHe(f);
   const news = [];
   if (now.walk && !m.walk) news.push(`${n} took ${p.poss} first wobbly steps.`);
@@ -204,7 +198,7 @@ function fluffyCallsOther(speaker, target) {
 
 function onKindnessToNamed(f) {
   if (!f || typeof fluffyNames === "undefined" || !fluffyNames[f.id]) return;
-  const now = _idNow();
+  const now = timePlayed;
   if (f.nameCalledAt !== undefined && now - f.nameCalledAt < HOUR_LENGTH) return;
   f.nameCalledAt = now;
   f.changeHappiness(NAME_CALLED_BONUS);

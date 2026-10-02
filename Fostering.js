@@ -57,10 +57,6 @@ const FOSTER_BOND = 0.15; // liking each other, for life (Bonds.js getLiking)
 const FOSTER_LOSS_UNHAPPY = 0.3; // sold away from each other
 const fosterTicker = new Ticker(FOSTER_EVERY);
 
-function _fsNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 // Its mum is dead or gone (a foal still on milk, wild or yours)
 function isOrphanFoal(f) {
   if (!f || !f.isAlive || f.growth >= FOSTER_MAX_GROWTH) return false;
@@ -88,7 +84,7 @@ function fosterMumReason(m) {
   if (m.currentStateKey === "SLEEPING" || m.isDragging || m.placedOn || m.currentCage || m.isPregnant) return null;
   if (m.happiness <= WAN_DIE_THRESHOLD || m.health < 40) return null;
   if (_fsNursing(m) >= FOSTER_MAX_LITTER) return null;
-  const now = _fsNow();
+  const now = timePlayed;
   if (typeof m.lostFoalAt === "number" && m.lostFoalAt <= now && now - m.lostFoalAt <= FOSTER_GRIEF_DAYS * DAY_LENGTH) return "grieving";
   const temper = typeof traitValue === "function" ? traitValue(m, "temper") : 0;
   if (temper <= FOSTER_KIND_TEMPER && m.lactatingTimer > 0 && _fsNursing(m) > 0) return "kind";
@@ -196,7 +192,7 @@ function noteFosterLeft(gone, reason) {
     o.changeHappiness(-FOSTER_LOSS_UNHAPPY);
     if (typeof changePlayerTrust === "function" && o.adopted && (reason === "sold" || reason === "given up")) changePlayerTrust(o, -0.1);
     const isMum = gone.fosterMumId === o.id;
-    if (isMum) o.lostFoalAt = _fsNow(); // (a grieving mum again)
+    if (isMum) o.lostFoalAt = timePlayed; // (a grieving mum again)
     if (typeof recordStory === "function") recordStory("turning", o, { x: `${typeof fluffyDisplayName === "function" ? fluffyDisplayName(o) : "It"} lost ${isMum ? "the foster foal she took in" : "the foster mum who took it in"}.` });
     if (typeof getDialogue === "function") {
       if (o.tooYoungToSpeak()) o.speak(getDialogue(["FOSTER", "FOAL_LOST"], o, gone), true, true);
@@ -219,7 +215,7 @@ function describeFoster(f) {
 
 function updateFostering(dt) {
   if (typeof fluffies === "undefined") return;
-  const now = _fsNow();
+  const now = timePlayed;
   // On her way to a foal: steered every step (or she wanders off)
   for (const m of fluffies) {
     const job = m._fostering;

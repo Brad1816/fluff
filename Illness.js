@@ -76,14 +76,10 @@ function maybeCarryFlu(f, chance) {
   if (Math.random() < chance) catchFlu(f, Math.random() * FLU_HIDDEN * 2);
 }
 
-function _illName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
-
 function _announceFlu(f) {
   if (!f.adopted || f._fluAnnounced) return;
   f._fluAnnounced = true;
-  if (typeof addUIMessage === "function") addUIMessage(`${_illName(f)} has Fluffy flu! Keep it apart from the others.`);
+  if (typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} has Fluffy flu! Keep it apart from the others.`);
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: "Fluffy flu is going round your fluffies." });
 }
 
@@ -119,7 +115,7 @@ function updateIllness(dt) {
     if (f.illness.t >= FLU_LENGTH) {
       cureFlu(f);
       f._fluAnnounced = false;
-      if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${_illName(f)} is over the flu.`);
+      if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} is over the flu.`);
       continue;
     }
     if (f.illness.t < FLU_HIDDEN) continue;

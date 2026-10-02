@@ -48,20 +48,6 @@ function updateCorpses(dt) {
   }
 }
 
-// Horse.draw: set up the rotten look (returns true if it changed ctx, so
-// the caller restores it)
-function beginCorpseLook(c, f) {
-  const rot = corpseRot(f);
-  if (rot <= 0) return false;
-  const fade = corpseKeptForNow(f) ? Math.max(0.35, corpseFade(f)) : corpseFade(f);
-  c.save();
-  c.filter = `sepia(${(rot * 0.8).toFixed(2)}) saturate(${(1 - rot * 0.5).toFixed(2)}) hue-rotate(${Math.round(
-    rot * 35,
-  )}deg) brightness(${(1 - rot * 0.4).toFixed(2)})`;
-  c.globalAlpha *= fade;
-  return true;
-}
-
 // The same, drawn cheaply (Bath.js drawFluffyTinted): { tints, alpha } or null
 function corpseTint(f) {
   const rot = corpseRot(f);

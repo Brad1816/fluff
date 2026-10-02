@@ -91,10 +91,6 @@ function _hhReachable(scene) {
   return typeof playerQuartersAndNotBackyard === "function" && playerQuartersAndNotBackyard(scene);
 }
 
-function _hhName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Fluffy";
-}
-
 // (worked out at most every HH_CACHE_MS of real time while it's open)
 const HH_CACHE_MS = 400;
 let _hhCache = null;
@@ -120,7 +116,7 @@ function _computeHousehold() {
       room: householdRoomName(f.scene),
     };
   });
-  rows.sort((a, b) => b.words.length - a.words.length || _hhName(a.f).localeCompare(_hhName(b.f)));
+  rows.sort((a, b) => b.words.length - a.words.length || fluffyDisplayName(a.f).localeCompare(fluffyDisplayName(b.f)));
   return {
     rows,
     total: rows.length,
@@ -212,7 +208,7 @@ function _drawHouseholdRow(c, r, over) {
   c.textBaseline = "alphabetic";
   c.font = "bold 15px Arial";
   c.fillStyle = "white";
-  c.fillText(fitText(c, `${f.gender === "male" ? "♂" : "♀"} ${_hhName(f)}`, col("room") - col("name") - 10), col("name"), r.y + 24);
+  c.fillText(fitText(c, `${f.gender === "male" ? "♂" : "♀"} ${fluffyDisplayName(f)}`, col("room") - col("name") - 10), col("name"), r.y + 24);
   c.font = "12px Arial";
   c.fillStyle = "rgba(255,255,255,0.6)";
   const stage = typeof lifeStage === "function" ? lifeStage(f) : "";

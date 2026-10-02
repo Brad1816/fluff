@@ -2,12 +2,12 @@
 // The memorial tree (Fluff Mart, Home & Play, $200): a tree with a little
 // brass plaque, for the fluffies you've lost.
 //
-// The plaque (memorialPlaque, saved with the game) lists every one of your
-// fluffies that dies - its name, the day, and what took it - whether or not
-// (not stillborn foals - those that never lived, "Born ..." - nor wild ones)
-// you have a tree yet: plant one and they're all on it. Long-press (right-
-// click) the tree to read it. There's one plaque however many trees you
-// plant; it holds the last MEMORIAL_KEEP names.
+// The plaque lists every one of your fluffies that died - its name, the
+// day, and what took it. It reads the lives in the Memories book (Lives.js
+// livesBook: yours, not stillborn foals), so it's there whether or not you
+// had a tree yet: plant one and they're all on it. Long-press (right-click)
+// the tree to read it; tap a name to read that fluffy's life story. There's
+// one plaque however many trees you plant.
 //
 // Mourning: when one of yours dies, those close to it - its mum and dad,
 // its foals, its brothers and sisters, its special friend, and good
@@ -22,7 +22,6 @@
 // ---------------------------------------------------------------------------
 
 const MEMORIAL_PRICE = 200;
-const MEMORIAL_KEEP = 300;
 const MOURN_DAYS = 2;
 const MOURN_UNHAPPY = 0.015; // a game hour
 const MOURN_FRIEND = 0.5;
@@ -31,15 +30,8 @@ const MOURN_VISIT_NEAR = 110; // px: at the plaque
 const MOURN_VISIT_STAY = 15; // game seconds
 const MOURN_VISIT_JOY = 0.08;
 const MOURN_VISIT_EASE = 0.35; // of what's left
-let memorialPlaque = []; // [{ id, name, day, cause, foal }]
 const memorialTicker = new Ticker(3);
 
-function _mmNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _mmName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 
 class MemorialTree {
   constructor(scene = "BACKYARD") {
@@ -78,7 +70,7 @@ class MemorialTree {
     this.drawOffScreen(ctx);
   }
   drawOffScreen(ctx) {
-    drawMemorialTree(ctx, this.x, this.y, 1, memorialPlaque.length);
+    drawMemorialTree(ctx, this.x, this.y, 1, plaqueNames().length);
   }
 }
 
@@ -160,17 +152,21 @@ function memorialTrees() {
   return typeof objects !== "undefined" ? objects.filter((o) => o instanceof MemorialTree) : [];
 }
 
+// The names on the plaque, oldest first: [{ id, name, day, cause }]
+function plaqueNames() {
+  const lives = typeof livesBook !== "undefined" && livesBook && Array.isArray(livesBook.lives) ? livesBook.lives : [];
+  return lives.map((l) => {
+    const named = typeof fluffyNames !== "undefined" && fluffyNames[l.id];
+    return { id: l.id, name: named || (l.foal && /^Fluffy \(/.test(l.name) ? "A little foal" : l.name), day: l.day, cause: l.cause || "" };
+  });
+}
+
 // ---- When one of yours dies (HorseAnatomy.die) ----
-function rememberOnPlaque(f) {
+// (its name goes on the plaque by itself: Lives.js recordLife)
+function mournTheLost(f) {
   if (!f || !f.adopted) return false;
-  if (/^Born /.test(f.causeOfDeath || "")) return false; // (stillborn: not on the plaque)
-  if (memorialPlaque.some((e) => e.id === f.id)) return false;
-  const day = typeof getDayNumber === "function" ? getDayNumber() : 1;
-  const named = typeof fluffyNames !== "undefined" && fluffyNames[f.id];
-  memorialPlaque.push({ id: f.id, name: named ? _mmName(f) : f.growth < 0.36 ? "A little foal" : _mmName(f), day, cause: f.causeOfDeath || "", foal: f.growth < 1 });
-  if (memorialPlaque.length > MEMORIAL_KEEP) memorialPlaque.splice(0, memorialPlaque.length - MEMORIAL_KEEP);
-  startMourning(f);
-  return true;
+  if (/^Born /.test(f.causeOfDeath || "")) return false; // (stillborn: not mourned at the tree)
+  return startMourning(f) > 0;
 }
 
 // Those close to it mourn
@@ -187,17 +183,17 @@ function mournersOf(dead) {
 
 function startMourning(dead) {
   if (typeof fluffies === "undefined") return 0;
-  const now = _mmNow();
+  const now = timePlayed;
   let n = 0;
   for (const o of mournersOf(dead)) {
-    o.mourning = { id: dead.id, name: _mmName(dead), until: now + MOURN_DAYS * DAY_LENGTH, visited: false };
+    o.mourning = { id: dead.id, name: fluffyDisplayName(dead), until: now + MOURN_DAYS * DAY_LENGTH, visited: false };
     n++;
   }
   return n;
 }
 
 function isMourning(f) {
-  return !!(f && f.isAlive && f.mourning && f.mourning.until > _mmNow());
+  return !!(f && f.isAlive && f.mourning && f.mourning.until > timePlayed);
 }
 
 function _mmSay(f, key) {
@@ -209,12 +205,12 @@ function _mmSay(f, key) {
 // A visit to the tree: comfort, and less grief left
 function memorialVisit(f) {
   if (!isMourning(f)) return false;
-  const now = _mmNow();
+  const now = timePlayed;
   f.changeHappiness(MOURN_VISIT_JOY);
   f.mourning.until = now + (f.mourning.until - now) * (1 - MOURN_VISIT_EASE);
   if (!f.mourning.visited) {
     f.mourning.visited = true;
-    if (typeof recordStory === "function") recordStory("turning", f, { x: `${_mmName(f)} sat by ${f.mourning.name}'s name on the memorial tree.` });
+    if (typeof recordStory === "function") recordStory("turning", f, { x: `${fluffyDisplayName(f)} sat by ${f.mourning.name}'s name on the memorial tree.` });
   }
   _mmSay(f, "VISIT");
   return true;
@@ -223,13 +219,13 @@ function memorialVisit(f) {
 // Magnifying glass: [text, tone] or null
 function describeMourning(f) {
   if (!isMourning(f)) return null;
-  const hrs = Math.max(1, Math.round((f.mourning.until - _mmNow()) / HOUR_LENGTH));
+  const hrs = Math.max(1, Math.round((f.mourning.until - timePlayed) / HOUR_LENGTH));
   return [`Missing ${f.mourning.name} (${hrs}h)${memorialTrees().length ? "" : " - a memorial tree would help"}`, "bad"];
 }
 
 function updateMemorial(dt) {
   if (typeof fluffies === "undefined") return;
-  const now = _mmNow();
+  const now = timePlayed;
   // On the way to the tree, or sitting by it
   for (const f of fluffies) {
     const v = f._memVisit;
@@ -347,12 +343,13 @@ function drawMemorialPlaque(c) {
   c.font = "bold 22px Georgia, serif";
   c.fillText("In loving memory", px + pw / 2, py + 36);
   c.font = "13px Georgia, serif";
-  c.fillText(memorialPlaque.length ? `${memorialPlaque.length} remembered here` : "No names yet.", px + pw / 2, py + 56);
-  const list = memorialPlaque.slice().reverse();
+  const all = plaqueNames();
+  c.fillText(all.length ? `${all.length} remembered here · tap a name to read its story` : "No names yet.", px + pw / 2, py + 56);
+  const list = all.slice().reverse();
   const pages = Math.max(1, Math.ceil(list.length / MEMORIAL_PER_PAGE));
   memorialPage = Math.max(0, Math.min(pages - 1, memorialPage));
   const shown = list.slice(memorialPage * MEMORIAL_PER_PAGE, (memorialPage + 1) * MEMORIAL_PER_PAGE);
-  const rowH = Math.min(26, (ph - 80) / MEMORIAL_PER_PAGE);
+  const rowH = _plaqueRowH(L);
   shown.forEach((e, i) => {
     const ry = py + 84 + i * rowH;
     c.textAlign = "left";
@@ -382,6 +379,33 @@ function drawMemorialPlaque(c) {
   c.restore();
 }
 
+function _plaqueRowH(L) {
+  return Math.min(26, (L.h - 100 - 80) / MEMORIAL_PER_PAGE);
+}
+
+// The name under (x, y) on the open plaque, or null
+function plaqueNameAt(x, y) {
+  const L = getMemorialLayout();
+  const list = plaqueNames().reverse();
+  const shown = list.slice(memorialPage * MEMORIAL_PER_PAGE, (memorialPage + 1) * MEMORIAL_PER_PAGE);
+  const rowH = _plaqueRowH(L);
+  const top = L.y + 24 + 84;
+  if (x < L.x + 24 || x > L.x + L.w - 24) return null;
+  const i = Math.floor((y - top + rowH * 0.75) / rowH);
+  return i >= 0 && i < shown.length ? shown[i] : null;
+}
+
+// Its life story, in the Memories book (Lives.js)
+function readLifeFromPlaque(id) {
+  if (typeof openMemoriesBook !== "function" || typeof livesReading === "undefined") return false;
+  closeMemorial();
+  openMemoriesBook();
+  memoriesBookTab = "lives";
+  livesReading = id;
+  if (typeof lifeStoryPage !== "undefined") lifeStoryPage = 0;
+  return true;
+}
+
 function handleMemorialClick() {
   if (!memorialOpen) return false;
   const L = getMemorialLayout();
@@ -389,6 +413,10 @@ function handleMemorialClick() {
   if (hit(L.close) || !isPointInRect(mouse.x, mouse.y, L.x, L.y, L.w, L.h)) closeMemorial();
   else if (hit(L.prev)) memorialPage--;
   else if (hit(L.next)) memorialPage++;
+  else {
+    const e = plaqueNameAt(mouse.x, mouse.y);
+    if (e) readLifeFromPlaque(e.id);
+  }
   return true;
 }
 
@@ -427,11 +455,3 @@ if (typeof ITEM_TYPES !== "undefined") {
   });
 }
 if (typeof SAVED_CLASSES !== "undefined") SAVED_CLASSES.MemorialTree = (d) => new MemorialTree(d.scene);
-if (typeof SAVED_GAME_STATE !== "undefined") {
-  SAVED_GAME_STATE.push({
-    name: "memorialPlaque",
-    get: () => memorialPlaque,
-    set: (v) => (memorialPlaque = Array.isArray(v) ? v : []),
-    fresh: () => [],
-  });
-}

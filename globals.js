@@ -140,8 +140,22 @@ function isAlleyScene(sceneName) {
   return cfg ? !!cfg.isAlley : false;
 }
 
-function isAlley(sceneName) {
-  return isAlleyScene(sceneName);
+// Shared drawing helpers (were copied into several screens)
+function roundRectPath(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
+function canvasText(c, text, x, y, color = "white", font = "14px Arial", align = "left") {
+  c.font = font;
+  c.fillStyle = color;
+  c.textAlign = align;
+  c.fillText(text, x, y);
 }
 
 function sceneHasWall(sceneName) {
@@ -1476,7 +1490,6 @@ const FULL_SPEECH_THRESHOLD = 0.35;
 const WALKY_THRESHOLD = 0.3;
 const CHIRPY_THRESHOLD = 0.15;
 const MISCARRIAGE_LABOR_DELAY = 10; // Seconds from a miscarriage starting until labor
-const PREMATURE_BIRTH_MIN_PROGRESS = 0.25; // Births earlier than this in a pregnancy leave no body
 
 // Poopie colours: the browns. Random "bad" coats are made near these
 // (generateRandomGenes); judging a coat is judgeCoatColour below.

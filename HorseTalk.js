@@ -5,6 +5,8 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+const TRAUMA_TALK_DAYS = 3; // game days a fluffy talks about a bad thing that happened to it
+
 addHorseMethods({
   getAphrodisiacDialogue() {
     return getDialogue("APHRODISIAC", this);
@@ -141,6 +143,25 @@ addHorseMethods({
         const babyId = lostBabies[Math.floor(Math.random() * lostBabies.length)];
         const baby = fluffies.find((f) => f.id == babyId);
         text = getDialogue(["TRAUMA", "BABY"], this, baby);
+      }
+    }
+
+    // Something bad that happened to it (traumaMemory: a miscarriage, lost
+    // legs, its lumps): it talks about it now and then for a few days
+    if (!text && !this.tooYoungToSpeak() && Array.isArray(this.traumaMemory) && this.traumaMemory.length) {
+      const now = timePlayed;
+      const kept = {};
+      for (const tm of this.traumaMemory) {
+        if (!tm || !tm.type) continue;
+        if (typeof tm.since !== "number") tm.since = now;
+        if (now - tm.since > TRAUMA_TALK_DAYS * DAY_LENGTH) continue;
+        if (!kept[tm.type] || kept[tm.type].since < tm.since) kept[tm.type] = tm;
+      }
+      this.traumaMemory = Object.values(kept);
+      const talkable = this.traumaMemory.filter((tm) => DIALOGUE.TRAUMA[String(tm.type).toUpperCase()]);
+      if (talkable.length && Math.random() < 0.25) {
+        const tm = talkable[Math.floor(Math.random() * talkable.length)];
+        text = getDialogue(["TRAUMA", String(tm.type).toUpperCase()], this);
       }
     }
 

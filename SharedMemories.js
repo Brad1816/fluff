@@ -59,11 +59,8 @@ function _shmOk() {
   if (typeof sharedMemories.nextId !== "number") sharedMemories.nextId = sharedMemories.list.length + 1;
   return sharedMemories;
 }
-function _shmNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _shmDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_shmNow() / DAY_LENGTH) + 1;
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(timePlayed / DAY_LENGTH) + 1;
 }
 function _shmName(f) {
   if (!f) return null;
@@ -108,7 +105,7 @@ function _shmBond(a, b) {
 // enough of them - a memory is only shared by 2+).
 function makeSharedMemory(kind, name, who, opts = {}) {
   _shmOk();
-  const now = _shmNow();
+  const now = timePlayed;
   const scene = opts.scene || (who[0] && who[0].scene) || null;
   const key = opts.key || kind;
   let m = sharedMemories.list.find((x) => x.key === key && x.kind === kind && now - x.t >= 0 && now - x.t < (opts.window || SM_WINDOW));
@@ -171,7 +168,7 @@ function noteSharedStory(kind, ids, opts = {}) {
     const mum = _shmById(ids[1]);
     if (!foal || !mum || !mum.adopted) return;
     const watchers = _shmWatchers(mum.scene, [foal, mum]);
-    const open = _shmOk().list.find((m) => m.key === `birth:${mum.id}` && _shmNow() - m.t < SM_WINDOW);
+    const open = _shmOk().list.find((m) => m.key === `birth:${mum.id}` && timePlayed - m.t < SM_WINDOW);
     if (!open && watchers.length < 2) return;
     const foals = (open ? open.foals || 0 : 0) + 1;
     const n = _shmName(mum);
@@ -231,7 +228,7 @@ function noteSharedComfort(f) {
 function noteSharedFight(attacker, victim) {
   if (!attacker || !victim || (!attacker.adopted && !victim.adopted)) return;
   const scene = victim.scene;
-  const now = _shmNow();
+  const now = timePlayed;
   let fg = _shmFights[scene];
   if (!fg || !(now >= fg.t) || now - fg.t > SM_WINDOW) fg = _shmFights[scene] = { t: now, hits: 0, who: new Set() };
   fg.hits++;

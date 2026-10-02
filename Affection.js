@@ -83,14 +83,8 @@ Object.assign(MEMORY_TEXT, {
 const affectionTicker = new Ticker(2);
 let affectionPops = []; // little hearts over fluffies (not saved)
 
-function _affNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _affDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_affNow() / 1200);
-}
-function _affName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(timePlayed / 1200);
 }
 
 function affectionLevel(f) {
@@ -126,7 +120,7 @@ function giveAffection(f, type, scale = 1) {
   const act = AFFECTION_ACTS[type];
   if (!act) return 0;
   ensurePlayerMemory(f);
-  const now = _affNow();
+  const now = timePlayed;
   const day = _affDay();
   if (!f.affectionToday || f.affectionToday.day !== day) f.affectionToday = { day, n: {}, at: {} };
   const today = f.affectionToday;
@@ -169,7 +163,7 @@ function loseAffection(f, type, amount, remember = true) {
 function onAffectionChanged(f, before) {
   if (!f || typeof before !== "number") return;
   const d = f.playerTrust - before;
-  const now = _affNow();
+  const now = timePlayed;
   if (Math.abs(d) >= 0.015 && f.isAlive) {
     if (!f._lastHeartPop || now - f._lastHeartPop > 1 || typeof timePlayed !== "number") {
       f._lastHeartPop = now;
@@ -185,11 +179,11 @@ function onAffectionChanged(f, before) {
   if (f._affMsgAt && now - f._affMsgAt < 60) return;
   const up = rank[lvlNow] > rank[lvlBefore];
   let msg = null;
-  if (up && lvlNow === "loves") msg = `${_affName(f)} loves you now! ♥`;
+  if (up && lvlNow === "loves") msg = `${fluffyDisplayName(f)} loves you now! ♥`;
   if (up && (lvlNow === "loves" || lvlNow === "adores") && typeof noteWeekLoved === "function") noteWeekLoved(f); // (WeekSummary.js)
-  else if (up && lvlNow === "adores") msg = `${_affName(f)} adores you! ♥♥`;
-  else if (!up && lvlBefore === "loves") msg = `${_affName(f)} doesn't love you like before.`;
-  else if (!up && lvlNow === "dislikes") msg = `${_affName(f)} doesn't like you any more.`;
+  else if (up && lvlNow === "adores") msg = `${fluffyDisplayName(f)} adores you! ♥♥`;
+  else if (!up && lvlBefore === "loves") msg = `${fluffyDisplayName(f)} doesn't love you like before.`;
+  else if (!up && lvlNow === "dislikes") msg = `${fluffyDisplayName(f)} doesn't like you any more.`;
   if (msg) {
     f._affMsgAt = now;
     if (typeof addUIMessage === "function") addUIMessage(msg);
@@ -259,7 +253,7 @@ function brushDialogueKey(f, key) {
 function updateAffection(dt) {
   const step = affectionTicker.step(dt);
   if (!step) return;
-  const now = _affNow();
+  const now = timePlayed;
   const hours = step / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
   const day = _affDay();
   for (const f of fluffies) {

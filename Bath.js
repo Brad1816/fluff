@@ -47,15 +47,6 @@ const BATH_GET_USED = 0.08;
 
 const bathTicker = new Ticker(1);
 
-function _bNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _bTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
-}
-function _bName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
-}
 
 function dirtOf(f) {
   return typeof f.dirt === "number" ? f.dirt : 0;
@@ -78,9 +69,9 @@ function dirtLevel(f) {
 function bathLike(f) {
   if (typeof f.bathLike !== "number") {
     let v = Math.random() * 1.4 - 0.7;
-    v -= 0.3 * _bTrait(f, "temper"); // gentle +, grumpy -
-    v += 0.2 * _bTrait(f, "energy"); // playful like splashing
-    v += 0.2 * _bTrait(f, "bravery"); // timid ones are scared of it
+    v -= 0.3 * traitValue(f, "temper"); // gentle +, grumpy -
+    v += 0.2 * traitValue(f, "energy"); // playful like splashing
+    v += 0.2 * traitValue(f, "bravery"); // timid ones are scared of it
     f.bathLike = Math.round(Math.max(-1, Math.min(1, v)) * 100) / 100;
   }
   return f.bathLike;
@@ -169,7 +160,7 @@ function scrubFluffy(f) {
   if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
     poofs.push(new Poof(f.x + (Math.random() - 0.5) * 50, f.y - 40 - Math.random() * 40, f.scene, "#e8f6ff"));
   }
-  const now = _bNow();
+  const now = timePlayed;
   if (f._bathAt !== undefined && now - f._bathAt < BATH_SESSION) {
     if (before > 0 && f.dirt === 0 && !f._bathCleanSaid) {
       f._bathCleanSaid = true;
@@ -267,7 +258,7 @@ function drawFluffyTinted(ctx, f, clip, tints, alpha = 1) {
 // Flies and smell lines over a filthy fluffy
 function drawDirtEffects(c, f) {
   if (dirtLevel(f) !== "filthy" || !f.isAlive) return;
-  const t = _bNow();
+  const t = timePlayed;
   const top = f.y - 60 - 50 * (f.growth || 1);
   c.save();
   c.strokeStyle = "rgba(120, 140, 60, 0.55)";
@@ -314,7 +305,7 @@ function updateBath(dt) {
   if (!step) return;
   const hours = step / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
   const day = typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200;
-  const now = _bNow();
+  const now = timePlayed;
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted || f.isDragging) continue;
     let add = (DIRT_PER_DAY / day) * step;

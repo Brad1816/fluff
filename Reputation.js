@@ -42,9 +42,6 @@ function _krOk() {
   if (!Array.isArray(keeperRep.notes)) keeperRep.notes = [];
   return keeperRep;
 }
-function _krDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
 
 // What it was like when it left
 function saleProfile(f) {
@@ -81,7 +78,7 @@ function noteSoldForRep(f, reason) {
     return;
   }
   if (Math.random() > (NOTE_CHANCE[buyer] ?? 0.4)) return;
-  r.pending.push({ due: _krDay() + 1 + Math.floor(Math.random() * 3), buyer, p });
+  r.pending.push({ due: getDayNumber() + 1 + Math.floor(Math.random() * 3), buyer, p });
   if (r.pending.length > 40) r.pending.shift();
 }
 
@@ -124,7 +121,7 @@ function writeOwnerNote(p, buyer) {
 // Once a game day: notes that are due arrive (one or two)
 function _deliverNotes() {
   const r = _krOk();
-  const day = _krDay();
+  const day = getDayNumber();
   let sent = 0;
   for (const item of r.pending.slice()) {
     if (item.due > day || sent >= 2) continue;
@@ -177,7 +174,7 @@ const reputationTicker = new Ticker(10);
 let _repDay = null;
 function updateReputation(dt) {
   if (!reputationTicker.step(dt)) return;
-  const day = _krDay();
+  const day = getDayNumber();
   if (_repDay === day) return;
   _repDay = day;
   _deliverNotes();

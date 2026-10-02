@@ -73,21 +73,13 @@ function ensurePlayerMemory(f) {
   if (!Array.isArray(f.playerMemories)) f.playerMemories = [];
 }
 
-function _memNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
-function _traitVal(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
-}
-
 function rememberPlayerEvent(f, type) {
   ensurePlayerMemory(f);
   // Harm goes in the story book (the kind things are tallied by Affection.js);
   // a squirt of water is only a telling-off
   if (MEMORY_HARM_TYPES.has(type) && typeof recordStory === "function") recordStory("harmed", f, { x: MEMORY_TEXT[type] || type });
   else if (type === "spray" && typeof recordStory === "function") recordStory("scolded", f);
-  const now = _memNow();
+  const now = timePlayed;
   // The same thing again within a minute just refreshes the time
   const last = f.playerMemories[0];
   if (last && last.type === type && now - last.t < 60) {
@@ -102,7 +94,7 @@ function rememberPlayerEvent(f, type) {
 function changePlayerTrust(f, amount) {
   ensurePlayerMemory(f);
   // Social fluffies warm up to you faster
-  if (amount > 0) amount *= 1 + 0.3 * _traitVal(f, "social");
+  if (amount > 0) amount *= 1 + 0.3 * traitValue(f, "social");
   // A Survivor is loyal, a Wary one slow to believe (Titles.js)
   if (amount > 0 && typeof titleTrustMultiplier === "function") amount *= titleTrustMultiplier(f);
   const before = f.playerTrust;
@@ -114,8 +106,8 @@ function changePlayerFear(f, amount) {
   ensurePlayerMemory(f);
   if (amount > 0) {
     // Brave fluffies scare less easily, timid ones more
-    amount *= 1 - 0.4 * _traitVal(f, "bravery");
-    f.lastHurtByPlayerAt = _memNow();
+    amount *= 1 - 0.4 * traitValue(f, "bravery");
+    f.lastHurtByPlayerAt = timePlayed;
     // Being hurt also costs trust (affection, Affection.js)
     const before = f.playerTrust;
     f.playerTrust = clamp(f.playerTrust - amount * 0.6, 0, 1);
@@ -139,7 +131,7 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
   if (isAmputation && (weaponType === "knife" || weaponType === "scalpel")) fear += 0.2;
   // For Separation.js: was it hurt or killed by you shortly before being taken?
   if (!isTraining) {
-    victim.hurtByPlayerAt = _memNow();
+    victim.hurtByPlayerAt = timePlayed;
     if (isDead || !victim.isAlive) victim.killedByPlayer = true;
   }
   if (!isDead && victim.isAlive) {
@@ -188,7 +180,7 @@ function onFluffyPickedUp(f) {
   if (!f.isAlive) return;
   if (typeof onComfortedByYou === "function") onComfortedByYou(f, "held"); // a cuddle when frightened (Fears.js)
   ensurePlayerMemory(f);
-  const now = _memNow();
+  const now = timePlayed;
   if (f._lastPickupReaction && now - f._lastPickupReaction < 20) return;
   f._lastPickupReaction = now;
   const canTalk = !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING";
@@ -221,11 +213,11 @@ function onFluffyPickedUp(f) {
 function updatePlayerMemory(f, dt) {
   if (!f.isAlive) return;
   ensurePlayerMemory(f);
-  const now = _memNow();
+  const now = timePlayed;
 
   // Fear fades once it's been a while; gentle fluffies forgive faster
   if (f.playerFear > 0 && now - (f.lastHurtByPlayerAt || -1e9) > FEAR_FADE_DELAY) {
-    let forgive = 1 - 0.5 * _traitVal(f, "temper"); // gentle 1.5x, grumpy 0.5x
+    let forgive = 1 - 0.5 * traitValue(f, "temper"); // gentle 1.5x, grumpy 0.5x
     if (f.playerTrust >= 0.75) forgive *= 1.5; // it loves you (Affection.js)
     f.playerFear = Math.max(0, f.playerFear - (FEAR_FADE_PER_MIN / 60) * forgive * dt);
   }
@@ -273,7 +265,7 @@ function isFriendlyWithPeople(f) {
 function describePlayerMemories(f, max = 2) {
   ensurePlayerMemory(f);
   if (!f.playerMemories.length) return "Nothing special yet";
-  const now = _memNow();
+  const now = timePlayed;
   return f.playerMemories
     .slice(0, max)
     .map((m) => {

@@ -33,9 +33,6 @@ const SMARTY_BULLY_DAMAGE = 4;
 const SMARTY_BULLY_FLOOR = 30; // a shove never takes health below this
 const SMARTY_ENFIES_GAP = [2 * HOUR_LENGTH, 5 * HOUR_LENGTH];
 
-function _smNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _smGap(range) {
   return range[0] + Math.random() * (range[1] - range[0]);
 }
@@ -48,16 +45,16 @@ function smartyInBadMood(s) {
 function noteSmartyProvoked(s, by) {
   if (!s || !by || s === by) return;
   s.smartyProvokerId = by.id;
-  s.smartyProvokedUntil = _smNow() + SMARTY_PROVOKED_TIME;
+  s.smartyProvokedUntil = timePlayed + SMARTY_PROVOKED_TIME;
   if (s.smartySettled) delete s.smartySettled[by.id]; // a new quarrel
   if (s.smartyQuarrelHits) delete s.smartyQuarrelHits[by.id];
 }
 
 function smartyProvokedBy(s, f) {
   if (!s || !f) return false;
-  if (s.smartyProvokerId === f.id && _smNow() < (s.smartyProvokedUntil || 0)) return true;
+  if (s.smartyProvokerId === f.id && timePlayed < (s.smartyProvokedUntil || 0)) return true;
   // A deep grudge, unless it has already made its point lately
-  if (s.smartySettled && _smNow() < (s.smartySettled[f.id] || 0)) return false;
+  if (s.smartySettled && timePlayed < (s.smartySettled[f.id] || 0)) return false;
   return typeof getOpinion === "function" && typeof OPINION_GRUDGE !== "undefined" && getOpinion(s, f) <= OPINION_GRUDGE;
 }
 
@@ -66,7 +63,7 @@ function smartySettle(s, f) {
   if (!s || !f) return;
   if (s.smartyProvokerId === f.id) s.smartyProvokedUntil = 0;
   if (!s.smartySettled) s.smartySettled = {};
-  s.smartySettled[f.id] = _smNow() + SMARTY_SETTLED_TIME;
+  s.smartySettled[f.id] = timePlayed + SMARTY_SETTLED_TIME;
   if (s.smartyQuarrelHits) delete s.smartyQuarrelHits[f.id];
 }
 
@@ -140,7 +137,7 @@ function smartyFightTarget(s) {
 
 // A good-mood bully: now and then, someone outside its circle to shove
 function smartyBullyTarget(s) {
-  const now = _smNow();
+  const now = timePlayed;
   if (s.smartyNextBullyAt === undefined) s.smartyNextBullyAt = now + _smGap(SMARTY_BULLY_GAP);
   if (now < s.smartyNextBullyAt) return null;
   let best = null;
@@ -160,13 +157,13 @@ function smartyBullyTarget(s) {
 }
 
 function smartyDidBully(s) {
-  s.smartyNextBullyAt = _smNow() + _smGap(SMARTY_BULLY_GAP);
+  s.smartyNextBullyAt = timePlayed + _smGap(SMARTY_BULLY_GAP);
 }
 
 // Enfies: not again for a while
 function smartyReadyForEnfies(s) {
-  return _smNow() >= (s.smartyNextEnfiesAt || 0);
+  return timePlayed >= (s.smartyNextEnfiesAt || 0);
 }
 function smartyDidEnfies(s) {
-  s.smartyNextEnfiesAt = _smNow() + _smGap(SMARTY_ENFIES_GAP);
+  s.smartyNextEnfiesAt = timePlayed + _smGap(SMARTY_ENFIES_GAP);
 }

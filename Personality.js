@@ -73,9 +73,6 @@ const personalityTicker = new Ticker(5);
 function _pnHe(f) {
   return f.gender === "male" ? { sub: "he", obj: "him", poss: "his", Sub: "He" } : { sub: "she", obj: "her", poss: "her", Sub: "She" };
 }
-function _pnName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
-}
 function _pnWords(kind, f) {
   const w = FAVOURITE_CARE_WORDS[kind];
   const p = _pnHe(f);
@@ -108,7 +105,7 @@ function onFavouriteCare(f, type) {
       ? `${p.Sub} was never much for ${FAVOURITE_CARE_WORDS[other].never}, but ${p.sub}'d melt when you ${w.did}.`
       : `Nothing made ${p.obj} happier than ${w.ing}.`;
     if (typeof recordStory === "function") recordStory("fav_found", f, { x: line });
-    if (typeof noteTurningPoint === "function") noteTurningPoint(f, `${_pnName(f)} loves ${w.ing} most of all.`, { record: false });
+    if (typeof noteTurningPoint === "function") noteTurningPoint(f, `${fluffyDisplayName(f)} loves ${w.ing} most of all.`, { record: false });
   }
   return FAVOURITE_TRUST_BONUS;
 }
@@ -142,10 +139,6 @@ function describeTraitShifts(f) {
 
 // ---- Personality growth ----
 
-function traitShiftOf(f, key) {
-  return (f && f.traitShift && f.traitShift[key]) || 0;
-}
-
 // Move a trait a step and say why in its story. Returns true if it moved.
 function shiftTrait(f, rule, extra = "") {
   const r = GROWTH_RULES[rule];
@@ -159,7 +152,7 @@ function shiftTrait(f, rule, extra = "") {
   if (next === now) return false;
   f.traitShift[r.trait] = Math.round(next * 100) / 100;
   f.growthProgress[`${rule}Times`] = times + 1;
-  const line = r.why(_pnName(f), _pnHe(f), extra);
+  const line = r.why(fluffyDisplayName(f), _pnHe(f), extra);
   if (typeof recordStory === "function") recordStory("trait_shift", f, { x: line });
   return true;
 }

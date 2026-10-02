@@ -27,9 +27,6 @@ let strayVisits = []; // [{ ids: [...] }] waiting for you to decide
 let strayQuestionsEnabled = true; // (the tests switch the question off, like naming pop-ups)
 const strayTicker = new Ticker(1);
 
-function _stName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "Fluffy";
-}
 function _stShort(f) {
   return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "this fluffy";
 }

@@ -59,10 +59,6 @@ function scarsOf(f) {
   return f && Array.isArray(f.scars) ? f.scars : [];
 }
 
-function _scDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : 1;
-}
-
 // Leaves a scar. Returns it (or null: no room left for a new one).
 // opts.at: where on the body (a burn: the wound it closed); opts.always:
 // it's left even when it already has SCAR_MAX (a burn is never skipped)
@@ -72,7 +68,7 @@ function addScar(f, kind, how, opts = {}) {
   if (f.scars.length >= SCAR_MAX && !opts.always) return null;
   // (a tail it hasn't got can't be crooked)
   if (kind === "tail" && f.limbs && f.limbs.tail === false) kind = "flank";
-  const scar = { kind, how: String(how || "Hurt"), day: _scDay(), where: _scPlace(f.scene) };
+  const scar = { kind, how: String(how || "Hurt"), day: getDayNumber(), where: _scPlace(f.scene) };
   if (opts.at) scar.at = opts.at;
   f.scars.push(scar);
   const name = SCAR_KINDS[kind].name;
@@ -121,14 +117,14 @@ function scarFromFight(victim, attacker, move) {
   const kinds = SCAR_FROM[move] || SCAR_FROM.FLUFFY_JAB;
   const who = typeof fluffyDisplayName === "function" && attacker ? fluffyDisplayName(attacker) : "another fluffy";
   const verb = move === "FLUFFY_BITE" ? "Bitten" : "Stomped on";
-  return addScar(victim, _scPick(kinds), `${verb} by ${who} in a fight on day ${_scDay()}`);
+  return addScar(victim, _scPick(kinds), `${verb} by ${who} in a fight on day ${getDayNumber()}`);
 }
 
 // Memory.notePlayerViolence: you hurt it
 function scarFromYou(victim, weaponType) {
   const p = SCAR_WEAPON_CHANCE[weaponType];
   if (!victim || !p || Math.random() > p) return null;
-  return addScar(victim, _scPick(SCAR_FROM[weaponType]), `${SCAR_WEAPON_WORDS[weaponType]} on day ${_scDay()}`);
+  return addScar(victim, _scPick(SCAR_FROM[weaponType]), `${SCAR_WEAPON_WORDS[weaponType]} on day ${getDayNumber()}`);
 }
 
 // Shows.showScore

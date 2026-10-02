@@ -22,10 +22,6 @@ const PERCH_CHANCE = 0.25; // a game hour, of going over (each fluffy)
 const PERCH_GIVE_UP = 40; // game seconds to get there
 const perchTicker = new Ticker(2);
 
-function _pcNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 class Perch {
   constructor(scene = "INDOORS") {
     this.id = nextObjectId++;
@@ -154,7 +150,7 @@ function isPractisingFlight(f) {
 
 function updatePerches(dt) {
   if (typeof fluffies === "undefined" || typeof objects === "undefined") return;
-  const now = _pcNow();
+  const now = timePlayed;
   // On their way, or hopping
   for (const f of fluffies) {
     const p = f._perch;

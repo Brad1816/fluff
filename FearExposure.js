@@ -22,10 +22,6 @@ const FORCE_WORKS = 0.6;
 const FORCE_BACKFIRE = 0.15;
 const EXPOSE_REST = 1; // game days between goes
 
-function _exNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 // The fear it'd face: its worst
 function worstFear(f) {
   if (typeof realFears !== "function") return null;
@@ -36,16 +32,12 @@ function worstFear(f) {
 function canFaceFear(f) {
   if (!f || !f.isAlive || !f.adopted || f.tooYoungToWalk() || f.currentStateKey === "SLEEPING") return false;
   if (typeof isFrightened === "function" && isFrightened(f)) return false;
-  if (typeof f._exposedAt === "number" && _exNow() - f._exposedAt < EXPOSE_REST * DAY_LENGTH && _exNow() >= f._exposedAt) return false;
+  if (typeof f._exposedAt === "number" && timePlayed - f._exposedAt < EXPOSE_REST * DAY_LENGTH && timePlayed >= f._exposedAt) return false;
   return !!worstFear(f);
 }
 
-function _exName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
-}
-
 function _exOver(f, fe, before) {
-  if (before >= FEAR_MIN && fearOf(f, fe.key) < FEAR_MIN && typeof recordStory === "function") recordStory("turning", f, { x: `${_exName(f)} got over ${fe.name === "the dark" ? "its fear of the dark" : `its fear of ${fe.name}`}.` });
+  if (before >= FEAR_MIN && fearOf(f, fe.key) < FEAR_MIN && typeof recordStory === "function") recordStory("turning", f, { x: `${fluffyDisplayName(f)} got over ${fe.name === "the dark" ? "its fear of the dark" : `its fear of ${fe.name}`}.` });
 }
 
 // Kind: a little, safely
@@ -55,7 +47,7 @@ function faceFearGently(f) {
   const before = fearOf(f, fe.key);
   const k = (f.playerTrust || 0) >= 0.5 ? EXPOSE_TRUST_BONUS : 1;
   changeFear(f, fe.key, -EXPOSE_GENTLE * k);
-  f._exposedAt = _exNow();
+  f._exposedAt = timePlayed;
   if (typeof giveAffection === "function") giveAffection(f, "treat"); // (a treat and a cuddle)
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["FACE_FEAR", "GENTLE"], f), true);
   _exOver(f, fe, before);
@@ -67,7 +59,7 @@ function forceFaceFear(f) {
   if (!canFaceFear(f)) return false;
   const fe = worstFear(f);
   const before = fearOf(f, fe.key);
-  f._exposedAt = _exNow();
+  f._exposedAt = timePlayed;
   f.changeHappiness(-0.12);
   if (typeof rememberPlayerEvent === "function") rememberPlayerEvent(f, "forced_fear");
   if (typeof changePlayerFear === "function") changePlayerFear(f, 0.06);
@@ -85,7 +77,7 @@ function forceFaceFear(f) {
     startFright(f, fe.key);
   }
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function") f.speak(getDialogue(["FACE_FEAR", "BACKFIRE"], f), true);
-  if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${_exName(f)} panicked - forcing it made its fear of ${fe.name} worse.`);
+  if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} panicked - forcing it made its fear of ${fe.name} worse.`);
   return "backfired";
 }
 

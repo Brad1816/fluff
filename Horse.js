@@ -79,6 +79,9 @@ function notifyViolence(
 const THINK_EVERY_HERE = 0.05; // seconds between a fluffy's decisions where you're looking
 const THINK_EVERY_AWAY = 0.1; // ...and elsewhere
 
+// True while Horse.deserialize builds a fluffy from a save (see the constructor)
+let horseBeingLoaded = false;
+
 class Horse {
   get layout() {
     return this.renderer.layout;
@@ -213,11 +216,13 @@ class Horse {
       this.brain.addDesire(new DefendTerritoryDesire());
       this.brain.addDesire(new LeaveTerritoryDesire());
     }
-    this.id = nextFluffyId++;
+    // (Loading a save: Horse.deserialize sets the real id and the saved
+    // relationships, so don't use up an id or write family links for one)
+    this.id = horseBeingLoaded ? -1 : nextFluffyId++;
     this.age = 0;
     this.motherId = motherId;
     this.fatherId = null;
-    relationships[this.id] = {};
+    if (!horseBeingLoaded) relationships[this.id] = {};
     this.herdId = null;
 
     this.gender = gender || (Math.random() < 0.5 ? "male" : "female");
@@ -494,7 +499,7 @@ class Horse {
       this.limbs.horn = true;
     }
 
-    if (motherId !== null) {
+    if (motherId !== null && !horseBeingLoaded) {
       relationships[this.id][motherId] = "mother";
       if (relationships[motherId]) {
         const mom = fluffies.find((f) => f.id == motherId);
@@ -2067,16 +2072,22 @@ class Horse {
   }
 
   static deserialize(data) {
-    const horse = new Horse(
-      data.growth,
-      data.motherId,
-      data.scene,
-      "earthy", // Placeholder, will be overriden by genes
-      data.genes,
-      null,
-      null,
-      data.gender,
-    );
+    let horse;
+    horseBeingLoaded = true;
+    try {
+      horse = new Horse(
+        data.growth,
+        data.motherId,
+        data.scene,
+        "earthy", // Placeholder, will be overriden by genes
+        data.genes,
+        null,
+        null,
+        data.gender,
+      );
+    } finally {
+      horseBeingLoaded = false;
+    }
 
     horse.id = data.id;
     // Everything in SAVED_HORSE_FIELDS (HorseSave.js)

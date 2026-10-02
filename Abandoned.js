@@ -57,10 +57,6 @@ function makeYoungAbandoned(f) {
   if (typeof setSpawnAge === "function") setSpawnAge(f);
 }
 
-function _abandonedName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
-
 // Magnifying glass row: [text, tone] or null
 function describeMissingOwner(f) {
   if (!f || !(f.missingOwner > 0)) return null;
@@ -95,7 +91,7 @@ function updateAbandoned(dt) {
       f.changeHappiness(0.1);
       if (!f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(["ABANDONED", "OVER_IT"], f));
       if (f.adopted) {
-        const text = `${_abandonedName(f)} has got over its old owner.`;
+        const text = `${fluffyDisplayName(f)} has got over its old owner.`;
         if (typeof addUIMessage === "function") addUIMessage(text);
         if (typeof noteDayEvent === "function") noteDayEvent("news", { text });
       }

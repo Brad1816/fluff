@@ -127,7 +127,7 @@ module.exports = [
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const out = {};
-        memorialPlaque = [];
+        livesBook = freshLivesBook();
         out.shop = SPAWN_ACTIONS.some((a) => a.isItem === "memorial_tree") && STORE_AISLES.some((a) => a.items.includes("memorial_tree"));
         const mum = __mk(200, { name: "Clover" });
         const pip = __mk(300, { growth: 0.5, name: "Pip" });
@@ -147,7 +147,7 @@ module.exports = [
         setRelationship(mare.id, still.id, "baby_child");
         still.die(null, "Born non-viable");
         out.stillMourn = isMourning(mare);
-        out.plaque = memorialPlaque.map((e) => [e.name, e.cause]);
+        out.plaque = plaqueNames().map((e) => [e.name, e.cause]);
         out.mourners = [mum, friend, stranger].map((f) => isMourning(f));
         out.describe = describeMourning(mum);
         // A tree in the room; she goes to it
@@ -175,10 +175,16 @@ module.exports = [
         const entry = ITEM_TYPES.find((e) => e.sellType === "memorial_tree");
         entry.onRightClick(tree);
         out.open = memorialOpen;
-        closeMemorial();
-        // Saved
-        const field = SAVED_GAME_STATE.find((e) => e.name === "memorialPlaque");
-        out.saved = JSON.stringify(field.get()) === JSON.stringify(memorialPlaque);
+        // Tap Pip's name: her life story in the Memories book
+        const L = getMemorialLayout();
+        mouse.x = L.x + 80;
+        mouse.y = L.y + 24 + 84 - 5;
+        out.tapped = plaqueNameAt(mouse.x, mouse.y);
+        handleMemorialClick();
+        out.reading = { plaque: memorialOpen, book: memoriesBookOpen, tab: memoriesBookTab, life: livesReading === pip.id };
+        closeMemoriesBook();
+        // Saved: the plaque reads the Lives book, which is saved
+        out.saved = SAVED_GAME_STATE.some((e) => e.name === "livesBook");
         out.treeSaved = createItemFromSave(tree.serialize()) instanceof MemorialTree;
         return out;
       }, SETUP);
@@ -190,6 +196,8 @@ module.exports = [
       check(r.eased && r.cheered, "it comforts her and eases her grief");
       check(!r.stillMourn, "a stillborn isn't mourned at the tree");
       check(r.open, "long-press: the plaque");
+      check(r.tapped && r.tapped.name === "Pip", `the name under a tap: ${JSON.stringify(r.tapped)}`);
+      checkEqual(JSON.stringify(r.reading), JSON.stringify({ plaque: false, book: true, tab: "lives", life: true }), "tapping her name opens her life story");
       check(r.saved && r.treeSaved, "saved");
     },
   },

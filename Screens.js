@@ -40,10 +40,6 @@ function registerScreen(screen) {
   SCREENS.sort((a, b) => a.layer - b.layer);
 }
 
-function getScreen(name) {
-  return SCREENS.find((s) => s.name === name) || null;
-}
-
 function _screenOpen(s) {
   try {
     return !!s.isOpen();

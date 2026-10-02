@@ -9,8 +9,8 @@
 //     it's mostly about], s?: scene, h?: herd id, x?: detail (text/number),
 //     q?: a line a fluffy said, n?: times (merged repeats) }
 // An event is stored once, however many fluffies it involves; storyOf(f)
-// finds every event f is in (an index rebuilt on load), storyOfFamily and
-// storyOfHerd gather wider stories.
+// finds every event f is in (an index rebuilt on load), and storyOfFamily
+// gathers a wider story.
 //
 // Big events (STORY_KINDS with big: true - births, deaths, names, sales,
 // tricks learnt, lessons that stuck, harm from you, shows, scars...) are kept
@@ -244,12 +244,6 @@ function storyOfFamily(f) {
     out.push(e);
   }
   return out.sort((a, b) => a.t - b.t || a.i - b.i);
-}
-
-// A herd's story: big events that happened to its members while in it
-function storyOfHerd(herdId) {
-  _storyBookOk();
-  return storyBook.events.filter((e) => e.h === herdId && e.k !== "tally");
 }
 
 function storyTotals() {

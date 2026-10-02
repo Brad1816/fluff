@@ -85,17 +85,8 @@ const TITLE_TEXT = {
   Spoiled: "Spoiled - demanding and fussy",
 };
 
-function _tiNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _tiDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_tiNow() / DAY_LENGTH) + 1;
-}
-function _tiName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
-}
-function _tiTrait(f, k) {
-  return typeof traitValue === "function" ? traitValue(f, k) : 0;
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(timePlayed / DAY_LENGTH) + 1;
 }
 function _tiState(f) {
   if (!f.titleState || typeof f.titleState !== "object") f.titleState = { lovedDays: 0, defends: 0, respect: 0, healing: 0, maxStrain: 0, lastHarm: -1e9, day: _tiDay() };
@@ -109,25 +100,25 @@ function titleOf(f) {
 // Its own breaking point
 function breakLimitOf(f) {
   if (typeof f.breakLimit !== "number") {
-    f.breakLimit = Math.round((BREAK_BASE + 5 * _tiTrait(f, "bravery") + 3 * Math.max(0, _tiTrait(f, "temper")) + (Math.random() - 0.5) * 4) * 10) / 10;
+    f.breakLimit = Math.round((BREAK_BASE + 5 * traitValue(f, "bravery") + 3 * Math.max(0, traitValue(f, "temper")) + (Math.random() - 0.5) * 4) * 10) / 10;
     f.breakLimit = Math.max(5, f.breakLimit);
   }
   return f.breakLimit;
 }
 
 function _strongWilled(f) {
-  return _tiTrait(f, "bravery") + _tiTrait(f, "temper") >= REBEL_WILL;
+  return traitValue(f, "bravery") + traitValue(f, "temper") >= REBEL_WILL;
 }
 
 function setTitle(f, title, why) {
   const before = titleOf(f);
   if (before === title) return false;
   f.title = title;
-  f.titleSince = _tiNow();
+  f.titleSince = timePlayed;
   const st = _tiState(f);
   st.healing = 0;
   st.respect = 0;
-  const n = _tiName(f);
+  const n = fluffyDisplayName(f);
   const line =
     why ||
     (title
@@ -157,7 +148,7 @@ function noteTitleHarm(f, amount, why) {
   const st = _tiState(f);
   f.strain = Math.min(60, (f.strain || 0) + amount);
   st.maxStrain = Math.max(st.maxStrain || 0, f.strain);
-  st.lastHarm = _tiNow();
+  st.lastHarm = timePlayed;
   st.healing = Math.max(0, (st.healing || 0) - HEAL_HARM * Math.min(1, amount));
   st.respect = 0;
   st.lovedDays = 0;
@@ -184,7 +175,7 @@ function noteTitleCare(f, kind) {
   if (titleOf(f) === "Broken") st.healing = Math.min(1, (st.healing || 0) + h);
   if (titleOf(f) === "Rebel") st.respect = (st.respect || 0) + 1;
   f.strain = Math.max(0, (f.strain || 0) - 0.05);
-  if (kind === "treat") st.lastTreat = _tiNow();
+  if (kind === "treat") st.lastTreat = timePlayed;
   if ((kind === "lesson" || kind === "scolded") && titleOf(f) === "Spoiled") st.firm = (st.firm || 0) + 1;
 }
 
@@ -193,7 +184,7 @@ function noteTitleDefend(f, victim = null) {
   if (!f || !f.adopted) return;
   const st = _tiState(f);
   // One fight counts once (not every blow of it)
-  const now = _tiNow();
+  const now = timePlayed;
   const key = victim && victim.id !== undefined ? victim.id : "?";
   if (st.lastDefend && st.lastDefend.key === key && now - st.lastDefend.at < HOUR_LENGTH) return;
   st.lastDefend = { key, at: now };
@@ -222,7 +213,7 @@ function titleRefusesYou(f) {
   if (t === "Rebel") return "rebel";
   if (t === "Spoiled") {
     const st = _tiState(f);
-    return !(typeof st.lastTreat === "number" && _tiNow() - st.lastTreat < HOUR_LENGTH) && Math.random() < 0.35 ? "spoiled" : null;
+    return !(typeof st.lastTreat === "number" && timePlayed - st.lastTreat < HOUR_LENGTH) && Math.random() < 0.35 ? "spoiled" : null;
   }
   return null;
 }
@@ -277,7 +268,7 @@ function _tiCheck(f) {
 // Once a game day (and on changes)
 function _tiDaily(f) {
   const st = _tiState(f);
-  const now = _tiNow();
+  const now = timePlayed;
   const harmedToday = now - (st.lastHarm ?? -1e9) < DAY_LENGTH;
   const t = titleOf(f);
   // Strain fades a little every day, more on a day without harm
@@ -298,15 +289,15 @@ function _tiDaily(f) {
   if (t === "Broken") {
     if (st.healing >= 1) {
       f.strain = Math.min(f.strain || 0, breakLimitOf(f) * 0.3);
-      return setTitle(f, "Survivor", `${_tiName(f)} healed. Broken no more: a Survivor.`);
+      return setTitle(f, "Survivor", `${fluffyDisplayName(f)} healed. Broken no more: a Survivor.`);
     }
     return false;
   }
   // Cherished only while it's still loved: neglected or drilled until its
   // trust slips, it's Wary of you (Wary heals back with time)
-  if (t === "Cherished" && (f.playerTrust || 0) < CHERISH_TRUST - 0.2) return setTitle(f, "Wary", `${_tiName(f)} isn't sure of you any more: Wary.`);
+  if (t === "Cherished" && (f.playerTrust || 0) < CHERISH_TRUST - 0.2) return setTitle(f, "Wary", `${fluffyDisplayName(f)} isn't sure of you any more: Wary.`);
   if (t === "Rebel") {
-    if ((st.respect || 0) >= REBEL_RESPECT && now - (st.lastHarm ?? -1e9) >= 2 * DAY_LENGTH) return setTitle(f, "Guardian", `${_tiName(f)} was won round: a Rebel no more, a Guardian.`);
+    if ((st.respect || 0) >= REBEL_RESPECT && now - (st.lastHarm ?? -1e9) >= 2 * DAY_LENGTH) return setTitle(f, "Guardian", `${fluffyDisplayName(f)} was won round: a Rebel no more, a Guardian.`);
     return false;
   }
   if (t === "Wary") {
@@ -314,7 +305,7 @@ function _tiDaily(f) {
     return false;
   }
   if (t === "Spoiled") {
-    if ((st.firm || 0) >= 4 && (tally.treat || 0) < SPOIL_TREATS / 2) return setTitle(f, (f.playerTrust || 0) >= CHERISH_TRUST ? "Cherished" : null, `${_tiName(f)} isn't spoiled any more: lessons and a firm hand did it.`);
+    if ((st.firm || 0) >= 4 && (tally.treat || 0) < SPOIL_TREATS / 2) return setTitle(f, (f.playerTrust || 0) >= CHERISH_TRUST ? "Cherished" : null, `${fluffyDisplayName(f)} isn't spoiled any more: lessons and a firm hand did it.`);
     return false;
   }
   if (!t || t === "Survivor") {
@@ -322,7 +313,7 @@ function _tiDaily(f) {
     if (st.lovedDays >= (t === "Survivor" ? CHERISH_DAYS + 3 : CHERISH_DAYS)) return setTitle(f, "Cherished");
     const scarredByYou = (f.scars || []).some((s) => !/fight/.test(s.how));
     if (!t && ((st.maxStrain || 0) >= breakLimitOf(f) * 0.5 || scarredByYou) && (f.playerTrust || 0) >= 0.5 && (f.strain || 0) < breakLimitOf(f) * 0.25)
-      return setTitle(f, "Survivor", `${_tiName(f)} lived through it, and trusts you again: a Survivor.`);
+      return setTitle(f, "Survivor", `${fluffyDisplayName(f)} lived through it, and trusts you again: a Survivor.`);
   }
   return false;
 }

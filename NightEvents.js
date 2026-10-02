@@ -52,10 +52,6 @@ function _nightIndex() {
   return Math.floor(t / DAY_LENGTH);
 }
 
-function _nightNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 // ---- Who an event happens to ----
 
 function _inParkFree(f) {
@@ -121,10 +117,6 @@ function _adults(g) {
 
 function _nightSay(f, keys, target = null) {
   if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(keys, f, target));
-}
-
-function _nightName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "a fluffy";
 }
 
 function _plural(n, one, many = one + "s") {
@@ -260,9 +252,9 @@ const NIGHT_EVENTS = [
       if (g.herd && b === leader && Math.random() < 0.5) {
         g.herd.leaderId = a.id;
         if (typeof _herdChanged === "function") _herdChanged();
-        return `${_nightName(a)} fought ${_nightName(b)} for the lead of ${g.label}, and won.`;
+        return `${fluffyDisplayName(a)} fought ${fluffyDisplayName(b)} for the lead of ${g.label}, and won.`;
       }
-      return `${_nightName(a)} and ${_nightName(b)} of ${g.label} fell out in the night.`;
+      return `${fluffyDisplayName(a)} and ${fluffyDisplayName(b)} of ${g.label} fell out in the night.`;
     },
   },
   // ---- Good ----
@@ -535,7 +527,7 @@ class NightPredator {
       }
       v.changeHappiness(-0.05);
       this._flee();
-      this._finish(true, hero ? `A fox went for ${_nightName(v)}, but ${_nightName(hero)} of ${this.label} drove it off.` : `A fox went for ${_nightName(v)}, but the screaming from ${this.label} put it off.`);
+      this._finish(true, hero ? `A fox went for ${fluffyDisplayName(v)}, but ${fluffyDisplayName(hero)} of ${this.label} drove it off.` : `A fox went for ${fluffyDisplayName(v)}, but the screaming from ${this.label} put it off.`);
       return;
     }
     if (roll < driveOff + (1 - driveOff) * escape) {
@@ -544,7 +536,7 @@ class NightPredator {
       if (v.isAlive) {
         v.actionHandler.executeRunawayFear(this, ["PREDATOR", "FLEE"]);
         this._flee();
-        this._finish(true, `A fox caught ${_nightName(v)} of ${this.label}, but it wriggled free and got away.`);
+        this._finish(true, `A fox caught ${fluffyDisplayName(v)} of ${this.label}, but it wriggled free and got away.`);
         return;
       }
     }
@@ -556,7 +548,7 @@ class NightPredator {
       f.setShock(2);
     }
     this._flee();
-    this._finish(false, `A fox came in the night and killed ${_nightName(v)} of ${this.label}.`);
+    this._finish(false, `A fox came in the night and killed ${fluffyDisplayName(v)} of ${this.label}.`);
   }
 
   _flee() {
@@ -590,7 +582,7 @@ class NightPredator {
       if (!f.isAlive || f.scene !== PARK_SCENE || Math.hypot(f.x - this.x, f.y - this.y) > 350) continue;
       if (typeof f.playerTrust === "number") f.playerTrust = Math.min(1, f.playerTrust + 0.05);
     }
-    this._finish(true, `You chased off a fox before it could hurt ${v ? _nightName(v) : "anyone"}.`);
+    this._finish(true, `You chased off a fox before it could hurt ${v ? fluffyDisplayName(v) : "anyone"}.`);
     return true;
   }
 
@@ -702,7 +694,7 @@ function updateNightEvents(dt) {
   if (!nightTicker.step(dt)) return; // every 1s (Systems.js)
   if (typeof parkLife === "undefined" || !parkLife.enabled) return;
 
-  const now = _nightNow();
+  const now = timePlayed;
   const hour = gameHour();
   const index = _nightIndex();
   // Plan tonight's events once it's dark

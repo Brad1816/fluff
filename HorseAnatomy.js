@@ -214,7 +214,7 @@ class HorseAnatomy {
       }
     }
     // Its name on the memorial plaque, and those close to it mourn (MemorialTree.js)
-    if (typeof rememberOnPlaque === "function") rememberOnPlaque(this.horse);
+    if (typeof mournTheLost === "function") mournTheLost(this.horse); // (MemorialTree.js)
     // Its comfort plushie goes to one of its foals (Plushie.js)
     if (typeof passOnPlushie === "function") passOnPlushie(this.horse);
   }

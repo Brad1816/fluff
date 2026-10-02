@@ -132,10 +132,6 @@ function vetPrice(amount, kind = "treat") {
   return kind !== "jab" && typeof vetPlanPrice === "function" ? vetPlanPrice(amount, kind) : amount;
 }
 
-function _vetName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Fluffy";
-}
-
 // What the vet can treat right now (known or obvious)
 function vetProblems(f) {
   const out = [];
@@ -185,7 +181,7 @@ function vetCheckUp(f) {
   f.vetLife = vetLifeNote(f);
   f.vetNote = found.length ? found.join(", ") : "nothing wrong";
   const said = [f.vetNote, f.vetLife].filter(Boolean).join("; ");
-  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} - ${said}.`);
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${fluffyDisplayName(f)} - ${said}.`);
   return true;
 }
 
@@ -205,7 +201,7 @@ function vetTreat(f) {
   f.vetNote = "treated - all better";
   if (typeof giveAffection === "function") giveAffection(f, "vet");
   const paid = vetPrice(price);
-  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} is all better ($${paid}${paid < price ? ", on the plan" : ""}).`);
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${fluffyDisplayName(f)} is all better ($${paid}${paid < price ? ", on the plan" : ""}).`);
   return true;
 }
 
@@ -218,7 +214,7 @@ function canBookMidwife(f) {
 function vetMidwife(f) {
   if (!canBookMidwife(f) || !_vetPay(VET_MIDWIFE_PRICE, "midwife")) return false;
   f.midwife = true;
-  if (typeof addUIMessage === "function") addUIMessage(`Vet: a midwife will be there when ${_vetName(f)} gives birth.`);
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: a midwife will be there when ${fluffyDisplayName(f)} gives birth.`);
   return true;
 }
 
@@ -246,7 +242,7 @@ function vetJab(f) {
   if (!f.isToxoVaccinated && _toxoOn()) got.push("toxoplasmosis");
   f.fluVaccinated = true;
   if (_toxoOn()) f.isToxoVaccinated = true;
-  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${_vetName(f)} had its ${got.join(" and ")} jab${got.length > 1 ? "s" : ""} ($${price}).`);
+  if (typeof addUIMessage === "function") addUIMessage(`Vet: ${fluffyDisplayName(f)} had its ${got.join(" and ")} jab${got.length > 1 ? "s" : ""} ($${price}).`);
   return true;
 }
 
@@ -254,7 +250,7 @@ function vetJab(f) {
 function vetPatients() {
   return fluffies
     .filter((f) => f.adopted && f.isAlive)
-    .sort((a, b) => (vetTreatmentPrice(b) > 0) - (vetTreatmentPrice(a) > 0) || _vetName(a).localeCompare(_vetName(b)));
+    .sort((a, b) => (vetTreatmentPrice(b) > 0) - (vetTreatmentPrice(a) > 0) || fluffyDisplayName(a).localeCompare(fluffyDisplayName(b)));
 }
 
 // Condition text for the list: [text, tone]
@@ -367,8 +363,8 @@ function drawVet(c) {
     if (!pick) c.fillText("Breeding advice: pick a grown fluffy to see who it should (and shouldn't) have foals with.", L.x + 24, L.y + 84);
     else {
       const best = typeof bestMatches === "function" ? _vetBestMatches(pick) : [];
-      const names = best.map((b) => `${_vetName(b.f)} (${Math.round(b.advice.alive * 100)}% born alive)`);
-      c.fillText(fitText(c, `Best matches for ${_vetName(pick)}: ${names.length ? names.join(", ") : "nobody here yet"}.`, L.w - 48), L.x + 24, L.y + 84);
+      const names = best.map((b) => `${fluffyDisplayName(b.f)} (${Math.round(b.advice.alive * 100)}% born alive)`);
+      c.fillText(fitText(c, `Best matches for ${fluffyDisplayName(pick)}: ${names.length ? names.join(", ") : "nobody here yet"}.`, L.w - 48), L.x + 24, L.y + 84);
     }
   } else c.fillText("Flu spreads to fluffies nearby: pen new arrivals for a day or two. Toxoplasmosis comes from eating poop: keep floors clean.", L.x + 24, L.y + 84);
   _vetButton(c, L.advice, vetAdviceOn ? "Back to patients" : "Breeding advice", true);
@@ -397,7 +393,7 @@ function drawVet(c) {
     c.textAlign = "left";
     c.font = "bold 14px Arial";
     c.fillStyle = "white";
-    const name = _vetName(f);
+    const name = fluffyDisplayName(f);
     c.fillText(fitText(c, name, 200), r.x + 20, r.y + 29);
     c.font = "13px Arial";
     const stage = typeof lifeStage === "function" ? lifeStage(f) : "";

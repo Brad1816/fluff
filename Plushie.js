@@ -27,12 +27,6 @@ const PLUSHIE_MISS_UNHAPPY = 0.02; // a game hour
 const PLUSHIE_HANDED_DOWN = 0.7; // bond a foal starts with, inheriting it
 const plushieTicker = new Ticker(3);
 
-function _pzNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-function _pzName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "A fluffy";
-}
 
 class Plushie {
   constructor(scene = "INDOORS") {
@@ -175,8 +169,8 @@ function passOnPlushie(f) {
   p.ownerId = heir.id;
   p.bond[heir.id] = Math.max(p.bond[heir.id] || 0, PLUSHIE_HANDED_DOWN);
   const who = f.gender === "male" ? "dad" : "mum";
-  if (typeof recordStory === "function") recordStory("turning", heir, { x: `${_pzName(heir)} has ${heir.gender === "male" ? "his" : "her"} ${who}'s plushie now.` });
-  if (heir.adopted && typeof addUIMessage === "function") addUIMessage(`${_pzName(heir)} has ${heir.gender === "male" ? "his" : "her"} ${who}'s plushie now.`);
+  if (typeof recordStory === "function") recordStory("turning", heir, { x: `${fluffyDisplayName(heir)} has ${heir.gender === "male" ? "his" : "her"} ${who}'s plushie now.` });
+  if (heir.adopted && typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(heir)} has ${heir.gender === "male" ? "his" : "her"} ${who}'s plushie now.`);
   return heir;
 }
 
@@ -196,7 +190,7 @@ function describePlushie(f) {
 function updatePlushies(dt) {
   const step = plushieTicker.step(dt);
   if (!step || typeof fluffies === "undefined") return;
-  const now = _pzNow();
+  const now = timePlayed;
   const plushies = allPlushies();
   // Growing attached
   for (const p of plushies) {
@@ -209,7 +203,7 @@ function updatePlushies(dt) {
       p.bond[f.id] = Math.min(1.2, (p.bond[f.id] || 0) + step / (PLUSHIE_BOND_HOURS * HOUR_LENGTH));
       if (!p.ownerId && p.bond[f.id] >= 1 && !plushieOf(f)) {
         p.ownerId = f.id;
-        if (typeof recordStory === "function") recordStory("turning", f, { x: `${_pzName(f)} found a plushie to love.` });
+        if (typeof recordStory === "function") recordStory("turning", f, { x: `${fluffyDisplayName(f)} found a plushie to love.` });
         if (!f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && typeof getDialogue === "function") f.speak(getDialogue(["PLUSHIE", "HUG"], f));
       }
     }

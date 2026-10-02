@@ -30,10 +30,6 @@ const INFECTION_HEALTH_PER_DAY = 50;
 const INFECTION_DAYS = 2;
 const recoveryTicker = new Ticker(5);
 
-function _rcNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
-
 function _onTable(f) {
   return typeof OperatingTable !== "undefined" && f.placedOn instanceof OperatingTable;
 }
@@ -43,7 +39,7 @@ function startRecovery(f, knife) {
   if (!f || !f.isAlive) return null;
   const tool = knife && knife.type === "scalpel" ? "scalpel" : "knife";
   const risk = RECOVERY_RISK[tool][_onTable(f) ? "table" : "floor"];
-  const now = _rcNow();
+  const now = timePlayed;
   const r = f.recovery && f.recovery.until > now ? f.recovery : { until: now, risk: 0 };
   r.risk = 1 - (1 - r.risk) * (1 - risk);
   r.until = now + RECOVERY_HOURS * HOUR_LENGTH;
@@ -52,7 +48,7 @@ function startRecovery(f, knife) {
 }
 
 function isRecovering(f) {
-  return !!(f && f.isAlive && f.recovery && f.recovery.until > _rcNow());
+  return !!(f && f.isAlive && f.recovery && f.recovery.until > timePlayed);
 }
 
 // Stitched: half the risk; burnt shut: none
@@ -96,7 +92,7 @@ function describeRecovery(f) {
   if (!f || !f.isAlive) return null;
   if (hasInfection(f)) return ["Infected wound: fever - needs the vet", "bad"];
   if (!isRecovering(f)) return null;
-  const hrs = Math.max(1, Math.round((f.recovery.until - _rcNow()) / HOUR_LENGTH));
+  const hrs = Math.max(1, Math.round((f.recovery.until - timePlayed) / HOUR_LENGTH));
   if (f.recovery.risk <= 0) return [`Recovering from surgery (${hrs}h): wound burnt clean`, "ok"];
   const wrap = f.recovery.bandaged ? ", bandaged" : "";
   return [`Recovering from surgery (${hrs}h): infection risk ${riskWord(f.recovery.risk)}${wrap}${isResting(f) ? ", resting" : " - let it rest"}`, f.recovery.risk < 0.08 ? "ok" : "bad"];
@@ -105,7 +101,7 @@ function describeRecovery(f) {
 function updateRecovery(dt) {
   const step = recoveryTicker.step(dt);
   if (!step || typeof fluffies === "undefined") return;
-  const now = _rcNow();
+  const now = timePlayed;
   for (const f of fluffies) {
     if (!f.isAlive) continue;
     // A wound that might go bad

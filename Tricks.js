@@ -56,17 +56,8 @@ const TRICK_WATCH = 0.03; // a foal watching learns this much (up to half)
 
 let trickUI = null; // { phase: "menu" | "spot" | "reward", id, trick, until }
 
-function _trNow() {
-  return typeof timePlayed === "number" ? timePlayed : 0;
-}
 function _trDay() {
-  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(_trNow() / 1200);
-}
-function _trName(f) {
-  return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "Your fluffy";
-}
-function _trTrait(f, key) {
-  return typeof traitValue === "function" ? traitValue(f, key) : 0;
+  return typeof getDayNumber === "function" ? getDayNumber() : Math.floor(timePlayed / 1200);
 }
 function getTrick(key) {
   return TRICKS.find((t) => t.key === key) || null;
@@ -92,7 +83,7 @@ function canLearnTricks(f) {
 function trickLearnRate(f) {
   const lvl = typeof affectionLevel === "function" ? affectionLevel(f) : "unsure";
   let r = { adores: 1.4, loves: 1.3, likes: 1.1, unsure: 0.9, dislikes: 0.6 }[lvl] ?? 1;
-  r *= 1 + 0.25 * _trTrait(f, "energy");
+  r *= 1 + 0.25 * traitValue(f, "energy");
   const stage = typeof lifeStage === "function" ? lifeStage(f) : "adult";
   if (stage === "foal") r *= 1.3;
   else if (stage === "elderly") r *= 0.6;
@@ -135,10 +126,10 @@ function _trLearn(f, key, amount) {
   const after = Math.min(1, before + amount);
   f.tricks[key] = Math.round(after * 1000) / 1000;
   if (before < TRICK_KNOWN && after >= TRICK_KNOWN && f.adopted && typeof addUIMessage === "function") {
-    addUIMessage(`${_trName(f)} knows "${getTrick(key).name}" now! ✓`);
+    addUIMessage(`${fluffyDisplayName(f)} knows "${getTrick(key).name}" now! ✓`);
     if (typeof recordStory === "function") recordStory("trick", f, { x: getTrick(key).name });
     const known = Object.keys(f.tricks).filter((k) => trickSkill(f, k) >= TRICK_KNOWN).length;
-    if (known === 1 && typeof noteTurningPoint === "function") noteTurningPoint(f, `${_trName(f)} learnt ${f.gender === "male" ? "his" : "her"} first trick.`, { record: false });
+    if (known === 1 && typeof noteTurningPoint === "function") noteTurningPoint(f, `${fluffyDisplayName(f)} learnt ${f.gender === "male" ? "his" : "her"} first trick.`, { record: false });
   }
   return after - before;
 }
@@ -194,7 +185,7 @@ function tryTrick(f, key, target = null) {
 // Make it do the trick now (no learning)
 function startTrick(f, key, target = null, time = null) {
   const trick = getTrick(key);
-  const now = _trNow();
+  const now = timePlayed;
   f.trickNow = { key, start: now, until: now + (time ?? trick.time), x: target ? target.x : f.x, y: target ? target.y : f.y, started: false };
 }
 
@@ -290,7 +281,7 @@ class TrickDesire extends Desire {
   evaluate(h) {
     const t = h.trickNow;
     if (!t) return 0;
-    if (!h.isAlive || h.isDragging || h.placedOn || h.currentStateKey === "SLEEPING" || _trNow() > t.until) {
+    if (!h.isAlive || h.isDragging || h.placedOn || h.currentStateKey === "SLEEPING" || timePlayed > t.until) {
       _dropFetchBall(h);
       h.trickNow = null;
       return 0;
@@ -311,12 +302,12 @@ class TrickDesire extends Desire {
       } else if (!t.arrived && !h.isMovingOrRunning()) {
         // Here! Sits and waits a moment, like a good fluffy
         t.arrived = true;
-        t.until = _trNow() + 3;
+        t.until = timePlayed + 3;
         h.initBehavior("SITTING");
         h.stateTimer = 3;
       } else if (t.arrived && h.currentStateKey !== "SITTING") {
         h.initBehavior("SITTING");
-        h.stateTimer = Math.max(0.5, t.until - _trNow());
+        h.stateTimer = Math.max(0.5, t.until - timePlayed);
       }
       return true;
     }
@@ -325,7 +316,7 @@ class TrickDesire extends Desire {
       t.started = true;
       h.initBehavior(trick.pose);
       // Dancing and waving repeat a short move; poses are held
-      h.stateTimer = trick.spin || trick.pose === "FLUFFY_JAB" ? 0.5 : Math.max(0.5, t.until - _trNow());
+      h.stateTimer = trick.spin || trick.pose === "FLUFFY_JAB" ? 0.5 : Math.max(0.5, t.until - timePlayed);
     }
     return true;
   }
@@ -370,13 +361,13 @@ function _doFetch(h, t) {
     t.arrived = true;
     _dropFetchBall(h);
     if (typeof onFluffyPlayed === "function") onFluffyPlayed(h, "fetch");
-    t.until = _trNow() + 2.5;
+    t.until = timePlayed + 2.5;
     h.initBehavior("SITTING");
     h.stateTimer = 2.5;
     if (!h.tooYoungToSpeak()) h.speak(getDialogue(["TRICK", "FETCHED"], h), true);
   } else if (t.arrived && h.currentStateKey !== "SITTING") {
     h.initBehavior("SITTING");
-    h.stateTimer = Math.max(0.5, t.until - _trNow());
+    h.stateTimer = Math.max(0.5, t.until - timePlayed);
   }
   return true;
 }
@@ -419,7 +410,7 @@ function trickRightClick() {
   const f = hits[0];
   if (!f) return false;
   if (!canLearnTricks(f)) {
-    if (typeof addUIMessage === "function") addUIMessage(`${_trName(f)} is too little to learn tricks.`);
+    if (typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} is too little to learn tricks.`);
     return true;
   }
   trickUI = { phase: "menu", id: f.id };
@@ -585,19 +576,19 @@ function handleTrickClick() {
 function _trAsk(f, key, target = null) {
   const res = tryTrick(f, key, target);
   // Come and Fetch take a while: wait until it gets back, then reward it
-  if (res === "done" && (key === "come" || key === "fetch")) trickUI = { phase: "waiting", id: f.id, trick: key, until: _trNow() + getTrick(key).time + 2 };
-  else if (res === "done") trickUI = { phase: "reward", id: f.id, trick: key, until: _trNow() + TRICK_REWARD_WINDOW };
+  if (res === "done" && (key === "come" || key === "fetch")) trickUI = { phase: "waiting", id: f.id, trick: key, until: timePlayed + getTrick(key).time + 2 };
+  else if (res === "done") trickUI = { phase: "reward", id: f.id, trick: key, until: timePlayed + TRICK_REWARD_WINDOW };
   // Strict: a wrong try can be punished (FearTraining.js)
-  else if (res === "failed" && typeof isStrict === "function" && isStrict()) trickUI = { phase: "punish", id: f.id, trick: key, until: _trNow() + FEAR_PUNISH_WINDOW };
+  else if (res === "failed" && typeof isStrict === "function" && isStrict()) trickUI = { phase: "punish", id: f.id, trick: key, until: timePlayed + FEAR_PUNISH_WINDOW };
   else {
     closeTrickUI();
     const msg = {
-      asleep: `${_trName(f)} is asleep.`,
-      tired: `${_trName(f)} has had enough tricks for today.`,
-      scared: `${_trName(f)} is too scared of you to learn.`,
+      asleep: `${fluffyDisplayName(f)} is asleep.`,
+      tired: `${fluffyDisplayName(f)} has had enough tricks for today.`,
+      scared: `${fluffyDisplayName(f)} is too scared of you to learn.`,
       smarty: `Smarties don't do tricks.`,
-      rebel: `${_trName(f)} won't do what you say any more.`,
-      spoiled: `${_trName(f)} won't - not without a treat first.`,
+      rebel: `${fluffyDisplayName(f)} won't do what you say any more.`,
+      spoiled: `${fluffyDisplayName(f)} won't - not without a treat first.`,
       noball: "There's no ball here to fetch.",
     }[res];
     if (msg && typeof addUIMessage === "function") addUIMessage(msg);
@@ -624,7 +615,7 @@ function drawTrickUI(c) {
     c.fillText(text, x, y);
   };
   if (trickUI.phase === "menu") {
-    label(`Train ${_trName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
+    label(`Train ${fluffyDisplayName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
     if (L.lessonY !== null) label(`Lessons · ${lessonTriesLeft(f)} left today`, L.titleX, L.lessonY - 14);
     if (L.actionY !== null && L.actionY !== undefined) label("Other", L.titleX, L.actionY - 14);
     for (const ch of L.chips) {
@@ -667,11 +658,11 @@ function drawTrickUI(c) {
       c.fillRect(ch.x + 8, ch.y + ch.h - 4, (ch.w - 16) * s, 2);
     }
   } else if (trickUI.phase === "waiting") {
-    label(trickUI.trick === "fetch" ? `Fetch, ${_trName(f)}!` : `Come here, ${_trName(f)}!`, L.titleX, L.titleY - 8);
+    label(trickUI.trick === "fetch" ? `Fetch, ${fluffyDisplayName(f)}!` : `Come here, ${fluffyDisplayName(f)}!`, L.titleX, L.titleY - 8);
   } else if (trickUI.phase === "spot") {
-    label(`Click where ${_trName(f)} should come to`, sm.x, sm.y - 30);
+    label(`Click where ${fluffyDisplayName(f)} should come to`, sm.x, sm.y - 30);
   } else if (trickUI.phase === "reward") {
-    const left = Math.max(0, trickUI.until - _trNow());
+    const left = Math.max(0, trickUI.until - timePlayed);
     label(`Reward it now! (${Math.ceil(left)}s)`, L.titleX, L.titleY - 8);
     for (const ch of L.chips) {
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
@@ -683,7 +674,7 @@ function drawTrickUI(c) {
       c.fillText(strictNod ? "Nod" : ch.key === "praise" ? "♥ Good fluffy!" : `Treat $${TRICK_TREAT_COST}`, ch.x + ch.w / 2, ch.y + ch.h / 2);
     }
   } else if (trickUI.phase === "punish") {
-    const left = Math.max(0, trickUI.until - _trNow());
+    const left = Math.max(0, trickUI.until - timePlayed);
     label(`Wrong! Punish it? (${Math.ceil(left)}s)`, L.titleX, L.titleY - 8);
     for (const ch of L.chips) {
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
@@ -716,13 +707,13 @@ function updateTricks(dt) {
   if (trickUI && trickUI.phase === "waiting") {
     const f = trickUIFluffy();
     const t = f && f.trickNow;
-    if (t && t.arrived) trickUI = { phase: "reward", id: f.id, trick: trickUI.trick, until: _trNow() + TRICK_REWARD_WINDOW };
-    else if (!t || _trNow() > trickUI.until) closeTrickUI();
+    if (t && t.arrived) trickUI = { phase: "reward", id: f.id, trick: trickUI.trick, until: timePlayed + TRICK_REWARD_WINDOW };
+    else if (!t || timePlayed > trickUI.until) closeTrickUI();
   }
   // Missed the moment to punish it (FearTraining.js)
-  if (trickUI && trickUI.phase === "punish" && _trNow() > trickUI.until) closeTrickUI();
+  if (trickUI && trickUI.phase === "punish" && timePlayed > trickUI.until) closeTrickUI();
   // Missed the moment to reward it
-  if (trickUI && trickUI.phase === "reward" && _trNow() > trickUI.until) {
+  if (trickUI && trickUI.phase === "reward" && timePlayed > trickUI.until) {
     const f = trickUIFluffy();
     if (f) _trLearn(f, trickUI.trick, TRICK_LEARN.none);
     closeTrickUI();
@@ -730,7 +721,7 @@ function updateTricks(dt) {
   if (trickUI && !trickUIFluffy()) closeTrickUI();
   const step = tricksTicker.step(dt);
   if (!step) return;
-  const now = _trNow();
+  const now = timePlayed;
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted || f.scene !== currentScene || f.trickNow) continue;
     if (f.currentStateKey !== "IDLE" || f.happiness < 0.7) continue;
