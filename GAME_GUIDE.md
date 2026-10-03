@@ -2554,8 +2554,8 @@ from. Nothing player-facing reads it yet except the debug view.
 ### Batch 10: playtest observations
 - **Defaults and pacing:** `masterVolume` starts at 0.2 (saved in
   localStorage "fluffyVolume"); `ROOM_SPACE` house 20 / backyard 30
-  (Population.js); grass regrows slower (`GRASS_REGROW` 360,
-  `GRASS_SPREAD_EVERY` 45, `MEADOW_SEED_EVERY` 45); mess lasts longer
+  (Population.js); grass regrows slower (`GRASS_REGROW` 240,
+  `GRASS_SPREAD_EVERY` 45, `MEADOW_SEED_EVERY` 30); mess lasts longer
   (`MESS_FADE` poop 0.25 a day, `RAIN_WASH` 0.003); bodies rot faster
   (`ROT_START` 100, `ROT_FULL` 300, `ROT_GONE` 720).
 - **Alicorns** (`AlicornAcceptance.js alicornStance`): "flee" (foals, hurt,

@@ -1,5 +1,5 @@
 // How fast grass grows back (game seconds for one bite's worth) and spreads
-const GRASS_REGROW = 360;
+const GRASS_REGROW = 240; // (was 120: twice as slow now)
 const GRASS_SPREAD_EVERY = 45;
 
 class Grass {
@@ -68,7 +68,7 @@ class Grass {
   }
 
   update(dt) {
-    // grows from 0 to 2, grows by 1 every two minutes (120 seconds)
+    // grows from 0 to 2, by 1 every GRASS_REGROW game seconds
     // Faster in spring and in the rain, hardly at all in winter (WorldTime.js)
     const season = typeof growthMultiplier === "function" ? growthMultiplier("grass") : 1;
     this.growth = Math.min(2, this.growth + (dt / GRASS_REGROW) * season);

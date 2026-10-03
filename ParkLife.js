@@ -27,7 +27,7 @@
 // ---------------------------------------------------------------------------
 
 const MEADOW_MAX_TUFTS = 5;
-const MEADOW_SEED_EVERY = 45; // seconds between new tufts in each meadow
+const MEADOW_SEED_EVERY = 30; // seconds between new tufts in each meadow
 const BERRY_MAX = 5;
 const BERRY_REGROW = 90; // seconds per berry
 const PARK_WILD_TARGET = 16;
