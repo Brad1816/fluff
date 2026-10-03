@@ -348,6 +348,18 @@ class HorseActionHandler {
       return true;
     }
 
+    // Too young or too simple to know: it's asleep (FoalLife.js) - or it's
+    // one of its own it's already puzzling over
+    const c = this.horse._deathConfusion;
+    if ((c && !c.done && c.id === closestCorpse.id) || (typeof mistakesBodyForSleeping === "function" && mistakesBodyForSleeping(this.horse, closestCorpse))) {
+      this.horse.bloodReactionTimer = 8.0;
+      if (!(c && c.id === closestCorpse.id) && this.horse.speech.nextTime <= 0 && Math.random() < 0.5) {
+        this.horse.speak(getDialogue(["NOT_DEAD", "STRANGER", this.horse.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], this.horse, closestCorpse));
+        this.horse.speech.nextTime = 4 + Math.random() * 2;
+      }
+      return true;
+    }
+
     const rels =
       typeof relationships !== "undefined"
         ? relationships[this.horse.id]

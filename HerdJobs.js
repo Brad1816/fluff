@@ -44,7 +44,7 @@ const herdJobTicker = new Ticker(HERD_JOB_EVERY);
 const HERD_JOB_WORDS = {
   leader: ["Leader", "leads the herd"],
   toughie: ["Toughie", "guards the herd and does its fighting"],
-  finder: ["Food-finder", "brings food to nursing mums and the sick"],
+  finder: ["Nummy finder", "brings food to nursing mums and the sick"],
 };
 
 function _hjTrait(f, k) {

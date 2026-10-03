@@ -154,7 +154,7 @@ function updateWarmth(dt) {
     if (w < CHILLY_BELOW) {
       if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness((-0.0008 * step * (CHILLY_BELOW - w)) / CHILLY_BELOW, "Cold");
       if (f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak() && Math.random() < 0.004 * step && typeof getDialogue === "function")
-        f.speak(getDialogue(["WEATHER", "COLD"], f));
+        f.speak((Math.random() < 0.3 && typeof seasonLine === "function" && seasonLine(f, "COLD")) || getDialogue(["WEATHER", "COLD"], f)); // (SeasonSense.js)
     }
     if (w < FREEZING_BELOW) {
       const rate = (0.25 * (FREEZING_BELOW - w)) / FREEZING_BELOW;

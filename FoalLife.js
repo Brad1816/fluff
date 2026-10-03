@@ -17,8 +17,13 @@
 // right to the water's edge. Mum notices after a little while (if she can
 // see or hear), calls for it and goes to fetch it.
 //
-// NOT UNDERSTANDING DEATH: a young foal (growth under CONFUSED_GROWTH)
-// whose mum, brother or sister dies near it doesn't understand at first.
+// NOT UNDERSTANDING DEATH: a young foal (growth under CONFUSED_GROWTH) -
+// or a simple-minded grown one (smartsOf at or under DEATH_DIM) - whose
+// family or special friend dies near it doesn't understand at first. A
+// clever one (DEATH_SMART or more) understands straight away, even as a
+// foal (understandsDeath). One that doesn't understand thinks any body it
+// comes across is asleep (mistakesBodyForSleeping: no fright, just
+// puzzlement - HorseActionHandler.executeCorpseReaction) until it smells.
 // For CONFUSED_TIME (less for a clever foal, over at once once the body
 // starts to smell) it goes to the body, tries to nurse from its dead mum
 // or nudges its dead sibling to wake up and play; then it understands,
@@ -76,6 +81,9 @@ const WANDER_NOTICE_FAR = 260; // px: far enough for her to notice
 const CONFUSED_GROWTH = 0.6;
 const CONFUSED_TIME = 100; // game seconds (2 hours)
 const CONFUSED_ROT = 0.3; // the body smells: it understands
+const DEATH_DIM = -0.3; // smartsOf: a grown fluffy this simple doesn't understand death
+const DEATH_SMART = 0.35; // smartsOf: this clever, even a foal understands
+const CONFUSED_RELATIONS = new Set(["mother", "father", "brother", "sister", "child", "baby_child", "special_friend"]);
 const BULLY_CHANCE = 0.2; // a game hour
 const BULLY_REST = 3 * HOUR_LENGTH; // after picking on one, before it starts again
 const BULLY_GROWN_RATE = 0.5; // a grown bully starts half as often (BULLY_REST x2)
@@ -240,11 +248,27 @@ function _folMumNotices(m) {
 
 // ---- Not understanding death ----
 
+// Does it know a body when it sees one?
+function understandsDeath(f) {
+  if (!f) return true;
+  const smarts = typeof smartsOf === "function" ? smartsOf(f) : 0;
+  if (smarts >= DEATH_SMART) return true;
+  if (f.growth < CONFUSED_GROWTH) return false;
+  return smarts > DEATH_DIM;
+}
+
+// HorseActionHandler.executeCorpseReaction: it thinks this one's asleep
+function mistakesBodyForSleeping(f, body) {
+  if (!f || !body || body.isAlive || understandsDeath(f)) return false;
+  if (typeof corpseRot === "function" && corpseRot(body) >= CONFUSED_ROT) return false; // (it smells)
+  return true;
+}
+
 // HorseFamily.updateRelationships, a relative dead near it: not yet
 function foalDoesntUnderstand(f, body, relation) {
-  if (!f || !body || f.growth >= CONFUSED_GROWTH || body.isDestroyed) return false;
+  if (!f || !body || understandsDeath(f) || body.isDestroyed) return false;
   if (/^Born /.test(body.causeOfDeath || "")) return false; // (a stillborn: it never knew it alive)
-  if (relation !== "mother" && relation !== "brother" && relation !== "sister") return false;
+  if (!CONFUSED_RELATIONS.has(relation)) return false;
   const now = timePlayed;
   const smarts = typeof smartsOf === "function" ? smartsOf(f) : 0;
   const lasts = CONFUSED_TIME * Math.max(0.3, 1 - 0.6 * smarts);
@@ -380,6 +404,7 @@ function bullyShove(f, victim) {
   if (typeof f.performAttack === "function") f.performAttack(victim, "BULLY");
   if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "SHOVE"], f, victim), true);
   victim.milkCooldown = Math.max(victim.milkCooldown || 0, 8); // (shoved off the milk)
+  for (const m of fluffies) if (m._nursing && m._nursing[victim.id] !== undefined) delete m._nursing[victim.id]; // (its teat's free: HorseFamily.js)
   victim.bullied = (victim.bullied || 0) + 1;
   victim.changeHappiness(-0.05, f.growth >= 1 ? "Picked on by a bully" : "Picked on by other foals");
   if (victim.growth < 1 && typeof _pnAdd === "function") _pnAdd(victim, "pickedOnFoal", 1);
@@ -529,6 +554,11 @@ class FoalLifeDesire extends Desire {
         if (!f || !f.isAlive || f.scene !== h.scene || !f._wander || timePlayed - h._seekAt > WANDER_GIVE_UP || h.currentCage) h._seekFoal = null;
         else return { kind: "seek", f, score: 86 };
       }
+      // (a simple one that thinks its dead friend is sleeping)
+      if (h.currentStateKey !== "SLEEPING" && !h.currentCage) {
+        const body = _folConfusedBody(h);
+        if (body) return { kind: "body", f: body, score: 40 };
+      }
       return this._bully(h); // (a grown bully)
     }
     if (h.currentStateKey === "SLEEPING" || h.currentCage) return null;
@@ -588,7 +618,9 @@ class FoalLifeDesire extends Desire {
         c.lastTry = timePlayed;
         h.facingRight = body.x > h.x;
         const nurse = c.relation === "mother" && h.growth < (typeof FOSTER_MAX_GROWTH === "number" ? FOSTER_MAX_GROWTH : 0.36);
-        h.speak(getDialogue(["NOT_DEAD", nurse ? "NURSE" : c.relation === "mother" ? "MUM" : "SIBLING", h.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], h, body));
+        const who =
+          { mother: "MUM", father: "DAD", child: "CHILD", baby_child: "CHILD", special_friend: "FRIEND" }[c.relation] || "SIBLING";
+        h.speak(getDialogue(["NOT_DEAD", nurse ? "NURSE" : who, h.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], h, body));
       }
       if (h.currentStateKey !== "SITTING") {
         h.initBehavior("SITTING");

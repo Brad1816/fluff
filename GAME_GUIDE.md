@@ -1535,7 +1535,8 @@ a pregnancy mattered. Now:
   litter it was born in (`f.litterBorn`). The expected litter is half
   `LITTER_BASE` (4) and half the average of mum's and dad's `litterBorn`
   (whichever are known), minus 1 for seniors, plus a bell-curve spread
-  (`LITTER_SPREAD` 1.3), kept to 1-7. Seven foals is now rare (about 4%).
+  (`LITTER_SPREAD` 1.6 since the lore round), kept to 1-`LITTER_MAX` (10).
+  Eight or more is rare unless both parents come from big litters.
 - **Care while pregnant** (`updatePregnancyCare`, system order 125, every
   2 s): `pregnancyConditionNow` = 30% fed, 25% happy, 25% health, 10%
   rested, 10% not scared of you; averaged into `f.pregCare {sum, n}`.
@@ -2204,7 +2205,7 @@ A helper robot that keeps its room fed. Built after the design doc's
 - Tests: `tests/feedbot.test.js`.
 
 ### Calendar and lifespans (Phase 0, stage 1)
-Fluffies now live 5 to 7 years, as in the lore. A season is 3 game days
+Fluffies now live 6.5 to 8 years (the lore says 5-7; a little longer so a farm sees a few generations - lore round). A season is 3 game days
 (`WorldTime.js DAYS_PER_SEASON`), so a year is 12 days and one game day is
 about one month of a fluffy's life (`Aging.js DAYS_PER_YEAR`). A game day is
 still 20 minutes at 1x, so per-day rates (hunger, boredom, dirt, trust...) are
@@ -2214,10 +2215,10 @@ unchanged.
 | Pregnancy (`Horse.js pregnancyDuration`) | 2 weeks | 560s (~11 game hours) | 300s |
 | Growing up (`GROW_UP_TIME`, used by `HorseUpdate` and day care) | 2 months | 2 | 1.4 |
 | Walks (30% grown) | ~3 weeks | 0.6 | 0.4 |
-| Senior (`SENIOR_DAYS`) | 3.5 years | 42 | 16 |
-| Elderly (`ELDERLY_DAYS`, stops breeding) | 5 years | 60 | 24 |
-| Old-age risk (`OLD_AGE_RISK_DAYS`) | 5.5 years | 66 | 28 |
-| Oldest (`MAX_AGE_DAYS`) | 7 years | 84 | 40 |
+| Senior (`SENIOR_DAYS`) | 4 years | 48 | 16 |
+| Elderly (`ELDERLY_DAYS`, stops breeding) | 6 years | 72 | 24 |
+| Old-age risk (`OLD_AGE_RISK_DAYS`) | 6.5 years | 78 | 28 |
+| Oldest (`MAX_AGE_DAYS`) | 8 years | 96 | 40 |
 - **Nursing:** `LACTATION_TIME` (pregnancy + 36% of growing up) from
   conception, so a mare nurses until her foals walk; prolactin caps at it too.
 - **Ages shown** as a fluffy's age: `fluffyAgeText(days)` ("3 weeks",
@@ -2741,3 +2742,51 @@ from. Nothing player-facing reads it yet except the debug view.
   stages (`sbsStage`/`sbsShows` in HorseRenderer; `sbsVisible` hides the
   condition chip until it shows; `vetSpotsSbs`). The surgery close-up
   (`drawSurgeryCloseUp` face panel, `surgeryPainLine` by part).
+
+### Lore round (from the community wiki)
+- **Seasons known (`SeasonSense.js`, new):** `f.seasonDays` (saved) counts
+  days lived in each season. `knowsSeason(f, s)`: 2+ days of it, a year old,
+  or `smartsOf >= 0.35`. `seasonLine(f, "HOT"|"COLD")` gives
+  `SEASON.HOT/COLD.KNOWN` ("hawt-times", "cowd-times") or `.NEW` (puzzled);
+  Heat.js and Warmth.js use it for 30% of complaints; when summer or winter
+  starts, half the awake fluffies say one (system order 51).
+- **Words:** sun = "bwight-baww", night = "dawk-time"/"dawkies", alicorn =
+  "hownie-wingie munsta", horn = "howny-pwace", forager job = "Nummy
+  finder", Foal-4-Sketties plate = sketties and meatballs (drawn on the
+  plate: `Bowl.drawOffScreen`), the lore's mummah song; ~100 spelling slips.
+- **Lifespans:** see the table above (`Aging.js`).
+- **Litters up to 10 (`Pregnancy.js`):** `LITTER_MAX` 10, `LITTER_SPREAD`
+  1.6. `bigLitterMiscarriageChance(f)`: 0 up to `BIG_LITTER_FROM` (4) foals,
+  then `BIG_LITTER_RISK` (6%) per extra foal x (1.2 - 0.4 x care), max 50%
+  (10 foals ~ 1/3). Spread over the pregnancy in `updatePregnancyCare` as a
+  per-check hazard; it calls `beginMiscarriage` (Premature.js decides how
+  the foals do). The vet scan warns from 10%.
+- **Two at the teat (`HorseFamily.js`):** `NURSE_SLOTS` 2, each drink holds a
+  slot `NURSE_TIME` (5 s) in `mare._nursing` (not saved).
+  `nursingSlotsFull` turns a third foal away (milkCooldown 1.5, `MILKIE_WAIT`
+  lines); a bully's shove frees the victim's slot (FoalLife.js).
+- **Out of breath (`Stamina.js`, new):** `f._breath` drains over
+  `RUN_BREATH_TIME` (7 s) of running (x1.4 elderly, x1.15 senior, x1.3
+  pregnant, faster when chubby: `breathDrainRate`), then `isWinded` for
+  `WINDED_TIME` (5 s): `Horse.updateSpeed` caps RUNNING at `WINDED_SPEED`
+  (90). `RUN_TIRED` lines. Back in `BREATH_RECOVER_TIME` (10 s). Running also
+  adds `RUN_SLEEPY` sleepiness.
+- **Bad smarties desert (`Desertion.js`, new):** `isBadSmarty` (grown,
+  `isSmarty()` - not a good one). `desertReason`: herd losing a war (fewer
+  fighters than the enemy, or it's under 50 health), a wild herd starving
+  (average hunger < 0.2), or half the herd with the flu. Checked every 3 s
+  (war 25%, the rest 2%). A fox (NightEvents `_alarm`): it always runs, and
+  deserts 50% of the time (`badSmartyFleesFox`). `desertHerd`: leaves
+  quietly, `_leftHerd` for 1800 s (can't rejoin), runs away from the herd,
+  `DESERT` lines, herd-mates' opinion -0.5, story kind `deserted`
+  (StoryBook.js, LifeStory.js), message for your herds. The herd picks a new
+  leader in `updateHerds`.
+- **Knowing death (`FoalLife.js`):** `understandsDeath(f)`: smarts >= 0.35
+  always; foals under `CONFUSED_GROWTH` never; grown ones unless smarts <=
+  `DEATH_DIM` (-0.3). `foalDoesntUnderstand` now covers simple grown ones too
+  and mother/father/siblings/children/special friend (`CONFUSED_RELATIONS`;
+  stillborns still exempt); the "body" job runs for them as well, with
+  `NOT_DEAD.DAD/CHILD/FRIEND` lines. `mistakesBodyForSleeping`: any body,
+  until it smells - `executeCorpseReaction` then gives a puzzled
+  `NOT_DEAD.STRANGER` line instead of a fright.
+- Tests: `tests/lore.test.js`; aging, records and pregnancy tests updated.

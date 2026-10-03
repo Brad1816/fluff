@@ -55,7 +55,7 @@ module.exports = [
         out.floor = f.happiness;
         out.name = keeperNameFor(f);
         out.obeys = obeysFromFear(f);
-        f.age = 60 * DAY_LENGTH;
+        f.age = 70 * DAY_LENGTH;
         out.risk = [oldAgeDailyRisk(f) > 0];
         f.title = null;
         out.risk.push(oldAgeDailyRisk(f));

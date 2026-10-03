@@ -157,8 +157,8 @@ function vetSpotsSbs(f, found) {
 const SURGERY_PAIN = {
   leg: ["NU! NU WEGGIES! Pwease!", "Weggie huwties! Huwties!", "*SCREE* <Speaker> nu can wawk!"],
   wing: ["Wingies! Nu take wingies!", "*SCREE* Pwetty wingies!", "Huu huu... wingies..."],
-  horn: ["Pointy! Nu! <Speaker> pointy!", "*SCREE* Head huwties!", "Huu... speshuw pointy..."],
-  ear: ["Nu heaw nao! Huwties!", "*SCREE* Eaw-pway!", "Owie owie owie!"],
+  horn: ["Howny-pwace! Nu! <Speaker> howny-pwace!", "*SCREE* Head huwties!", "Huu... speshuw howny-pwace..."],
+  ear: ["Eawsies! Nu take eawsies!", "*SCREE* Nu heaw nao!", "Owie owie owie!"],
   eye: ["Dawk! Evewyfin' dawk!", "*SCREE* <Speaker> nu see!", "Huu huu... wan see..."],
   tail: ["Taiw! Nu taiw!", "Huwties! Bum huwties!", "*sob* Fwuffy taiw..."],
   other: ["Huwties! Huwties! Make stop!", "*SCREE*", "Pwease mistah! Nu mowe!", "Wai mistah huwt <speaker>?"],

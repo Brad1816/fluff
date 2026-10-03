@@ -6,7 +6,14 @@
 // triggerPregnancy): runs in families. Every foal remembers the size of the
 // litter it was born in (f.litterBorn); a pairing's expected litter is half
 // LITTER_BASE, half the average of mum's and dad's (when known). Seniors
-// have about one foal fewer. Then some chance either way (1-7).
+// have about one foal fewer. Then some chance either way (1-10).
+//
+// Big litters are hard on her (lore): carrying more than BIG_LITTER_FROM
+// foals, each one more adds BIG_LITTER_RISK to the chance she miscarries
+// some time in her pregnancy (bigLitterMiscarriageChance - 6 foals 12%,
+// 10 foals 36%; good care takes a little off). Checked a bit at a time in
+// updatePregnancyCare; the miscarriage itself is HorseMating
+// beginMiscarriage (early labour - Premature.js decides how the foals do).
 //
 // Care (updatePregnancyCare, every PREG_CARE_EVERY seconds while she's
 // pregnant): a running average of how she's doing - fed, happy, healthy,
@@ -28,7 +35,10 @@
 // ---------------------------------------------------------------------------
 
 const LITTER_BASE = 4;
-const LITTER_SPREAD = 1.3;
+const LITTER_SPREAD = 1.6;
+const LITTER_MAX = 10;
+const BIG_LITTER_FROM = 4; // more foals than this, more risk
+const BIG_LITTER_RISK = 0.06; // per foal over, across the whole pregnancy
 const PREG_CARE_EVERY = 2; // seconds
 const CARE_OK = 0.65; // below this she may lose foals
 const CARE_RISKY = 0.5; // below this, stillbirths get more likely
@@ -56,7 +66,15 @@ function inheritedLitterMean(mare, sire = null) {
 // HorseAnatomy.triggerPregnancy
 function plannedLitterSize(mare, sire = null) {
   const n = Math.round(inheritedLitterMean(mare, sire) + _gauss() * LITTER_SPREAD);
-  return Math.max(1, Math.min(7, n));
+  return Math.max(1, Math.min(LITTER_MAX, n));
+}
+
+// The chance a pregnancy this big ends in a miscarriage (0..0.5)
+function bigLitterMiscarriageChance(f) {
+  const n = (f && f.babiesToBirth) || 0;
+  if (n <= BIG_LITTER_FROM) return 0;
+  const care = pregnancyCareScore(f); // (0.7 when nothing's been seen yet)
+  return Math.min(0.5, BIG_LITTER_RISK * (n - BIG_LITTER_FROM) * (1.2 - 0.4 * care));
 }
 
 // ---- Care during pregnancy ----
@@ -101,6 +119,12 @@ function updatePregnancyCare(dt) {
     if (!f.pregCare || typeof f.pregCare !== "object") f.pregCare = { sum: 0, n: 0 };
     f.pregCare.sum += pregnancyConditionNow(f);
     f.pregCare.n += 1;
+    // Too many in there: she may lose them (spread over the pregnancy)
+    const risk = bigLitterMiscarriageChance(f);
+    if (risk > 0 && (f.miscarriageTimer === null || f.miscarriageTimer === undefined)) {
+      const perCheck = 1 - Math.pow(1 - risk, PREG_CARE_EVERY / pregnancyDuration);
+      if (Math.random() < perCheck) f.beginMiscarriage();
+    }
   }
 }
 

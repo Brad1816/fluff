@@ -1,7 +1,7 @@
 // Breeding records (BreedingRecords.js)
 const { check, checkEqual } = require("./helpers");
 
-const ELDERLY = 60; // Aging.js ELDERLY_DAYS
+const ELDERLY = 72; // Aging.js ELDERLY_DAYS
 
 module.exports = [
   {

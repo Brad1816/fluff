@@ -222,6 +222,24 @@ class Bowl {
       ctx.drawImage(img, -img.width / 2, -img.height);
       ctx.filter = "none";
     }
+    // The machine's plate: meatballs on the sketties (FoalMachine.js - the
+    // foals, minced)
+    if (this.fromFoals && this.food > 0 && this.foodType === "sketties") {
+      const n = Math.min(3, this.food);
+      const top = -img.height + img.height * 0.32;
+      for (let i = 0; i < n; i++) {
+        const mx = (i - (n - 1) / 2) * img.width * 0.2;
+        const my = top + (i % 2) * 3;
+        ctx.fillStyle = "#6b2f1e";
+        ctx.beginPath();
+        ctx.arc(mx, my, Math.max(3, img.width * 0.07), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(255, 200, 170, 0.35)";
+        ctx.beginPath();
+        ctx.arc(mx - 1.5, my - 1.5, Math.max(1, img.width * 0.025), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     ctx.restore();
   }
 }

@@ -84,8 +84,8 @@ const channel_speeches = {
   ],
   ALICORN: [
     { text: "Gud fwuffies nu caww odda fwuffies 'munstah'!", weight: 1 },
-    { text: "Pointy-wingy fwuffies am gud fwuffies!", weight: 1 },
-    { text: "Pointy-wingy babbehs am gud babbehs!", weight: 1 },
+    { text: "Hownie-wingie fwuffies am gud fwuffies!", weight: 1 },
+    { text: "Hownie-wingie babbehs am gud babbehs!", weight: 1 },
     { text: "Fwuffies wif wingies an' howns nu am munstah!", weight: 1 },
   ],
   HEAVY_METAL: [

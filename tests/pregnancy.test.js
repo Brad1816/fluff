@@ -60,7 +60,7 @@ module.exports = [
       check(r.small > 2.3 && r.small < 2.9, `from small litters: about 2.5 (${r.small})`);
       check(Math.abs(r.mixed - 4) < 0.25, `one of each: about 4 (${r.mixed})`);
       check(r.senior < r.unknown - 0.7, `seniors have fewer (${r.senior})`);
-      check(r.min === 1 && r.max === 7, `1 to 7 (${r.min}-${r.max})`);
+      check(r.min === 1 && r.max === 10, `1 to 10 (${r.min}-${r.max})`);
       check(r.sevens < 0.08, `seven foals is rare now (${r.sevens})`);
     },
   },

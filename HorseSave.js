@@ -27,6 +27,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "badMum", fallback: null, clone: true }, // BadMummah.js
   { name: "takenFromMum", fallback: null },
   { name: "forgotMum", fallback: false }, // FoalLife.js
+  { name: "seasonDays", fallback: null, clone: true }, // SeasonSense.js: days lived in each season
   { name: "mumApart", fallback: 0 },
   { name: "bullied", fallback: 0 },
   { name: "bullyScore", fallback: 0 },

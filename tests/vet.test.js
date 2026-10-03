@@ -82,8 +82,8 @@ module.exports = [
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const strong = __mk(400, { days: 5 });
-        const old = __mk(1000, { days: 70 });
-        old.age = 70 * DAY_LENGTH;
+        const old = __mk(1000, { days: 74 });
+        old.age = 74 * DAY_LENGTH;
         catchFlu(strong, FLU_HIDDEN);
         catchFlu(old, FLU_HIDDEN);
         __tick(FLU_LENGTH);

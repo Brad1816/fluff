@@ -145,7 +145,7 @@ function _heatTick(step, summer) {
     const h = f.heat;
     if (h > HOT_ABOVE) {
       if (f.happiness > WAN_DIE_THRESHOLD + 0.05) f.changeHappiness((-0.0008 * step * (h - HOT_ABOVE)) / (1 - HOT_ABOVE), "Too hot");
-      if (f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak() && Math.random() < 0.004 * step && typeof getDialogue === "function") f.speak(getDialogue(["HEAT", "HOT"], f));
+      if (f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak() && Math.random() < 0.004 * step && typeof getDialogue === "function") f.speak((Math.random() < 0.3 && typeof seasonLine === "function" && seasonLine(f, "HOT")) || getDialogue(["HEAT", "HOT"], f)); // (now and then naming the hot-times: SeasonSense.js)
     }
     if (h > HEATSTROKE) {
       const old = typeof lifeStage === "function" && lifeStage(f) === "elderly";

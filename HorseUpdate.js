@@ -234,7 +234,7 @@ addHorseMethods({
           // How her pregnancy went decides the litter (Pregnancy.js)
           if (typeof onLabourStarts === "function") onLabourStarts(this);
           if (this.babiesToBirth === 0) {
-            this.babiesToBirth = Math.floor(Math.random() * 7) + 1;
+            this.babiesToBirth = Math.floor(Math.random() * 7) + 1; // (old saves only: Pregnancy.js plans it)
           }
           if (this.foalViability.length === 0) {
             for (let i = 0; i < this.babiesToBirth; i++) {

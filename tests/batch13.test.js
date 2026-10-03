@@ -67,7 +67,7 @@ module.exports = [
         };
       }, SETUP);
       checkEqual(JSON.stringify(r.jobs), JSON.stringify({ lead: "leader", tough: "toughie", tough2: "toughie", lively: "finder", mum: null }), "jobs");
-      check(/Toughie/.test(r.row) && r.label === "Food-finder", `magnifying glass and map: ${r.row} ${r.label}`);
+      check(/Toughie/.test(r.row) && r.label === "Nummy finder", `magnifying glass and map: ${r.row} ${r.label}`);
       check(r.toughFights && r.timidOut && r.bonus && r.rank, `wars and guarding: ${JSON.stringify(r)}`);
     },
   },

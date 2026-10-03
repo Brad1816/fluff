@@ -485,6 +485,12 @@ class NightPredator {
         } else f.actionHandler.executeRunawayFear(this, ["PREDATOR", "FLEE"]);
         continue;
       }
+      // A bad smarty runs, leader or not - and may leave its herd to it (Desertion.js)
+      if (typeof isBadSmarty === "function" && isBadSmarty(f)) {
+        f.actionHandler.executeRunawayFear(this, ["PREDATOR", "FLEE"]);
+        badSmartyFleesFox(f);
+        continue;
+      }
       const mum = v && v.motherId === f.id;
       const kin = v && ((vHerd && herdOf(f) === vHerd) || (relationships[f.id] && relationships[f.id][v.id]));
       if (_brave(f) || mum) this.roles.set(f.id, "hero");

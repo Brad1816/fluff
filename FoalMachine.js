@@ -19,7 +19,7 @@
 //     coat, the smallest)
 //   - the parent (its mum, if she's there; else a grown member) fetches it
 //     and carries it to the machine - reluctant, or forced by a bad smarty
-//   - the machine kills it inside, and a plate of sketties comes out
+//   - the machine kills it inside, and a plate of sketties and meatballs comes out (the foal, minced)
 //     (FOAL_MACHINE_PLATE bites) for the herd. Your own fluffies never use it.
 // Witnesses: the parent is shocked and grieves (a lost foal); everyone who
 // sees it learns to fear the machine (f.machineFear, saved) and is shaken.
@@ -162,7 +162,7 @@ function openFoalMachine(m) {
     title: "Foal-4-Sketties machine",
     lines: [
       `Plates left: ${m.plates}. Foals taken: ${m.taken}.`,
-      "Hungry wild herds nearby trade it a foal for a plate of sketties. The foal doesn't come out.",
+      "Hungry wild herds nearby trade it a foal for a plate of sketties and meatballs. The foal doesn't come out.",
     ],
     buttons: [
       { label: `Stock ${FOAL_MACHINE_STOCK} plates ($${FOAL_MACHINE_STOCK_COST})`, run: () => stockFoalMachine(m) },
@@ -278,7 +278,7 @@ function feedFoalToMachine(m, foal, parent) {
   const cause = "Fed to the Foal-4-Sketties machine";
   const wasMine = foal.adopted;
   foal.die(null, cause);
-  foal.isDestroyed = true; // (nothing comes out but sketties)
+  foal.isDestroyed = true; // (nothing comes out but meatballs on sketties)
   m.taken++;
   m.plates = Math.max(0, m.plates - 1);
   m._spin = 3;
@@ -509,7 +509,7 @@ function describeFoalMachine(f) {
 if (typeof SPAWN_ACTIONS !== "undefined") {
   SPAWN_ACTIONS.push({
     name: "Foal-4-Sketties",
-    desc: `Keeps wild herds small: a hungry herd nearby trades it a foal for a plate of sketties, and the foal doesn't come out. Put it where wild fluffies live. Long-press or right-click to stock it (${FOAL_MACHINE_STOCK} plates for $${FOAL_MACHINE_STOCK_COST}).`,
+    desc: `Keeps wild herds small: a hungry herd nearby trades it a foal for a plate of sketties and meatballs, and the foal doesn't come out. Put it where wild fluffies live. Long-press or right-click to stock it (${FOAL_MACHINE_STOCK} plates for $${FOAL_MACHINE_STOCK_COST}).`,
     cost: FOAL_MACHINE_PRICE,
     isItem: "foal_machine",
   });

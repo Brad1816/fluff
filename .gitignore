@@ -13,3 +13,4 @@ _backup_before_fence/
 node_modules/
 tests/package-lock.json
 test-results/
+.claude/

@@ -208,19 +208,33 @@ const DIALOGUE = {
       "Shivvy shivvy... su cowd...",
     ],
     SUNNY: [
-      "Sunnies am wawm! Bestest day!",
-      "Fwuffy wub sunnies!",
+      "Bwight-baww am wawm! Bestest bwight-time!",
+      "Fwuffy wub bwight-baww!",
+      "Bwight-time! Pway-time!",
     ],
     NIGHT: [
-      "Dawk am scawy... wan mummah...",
-      "Nite-nite time...",
+      "Dawk-time am scawy... wan mummah...",
+      "Dawkies come... nite-nite time...",
+      "Whewe bwight-baww go? Dawkies su scawy...",
     ],
+  },
+  // The hot-times and cold-times (SeasonSense.js): KNOWN once it has lived
+  // through one (or is clever), NEW when it's never felt it before
+  SEASON: {
+    HOT: {
+      KNOWN: ["Hawt-times come 'gain... nee' wawa an' shady pwace...", "Hawt-times! Bwight-baww su meanie nao...", "Nu wike hawt-times... wan' nu-hawt-baww..."],
+      NEW: ["Wai bwight-baww su meanie nao?? Nebah feew dis!", "Wai evewyfin' su hawt?? Fwuffy mewting!", "Wut happen tu sky? Su hawt..."],
+    },
+    COLD: {
+      KNOWN: ["Cowd-times come 'gain... nee' wawmies an' fwuff-piwe...", "Cowd-times! Stay cwose, fwens...", "Nu wike cowd-times... huu..."],
+      NEW: ["Wai evewyfin' su cowd?? Wan' wawm back!", "Wut am dis cowd?? Hoofsies huwt!", "Whewe wawm go?? Fwuffy nu undewstand..."],
+    },
   },
   // Fluffy flu (Illness.js)
   ILLNESS: {
     FLU: [
       "*ACHOO!* ...*sniffle*",
-      "Nosie am aww dwippy... *achoo*",
+      "Smeww-pwace am aww dwippy... *achoo*",
       "<Speaker> feew aww hot an' cowd... *cough cough*",
       "*sniff* Huu... tummeh an' head am huwties...",
       "*ACHOO!* *ACHOO!* Nu wike sneezies!",
@@ -244,8 +258,8 @@ const DIALOGUE = {
   ALICORN_ACCEPT: {
     DEFAULT: [
       "Munstah nu am munstah... am jus' fwuffy!",
-      "<Speaker> nu scawed of wingie-hown fwuffy nao!",
-      "Wingie-hown fwen am nice! Can hab huggies?",
+      "<Speaker> nu scawed of hownie-wingie fwuffy nao!",
+      "Hownie-wingie fwen am nice! Can hab huggies?",
     ],
     INTRO: [
       "Hewwo... munstah? Nu num <speaker>?",
@@ -259,7 +273,7 @@ const DIALOGUE = {
       "EEEEEK!! MUNSTAH!! WUN WAY!!",
       "SCAWY WED MUNSTAH!! HEWP!!",
       "NU NUM FWUFFY!! NUUUU!!",
-      "Mummah!! Big munstah in da dawk!!",
+      "Mummah!! Big munstah in da dawkies!!",
     ],
     DEFEND: [
       "GU 'WAY MUNSTAH!! Nu huwt hewd!!",
@@ -501,9 +515,9 @@ const DIALOGUE = {
   },
   FRIGHT: {
     THUNDER: ["*SCREEEE* Woud sky-noise!", "Sky am angwy! Hewp!", "Nu wike boomies! Huu huu!", "Make it stop! Pwease!"],
-    DARK: ["It am su dawk... scawy...", "Nu can see! Munstahs in dawk?", "Pwease tuwn on wight...", "*sniff* ...anyone dewe?"],
+    DARK: ["Dawkies! Su scawy...", "Nu can see! Munstahs in dawkies?", "Pwease tuwn on wight...", "*sniff* ...anyone dewe?"],
     BOT: ["Munstah-wobot! Nu eat <speaker>!", "*SCREEE* It comin' back!", "Go 'way scawy wobot!"],
-    FIRE: ["*SCREEE* Hot stick! Nu! Nu!", "Nu buwn <speaker> 'gain! Pwease!", "Hot huwties! Go 'way!", "*shaking* Nu hot fing... nu hot fing..."],
+    FIRE: ["*SCREEE* Hot stick! Nu! Nu!", "Nu buwn <speaker> 'gain! Pwease!", "Buwny huwties! Go 'way!", "*shaking* Nu hot fing... nu hot fing..."],
     CAGES: ["Nu! Nu gwass box! Wet <speaker> out!", "*SCREEE* Nu can bweavies in dewe!", "Nu put <speaker> in box! Pwease!", "Box make fwuffies go sweepies fowebah..."],
     COMFORTED: ["Safe nao... tank yu...", "Huggies make scawies go 'way...", "<Speaker> nu scawed wif yu."],
     CALMED: ["Bettew nao...", "Nu scawed anymowe.", "Tank yu fow snuggwes, fwen."],
@@ -535,8 +549,8 @@ const DIALOGUE = {
   },
   // Mothers and foals (batch 12): the mummah song (Lullaby.js)
   MUMMAH_SONG: {
-    SING: ["♪ Hush wittwe babbehs, mummah's hewe... ♪", "♪ Sweepy babbehs, cwose yo' eyesies... ♪", "♪ Mummah wub babbehs, aww nite wong... ♪", "♪ Nu be scawed, mummah keep yu safe... ♪"],
-    FOAL: ["Mummah song... *yawn*", "♪ ...aww nite wong... ♪", "Babbeh wub mummah song.", "Sing mowe, mummah..."],
+    SING: ["♪ Mummah wub babbeh, babbeh wub mummah, dwink wotsa miwkies an' gwo' big an' stwong! ♪", "♪ Mummah wub babbeh, babbeh wub mummah... ♪", "♪ Hush wittwe babbehs, mummah's hewe... ♪", "♪ Sweepy babbehs, cwose yo' eyesies... ♪", "♪ Mummah wub babbehs, aww nite wong... ♪", "♪ Nu be scawed, mummah keep yu safe... ♪"],
+    FOAL: ["Mummah songie... *yawn*", "♪ ...babbeh wub mummah... ♪", "Babbeh wub mummah songie.", "Sing mowe songie, mummah..."],
   },
   // A mum turning a foal away for its smell (Runts.js)
   SMELL: {
@@ -578,17 +592,34 @@ const DIALOGUE = {
       DEFAULT: ["Wake up! Pway!", "Wake up, pway wif babbeh!", "Wai yu nu pway? Siwwy sweepy..."],
       CHIRPY: ["*nudge* *chirp?*", "*peep?*"],
     },
+    DAD: {
+      DEFAULT: ["Daddeh, wake up! Pway!", "Daddeh sweepin' su wong...", "Daddeh? Wake up daddeh?"],
+      CHIRPY: ["*nuzzle* *peep?*"],
+    },
+    CHILD: {
+      DEFAULT: ["Babbeh wake up! <Speaker> hewe!", "Babbeh sweepin' su wong... wake up babbeh?", "Siwwy babbeh, aww da sweepies..."],
+      CHIRPY: ["*nudge* *chirp?*"],
+    },
+    FRIEND: {
+      DEFAULT: ["Fwen? Wake up! Pway wif <speaker>!", "Fwen sweepin'... <speaker> wait fow fwen.", "Wai fwen nu wake up? Su sweepy..."],
+      CHIRPY: ["*nudge* *chirp?*"],
+    },
+    // Anybody's body, to one that doesn't know death (HorseActionHandler)
+    STRANGER: {
+      DEFAULT: ["Siwwy fwuffy, sweepies on gwound!", "Shhh... fwuffy sweepin'.", "Wake up fwuffy! Pway wif <speaker>?", "Wai fwuffy nu wake up? Su sweepy..."],
+      CHIRPY: ["*curious peep*", "*nudge* *chirp?*"],
+    },
   },
   // Summer heat (Heat.js)
   HEAT: {
-    HOT: ["Hawt baww am too hawt...", "Fwuffy mewting... *pant pant*", "Need wawa... suu hawt...", "Shady pwace... need shady pwace..."],
+    HOT: ["Bwight-baww am too hawt...", "Fwuffy mewting... *pant pant*", "Need wawa... suu hawt...", "Shady pwace... need shady pwace..."],
     MOON: ["Nu-hawt-baww! Bestest baww!", "Nu-hawt-baww come! Nu mowe hawt!", "Hewwo nu-hawt-baww... fank yu..."],
     DRINK: ["*swurp swurp* Cowd wawa!", "Ahh... wawa bestest...", "Nummy cowd wawa!"],
   },
   // Plan batch 4: trade and tools (Trade.js, Mill.js, Tools.js)
   FAKE_ALICORN: {
-    GLUED: ["Wai mistah put pointy on <speaker> head? Ow...", "<Speaker> hab wingies nao?! ...Nu can fwap...", "Pointy fing itchy... wingies stuck..."],
-    OFF: ["Pointy fing faww off! <Speaker> am <speaker> again!", "Wingies gone... dey nebah fwap anyway.", "Itchy fings aww gone!"],
+    GLUED: ["Wai mistah put howny-pwace on <speaker> head? Ow...", "<Speaker> hab wingies nao?! ...Nu can fwap...", "Howny-pwace itchy... wingies stuck..."],
+    OFF: ["Howny-pwace faww off! <Speaker> am <speaker> again!", "Wingies gone... dey nebah fwap anyway.", "Itchy fings aww gone!"],
   },
   MILKED: ["Dat am babbeh miwkies! Nu take!", "Huu... miwkies fow babbehs...", "Nu wike... cowd hand on miwky pwace..."],
   FOREVER_FOAL: {
@@ -622,16 +653,16 @@ const DIALOGUE = {
     STARVING: ["Huu... nu chu'ce... odda babbehs hungwy...", "Nu wan go neaw munsta box... bu' suu hungwy...", "Hewd gon' die... wun babbeh..."],
     FOAL: ["Mummah? Wai babbeh in box? Dawk in hewe!", "Mummah! Get babbeh out! Pwease!", "Nu wike box! Mummah, upsies!"],
     FOAL_CHIRPY: ["*scared peep* *peep peep*", "*SCREE* *peep*", "*chirp?* *chirp chirp!*"],
-    GREEDY: ["Sketties! Bestest box evah!", "Nummy nummy sketties!", "Mowe babbehs, mowe sketties!"],
+    GREEDY: ["Sketties an' meatbawws! Bestest box evah!", "Nummy nummy sketties!", "Mowe babbehs, mowe meatbawws!"],
     UNEASY: ["...whewe babbeh go?", "Babbeh nu come out...", "Dat box... nu wike dat box..."],
     PARENT_REALISE: ["Babbeh? Wai babbeh nu come out? BABBEH?!", "Box! Gib babbeh back! BABBEH!", "NU! Mummah twade babbeh fow sketties... huu huu..."],
     WITNESS: ["Box munsta eat babbeh!!", "Munsta box! Wun!", "Babbeh go in... nu come out... SCAWY!"],
     AFRAID: ["Nu! Nu gib babbeh tu munsta box!", "Stay 'way fwom munsta box, hewd!", "Munsta box eat babbehs! Nu go!"],
-    REALISE_PARENT: ["Sketties... taste wike babbeh... NU! NU NU NU!", "Mummah eat babbeh?! Huu huu huu... *hurk*", "Dis... dis am babbeh... *hurk*"],
-    REALISE_CLEVER: ["Box nu make sketties... box make sketties fwom babbehs...", "Sketties am babbehs! *hurk*", "Dat box... babbehs... sketties... NU!"],
-    TELL: ["Nu eat box sketties! Dey am babbehs!", "Hewd! Box sketties am made of babbehs!", "Nebah eat box sketties! Nebah!"],
-    REFUSE_SKETTIES: ["Nu wan' sketties. Nebah sketties again.", "Nu! Dose am babbeh sketties!", "Fwuffy wudda stawve..."],
-    DONT_CARE: ["...stiww nummy.", "Babbeh sketties... nummy anyway.", "*munch* ...fwuffy nu cawe."],
+    REALISE_PARENT: ["Meatbawws... taste wike babbeh... NU! NU NU NU!", "Mummah eat babbeh?! Huu huu huu... *hurk*", "Dis... dis am babbeh... *hurk*"],
+    REALISE_CLEVER: ["Box nu make meatbawws... box make meatbawws fwom babbehs...", "Meatbawws am babbehs! *hurk*", "Dat box... babbehs... sketties... NU!"],
+    TELL: ["Nu eat box meatbawws! Dey am babbehs!", "Hewd! Box meatbawws am made of babbehs!", "Nebah eat box sketties! Nebah!"],
+    REFUSE_SKETTIES: ["Nu wan' box sketties. Nebah meatbawws again.", "Nu! Dose am babbeh meatbawws!", "Fwuffy wudda stawve..."],
+    DONT_CARE: ["...stiww nummy.", "Babbeh meatbawws... nummy anyway.", "*munch* ...fwuffy nu cawe."],
   },
   // Raids on the backyard (Raids.js)
   RAID: {
@@ -691,7 +722,7 @@ const DIALOGUE = {
   LESSON: {
     COLOURS: ["Aww cowows am fwens?", "Poopie-cowow fwuffies... am fwuffies too?", "<Speaker> twy be nice tu evewy cowow!", "Otha cowow nu bad... okie."],
     COLOURS_NO: ["Nu! Poopie cowows am bad!", "Bu' dey am poopie cowow...", "Nu wan be fwens wif poopie fwuffy!"],
-    ALICORNS: ["Wingie-hownie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
+    ALICORNS: ["Hownie-wingie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
     PLAYNICE: ["Stuffy am munstah... nu fwen?", "Nu be meanie tu fwuffies... okie.", "Be meanie tu stuffy, den say sowwy?"],
     BABIES: ["Aww babbehs am gud babbehs?", "Eben smaww babbeh... eben smeww funny babbeh?", "Mummah wub aww babbehs... okie."],
     BRAVE: ["<Speaker> am bwave fwuffy!", "Nu be scawed... okie...", "Scawy fing nu huwt <speaker>."],
@@ -1059,6 +1090,44 @@ const DIALOGUE = {
       "*Suckle suckle* cooo... cooo...chirp!",
       "*suckle suckle*",
       "Coooo...*suckle*",
+    ],
+  },
+
+  // A bad smarty runs off and leaves its herd (Desertion.js)
+  DESERT: {
+    GO: {
+      FOX: ["Smawty nu get eaten fow dummeh hewd!", "Wun wun! Munstah can hab dummeh fwuffies!"],
+      WAR: ["Dummeh hewd wose! Smawty nu stay!", "Smawty too speciaw tu get huwties! Bye dummehs!"],
+      HUNGRY: ["Nu enuff nummies! Smawty find nummies fow smawty!", "Dummeh hewd hab nu nummies... smawty go!"],
+      SICK: ["Hewd am sickies! Smawty nu get sickies!", "Icky sickie hewd! Smawty go 'way!"],
+    },
+    LEFT_BY_LEADER: [
+      "<Target> weave hewd?! Smawty pwomise keep hewd safe!!",
+      "Come back <target>!! Hewd nee' smawty!",
+      "<Target> am bad smawty! Nu weadew nu mowe!",
+    ],
+    LEFT_BY: ["<Target> wun 'way an' weave fwiends!", "Bad <target>! Nu pawt ob hewd nu mowe!"],
+  },
+
+  // Out of breath from running (Stamina.js)
+  RUN_TIRED: {
+    DEFAULT: [
+      "*huff huff*... nu can wun nu mowe...",
+      "*pant pant* Weggies su tiwed...",
+      "Nee'... westies... *wheeze*",
+      "*huff* *puff* Wun-wuns am su hawd...",
+      "Hoofsies... huwt... *pant*",
+    ],
+    CHIRPY: ["*tiny panting*", "*peep... pant pant*"],
+  },
+
+  // Both of mum's teats are taken (HorseFamily.nursingSlotsFull)
+  MILKIE_WAIT: {
+    CHIRPY: ["*squirm squirm* cheep!", "*impatient peeping*", "*cheep...* *nuzzle nuzzle*"],
+    DEFAULT: [
+      "Wan' miwkies tuu! Nu faiw!",
+      "Babbeh wan' tuwn!! Babbeh hungwy tuu!",
+      "Miwkie-pwaces aww taken... babbeh wait...",
     ],
   },
 
@@ -1602,6 +1671,7 @@ const DIALOGUE = {
     ],
     ALICORN: [
       "SCREEE! MUNSTAH!!",
+      "HOWNIE-WINGIE MUNSTA!! WUN WAY!!",
       "NU NUM <SPEAKER> MUNSTAH!!",
       "MUNSTAH!!! NEE WUN WAY!!!",
       "H-HAB WINGIES AN' HOWN??? SCAWDIES!!!",
@@ -1609,7 +1679,7 @@ const DIALOGUE = {
       "MUNSTAH GON NUM <SPEAKER>!! WUN WAY!! WUN WAY!!",
     ],
     // A grown one just keeps away from it (AlicornAcceptance alicornStance)
-    ALICORN_AVOID: ["Nu come cwose, munstah...", "<Speaker> nu wike munstah. Gu 'way.", "Hmph. Stay ober dewe.", "Munstah fwuffy... <speaker> wawk 'way."],
+    ALICORN_AVOID: ["Nu come cwose, munstah...", "<Speaker> nu wike munstah. Gu 'way.", "Hmph. Stay ober dewe.", "Munstah fwuffy... <speaker> wawk 'way.", "Hownie-wingie munsta... nu wook at <speaker>..."],
     // A fierce one goes for a weak one (AlicornAcceptance alicornStance)
     ALICORN_BRAVE: [
       "BAD MUNSTAH!! GU 'WAY!!",
@@ -1864,7 +1934,7 @@ const DIALOGUE = {
       ],
     },
     MUNSTA_TOL: [
-      "Pointy wingy fwuffies am fwends!",
+      "Hownie-wingie fwuffies am fwends!",
       "<Speaker> wuws aww fwuffies!",
     ],
     HEAVY_METAL: [
@@ -2510,7 +2580,7 @@ const DIALOGUE = {
     DEFAULT: [
       "*growl* Uh... hewwo nice bawky munstAAAAAAAAAAGGHHHH!!!!",
       "*grrrrr* Hewwo bawky munstah! Hab housie fo' fwuff-EEEEEEEEEEEEEEEEEEEEEK! *SNNNNNNAP!!!* *RIP* *TEAR* NNNNNNNNNGGGGGGGGG!!!! *gurgle* *gasp*",
-      "HEWPP!!! BAWKIE MUNSTAH AM GIB SU MANY HUWTIES!!! *GROWL* *CHOMP* EEEEEEEEEEK!! NU NUM TUMMEH SKETTIS!!! *MUNCH MUNCH MUNCH*... huuuu huu huu... wan die...",
+      "HEWPP!!! BAWKIE MUNSTAH AM GIB SU MANY HUWTIES!!! *GROWL* *CHOMP* EEEEEEEEEEK!! NU NUM TUMMY SKETTIES!!! *MUNCH MUNCH MUNCH*... huuuu huu huu... wan die...",
     ],
   },
 

@@ -21,8 +21,8 @@ module.exports = [
         };
         let genes = null;
         const young = mk(12);
-        const senior = mk(45);
-        const old = mk(64);
+        const senior = mk(52);
+        const old = mk(76);
         const foal = new Horse(0.4, null, "INDOORS", "earthy");
         foal.age = 0.4 * GROW_UP_TIME;
         const out = {
@@ -46,7 +46,7 @@ module.exports = [
         agingTicker.fireNext();
         updateAging(0);
         senior.renderer.tinted = { marker: true };
-        senior.age = 58 * DAY_LENGTH;
+        senior.age = 66 * DAY_LENGTH;
         agingTicker.fireNext();
         updateAging(0);
         out.retinted = senior.renderer.tinted === null;
@@ -55,8 +55,8 @@ module.exports = [
       checkEqual(JSON.stringify(r.stages), JSON.stringify(["foal", "adult", "senior", "elderly"]), "stages");
       check(/^Foal, 40% grown/.test(r.ages[0]), r.ages[0]);
       checkEqual(r.ages[1], "Adult, 1 year old", "adult age");
-      checkEqual(r.ages[2], "Senior, 3 years, 9 months old", "senior age");
-      checkEqual(r.ages[3], "Elderly, 5 years, 4 months old", "elderly age");
+      checkEqual(r.ages[2], "Senior, 4 years, 4 months old", "senior age");
+      checkEqual(r.ages[3], "Elderly, 6 years, 4 months old", "elderly age");
       check(r.grey[0] === 0 && r.grey[1] > 0 && r.grey[2] > r.grey[1], `grey ${r.grey}`);
       check(r.maneSame, "no grey when young");
       const [rr, gg, bb] = r.maneOld.match(/\d+/g).map(Number);
@@ -68,7 +68,7 @@ module.exports = [
     },
   },
   {
-    name: "aging: fluffies die of old age - never young, sometimes when old, always by 7 years",
+    name: "aging: fluffies die of old age - never young, sometimes when old, always by 8 years",
     run: async (page) => {
       const r = await page.evaluate(() => {
         __clearScene();
@@ -80,9 +80,9 @@ module.exports = [
           fluffies.push(h);
           return h;
         };
-        const young = Array.from({ length: 10 }, () => mk(50));
-        const old = Array.from({ length: 30 }, () => mk(75));
-        const ancient = mk(84.5);
+        const young = Array.from({ length: 10 }, () => mk(62));
+        const old = Array.from({ length: 30 }, () => mk(87));
+        const ancient = mk(96.5);
         // One game day of checks (ages held still)
         for (let t = 0; t < DAY_LENGTH; t += AGING_TICK) {
           for (const f of fluffies) if (f.isAlive) f.age = f.age; // unchanged
@@ -96,9 +96,9 @@ module.exports = [
           msg: uiMessages.some((m) => /died peacefully of old age/.test(m.text)),
         };
       });
-      checkEqual(r.youngDead, 0, "4-year-olds don't die of old age");
-      check(r.oldDead >= 2 && r.oldDead <= 16, `6-year-olds dying in a day: ${r.oldDead}/30 (expect ~7)`);
-      checkEqual(JSON.stringify(r.ancient), JSON.stringify([false, "Old age"]), "7 years is the limit");
+      checkEqual(r.youngDead, 0, "5-year-olds don't die of old age");
+      check(r.oldDead >= 2 && r.oldDead <= 16, `7-year-olds dying in a day: ${r.oldDead}/30 (expect ~7)`);
+      checkEqual(JSON.stringify(r.ancient), JSON.stringify([false, "Old age"]), "8 years is the limit");
       check(r.msg, "you're told");
     },
   },

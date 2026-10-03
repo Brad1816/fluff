@@ -49,6 +49,51 @@ function updateFoalCalls(dt) {
 }
 registerSystem("foalCalls", updateFoalCalls, 60);
 
+// A mare has two teats (lore): only NURSE_SLOTS foals can drink at a time.
+// Each drink takes NURSE_TIME game seconds (mare._nursing: foal id -> when
+// it's done; not saved). The others wait their turn, squirming.
+const NURSE_SLOTS = 2;
+const NURSE_TIME = 5;
+
+function _nurseNow() {
+  return typeof timePlayed === "number" ? timePlayed : 0;
+}
+
+// Is someone else on both teats right now?
+function nursingSlotsFull(mare, foal) {
+  const m = mare && mare._nursing;
+  if (!m) return false;
+  const now = _nurseNow();
+  let busy = 0;
+  for (const id in m) {
+    if (!(m[id] > now) || m[id] - now > NURSE_TIME * 2) {
+      delete m[id];
+      continue;
+    }
+    if (foal && String(foal.id) === id) return false; // (already on)
+    const other = fluffyById(id);
+    if (!other || !other.isAlive) {
+      delete m[id];
+      continue;
+    }
+    busy++;
+  }
+  return busy >= NURSE_SLOTS;
+}
+
+function startNursing(mare, foal) {
+  if (!mare || !foal) return;
+  if (!mare._nursing) mare._nursing = {};
+  mare._nursing[foal.id] = _nurseNow() + NURSE_TIME;
+}
+
+function nursingCount(mare) {
+  const m = mare && mare._nursing;
+  if (!m) return 0;
+  const now = _nurseNow();
+  return Object.values(m).filter((t) => t > now).length;
+}
+
 addHorseMethods({
   attemptFeedFromMare(mare) {
     if (
@@ -66,6 +111,13 @@ addHorseMethods({
     if (isMom && typeof foalShiesFromMum === "function" && foalShiesFromMum(this, mare)) return false;
     if (isMom && typeof mumAway === "function" && mumAway(mare)) {
       this.milkCooldown = 3.0;
+      return false;
+    }
+    // Both teats taken: wait a moment
+    if (mare.milkCharges > 0 && nursingSlotsFull(mare, this)) {
+      this.milkCooldown = 1.5;
+      if (Math.random() < 0.3 && (!this.speech || !this.speech.text))
+        this.speak(getDialogue(["MILKIE_WAIT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], this, mare));
       return false;
     }
     const mareTolerant =
@@ -170,6 +222,7 @@ addHorseMethods({
     if (success) {
       mare.milkCharges--;
       this.hunger = 1.0;
+      startNursing(mare, this);
       if (isMom && typeof noteBestestFed === "function") noteBestestFed(mare, this); // (Favourites.js)
       if (!isMom) goodDeed = "shared";
       if (goodDeed && typeof noteGoodDeed === "function") noteGoodDeed(mare, goodDeed);

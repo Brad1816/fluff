@@ -51,6 +51,7 @@ const STORY_KINDS = {
   scarred: { big: true, text: (e, n) => `${n} was scarred for life: ${String(e.x || "").toLowerCase()}.` },
   show: { big: true, text: (e, n) => `${n} came ${e.x} at a show.` },
   herd_formed: { big: true, text: (e, n) => `A new herd formed around ${n}: the ${e.x}.` },
+  deserted: { big: true, text: (e, n) => `${n} ran off and left the ${e.x}.` }, // (Desertion.js)
   // Phase 1 (LifeStory.js, Identity.js): x is the whole line
   backstory: { big: true, text: (e, n) => `${n}, before you: ${e.x}` },
   turning: { big: true, text: (e) => `Turning point: ${e.x}` },

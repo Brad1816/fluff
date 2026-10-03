@@ -4,18 +4,19 @@
 // A fluffy's age is f.age (game seconds since it was born; saved). A game
 // day is DAY_LENGTH (1,200s, WorldTime.js). The calendar: a season is 3 days
 // and a year 12 (WorldTime.js DAYS_PER_SEASON), so one game day is about one
-// month of a fluffy's life (DAYS_PER_YEAR, fluffyAgeText). Fluffies live 5 to
-// 7 years.
+// month of a fluffy's life (DAYS_PER_YEAR, fluffyAgeText). Fluffies live 6.5
+// to 8 years - a little longer than the lore's 5-7, so a farm can see a few
+// generations of one family.
 //   foal      growing up: GROW_UP_TIME, about 2 months (2 days;
 //             HorseUpdate._updateGrowingUp). Walks at 30% grown.
-//   adult     until SENIOR_DAYS (42 = 3.5 years)
+//   adult     until SENIOR_DAYS (48 = 4 years)
 //   senior    its mane and tail start to go grey
-//   elderly   from ELDERLY_DAYS (60 = 5 years): grey, slower
+//   elderly   from ELDERLY_DAYS (72 = 6 years): grey, slower
 //             (Horse.updateSpeed x0.75), mares can't get pregnant any more
 //             (HorseMating), worth less
-//   old age   from OLD_AGE_RISK_DAYS (66 = 5.5 years) there's a chance each
+//   old age   from OLD_AGE_RISK_DAYS (78 = 6.5 years) there's a chance each
 //             day of dying peacefully of old age, rising until MAX_AGE_DAYS
-//             (84 = 7 years), when it always happens.
+//             (96 = 8 years), when it always happens.
 // Pregnancy lasts about 2 weeks (Horse.js pregnancyDuration, ~11 game hours)
 // and a mare nurses from conception until her foals can walk
 // (LACTATION_TIME, HorseAnatomy.triggerPregnancy).
@@ -31,10 +32,10 @@
 
 const DAYS_PER_YEAR = 12; // (4 seasons of 3 days: one game day ~ one month)
 const GROW_UP_TIME = 2 * 1200; // seconds from newborn to grown: about 2 months (HorseUpdate)
-const SENIOR_DAYS = 42; // 3.5 years
-const ELDERLY_DAYS = 60; // 5 years
-const OLD_AGE_RISK_DAYS = 66; // 5.5 years
-const MAX_AGE_DAYS = 84; // 7 years
+const SENIOR_DAYS = 48; // 4 years
+const ELDERLY_DAYS = 72; // 6 years
+const OLD_AGE_RISK_DAYS = 78; // 6.5 years
+const MAX_AGE_DAYS = 96; // 8 years
 // A mare nurses from conception until her foals walk (at 30% grown)
 const LACTATION_TIME = 560 + 0.36 * GROW_UP_TIME;
 const AGING_TICK = 5; // seconds

@@ -186,6 +186,9 @@ function storyLine(e, f, fam = null) {
     case "herd_formed":
       if (e.w[0] === me) return `A new herd formed around ${p.obj}: the ${e.x}.`;
       return `${p.Sub} joined the ${e.x} when it formed.`;
+    case "deserted": // (Desertion.js)
+      if (e.w[0] === me) return `${p.Sub} ran off and left the ${e.x} ${day}.`;
+      return `${p.Sub} was left behind when a smarty deserted the ${e.x} ${day}.`;
     case "injured":
       if (e.x === "spay") return `${p.Sub} was spayed ${day}.`;
       return `${p.Sub} lost ${_lsPart(e.x, p)} ${day}.`;

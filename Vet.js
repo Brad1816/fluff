@@ -5,7 +5,7 @@
 // For each of your fluffies (sick ones listed first):
 //   Check-up (VET_CHECK_PRICE)  finds flu that isn't showing yet (Illness.js),
 //        and for older fluffies says roughly how long they have left
-//        (Aging.js: most live to 5-7 years)
+//        (Aging.js: most live to 6.5-8 years)
 //   Treat (vetTreatmentPrice)   cures Fluffy flu, poisoning, toxoplasmosis,
 //        the runs and incontinence, stops bleeding and heals to full health
 //   Jabs                        flu jab (VET_JAB_PRICE): can't catch Fluffy
@@ -178,6 +178,8 @@ function vetCheckUp(f) {
     const [care] = typeof describeCare === "function" ? describeCare(pregnancyCareScore(f)) : ["?"];
     let scan = `expecting ${n} foal${n === 1 ? "" : "s"} (care so far: ${care.toLowerCase()})`;
     if (typeof isRiskyLitter === "function" && isRiskyLitter(f) && !f.midwife) scan += " - a risky birth for her, book a midwife";
+    if (typeof bigLitterMiscarriageChance === "function" && bigLitterMiscarriageChance(f) >= 0.1)
+      scan += " - that's a lot to carry, she could lose them; keep her well";
     found.push(scan);
   }
   f.vetLife = vetLifeNote(f);

@@ -937,7 +937,8 @@ class Horse {
     if (this.isCrawling) {
       this.speed = 40;
     } else if (this.currentStateKey === "RUNNING") {
-      this.speed = 175;
+      // (out of breath: only a walk - Stamina.js)
+      this.speed = (typeof runWindedSpeed === "function" && runWindedSpeed(this)) || 175;
     } else {
       this.speed = 100;
     }
