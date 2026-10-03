@@ -30,7 +30,7 @@ const channel_speeches = {
       //This one doesn't have a flag, it's not required.
       tvResponse: "Baww! Baww!",
     },
-    { text: "Gud fwuffies wisten to ownah!", weight: 1 },
+    { text: "Gud fwuffies wisten tu ownah!", weight: 1 },
     {
       text: "Gud fwuffies wub aww fwuffies! Eben poopie fwuffies!!",
       weight: 1,
@@ -68,7 +68,7 @@ const channel_speeches = {
       tvResponse: "Wan' hewp babbeh wif nu mummah!",
     },
     {
-      text: "Babbehs need miwkies to gwow!",
+      text: "Babbehs need miwkies tu gwow!",
       weight: 1,
       milkEncouragment: true,
       tvResponse: "Babbehs wiww be big an stwong fwom miwkies!",
@@ -101,7 +101,7 @@ const channel_speeches = {
     { text: "BUT I COULD FAAAAADE AWAYYY", weight: 1 },
   ],
   TORTURE_CHANNEL: [
-    { text: "Mistah no hurt fwuffy! Fwuff- SCREEEEEEEEE!!", weight: 1 },
+    { text: "Mistah nu huwt fwuffy! Fwuff- SCREEEEEEEEE!!", weight: 1 },
     { text: "Huu huu huu wan die... mummah! Wan die!", weight: 1 },
     {
       text: "Am mummah soon! Nu wan num bad fow babbeh sketties! Huu huu...",
@@ -109,11 +109,11 @@ const channel_speeches = {
     }, //Reference to Carpdime
     { text: '"Sowwy babbeh..." "*pained chirping*"', weight: 1 }, //Reference to a forgotten comic
     {
-      text: "Wook cwose to needwe? SCREEEE!! Huuuhuuu fwuffy's see-pwace!",
+      text: "Wook cwose tu needwe? SCREEEE!! Huuuhuuu fwuffy's see-pwace!",
       weight: 1,
     },
     { text: "*hack* *cough* Nuu! Fwuff- *cough* nu am ashtway!", weight: 1 },
-    { text: "Mummaaahhh... why did mummah gib biwth to fwuffy?", weight: 1 }, //Reference to a Yukkuri abuse doujin
+    { text: "Mummaaahhh... wai did mummah gib biwth tu fwuffy?", weight: 1 }, //Reference to a Yukkuri abuse doujin
     {
       text: '"Say goodbye to your babies, you little shit!" "NUUUUUUUUUUU!!"',
       weight: 1,
@@ -128,10 +128,10 @@ const channel_speeches = {
       weight: 1,
     },
     {
-      text: "Huu huu... fwuffy poopie pwace hab worstest huwties...",
+      text: "Huu huu... fwuffy poopie pwace hab wowstest huwties...",
       weight: 1,
     },
-    { text: "Nuu! Fwuffy nu wan gib speshuw huggies to sissie!", weight: 1 },
+    { text: "Nuu! Fwuffy nu wan gib speshuw huggies tu sissie!", weight: 1 },
     {
       text: "Daddeh! Spinny-boxie too hot! Fwuffy too ho- *splortch*",
       weight: 1,
@@ -145,17 +145,17 @@ const channel_speeches = {
       weight: 1,
     }, //A loose reference to a Yukkuri abuse doujin
     { text: "Nu take pwetty wingies! Pwease nu take...", weight: 1 }, //Reference to art by Carpdime
-    { text: "Hewwo snakey munsta! Nu fren? ... snakey munsta?", weight: 1 },
+    { text: "Hewwo snakey munsta! Nu fwen? ... snakey munsta?", weight: 1 },
     {
-      text: '"Why in daddeh wittewbox? Fwuffy use big wittabox now?" *FLUSH* "WAWA BAD! WAWA BAD!!"',
+      text: '"Wai in daddeh wittewbox? Fwuffy use big wittabox nao?" *FLUSH* "WAWA BAD! WAWA BAD!!"',
       weight: 1,
     },
     {
-      text: "Daddeh? Huggies! Daddeh? Uppies? Wook! Dancie babbeh! Am dancie babbeh now! Huu huu...",
+      text: "Daddeh? Huggies! Daddeh? Uppies? Wook! Dancie babbeh! Am dancie babbeh nao! Huu huu...",
       weight: 1,
     }, //Reference to art by Spoosh
     {
-      text: "Nuuuu! Nu wan waviowi! Wan weggies an wumps back! Why vet take weggies? Huu huu...",
+      text: "Nuuuu! Nu wan waviowi! Wan weggies an wumps back! Wai vet take weggies? Huu huu...",
       weight: 1,
     }, //Reference to art by Wolfram
   ],

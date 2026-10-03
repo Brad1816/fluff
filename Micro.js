@@ -160,7 +160,7 @@ const SURGERY_PAIN = {
   horn: ["Pointy! Nu! <Speaker> pointy!", "*SCREE* Head huwties!", "Huu... speshuw pointy..."],
   ear: ["Nu heaw nao! Huwties!", "*SCREE* Eaw-pway!", "Owie owie owie!"],
   eye: ["Dawk! Evewyfin' dawk!", "*SCREE* <Speaker> nu see!", "Huu huu... wan see..."],
-  tail: ["Tail! Nu tail!", "Huwties! Bum huwties!", "*sob* Fwuffy tail..."],
+  tail: ["Taiw! Nu taiw!", "Huwties! Bum huwties!", "*sob* Fwuffy taiw..."],
   other: ["Huwties! Huwties! Make stop!", "*SCREE*", "Pwease mistah! Nu mowe!", "Wai mistah huwt <speaker>?"],
 };
 let _cuPortrait = null; // { id, at, canvas }
