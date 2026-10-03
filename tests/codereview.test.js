@@ -226,4 +226,33 @@ module.exports = [
       check(r.ran, "the other fluffy still updates");
     },
   },
+  {
+    name: "codereview: a sleeping fluffy doesn't get to know the room; awake ones do; tickers don't all fire together",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const a = __mk(300);
+        const b = __mk(400);
+        a.met = {};
+        b.met = {};
+        b.currentStateKey = "SLEEPING";
+        const out = { sleepingKnows: haveMet(a, b) };
+        meetTicker.fireNext();
+        updateMeetings(1);
+        out.sleepingMet = !!(a.met[b.id] || b.met[a.id]);
+        b.currentStateKey = "IDLE";
+        out.awakeKnows = haveMet(a, b);
+        meetTicker.fireNext();
+        updateMeetings(1);
+        out.awakeMet = !!(a.met[b.id] && b.met[a.id]);
+        // Tickers made one after another start at different points
+        const t = [new Ticker(1), new Ticker(1), new Ticker(1), new Ticker(1)].map((x) => +x.left.toFixed(2));
+        out.spread = new Set(t).size === 4;
+        return out;
+      }, SETUP);
+      check(!r.sleepingKnows && !r.sleepingMet, `asleep: not met (${JSON.stringify(r)})`);
+      check(r.awakeKnows && r.awakeMet, "awake: they meet");
+      check(r.spread, "tickers spread out");
+    },
+  },
 ];

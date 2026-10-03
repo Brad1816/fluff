@@ -33,7 +33,10 @@ function metOf(f) {
 function haveMet(a, b) {
   if (!a || !b) return false;
   if (a === b) return true;
-  if (a.scene === b.scene && a.scene !== undefined) {
+  // (awake and able to see or hear each other, as in updateMeetings; a body
+  // in the room is still seen by whoever's awake)
+  const looking = (f) => !f.isAlive || _canTakeIn(f);
+  if (a.scene === b.scene && a.scene !== undefined && (a.isAlive || b.isAlive) && looking(a) && looking(b)) {
     // (the park's big: near enough to see)
     if (!(typeof isCameraScene === "function" && isCameraScene(a.scene))) return true;
     if (Math.hypot(a.x - b.x, a.y - b.y) <= MEET_RANGE) return true;
@@ -73,8 +76,9 @@ function updateMeetings(dt) {
       const aOk = _canTakeIn(a);
       for (let j = i + 1; j < list.length; j++) {
         const b = list[j];
-        if (!aOk && !_canTakeIn(b)) continue;
-        if (wide && Math.abs(a.x - b.x) + Math.abs(a.y - b.y) > MEET_RANGE * 1.4) continue;
+        // Both have to be awake and able to see or hear (not just one)
+        if (!aOk || !_canTakeIn(b)) continue;
+        if (wide && (a.x - b.x) ** 2 + (a.y - b.y) ** 2 > MEET_RANGE * MEET_RANGE) continue;
         if (a.met && a.met[b.id] && b.met && b.met[a.id]) continue;
         meet(a, b);
       }

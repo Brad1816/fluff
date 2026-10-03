@@ -23,14 +23,19 @@
 //     ...
 //   }
 //
-// The first call is due straight away. ticker.fireNext() makes the next
-// call due (tests use it to run a system right now).
+// Each ticker starts part-way through its first wait (spread evenly by the
+// order they're made), so systems with the same interval don't all run on
+// the same frame - that made a small stutter every second or so.
+// ticker.fireNext() makes the next call due (tests use it to run a system
+// right now).
 // ---------------------------------------------------------------------------
 
+let _tickerCount = 0;
 class Ticker {
   constructor(every) {
     this.every = every;
-    this.left = 0;
+    // (the golden ratio spreads any number of them evenly over the wait)
+    this.left = every * ((_tickerCount++ * 0.6180339887) % 1);
   }
 
   // Seconds since it last fired (at least `every`) when it's due, else 0
