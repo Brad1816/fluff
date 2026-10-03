@@ -129,6 +129,7 @@ function noteTurnedAway(mare, foal) {
   if (!best) return;
   if (typeof changeOpinion === "function") changeOpinion(foal, best, -BESTEST_RESENT_DENIED, "mum's favourite");
   foal.changeHappiness(-0.03);
+  if (typeof noteMumMisdeed === "function") noteMumMisdeed(mare, foal, "hoarded"); // (Care.js, BadMummah.js)
   if (mare.happiness > WAN_DIE_THRESHOLD) mare.speak(getDialogue(["BESTEST", "SAVE_MILK"], mare, foal));
 }
 

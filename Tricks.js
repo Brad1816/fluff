@@ -448,6 +448,7 @@ function rightClickActions(f) {
   if (typeof releaseActions === "function") out.push(...releaseActions(f)); // Runaways.js
   if (typeof putOutActions === "function") out.push(...putOutActions(f)); // Strays.js
   if (typeof matingRuleActions === "function") out.push(...matingRuleActions(f)); // MatingRule.js
+  if (typeof badMummahActions === "function") out.push(...badMummahActions(f)); // BadMummah.js (last chance)
   if (typeof outingActions === "function") out.push(...outingActions(f)); // ParkOutings.js
   if (typeof photoActions === "function") out.push(...photoActions(f)); // Lives.js
   if (typeof herdActions === "function") out.push(...herdActions(f)); // Herds.js (forget its old herd)

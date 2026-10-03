@@ -198,6 +198,10 @@ class Horse {
     if (typeof TrickDesire !== "undefined") this.brain.addDesire(new TrickDesire());
     // Sitting with you, or in a time-out (Care.js)
     if (typeof CareDesire !== "undefined") this.brain.addDesire(new CareDesire());
+    // Mums and foals (batch 12): time away from her foals (BadMummah.js),
+    // wandering off, a dead mum, bullying (FoalLife.js)
+    if (typeof MumAwayDesire !== "undefined") this.brain.addDesire(new MumAwayDesire());
+    if (typeof FoalLifeDesire !== "undefined") this.brain.addDesire(new FoalLifeDesire());
     // Frightened by thunder, the dark or the Fluff-Bot (Fears.js)
     if (typeof FrightDesire !== "undefined") this.brain.addDesire(new FrightDesire());
     // Chasing the ball in your hand (Play.js)
@@ -985,6 +989,8 @@ class Horse {
     this.scale = 0.5 * (lerp(1, 0.92 + genderBonus, g) + genetics) * g;
     // Premature babies start smaller and catch up as they grow
     this.scale *= lerp(this.prematureGrowth == null ? 1 : this.prematureGrowth, 1.0, this.growth);
+    // A runt stays small (Runts.js)
+    if (this.runt && typeof runtScale === "function") this.scale *= runtScale(this);
     this.updateCrawling();
   }
 

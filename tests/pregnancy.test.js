@@ -192,7 +192,7 @@ module.exports = [
         const out = {
           n: foals.length,
           litterBorn: foals.map((f) => f.litterBorn),
-          vigor: foals.map((f) => f.birthVigor),
+          vigor: foals.filter((f) => !f.runt).map((f) => f.birthVigor), // (a runt is born weaker: Runts.js)
           done: !mum.isPregnant,
           msg: said.find((t) => /had \d foal/.test(t)),
           midwifeAfter: mum.midwife,
@@ -207,7 +207,7 @@ module.exports = [
         onFoalBorn(weakMum, weak, true);
         out.weak = { vigor: weak.birthVigor, health: weak.health, row: describeBirth(weak) };
         // Growth: strong and fed vs weak and hungry
-        const strong = foals[0];
+        const strong = foals.find((f) => !f.runt) || foals[0];
         strong.hunger = 1;
         weak.hunger = 0.05;
         out.rates = { strong: foalGrowthRate(strong), weak: foalGrowthRate(weak), adult: foalGrowthRate(mum), none: foalGrowthRate({ growth: 0.5, hunger: 0.5 }) };

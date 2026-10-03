@@ -186,7 +186,9 @@ function foalGrowthRate(f) {
   const fed = h >= 0.6 ? 1.05 : h >= 0.3 ? 1 : h >= 0.1 ? 0.75 : 0.5;
   // Good food, faster growing (Diet.js)
   const diet = typeof dietGrowthMultiplier === "function" ? dietGrowthMultiplier(f) : 1;
-  return vigor * fed * diet;
+  // A runt grows slower (Runts.js)
+  const runt = typeof runtGrowthRate === "function" ? runtGrowthRate(f) : 1;
+  return vigor * fed * diet * runt;
 }
 
 // ---- What you see ----

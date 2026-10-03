@@ -76,6 +76,11 @@ function needsSitWith(f) {
 function recentMisdeed(f) {
   const now = timePlayed;
   const recent = (t) => typeof t === "number" && now >= t && now - t <= SCOLD_RECENT;
+  // (the worst first: Batch 12, mothers and foals)
+  if (recent(f._cannibalAt)) return "cannibal";
+  if (recent(f._badMumAt)) return "badmum";
+  if (recent(f._foalAttackAt)) return "hurt_foal";
+  if (recent(f._bullyAt)) return "bully";
   if (recent(f._lastAttackAt) || (f.chaseTarget && f.chaseReason && f.chaseReason !== "MATING")) return "fight";
   if (recent(f._mischiefAt)) return "mischief";
   if (recent(f._accidentAt)) return "accident";
@@ -92,13 +97,117 @@ function careActions(f) {
   if (why && !(f.sitWith && now < f.sitWith.until) && !(typeof f._sitWithAt === "number" && now >= f._sitWithAt && now - f._sitWithAt < SIT_WITH_REST)) {
     out.push({ key: "sitwith", name: "Sit with", sub: why, run: (x) => sitWith(x) });
   }
-  if (f.currentStateKey !== "SLEEPING" && _caToday(f).praise < PRAISE_PER_DAY) out.push({ key: "praise", name: "Praise", sub: `${PRAISE_PER_DAY - _caToday(f).praise} left today`, run: (x) => praiseFluffy(x) });
+  if (f.currentStateKey !== "SLEEPING" && _caToday(f).praise < PRAISE_PER_DAY) {
+    const deed = recentGoodDeed(f);
+    out.push({ key: "praise", name: "Praise", sub: deed ? GOOD_DEED_WORDS[deed] : `${PRAISE_PER_DAY - _caToday(f).praise} left today`, run: (x) => praiseFluffy(x) });
+  }
   if (f.currentStateKey !== "SLEEPING") {
     const m = recentMisdeed(f);
-    out.push({ key: "scold", name: "Scold", sub: m ? { fight: "for fighting", mischief: "for mischief", accident: "for the mess" }[m] : "harsh", harsh: true, run: (x) => scoldFluffy(x) });
+    out.push({ key: "scold", name: "Scold", sub: m ? MISDEED_WORDS[m] : "harsh", harsh: true, run: (x) => scoldFluffy(x) });
     if (!(f.timeOut && now < f.timeOut.until)) out.push({ key: "timeout", name: "Time-out", sub: "harsh", harsh: true, run: (x) => timeOut(x) });
   }
   return out;
+}
+
+// ---- More to praise or punish (batch 12) ----
+//
+// Misdeeds (each "just now", SCOLD_RECENT, the worst first):
+//   cannibal   it ate (or bit to eat) another fluffy: less willing to again
+//              (cannibalismAcceptance - SCOLD_CANNIBAL)
+//   badmum     a mum who kept the milk from a foal, hurt one or turned one
+//              away (BadMummah.js): a step towards loving all her babies
+//              (babyLove + SCOLD_BABY_LOVE, Runts.js)
+//   hurt_foal  a grown fluffy that hurt a foal (a stallion too): its
+//              attacks stop a while, and told off often enough it grows
+//              calmer (Personality.js)
+//   bully      a foal picking on another (FoalLife.js): less colour
+//              prejudice, less afraid of alicorns, less of a bully
+// Good deeds (praise one just after, GOOD_DEED_RECENT): a mum singing to
+// her foals, holding herself back on her last chance, sharing her milk
+// (feeding the foals that aren't her bestest, or someone else's), taking
+// in an orphan, nursing a foal she'd once have turned away, and a foal
+// standing up for one being picked on. Praise then: more affection, and a
+// mum on her last chance gets a strike off (BadMummah.js) and loves her
+// babies a little more.
+const SCOLD_CANNIBAL = 0.25;
+const SCOLD_BABY_LOVE = 0.1;
+const GOOD_DEED_RECENT = 45; // game seconds
+const MISDEED_WORDS = {
+  fight: "for fighting",
+  mischief: "for mischief",
+  accident: "for the mess",
+  cannibal: "for eating fluffy",
+  badmum: "bad mummah",
+  hurt_foal: "hurt a foal",
+  bully: "for bullying",
+};
+const GOOD_DEED_WORDS = {
+  sang: "sang to foals",
+  held_back: "was a good mum",
+  shared: "shared milk",
+  fostered: "took one in",
+  accepted: "fed a foal",
+  protected: "stood up for one",
+};
+// (the growth rule "toldOffFoals" is added in FoalLife.js, after Personality.js)
+
+function noteGoodDeed(f, kind) {
+  if (!f || !f.isAlive) return;
+  f._goodDeed = { at: timePlayed, kind };
+}
+
+function recentGoodDeed(f) {
+  const d = f && f._goodDeed;
+  if (!d || typeof d.at !== "number" || timePlayed < d.at || timePlayed - d.at > GOOD_DEED_RECENT) return null;
+  return d.kind;
+}
+
+// A mum's slip (Favourites, Runts, attacks): a misdeed now, and a slip
+// for her last chance (BadMummah.js)
+function noteMumMisdeed(m, f, what) {
+  if (!m || !m.isAlive) return;
+  m._badMumAt = timePlayed;
+  if (typeof noteMumSlip === "function") noteMumSlip(m, f, what);
+}
+
+// HorseSocial.performAttack: a grown fluffy hurting a foal
+function noteFoalAttacked(attacker, target, intent) {
+  if (!attacker || !target || intent === "RETALIATION" || target.growth >= 1 || attacker.growth < 1) return;
+  attacker._foalAttackAt = timePlayed;
+  if (target.motherId === attacker.id && attacker.gender === "female") noteMumMisdeed(attacker, target, "hurt");
+}
+
+// Scolded just after one of the new misdeeds: what it learns
+function scoldLesson(f, misdeed) {
+  const learn = typeof smartsLearn === "function" ? smartsLearn(f) : 1;
+  if (misdeed === "cannibal") {
+    f.cannibalismAcceptance = Math.max(0, (f.cannibalismAcceptance || 0) - SCOLD_CANNIBAL * learn);
+    f.cannibalTarget = null;
+  } else if (misdeed === "badmum") {
+    f.babyLove = Math.min(1, (f.babyLove || 0) + SCOLD_BABY_LOVE * learn);
+  } else if (misdeed === "hurt_foal") {
+    f.attackCooldown = Math.max(f.attackCooldown || 0, 30);
+    if (typeof _pnAdd === "function") _pnAdd(f, "toldOffFoals", 1);
+  } else if (misdeed === "bully") {
+    if (typeof LESSON_COLOURS === "number") f.coloristDegree = Math.max(0, (f.coloristDegree || 0) - LESSON_COLOURS * 0.5 * learn);
+    if (typeof addAlicornComfort === "function") addAlicornComfort(f, 0.04 * learn);
+    f.bullyScore = Math.max(0, (f.bullyScore || 0) - 1);
+    f._bullyJob = null;
+  }
+}
+
+// Praised just after a good deed
+function praiseGoodDeed(f, deed) {
+  if (typeof giveAffection === "function") giveAffection(f, "praised", 1);
+  if (deed === "sang" || deed === "held_back" || deed === "shared" || deed === "fostered" || deed === "accepted") {
+    f.babyLove = Math.min(1, (f.babyLove || 0) + 0.05);
+    if (typeof clearMumStrike === "function") clearMumStrike(f, "praised");
+  }
+  if (deed === "accepted") {
+    if (typeof addAlicornComfort === "function") addAlicornComfort(f, 0.03);
+    f.coloristDegree = Math.max(0, (f.coloristDegree || 0) - 0.03);
+  }
+  if (deed === "protected") f.changeHappiness(0.03, "Praised for being brave");
 }
 
 // ---- Kind ----
@@ -149,6 +258,12 @@ function praiseFluffy(f) {
   t.praise++;
   if (typeof giveAffection === "function") giveAffection(f, "praised", 2);
   f.changeHappiness(0.03, "Praised");
+  // Just did something good: it learns from it
+  const deed = recentGoodDeed(f);
+  if (deed) {
+    f._goodDeed = null;
+    praiseGoodDeed(f, deed);
+  }
   f.expressionOverride = "GOOD_UPSIES";
   f.expressionOverrideTimer = 1.5;
   _caSay(f, "PRAISED");
@@ -181,6 +296,8 @@ function scoldFluffy(f) {
     f._nextMischief = timePlayed + DAY_LENGTH * (typeof smartsLearn === "function" ? smartsLearn(f) : 1); // (a clever one remembers longer)
   } else if (misdeed === "accident") {
     f.pottyTraining = Math.min(1, (f.pottyTraining || 0) + 0.05 * (typeof smartsLearn === "function" ? smartsLearn(f) : 1));
+  } else if (misdeed) {
+    scoldLesson(f, misdeed);
   }
   // The cost: a telling-off is a small thing (three times as much for nothing)
   const k = misdeed ? 1 : 3;

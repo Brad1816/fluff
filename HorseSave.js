@@ -17,6 +17,19 @@
 const SAVED_HORSE_FIELDS = [
   { name: "deathTimer", fallback: 0 }, // Corpses.js
   { name: "notForSale", fallback: false }, // NotForSale.js
+  // Mothers and foals (batch 12)
+  { name: "knowsSong", fallback: undefined }, // Lullaby.js
+  { name: "songHeard", fallback: 0 },
+  { name: "runt", fallback: false }, // Runts.js
+  { name: "babyLove", fallback: 0 },
+  { name: "smellRejected", fallback: null },
+  { name: "sniffed", fallback: null, clone: true },
+  { name: "badMum", fallback: null, clone: true }, // BadMummah.js
+  { name: "takenFromMum", fallback: null },
+  { name: "forgotMum", fallback: false }, // FoalLife.js
+  { name: "mumApart", fallback: 0 },
+  { name: "bullied", fallback: 0 },
+  { name: "bullyScore", fallback: 0 },
   { name: "separation", fallback: null, clone: true }, // Separation.js
   { name: "traumas", fallback: [], clone: true },
   { name: "hurtByPlayerAt", fallback: null }, // Memory.js

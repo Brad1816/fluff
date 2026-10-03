@@ -97,6 +97,8 @@ addHorseMethods({
     target.wasAttackedBy(this);
     // Grudges, and buddies jumping in (Bonds.js)
     if (typeof noteFluffyAttack === "function") noteFluffyAttack(this, target, intent);
+    // A grown fluffy hurting a foal (a mum her own: a slip) (Care.js)
+    if (typeof noteFoalAttacked === "function") noteFoalAttacked(this, target, intent);
     if (typeof noteSharedFight === "function") noteSharedFight(this, target); // a big fight they'll remember (SharedMemories.js)
     if (intent === "BULLY") {
       // A Smarty's shove (SmartyMood.js): stings, never kills

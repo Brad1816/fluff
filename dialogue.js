@@ -532,6 +532,61 @@ const DIALOGUE = {
     SPAYED: ["<Speaker> wiww neba be mummah... huu huu...", "Tummeh am empty fowebah...", "Nu babbehs fow <speaker>... neba...", "Wan' babbehs suu much... nu can..."],
     SPAYED_FOALS: ["Pwetty babbehs... <speaker> neba hab babbehs wike dat...", "Can <speaker> howd babbeh? Jus' fow a widdwe bit?", "Huu huu... odda mummahs hab babbehs...", "Wish <speaker> cud be mummah tu babbehs..."],
   },
+  // Mothers and foals (batch 12): the mummah song (Lullaby.js)
+  MUMMAH_SONG: {
+    SING: ["♪ Hush wittwe babbehs, mummah's hewe... ♪", "♪ Sweepy babbehs, cwose yo' eyesies... ♪", "♪ Mummah wub babbehs, aww nite wong... ♪", "♪ Nu be scawed, mummah keep yu safe... ♪"],
+    FOAL: ["Mummah song... *yawn*", "♪ ...aww nite wong... ♪", "Babbeh wub mummah song.", "Sing mowe, mummah..."],
+  },
+  // A mum turning a foal away for its smell (Runts.js)
+  SMELL: {
+    REJECT: ["Nu! Babbeh nu smeww pwetty! Nu mummah babbeh!", "*sniff sniff* ...dis nu am babbeh, smeww wong!", "Go 'way! Smeww bad! Nu miwkies fo' yu!", "Bad smeww babbeh! Nu wan!"],
+  },
+  // A mare on her last chance (BadMummah.js)
+  BAD_MUMMAH: {
+    TOLD: ["Mummah... wiww be gud mummah. Pwomise.", "Nu take babbehs! Mummah be gud!", "Okie... mummah twy hawdew."],
+    HOLDS_BACK: ["Mummah... gib miwkies tu aww babbehs.", "Mummah wan be mean... bu' nu. Gud mummah.", "Shawe, shawe... aww babbehs am mummah babbehs."],
+    AWAY: ["Nu! Mummah wan babbehs!", "Huu huu... mummah sowwy! Wet mummah see babbehs!", "Wai mummah hab tu sit in cownew?"],
+    BACK: ["Babbehs! Mummah back!", "Mummah be gud nao, babbehs.", "Mummah missed babbehs su much!"],
+    TAKEN: ["NU! Gib babbeh back! Pwease!", "Mummah's babbeh! Nu take!", "Huu huu huu... mummah bad mummah..."],
+  },
+  // A foal that's forgotten its mum (FoalLife.js)
+  FORGOT_MUM: {
+    FOAL: ["Who dat? Nu am mummah!", "Scawy fwuffy... go 'way!", "Nu knyow yu..."],
+    CHIRPY: ["*chirp?*", "*scared peep*", "*squeak*"],
+    MUM: ["Babbeh? Am mummah! Wai babbeh nu knyow mummah?", "Huu... babbeh fowget mummah...", "Pwease, babbeh, am yo' mummah..."],
+    KNOWS_AGAIN: ["Babbeh knyow mummah again! Huuu!", "Mummah's babbeh! Bestest day!"],
+  },
+  // A foal wandering off, and mum fetching it (FoalLife.js)
+  WANDER: {
+    OFF: ["Babbeh go expwowe!", "Wha's ovew dewe?", "Babbeh big nao, go by sewf!"],
+    MUM_CALLS: ["Babbeh?! Whewe babbeh?!", "BABBEH! Come back tu mummah!", "Mummah comin', babbeh! Stay dewe!"],
+    FOUND: ["Dewe yu awe! Nu go 'way fwom mummah!", "Bad babbeh! Mummah wowwied!", "Stay cwose tu mummah, babbeh."],
+    SORRY: ["Sowwy mummah...", "Babbeh jus' wan see...", "Mummah! Huggies!"],
+  },
+  // A young foal that doesn't understand death yet (FoalLife.js)
+  NOT_DEAD: {
+    NURSE: {
+      DEFAULT: ["Mummah? Miwkies? Mummah wake up?", "Mummah sweepin'... babbeh hungwy...", "Mummah? Wai mummah cowd?"],
+      CHIRPY: ["*chirp chirp* ...*nuzzle*", "*hungry peep*", "*nuzzle* *peep?*"],
+    },
+    MUM: {
+      DEFAULT: ["Mummah, wake up! Pway wif babbeh!", "Mummah? Mummah sweepin' su wong...", "Wake up mummah! Huggies?"],
+      CHIRPY: ["*nuzzle* *chirp?*", "*peep peep*"],
+    },
+    SIBLING: {
+      DEFAULT: ["Wake up! Pway!", "Wake up, pway wif babbeh!", "Wai yu nu pway? Siwwy sweepy..."],
+      CHIRPY: ["*nudge* *chirp?*", "*peep?*"],
+    },
+  },
+  // Foals picking on a foal (FoalLife.js)
+  FOAL_BULLY: {
+    START: ["Munstah! Get munstah!", "Poopie babbeh! Go 'way!", "Yu nu fwuffy, yu munstah!"],
+    GANG: ["Munstah! Munstah!", "Go 'way munstah!", "Poopie! Poopie!"],
+    SHOVE: ["Go 'way! Nu miwkies fo' munstah!", "Nu pway wif munstah!", "Shoo, munstah!"],
+    PROTECT: ["Nu! Weave babbeh awone! Am fwen!", "Stop! Nu be meanie!", "Fwen nu munstah! Yu am meanie!"],
+    STUFFY: ["Bad munstah stuffy! Take dat!", "Stuffy munstah! Shoo!", "*shove* Hah! Bad stuffy!"],
+    MAKE_UP: ["...sowwy stuffy. Am fwens?", "Stuffy nu munstah... sowwy.", "*huggies stuffy* Fwens nao."],
+  },
   // Sensitive babies (Inbreeding.js): their own few words
   SENSITIVE: {
     UPSIES: ["NU UPSIES! BABBEH TUU SENSITIB!", "Nu! Nu upsies! Huwties!", "*SCREE* Down! Down! Su sensitib!", "Gentwe... babbeh su sensitib..."],
@@ -561,6 +616,7 @@ const DIALOGUE = {
     COLOURS: ["Aww cowows am fwens?", "Poopie-cowow fwuffies... am fwuffies too?", "<Speaker> twy be nice to evewy cowow!", "Otha cowow nu bad... okie."],
     COLOURS_NO: ["Nu! Poopie cowows am bad!", "Bu' dey am poopie cowow...", "Nu wan be fwens wif poopie fwuffy!"],
     ALICORNS: ["Wingie-hownie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
+    BABIES: ["Aww babbehs am gud babbehs?", "Even smaww babbeh... even smeww funny babbeh?", "Mummah wub aww babbehs... okie."],
     BRAVE: ["<Speaker> am bwave fwuffy!", "Nu be scawed... okie...", "Scawy fing nu huwt <speaker>."],
     TABLE: ["Tabwe nu huwt... tabwe jus' tabwe?", "<Speaker> twy be bwave 'bout tabwe...", "Nu scawy tabwe... okie..."],
     CALM: ["Daddeh... nu huwt <speaker>?", "<Speaker> twy nu be scawed of daddeh...", "*sniff* Daddeh gentwe nao..."],

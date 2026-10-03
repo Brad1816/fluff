@@ -198,6 +198,8 @@ module.exports = [
           out.stages[p] = s ? [s.key, Math.round(s.survive * 100), Math.round(s.size * 100)] : null;
         }
         const dad = __mk(300, { gender: "male" });
+        window.__realRuntChance = runtChance;
+        runtChance = () => 0; // (no runts here: they'd skew the sizes - Runts.js)
         // A litter of 6 born at a given point in the pregnancy
         const birth = (progress, midwife = false) => {
           const mum = __mk(600);
@@ -259,6 +261,7 @@ module.exports = [
         small.growth = 0.3;
         small.updateGrowthStats();
         out.describe = describePremature(small);
+        runtChance = window.__realRuntChance;
         return out;
       }, SETUP);
       checkEqual(JSON.stringify(r.stages[0.2]), JSON.stringify(["too_early", 0, 36]), "20%: too early");

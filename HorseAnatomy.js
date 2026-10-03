@@ -231,6 +231,7 @@ class HorseAnatomy {
 
     target.wasAttackedBy(this.horse);
     this.horse.initBehavior("FLUFFY_BITE");
+    this.horse._cannibalAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: scold it)
 
     // High chance of gibbing
     if (target.isCrawling && Math.random() < 0.8) {
@@ -296,6 +297,7 @@ class HorseAnatomy {
   eatGib(gib) {
     if (!gib) return;
     this.horse.initBehavior("FLUFFY_BITE");
+    this.horse._cannibalAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: scold it)
     this.horse.speak(getDialogue(["CANNIBAL", "EAT"], this.horse));
     if (gib.type === "head" || gib.type === "torso") {
       this.horse.hunger = Math.min(
@@ -698,6 +700,8 @@ class HorseAnatomy {
     fluffies.push(baby);
     // Litter size, and how strong it is from mum's care (Pregnancy.js)
     if (typeof onFoalBorn === "function") onFoalBorn(this.horse, baby, isViable);
+    // A runt? (Runts.js; born here, it has to learn the mummah song)
+    if (isViable && typeof rollRunt === "function") rollRunt(baby, this.horse, sire);
     // Small and weak if it came early (Premature.js)
     if (early && typeof applyPrematureBirth === "function") applyPrematureBirth(baby, early, isViable);
     if (isViable) {

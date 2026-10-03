@@ -440,6 +440,8 @@ class HorseGenetics {
     if (typeof mangledPriceMultiplier === "function") price *= mangledPriceMultiplier(this.horse);
     // Born deformed (inbred): -15% each (Inbreeding.js)
     if (typeof deformityPriceMultiplier === "function") price *= deformityPriceMultiplier(this.horse);
+    // A runt: x0.7 (Runts.js)
+    if (typeof runtPriceMultiplier === "function") price *= runtPriceMultiplier(this.horse);
     // Titles: Cherished x1.1, Broken x0.8... (Titles.js)
     if (typeof titlePriceMultiplier === "function") price *= titlePriceMultiplier(this.horse);
 

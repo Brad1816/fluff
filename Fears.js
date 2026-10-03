@@ -140,6 +140,8 @@ function startFright(f, key) {
   if (!f || !f.isAlive || f.isDragging) return false;
   // Its plushie's here: often it's not so scary after all (Plushie.js)
   if (typeof plushieSoothes === "function" && plushieSoothes(f)) return false;
+  // Mum sang to it tonight: thunder and the dark often pass it by (Lullaby.js)
+  if (typeof lullabySoothes === "function" && lullabySoothes(f, key)) return false;
   // A good smarty leading its herd keeps them steady (Intelligence.js)
   if (typeof goodLeaderCalms === "function" && goodLeaderCalms(f)) return false;
   // (a Fearful room makes it worse, Climate.js)
@@ -184,6 +186,7 @@ function frightComforter(f) {
   let bd = Infinity;
   for (const o of fluffies) {
     if (o === f || !o.isAlive || o.scene !== f.scene || o.growth < 1) continue;
+    if (o.id === f.motherId && f.forgotMum) continue; // (FoalLife.js: it doesn't know her)
     const isMum = o.id === f.motherId;
     // (a frightened foal runs to a wise old fluffy too: Elders.js)
     const elder = f.growth < 1 && typeof isWiseElder === "function" && isWiseElder(o);

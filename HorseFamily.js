@@ -24,7 +24,7 @@ function updateFoalCalls(dt) {
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   for (const f of fluffies) {
     if (!f.isAlive || !f.tooYoungToWalk() || f.motherId === null || f.motherId === undefined) continue;
-    if (f.currentStateKey === "SLEEPING") continue;
+    if (f.currentStateKey === "SLEEPING" || f.forgotMum) continue; // (FoalLife.js: it doesn't know her)
     const mum = fluffies.find((m) => m.id === f.motherId);
     if (!mum || !mum.isAlive || mum.scene !== f.scene || relationships[mum.id]?.[f.id] !== "baby_child") {
       f._aloneSince = undefined;
@@ -58,6 +58,13 @@ addHorseMethods({
       return false;
 
     const isMom = mare.id === this.motherId;
+    // It doesn't know her any more (FoalLife.js), or she's away from her
+    // foals (BadMummah.js)
+    if (isMom && typeof foalShiesFromMum === "function" && foalShiesFromMum(this, mare)) return false;
+    if (isMom && typeof mumAway === "function" && mumAway(mare)) {
+      this.milkCooldown = 3.0;
+      return false;
+    }
     const mareTolerant =
       !worldSettings.alicornIntolerance || this.typeVisibleToOthers() !== "alicorn" || mare.tolerantOfAlicorns();
     const canSee = mare.canSee();
@@ -70,7 +77,16 @@ addHorseMethods({
     let success = true;
 
     // A mum keeping the last of her milk for her bestest babbeh (Favourites.js)
-    const heldBack = isMom && typeof bestestHoldsBack === "function" && mare.happiness > WAN_DIE_THRESHOLD && mare.canSee() && bestestHoldsBack(mare, this);
+    // (...unless she's on her last chance and holds herself back: BadMummah.js)
+    const heldBack =
+      isMom &&
+      typeof bestestHoldsBack === "function" &&
+      mare.happiness > WAN_DIE_THRESHOLD &&
+      mare.canSee() &&
+      bestestHoldsBack(mare, this) &&
+      !(typeof mumHoldsBack === "function" && mumHoldsBack(mare, this));
+    let goodDeed = null; // (Care.js: something to praise her for)
+    if (isMom && !heldBack && typeof bestestOf === "function" && bestestOf(mare) && bestestOf(mare) !== this) goodDeed = "shared";
     if (mare.milkCharges > 0 && heldBack) {
       this.milkCooldown = 3.0;
       noteTurnedAway(mare, this);
@@ -82,7 +98,8 @@ addHorseMethods({
       } else if (
         canSee &&
         mare.genetics &&
-        mumRejectsFoalColour(mare, this)
+        mumRejectsFoalColour(mare, this) &&
+        !(isMom && typeof mumHoldsBack === "function" && mumHoldsBack(mare, this) && (goodDeed = "accepted"))
       ) {
         // Colorism rejection!
         key1 = "ATTACK";
@@ -102,8 +119,16 @@ addHorseMethods({
         key2 = "NOT_MOM";
         this.milkCooldown = 3.0;
         success = false;
+      } else if (isMom && mareTolerant && typeof mumSniffsFoal === "function" && mumSniffsFoal(mare, this)) {
+        // She sniffed it and it smells wrong to her (Runts.js: she's said so)
+        this.milkCooldown = 3.0;
+        return false;
       } else if (isMom && mareTolerant) {
         key2 = "DEFAULT";
+      } else if (isMom && !mareTolerant && typeof mumHoldsBack === "function" && mumHoldsBack(mare, this)) {
+        // An alicorn foal of hers she can't stand - but on her last chance she feeds it
+        key2 = "DEFAULT";
+        goodDeed = "accepted";
       } else if (legless && (mare.placedOn instanceof ImmobilizationBoard || Math.random() < 0.5)) {
         key2 = mareTolerant ? "LEGLESS" : "ALICORN";
       } else if (mareTolerant && this.attemptAdoption(mare)) {
@@ -143,6 +168,8 @@ addHorseMethods({
       mare.milkCharges--;
       this.hunger = 1.0;
       if (isMom && typeof noteBestestFed === "function") noteBestestFed(mare, this); // (Favourites.js)
+      if (!isMom) goodDeed = "shared";
+      if (goodDeed && typeof noteGoodDeed === "function") noteGoodDeed(mare, goodDeed);
       this.addPreferredMilkSource(mare.id, "HORSE");
       if (mare.isPoisoned) {
         this.isPoisoned = true;
@@ -163,7 +190,7 @@ addHorseMethods({
     const rels = relationships[mare.id];
     if (
       rels[this.id] === "rejected_baby" ||
-      (mom && mom.isAlive) ||
+      (mom && mom.isAlive && !(typeof mumDisowned === "function" && mumDisowned(this))) ||
       mare.gender !== "female" ||
       mare.lactatingTimer <= 0
     )
@@ -218,6 +245,9 @@ addHorseMethods({
       if (pRel.state === "unmet" && other && typeof haveMet === "function" && haveMet(this, other)) pRel.state = other.scene === this.scene ? "current" : "unmet";
       if (other && other.scene === this.scene) {
         if (!other.isAlive) {
+          // A young foal doesn't understand yet: it tries to nurse or wake
+          // them before it grieves (FoalLife.js)
+          if (pRel.state !== "dead" && typeof foalDoesntUnderstand === "function" && foalDoesntUnderstand(this, other, relation)) continue;
           if (pRel.state !== "dead" && typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(this, other)) {
             pRel.state = "dead"; // (a munstah: good riddance - AlicornAcceptance.js)
             if (!this.tooYoungToSpeak() && Math.random() < 0.5) this.speak(getDialogue(["CORPSE", "ALICORN"], this));

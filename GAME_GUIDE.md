@@ -2634,3 +2634,41 @@ from. Nothing player-facing reads it yet except the debug view.
   `Horse._lament`); sensitive babies' own lines (upsies, babble, birth).
 - **Touch:** the long-press ring hides at once when the finger lifts.
 - Tests: `tests/batch11.test.js`.
+
+### Batch 12: mothers and foals
+- **Mummah song** (`Lullaby.js`): a mare who knows it (`knowsSong`) sings to
+  her foals (baby_child, within `SONG_NEAR`) once an evening and whenever one
+  is frightened (`SONG_FRIGHT_REST`). It ends a fright, makes them sleepy,
+  and for the night thunder and the dark often don't frighten them
+  (`lullabySoothes`, from Fears.startFright). Foals learn it after
+  `SONG_LEARN_AT` songs; grown fluffies from outside mostly know it
+  (`SONG_KNOWN_OUTSIDE`). A gag stops her. Saved: knowsSong, songHeard.
+- **Runts** (`Runts.js`): `rollRunt` at birth (`runtChance`: big litter,
+  kin, poor care). Smaller (`runtScale` in Horse.updateGrowthStats), slower
+  (`runtGrowthRate` in foalGrowthRate), weaker, x0.7 price.
+- **Rejection by smell:** her own foal's first drink (and again when it's
+  sick) she sniffs it (`mumSniffsFoal`): a runt, a deformed or a sick foal
+  may become her "rejected_baby" (no milk, maybe a shove). `mumDisowned`
+  makes it an orphan for fostering; `mumWontNurse` sends it to feeders.
+  The "All babies" lesson (`babyLove`) lowers the chance to nothing and at
+  100% she takes such foals back.
+- **Last chance** (`BadMummah.js`): slips (`noteMumMisdeed`: hoarded milk,
+  hurt a foal, smell rejection; one per `MUM_SLIP_REST`). Right-click "Last
+  chance": she may hold back (`mumObeyChance`); each slip anyway is a
+  strike: time away (`MumAwayDesire`, `MUM_AWAY_TIME`), her bestest to a
+  foster mum (`giveFoalAway`), then all of them. `MUM_GOOD_SPELL` or praise
+  after a good deed clears a strike. Saved: badMum, takenFromMum.
+- **Foal life** (`FoalLife.js`): foals apart from mum count `mumApart` and
+  forget her (`forgetAfter`: 4/8/16 h by age; `forgotMum`), relearn with
+  `RELEARN_TIME` near her. Curious foals wander (`WANDER_CHANCE`, to the
+  water's edge on the river); mum notices and fetches them. Young foals
+  don't understand a death (`foalDoesntUnderstand`, from
+  HorseFamily.updateRelationships) for `CONFUSED_TIME`; herds take such a
+  body away at once. Foals bully alicorn or poopie foals (`seesAsMunstah`,
+  gangs, `bullyScore`, Personality rules pickedOnFoal / bullyFoal); a
+  plushie takes the blame. `FoalLifeDesire` does the walking.
+- **Praise and punish** (Care.js): misdeeds cannibal, badmum, hurt_foal,
+  bully (`scoldLesson`); good deeds (`noteGoodDeed`: sang, held back,
+  shared, fostered, accepted, protected) praised within `GOOD_DEED_RECENT`.
+- Magnifying glass: Runt, Mummah song, Mothering, Rejected, Its mum,
+  Bullying. Tests: `tests/batch12.test.js`.

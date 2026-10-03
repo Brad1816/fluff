@@ -219,7 +219,7 @@ function _hwBodyCare() {
     const centre = typeof getHerdCentre === "function" ? getHerdCentre(h, scene) : { x: minder.x, y: minder.y };
     if (!centre) continue;
     const body = _hwBodies(scene)
-      .filter((b) => !b._carriedBy && Math.hypot(b.x - centre.x, b.y - centre.y) < BODY_CARE_NEAR && corpseRot(b) > 0)
+      .filter((b) => !b._carriedBy && Math.hypot(b.x - centre.x, b.y - centre.y) < BODY_CARE_NEAR && (corpseRot(b) > 0 || (typeof bodyConfusesFoals === "function" && bodyConfusesFoals(b))))
       .sort((p, q) => Math.hypot(p.x - minder.x, p.y - minder.y) - Math.hypot(q.x - minder.x, q.y - minder.y))[0];
     if (!body) continue;
     // Far edge of the area, away from the herd

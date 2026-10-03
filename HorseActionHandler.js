@@ -692,7 +692,9 @@ class HorseActionHandler {
           f.isAlive &&
           f.scene === this.horse.scene &&
           f.lactatingTimer > 0 &&
-          f.currentCage === this.horse.currentCage,
+          f.currentCage === this.horse.currentCage &&
+          // (not one who won't nurse it, or is away from it: Runts.js, BadMummah.js)
+          !(typeof mumWontNurse === "function" && mumWontNurse(f, this.horse)),
       );
       if (mom) {
         const dist = Math.sqrt(

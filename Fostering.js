@@ -63,7 +63,8 @@ function isOrphanFoal(f) {
   if (f.isDragging || f.placedOn || f.currentCage) return false;
   if (f.motherId === null || f.motherId === undefined) return true;
   const mum = fluffies.find((m) => m.id === f.motherId);
-  return !mum || !mum.isAlive;
+  // (or she won't nurse it: turned away, taken from her, forgotten - Runts.js)
+  return !mum || !mum.isAlive || (typeof mumDisowned === "function" && mumDisowned(f));
 }
 
 // Foals she's nursing (baby_child, alive)
@@ -99,6 +100,7 @@ function orphanCrying(f) {
 // Would she take this one? (a crying one she can hear from further off)
 function canFoster(m, foal) {
   if (!fosterMumReason(m) || !isOrphanFoal(foal) || m.scene !== foal.scene || m === foal) return false;
+  if (foal.motherId === m.id) return false; // (its own mum, who turned it away)
   if (!!m.adopted !== !!foal.adopted) return false; // (wild with wild, yours with yours)
   const crying = orphanCrying(foal);
   if (Math.hypot(m.x - foal.x, m.y - foal.y) > (crying ? FOSTER_HEAR_RANGE : FOSTER_RANGE)) return false;
@@ -157,6 +159,7 @@ function fosterFoal(mare, foal, why = fosterMumReason(mare)) {
   if (!(mare.lactatingTimer > 0)) mare.milkCharges = Math.max(mare.milkCharges || 0, 2);
   mare.lactatingTimer = Math.max(mare.lactatingTimer || 0, need);
   mare.lostFoalAt = null; // (she has a foal to look after now)
+  if (typeof noteGoodDeed === "function") noteGoodDeed(mare, "fostered"); // (Care.js: praise her)
   mare._fostering = null;
   foal.changeHappiness(0.2);
   mare.changeHappiness(why === "grieving" ? 0.25 : 0.1);

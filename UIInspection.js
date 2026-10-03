@@ -173,6 +173,19 @@ function getFluffyInspectionInfo(f) {
     if (role) about.push({ label: "Family role", value: role[0], tone: role[1] });
     const bestest = typeof describeBestest === "function" ? describeBestest(f) : null; // Favourites.js
     if (bestest) about.push({ label: "Favourite", value: bestest[0], tone: bestest[1] });
+    // Mothers and foals (batch 12)
+    const runt = typeof describeRunt === "function" ? describeRunt(f) : null; // Runts.js
+    if (runt) about.push({ label: "Runt", value: runt[0], tone: runt[1] });
+    const song = typeof describeSong === "function" ? describeSong(f) : null; // Lullaby.js
+    if (song) about.push({ label: "Mummah song", value: song[0], tone: song[1] });
+    const mothering = typeof describeMothering === "function" ? describeMothering(f) : null; // BadMummah.js
+    if (mothering) about.push({ label: "Mothering", value: mothering[0], tone: mothering[1] });
+    const smelt = typeof describeSmellRejected === "function" ? describeSmellRejected(f) : null; // Runts.js
+    if (smelt) about.push({ label: "Rejected", value: smelt[0], tone: smelt[1] });
+    const knowsMum = typeof describeFoalMum === "function" ? describeFoalMum(f) : null; // FoalLife.js
+    if (knowsMum) about.push({ label: "Its mum", value: knowsMum[0], tone: knowsMum[1] });
+    const bullying = typeof describeBullying === "function" ? describeBullying(f) : null; // FoalLife.js
+    if (bullying) about.push({ label: "Bullying", value: bullying[0], tone: bullying[1] });
     const rec = typeof describeRecovery === "function" ? describeRecovery(f) : null; // Recovery.js
     if (rec) about.push({ label: "Surgery", value: rec[0], tone: rec[1] });
     const flight = typeof describeFlight === "function" ? describeFlight(f) : null; // Flight.js
@@ -410,15 +423,15 @@ const INSPECTION_TABS = [
     id: "family",
     name: "Family & friends",
     cols: [
-      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Line", "Born", "Named by", "Herd", "Feud"] },
-      { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Misses"] },
+      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Its mum", "Rejected", "Mothering", "Mummah song", "Line", "Born", "Named by", "Herd", "Feud"] },
+      { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Bullying", "Misses"] },
     ],
   },
   {
     id: "looks",
     name: "Looks & nature",
     cols: [
-      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Deformities", "Scars", "Ribbons"] },
+      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Runt", "Deformities", "Scars", "Ribbons"] },
       { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
     ],
   },
@@ -458,7 +471,7 @@ function getInspectionTabs(f) {
   const warn = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries", "Deformities"]);
+  const notUrgent = new Set(["Runt", "Mummah song", "Bullying", "Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries", "Deformities"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;

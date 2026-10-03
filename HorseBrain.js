@@ -577,6 +577,7 @@ class CareForBabiesDesire extends Desire {
     if (horse.speech.text) return 0; // Currently speaking
     if (horse.growth < 1.0) return 0; // Not adult
     if (horse.gender !== "female") return 0; // Only moms
+    if (typeof mumAway === "function" && mumAway(horse)) return 0; // (time away, BadMummah.js)
 
     const rels =
       typeof relationships !== "undefined" ? relationships[horse.id] : null;
@@ -611,6 +612,7 @@ class FeedHungryFoalDesire extends Desire {
   evaluate(horse) {
     if (horse.isScared || horse.isStacking) return 0;
     if (horse.lactatingTimer <= 0 || horse.milkCharges <= 0) return 0;
+    if (typeof mumAway === "function" && mumAway(horse)) return 0; // (time away from her foals, BadMummah.js)
     if (!horse.positioning.scoutForHungryFoal()) return 0;
     return 90; // High priority fixed score, let execute find a hungry foal
   }
