@@ -342,7 +342,7 @@ class DefendTerritoryDesire extends Desire {
   _target(horse) {
     const d = horse._defend;
     if (!d || d.until <= timePlayed) return null;
-    const t = fluffies.find((f) => f.id === d.id);
+    const t = fluffyById(d.id);
     if (!t || !t.isAlive || t.scene !== horse.scene || t.isDragging) return null;
     if (!inTerritoryZone(d.idx, t.x, t.y) || territoryOwner(d.idx) !== herdOf(horse)) return null;
     return t;
@@ -449,7 +449,7 @@ class LeaveTerritoryDesire extends Desire {
       horse.currentStateKey = "RUNNING";
       if (!horse._lastLeaveLine || timePlayed - horse._lastLeaveLine > 8) {
         horse._lastLeaveLine = timePlayed;
-        const chaser = fluffies.find((f) => f.id === a.c.by);
+        const chaser = fluffyById(a.c.by);
         _say(horse, ["TERRITORY", "LEAVE"], chaser);
       }
     }

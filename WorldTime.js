@@ -196,13 +196,17 @@ function _fluffySays(f, key) {
     f.speak(getDialogue(["WEATHER", key], f));
 }
 
+let _wsFilled = null; // (the weather state last checked for missing fields)
 // script.js updateSimulation
 function updateWorldTime(dt) {
   const now = typeof timePlayed === "number" ? timePlayed : 0;
   // Old saves / odd data: fill in anything missing
   if (!weatherState || typeof weatherState !== "object") weatherState = freshWeatherState();
-  for (const [k, v] of Object.entries(freshWeatherState())) {
-    if (weatherState[k] === undefined || weatherState[k] === null) weatherState[k] = k === "until" ? now : v;
+  if (_wsFilled !== weatherState || weatherState.until === undefined || weatherState.until === null) {
+    for (const [k, v] of Object.entries(freshWeatherState())) {
+      if (weatherState[k] === undefined || weatherState[k] === null) weatherState[k] = k === "until" ? now : v;
+    }
+    _wsFilled = weatherState;
   }
   const w = weatherState;
 

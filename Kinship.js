@@ -34,7 +34,7 @@ function _kinParents(id) {
   let d = rec ? rec.fatherId : null;
   // A fluffy that's here knows its own parents even without a record
   if ((m === null || m === undefined || d === null || d === undefined) && typeof fluffies !== "undefined") {
-    const f = fluffies.find((x) => x.id === id);
+    const f = fluffyById(id);
     if (f) {
       if (m === null || m === undefined) m = f.motherId;
       if (d === null || d === undefined) d = f.fatherId;
@@ -87,8 +87,17 @@ function _kinship(a, b, depth, memo) {
 let _kinCache = new Map();
 let _kinCacheKey = "";
 let _kinCacheAt = 0;
+let _kinQuick = "";
+let _kinQuickRecs = null;
 function _kinCacheCheck() {
-  const n = typeof fluffyRecords !== "undefined" && fluffyRecords ? Object.keys(fluffyRecords).length : 0;
+  // (counting the records means listing them all: only done when something
+  // cheaper to look at has changed - the step, the fluffies, the next id)
+  const recs = typeof fluffyRecords !== "undefined" ? fluffyRecords : null;
+  const quick = `${typeof timePlayed === "number" ? timePlayed : 0}:${typeof fluffies !== "undefined" ? fluffies.length : 0}:${typeof nextFluffyId !== "undefined" ? nextFluffyId : 0}`;
+  if (quick === _kinQuick && recs === _kinQuickRecs && _kinCache.size <= 20000) return;
+  _kinQuick = quick;
+  _kinQuickRecs = recs;
+  const n = recs ? Object.keys(recs).length : 0;
   const key = `${n}:${typeof fluffies !== "undefined" ? fluffies.length : 0}:${typeof nextFluffyId !== "undefined" ? nextFluffyId : 0}`;
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
   if (key !== _kinCacheKey || now - _kinCacheAt > 30000 || _kinCache.size > 20000) {

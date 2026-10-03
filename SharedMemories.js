@@ -67,7 +67,7 @@ function _shmName(f) {
   return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || null;
 }
 function _shmById(id) {
-  return typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) : null;
+  return typeof fluffies !== "undefined" ? fluffyById(id) : null;
 }
 function _shmRoomWords(scene) {
   if (typeof houseRoomName === "function") {

@@ -197,7 +197,7 @@ function _hjFood(f) {
   for (const o of objects) {
     if (o.scene !== f.scene || o.isDestroyed || o.isDragging || o.currentCage !== f.currentCage) continue;
     const isGrass = typeof Grass !== "undefined" && o instanceof Grass;
-    const isBowl = typeof Bowl !== "undefined" && o instanceof Bowl && o.foodType !== "formula";
+    const isBowl = typeof Bowl !== "undefined" && o instanceof Bowl && o.foodType !== "formula" && o.foodType !== "rat_poison";
     if (!(isGrass || isBowl) || !o.hasFood()) continue;
     const d = Math.hypot(o.x - f.x, o.y - f.y);
     if (d < bd) {
@@ -227,7 +227,9 @@ function _hjGive(f, m) {
   m.hunger = Math.min(1, (m.hunger || 0) + FINDER_GIVES);
   m.changeHappiness(0.02, "A herd-mate brought food");
   if (typeof changeOpinion === "function") changeOpinion(m, f, 0.05, "brought me food");
-  if (!f.tooYoungToSpeak()) f.speak(getDialogue(["HERD_JOB", m.isSmarty && m.isSmarty() && m === getHerdLeader(herdOf(f)) ? "FEED_LEADER" : "FEED"], f, m), true);
+  const fh = typeof herdOf === "function" ? herdOf(f) : null; // (it may have left the herd on the way)
+  const toLeader = !!fh && m.isSmarty && m.isSmarty() && m === getHerdLeader(fh);
+  if (!f.tooYoungToSpeak()) f.speak(getDialogue(["HERD_JOB", toLeader ? "FEED_LEADER" : "FEED"], f, m), true);
   if (typeof noteGoodDeed === "function") noteGoodDeed(f, "shared");
 }
 
@@ -241,8 +243,14 @@ function updateHerdJobs(dt) {
     if (lead) _hjEnforce(h, lead);
     for (const f of getHerdMembers(h)) if (f.herdJob === "finder") _hjFind(h, f);
   }
-  // Tasks that have run too long
-  for (const f of fluffies) if (f._herdTask && (timePlayed - f._herdTask.at > 60 || timePlayed < f._herdTask.at || !f.isAlive)) f._herdTask = null;
+  // Tasks that have run too long; jobs kept by fluffies who've left their herd
+  for (const f of fluffies) {
+    if (f._herdTask && (timePlayed - f._herdTask.at > 60 || timePlayed < f._herdTask.at || !f.isAlive)) f._herdTask = null;
+    if (f.herdJob && !herdOf(f)) {
+      f.herdJob = null;
+      if (f._herdTask && f._herdTask.kind !== "defend") f._herdTask = null;
+    }
+  }
 }
 registerSystem("herdJobs", updateHerdJobs, 133);
 
@@ -253,12 +261,13 @@ class HerdJobDesire extends Desire {
   _target(h) {
     const t = h._herdTask;
     if (!t || !h.isAlive || h.isDragging || h.placedOn || h.currentCage) return null;
+    if (t.kind !== "defend" && typeof herdOf === "function" && !herdOf(h)) return null; // (left the herd)
     if (t.kind === "fetch") {
       const food = typeof objects !== "undefined" ? objects.find((o) => o.id === t.food) : null;
       if (!food || food.isDestroyed || food.scene !== h.scene || !food.hasFood()) return null;
       return food;
     }
-    const f = fluffies.find((x) => x.id === t.id);
+    const f = fluffyById(t.id);
     if (!f || !f.isAlive || f.scene !== h.scene || f.isDragging) return null;
     return f;
   }

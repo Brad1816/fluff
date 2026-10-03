@@ -65,20 +65,35 @@ function fansIn(scene) {
   return typeof Fan !== "undefined" ? _hOn(Fan).filter((o) => o.scene === scene) : [];
 }
 
+// What's in a room that changes the heat (worked out once per room each tick
+// in updateHeat; anywhere else, fresh)
+let _heatRooms = null;
+function _heatRoom(scene) {
+  if (_heatRooms && _heatRooms.has(scene)) return _heatRooms.get(scene);
+  const r = { place: placeHeat(scene), outdoor: typeof isOutdoorScene === "function" ? isOutdoorScene(scene) : false, fans: [], sprinklers: [], heaters: [] };
+  if (r.place > 0) {
+    r.fans = fansIn(scene);
+    if (typeof Sprinkler !== "undefined") r.sprinklers = objects.filter((o) => o instanceof Sprinkler && o.isOn && o.scene === scene);
+    if (typeof heatersIn === "function") r.heaters = heatersIn(scene).filter((o) => o.on !== false);
+  }
+  if (_heatRooms) _heatRooms.set(scene, r);
+  return r;
+}
+
 function heatAt(f) {
   if (typeof inIncubator === "function" && inIncubator(f)) return 0;
-  let h = placeHeat(f.scene);
+  const room = _heatRoom(f.scene);
+  let h = room.place;
   if (h <= 0) return 0;
-  const outdoor = typeof isOutdoorScene === "function" ? isOutdoorScene(f.scene) : false;
-  const fans = fansIn(f.scene);
-  if (fans.length) {
-    if (!outdoor) return 0;
-    const d = Math.min(...fans.map((o) => Math.hypot(o.x - f.x, o.y - f.y)));
+  if (room.fans.length) {
+    if (!room.outdoor) return 0;
+    let d = Infinity;
+    for (const o of room.fans) d = Math.min(d, Math.hypot(o.x - f.x, o.y - f.y));
     if (d < FAN_RADIUS) h *= 0.3 + 0.7 * (d / FAN_RADIUS);
   }
   if (typeof parkShelterNear === "function" && typeof PARK_SCENE !== "undefined" && f.scene === PARK_SCENE && parkShelterNear(f.x, f.y)) h -= 0.35;
-  if (typeof Sprinkler !== "undefined" && objects.some((o) => o instanceof Sprinkler && o.isOn && o.scene === f.scene && Math.hypot(o.x - f.x, o.y - f.y) < 220)) h -= 0.5;
-  if (typeof heatersIn === "function" && heatersIn(f.scene).some((o) => o.on !== false && Math.hypot(o.x - f.x, o.y - f.y) < 300)) h += 0.2;
+  if (room.sprinklers.some((o) => Math.hypot(o.x - f.x, o.y - f.y) < 220)) h -= 0.5;
+  if (room.heaters.some((o) => Math.hypot(o.x - f.x, o.y - f.y) < 300)) h += 0.2;
   return Math.max(0, Math.min(1, h));
 }
 
@@ -111,6 +126,15 @@ function updateHeat(dt) {
   const step = heatTicker.step(dt);
   if (!step || typeof fluffies === "undefined") return;
   const summer = _hSeason() === "Summer";
+  _heatRooms = new Map();
+  try {
+    _heatTick(step, summer);
+  } finally {
+    _heatRooms = null;
+  }
+}
+
+function _heatTick(step, summer) {
   for (const f of fluffies) {
     if (!f.isAlive) continue;
     if (typeof f.heat !== "number") f.heat = 0;

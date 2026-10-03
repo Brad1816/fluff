@@ -111,7 +111,7 @@ function bestestOf(m) {
 
 function mumOf(f) {
   if (!f || f.motherId === null || f.motherId === undefined) return null;
-  return fluffies.find((m) => m.id === f.motherId) || null;
+  return fluffyById(f.motherId) || null;
 }
 
 // HorseFamily.attemptFeedFromMare: does she turn this foal away to keep the

@@ -83,8 +83,7 @@ function singLullaby(m, why = "bedtime") {
   for (const f of foals) {
     // A fright ends
     if (typeof isFrightened === "function" && isFrightened(f)) {
-      const key = f.fright.key;
-      f.fright = null;
+      const key = endFright(f); // (Fears.js)
       if (typeof changeFear === "function") changeFear(f, key, -FEAR_COMFORT * 0.5);
       f.expressionOverride = "RELIEF";
       f.expressionOverrideTimer = 2;

@@ -146,6 +146,12 @@ function _hwFight(w, dt) {
   const A = _hwFighters(a, scene);
   const B = _hwFighters(b, scene);
   if (A.length < 1 || B.length < 1 || timePlayed > w.until) return _endWar(w, A.length < 1 || B.length < 1 ? "routed" : "time");
+  // (fighters look for someone to hit five times a second, not every frame)
+  if (w._acc !== undefined && w._acc + dt < 0.2) {
+    w._acc += dt;
+    return;
+  }
+  w._acc = 0;
   for (const [mine, theirs] of [
     [A, B],
     [B, A],
@@ -161,7 +167,7 @@ function _hwFight(w, dt) {
         }
       }
       if (!best) continue;
-      f._war = { id: best.id };
+      f._war = { id: best.id }; // (who it's after: the tests look)
       if (f.currentStateKey === "SLEEPING") f.initBehavior("IDLE");
       if (bd > WAR_REACH) {
         if (!f.isMovingOrRunning()) f.initBehavior("RUNNING");
@@ -237,7 +243,7 @@ function _hwCarry(dt) {
   for (const f of fluffies) {
     const job = f._body;
     if (!job) continue;
-    const body = fluffies.find((x) => x.id === job.id);
+    const body = fluffyById(job.id);
     const quit = () => {
       if (body) body._carriedBy = null;
       f._body = null;

@@ -2,6 +2,8 @@ let sellRequestAverage = 120;
 let sellRequestTimer = sellRequestAverage; // 2 minutes average
 let tutorialTimer = 10.0;
 
+let _sellCount = 0;
+let _sellCountAt = -Infinity;
 function updateMoneyAndRequests(dt) {
   if (tutorialTimer > 0) tutorialTimer -= dt;
 
@@ -37,20 +39,21 @@ function updateMoneyAndRequests(dt) {
       currentSellRequest = null;
     }
   } else {
-    const indoorFluffies = fluffies.filter(
-      (f) =>
-        getSceneConfig(f.scene).insidePlayerQuarters &&
-        f.canBeSold() &&
-        !f.isDragging,
-    );
-    const indoorCount = indoorFluffies.length;
+    // (who could be sold is counted once a second, and again when a buyer comes)
+    if (!(timePlayed - _sellCountAt < 1 && timePlayed >= _sellCountAt)) {
+      _sellCountAt = timePlayed;
+      _sellCount = fluffies.filter((f) => getSceneConfig(f.scene).insidePlayerQuarters && f.canBeSold() && !f.isDragging).length;
+    }
+    const indoorCount = _sellCount;
 
     // Timer decreases faster with more indoor fluffies
     // (slow or busy days, Pressure.js)
     sellRequestTimer -= dt * Math.max(1, Math.log2(indoorCount)) * (typeof marketBuyerRate === "function" ? marketBuyerRate() : 1);
 
     if (sellRequestTimer <= 0) {
-      if (indoorCount > 0) {
+      const indoorFluffies = fluffies.filter((f) => getSceneConfig(f.scene).insidePlayerQuarters && f.canBeSold() && !f.isDragging);
+      _sellCountAt = -Infinity;
+      if (indoorFluffies.length > 0) {
         // Prioritize "sell" cage fluffies
         const sellCageFluffies = indoorFluffies.filter(
           (f) => f.currentCage && f.currentCage.tag === "sell",
@@ -1170,13 +1173,26 @@ function updateFerals(dt) {
       }
 
       feralDespawnTimer = 30 + Math.random() * 60;
+    } else {
+      feralDespawnTimer = 5; // (nothing to take away: look again in a while, not every step)
     }
   }
 }
 
 let lastTime = 0;
 let renderFrameCount = 0; // frames drawn so far (Horse.hitTestAsSeen)
+// One frame going wrong mustn't stop the game for good: the error is
+// reported (Systems.js) and the next frame comes anyway
 function animate(timestamp) {
+  try {
+    _animateFrame(timestamp);
+  } catch (e) {
+    if (typeof _systemFailed === "function") _systemFailed({ name: "frame" }, e);
+    requestAnimationFrame(animate);
+  }
+}
+
+function _animateFrame(timestamp) {
   if (!lastTime) lastTime = timestamp;
 
   if (!document.hasFocus()) {
@@ -1342,13 +1358,6 @@ function updateSimulation(dt) {
   for (const sceneKey in SCENES) {
     const config = SCENES[sceneKey];
     if (config.isGrassy) {
-      const hasGrass = objects.some(
-        (o) => o instanceof Grass && o.scene === config.id,
-      );
-      const targetInterval = hasGrass
-        ? GRASS_SPAWN_INTERVAL_HAS_GRASS
-        : GRASS_SPAWN_INTERVAL_NO_GRASS;
-
       if (sceneGrassSpawnTimers[config.id] === undefined) {
         sceneGrassSpawnTimers[config.id] = 15.0;
       }
@@ -1356,7 +1365,13 @@ function updateSimulation(dt) {
       sceneGrassSpawnTimers[config.id] -= dt;
 
       if (sceneGrassSpawnTimers[config.id] <= 0) {
-        sceneGrassSpawnTimers[config.id] = targetInterval;
+        // (only looked at when it's time)
+        const hasGrass = objects.some(
+          (o) => o instanceof Grass && o.scene === config.id,
+        );
+        sceneGrassSpawnTimers[config.id] = hasGrass
+          ? GRASS_SPAWN_INTERVAL_HAS_GRASS
+          : GRASS_SPAWN_INTERVAL_NO_GRASS;
 
         if (Math.random() < 0.5 && images && images.grass) {
           let spawnX = 50 + Math.random() * (width - 100);
@@ -1379,7 +1394,11 @@ function updateSimulation(dt) {
 
   for (let i = objects.length - 1; i >= 0; i--) {
     const obj = objects[i];
-    obj.update(dt);
+    try {
+      obj.update(dt);
+    } catch (e) {
+      if (typeof _systemFailed === "function") _systemFailed({ name: `object ${obj && obj.constructor && obj.constructor.name}` }, e);
+    }
     if (
       obj.isDestroyed ||
       (obj instanceof FoodBag && obj.amount <= 0) ||
@@ -1403,7 +1422,12 @@ function updateSimulation(dt) {
   if (typeof prepareFenceCollisions === "function") prepareFenceCollisions();
   for (let i = fluffies.length - 1; i >= 0; i--) {
     const f = fluffies[i];
-    f.update(dt);
+    try {
+      f.update(dt);
+    } catch (e) {
+      // (one fluffy's update going wrong mustn't freeze the game: Systems.js)
+      if (typeof _systemFailed === "function") _systemFailed({ name: "fluffy update" }, e);
+    }
     // Fluffies can't walk through fence pieces
     if (typeof resolveFenceCollision === "function") {
       resolveFenceCollision(f);

@@ -118,9 +118,8 @@ function makeFakeAlicorn(f) {
 function removeFakeAlicorn(f, how = "bath") {
   if (!f || !f.fakeAlicorn) return false;
   const had = f.fakeAlicorn.had || {};
-  f.limbs.horn = !!had.horn;
-  f.limbs.leftWing = !!had.leftWing;
-  f.limbs.rightWing = !!had.rightWing;
+  // Only the glued-on parts come off (a real one cut off meanwhile stays gone)
+  for (const k of ["horn", "leftWing", "rightWing"]) if (!had[k]) f.limbs[k] = false;
   f.fakeAlicorn = null;
   if (f.renderer) f.renderer.tinted = null;
   if (typeof addUIMessage === "function" && f.adopted) addUIMessage(how === "bath" ? `The glued-on horn and wings came off ${fluffyDisplayName(f)} in the bath.` : `The vet peeled the horn and wings off ${fluffyDisplayName(f)}.`);

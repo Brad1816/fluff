@@ -123,7 +123,7 @@ function _computeBreedingRecords() {
   }
   const parentList = Object.values(parents).map((p) => {
     const rec = getFamilyRecord(p.id) || { id: p.id };
-    const live = fluffies.find((x) => x.id == p.id);
+    const live = fluffyById(p.id);
     p.rec = rec;
     p.gender = rec.gender;
     p.status = live && live.isAlive ? "alive" : rec.status || "gone";

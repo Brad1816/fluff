@@ -235,7 +235,7 @@ const NIGHT_EVENTS = [
     run(g) {
       const adults = _adults(g).sort(() => Math.random() - 0.5);
       if (adults.length < 2) return null;
-      const leader = g.herd ? fluffies.find((f) => f.id === g.herd.leaderId) : null;
+      const leader = g.herd ? fluffyById(g.herd.leaderId) : null;
       let a = adults[0];
       let b = adults[1];
       if (leader && adults.includes(leader) && Math.random() < 0.4) {
@@ -415,7 +415,7 @@ class NightPredator {
   }
 
   victim() {
-    return fluffies.find((f) => f.id === this.victimId) || null;
+    return fluffyById(this.victimId) || null;
   }
 
   update(dt) {
@@ -508,7 +508,7 @@ class NightPredator {
     const heroes = [];
     const helpers = [];
     for (const [id, role] of this.roles) {
-      const f = fluffies.find((x) => x.id === id);
+      const f = fluffyById(id);
       if (!close(f)) continue;
       (role === "hero" ? heroes : helpers).push(f);
     }

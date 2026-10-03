@@ -735,6 +735,20 @@ function isItemMenuAvailable() {
   return showDebugMenu;
 }
 
+const _shopTints = new Map();
+function _tintedShopImage(key, img, filter) {
+  const k = `${key}|${filter}`;
+  let t = _shopTints.get(k);
+  if (t && t.src === img) return t.canvas;
+  if (typeof OffscreenCanvas === "undefined") return img;
+  const canvas = new OffscreenCanvas(img.width, img.height);
+  const c = canvas.getContext("2d");
+  c.filter = filter;
+  c.drawImage(img, 0, 0);
+  _shopTints.set(k, { src: img, canvas });
+  return canvas;
+}
+
 // Shop picture for an action, centred on (cx, cy), fitting in a box
 // size wide and sizeH tall (square if sizeH is left out)
 function drawShopActionIcon(c, action, cx, cy, size, disabled = false, sizeH = size) {
@@ -743,14 +757,15 @@ function drawShopActionIcon(c, action, cx, cy, size, disabled = false, sizeH = s
   c.save();
   // Kibble brands: tinted bags (Diet.js)
   const brand = action.foodType && typeof FOODS !== "undefined" ? FOODS[action.foodType] : null;
-  if (brand && brand.filter) c.filter = brand.filter;
   if (disabled) c.globalAlpha = 0.3;
   // (a loaded picture, or one drawn at start-up on a canvas - the mower,
   // incubator, bandages... - which has no .complete: globals.js isDrawableImage)
   const pic = imgKey && typeof images !== "undefined" ? images[imgKey] : null;
   const drawable = pic && (typeof isDrawableImage === "function" ? isDrawableImage(pic) : pic.complete) && pic.width > 0;
+  if (brand && brand.filter && !drawable) c.filter = brand.filter;
   if (drawable) {
-    const img = images[imgKey];
+    // (a tinted bag is tinted once and kept: a canvas filter every frame is slow on phones)
+    const img = brand && brand.filter ? _tintedShopImage(imgKey, pic, brand.filter) : images[imgKey];
     const scale = Math.min(size / img.width, sizeH / img.height);
     c.translate(cx, cy);
     c.scale(scale, scale);

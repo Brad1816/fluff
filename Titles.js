@@ -160,7 +160,7 @@ function noteTitleHarm(f, amount, why) {
 // StoryBook: harm memories
 function noteTitleStory(kind, ids, opts = {}) {
   if (kind !== "harmed") return;
-  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === ids[0]) : null;
+  const f = typeof fluffies !== "undefined" ? fluffyById(ids[0]) : null;
   if (!f) return;
   const seen = typeof MEMORY_TEXT !== "undefined" && (opts.x === MEMORY_TEXT.witness || opts.x === MEMORY_TEXT.witness_family);
   const training = typeof MEMORY_TEXT !== "undefined" && opts.x === MEMORY_TEXT.training;
@@ -324,7 +324,8 @@ function _tiRecentTally(f, days) {
   if (typeof storyOf !== "function") return out;
   const day = _tiDay() - 1; // same days as the story book
   for (const e of storyOf(f)) {
-    if (e.k !== "tally" || e.w[0] !== f.id || day - e.d >= days) continue;
+    // (year tallies have no day - they're not recent)
+    if (e.k !== "tally" || e.w[0] !== f.id || typeof e.d !== "number" || day - e.d >= days) continue;
     for (const [k, v] of Object.entries(e.c)) out[k] = (out[k] || 0) + v;
     if (e.d === day - 1) Object.assign(out.yesterday, e.c);
   }

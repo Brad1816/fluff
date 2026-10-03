@@ -421,7 +421,7 @@ class AvoidGrudgeDesire extends Desire {
     if (typeof traitValue === "function" && traitValue(horse, "temper") > 0.5) return 0;
     const near = _bondCandidates(
       horse,
-      (f) => getLiking(horse, f) <= OPINION_DISLIKE && Math.hypot(f.x - horse.x, f.y - horse.y) < 110,
+      (f) => Math.hypot(f.x - horse.x, f.y - horse.y) < 110 && getLiking(horse, f) <= OPINION_DISLIKE, // (the cheap test first)
     );
     if (!near.length) return 0;
     this.target = near[0];

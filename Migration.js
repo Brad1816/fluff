@@ -175,7 +175,7 @@ function updateMigration(dt) {
     if (near || now - m.at > MIGRATE_WALK_MAX || f.tooYoungToWalk()) {
       // (a foal goes when its mum does)
       if (f.tooYoungToWalk() && f.motherId !== null) {
-        const mum = fluffies.find((x) => x.id === f.motherId);
+        const mum = fluffyById(f.motherId);
         if (mum && mum._migrate && mum.scene === f.scene) continue;
       }
       arriveMigration(f);

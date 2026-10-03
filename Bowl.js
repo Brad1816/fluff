@@ -96,9 +96,12 @@ class Bowl {
   eat() {
     if (this.food > 0) {
       this.food--;
+      this.lastBite = { foodType: this.foodType, poisoned: !!this.poisoned, fromFoals: !!this.fromFoals, foalParentId: this.foalParentId ?? null };
       if (this.food <= 0) {
         this.foodType = null;
         this.poisoned = false;
+        this.fromFoals = false; // (an empty plate is just a bowl: FoalMachine.js)
+        this.foalParentId = null;
       }
       return true;
     }
@@ -120,8 +123,9 @@ class Bowl {
       food: this.food,
       maxFood: this.maxFood,
       foodType: this.foodType,
-      fromFoals: this.fromFoals || undefined,
-      poisoned: this.poisoned || undefined, // (rat poison mixed in: Tools.js) // (the Foal-4-Sketties machine's plate: FoalMachine.js)
+      fromFoals: this.fromFoals || undefined, // (the Foal-4-Sketties machine's plate: FoalMachine.js)
+      machinePlate: this.machinePlate || undefined,
+      poisoned: this.poisoned || undefined, // (rat poison mixed in: Tools.js)
       foalParentId: this.foalParentId ?? undefined,
       currentCageId: this.currentCage ? this.currentCage.id : null,
     };
@@ -134,6 +138,7 @@ class Bowl {
       (data.type === "trough" || data.type === "mega_feeder" ? 25 : 5);
     this.foodType = data.foodType === "soylent_brown" ? "scrap_kibble" : data.foodType || null; // old saves
     if (data.fromFoals) this.fromFoals = true;
+    if (data.machinePlate) this.machinePlate = true;
     if (data.poisoned) this.poisoned = true;
     if (data.foalParentId !== undefined) this.foalParentId = data.foalParentId;
   }

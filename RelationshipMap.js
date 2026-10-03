@@ -45,8 +45,7 @@ let relMapSel = null; // selected fluffy id
 let relMapAll = null; // { id, page }: every tie one fluffy has, as a list ("All ties")
 let relMapFilters = { love: true, family: true, grudge: true, fear: true, gossip: true, you: false };
 let _relCache = null; // { at, people, groups, edges }
-let _relPortraits = {}; // id:size -> canvas
-let _relPortraitAt = 0;
+let _relPortraits = {}; // id:size -> { at, canvas }
 let relMapView = { zoom: 1, x: 0, y: 0 }; // zoom, and how far it's moved (px)
 let relMapScope = { wild: false, scene: null }; // whose map: yours, or the wild ones in a scene
 let _relPan = null; // dragging the map: { sx, sy, x, y }
@@ -437,15 +436,21 @@ function _relNodePositions(data, g) {
   return out;
 }
 
+// (each portrait is redrawn when it's ten seconds old - a couple a frame at
+// most, rather than all of them in one frame)
+let _relRedrawn = { at: -1, n: 0 };
 function _relPortrait(f, size) {
   const now = _relNow();
-  if (now - _relPortraitAt > 10) {
-    _relPortraits = {};
-    _relPortraitAt = now;
-  }
+  const frame = Math.floor(now * 60); // (about one frame)
+  if (_relRedrawn.at !== frame) _relRedrawn = { at: frame, n: 0 };
   const key = `${f.id}:${size}`;
-  if (_relPortraits[key] === undefined) _relPortraits[key] = typeof drawFluffyPortraitCanvas === "function" ? drawFluffyPortraitCanvas(f, size) : null;
-  return _relPortraits[key];
+  const e = _relPortraits[key];
+  const stale = !e || now - e.at > 10 || now < e.at;
+  if (stale && (!e || _relRedrawn.n < 2)) {
+    _relRedrawn.n++;
+    _relPortraits[key] = { at: now, canvas: typeof drawFluffyPortraitCanvas === "function" ? drawFluffyPortraitCanvas(f, size) : null };
+  }
+  return _relPortraits[key].canvas;
 }
 
 // Which fluffy is under the mouse (id or null)
@@ -935,7 +940,7 @@ function _relTieLines(f) {
 }
 
 function _drawRelAllTies(c, L) {
-  const f = fluffies.find((x) => x.id === relMapAll.id);
+  const f = fluffyById(relMapAll.id);
   if (!f) {
     relMapAll = null;
     return;

@@ -194,7 +194,7 @@ function acceptAlicorns(f) {
   if (rels) {
     for (const id in rels) {
       if (rels[id] !== "estranged_child") continue;
-      const child = fluffies.find((x) => x.id == id);
+      const child = fluffyById(id);
       if (!child || !child.isAlive || child.type !== "alicorn") continue;
       rels[id] = child.growth < 1 ? "baby_child" : "child";
       if (typeof noteDayEvent === "function" && f.adopted)

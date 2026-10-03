@@ -99,8 +99,13 @@ function giveStayLittle(f) {
 // HorseUpdate._updateGrowingUp: x how fast it grows (0 = not at all)
 function stayLittleGrowth(f) {
   if (!stayLittleActive(f)) return 1;
-  const grownNear = fluffies.some((o) => o !== f && o.isAlive && o.growth >= 1 && o.scene === f.scene && o.id !== f.motherId && Math.hypot(o.x - f.x, o.y - f.y) < 400);
-  return grownNear ? 0.5 : 0;
+  // (who's near is looked at every couple of seconds, not every step)
+  const c = f._slNear;
+  if (!c || timePlayed - c.at >= 2 || timePlayed < c.at) {
+    const near = fluffies.some((o) => o !== f && o.isAlive && o.growth >= 1 && o.scene === f.scene && o.id !== f.motherId && Math.hypot(o.x - f.x, o.y - f.y) < 400);
+    f._slNear = { at: timePlayed, near };
+  }
+  return f._slNear.near ? 0.5 : 0;
 }
 
 const foreverTicker = new Ticker(10);
@@ -387,8 +392,8 @@ function mixPoison(bowl, foodType) {
 }
 
 // HorseUpdate eating: it ate from a poisoned bowl
-function atePoisonedFood(f, bowl) {
-  if (!bowl || !bowl.poisoned) return;
+function atePoisonedFood(f, bowl, wasPoisoned = false) {
+  if (!bowl || !(bowl.poisoned || wasPoisoned)) return;
   f.isPoisoned = true;
   if (f.renderer) f.renderer.tinted = null;
   f.vomitTimer = 6 + Math.random() * 8;

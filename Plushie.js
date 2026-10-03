@@ -84,7 +84,7 @@ function plushieOwnerTag(p) {
   if (!p || p.ownerId === null || p.ownerId === undefined) return null;
   const named = typeof fluffyNames !== "undefined" && fluffyNames[p.ownerId];
   if (named) return `${named}'s`;
-  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === p.ownerId) : null;
+  const f = typeof fluffies !== "undefined" ? fluffyById(p.ownerId) : null;
   return f && typeof describeFluffyLooks === "function" ? `${describeFluffyLooks(f)}'s` : null;
 }
 
@@ -237,7 +237,7 @@ function updatePlushies(dt) {
   // Owners gone: free again
   for (const p of plushies) {
     if (p.ownerId === null || p.ownerId === undefined) continue;
-    const o = fluffies.find((x) => x.id === p.ownerId);
+    const o = fluffyById(p.ownerId);
     if (!o || !o.isAlive) p.ownerId = null;
   }
   // Missing it (or it's back)

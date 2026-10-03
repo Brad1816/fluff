@@ -134,7 +134,7 @@ function _clRoom(scene, create) {
 function noteClimateStory(kind, ids, opts = {}) {
   const w = CLIMATE_WEIGHTS[kind];
   if (!w || !ids || !ids.length || typeof fluffies === "undefined") return;
-  const main = fluffies.find((f) => f.id === ids[0]);
+  const main = fluffyById(ids[0]);
   const scene = opts.s || (main && main.scene);
   if (!scene || typeof scene !== "string") return;
   const r = _clRoom(scene, true);

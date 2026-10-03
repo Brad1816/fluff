@@ -401,6 +401,21 @@ function noteConditionBrush(f) {
   }
 }
 
+// HorseUpdate sleeping: brushed before bed, it rests better; told cruel
+// things today (Tools.js talkTo), it cries itself to sleep and rests worse
+function sleepRestFactor(f) {
+  let r = 1;
+  if (typeof f._calmBedtime === "number" && timePlayed >= f._calmBedtime && timePlayed - f._calmBedtime < 6 * HOUR_LENGTH) r *= 1.3;
+  if (typeof f._criedTonight === "number" && typeof getDayNumber === "function" && f._criedTonight === getDayNumber()) {
+    r *= 0.75;
+    if (f._criedSaid !== f._criedTonight && f.currentStateKey === "SLEEPING") {
+      f._criedSaid = f._criedTonight;
+      f.speak("*sniffle* ...huu huu...");
+    }
+  }
+  return r;
+}
+
 // Affection.onBowlFilledByYou: the ones watching link food with you;
 // conditioned hungry ones come running
 function noteConditionFeed(bowl) {

@@ -182,7 +182,7 @@ function updateHuddles(dt) {
     if (!(scene in labels)) labels[scene] = isHouseRoom(scene) && typeof climateOf === "function" ? climateOf(scene).label : "Calm";
     const uneasy = labels[scene] === "Tense" || labels[scene] === "Fearful";
     if (f._huddle) {
-      const o = fluffies.find((x) => x.id === f._huddle.with);
+      const o = fluffyById(f._huddle.with);
       if (!uneasy || f._huddle.until <= now || !o || !o.isAlive || o.scene !== f.scene) {
         f._huddle = null;
         continue;
@@ -248,7 +248,7 @@ function updateSleepHeaps(dt) {
       continue;
     }
     // Pick who to snuggle up to when it falls asleep, then keep them
-    let o = f._pileWith ? fluffies.find((x) => x.id === f._pileWith) : null;
+    let o = f._pileWith ? fluffyById(f._pileWith) : null;
     if (!o || !o.isAlive || o.currentStateKey !== "SLEEPING" || o.scene !== f.scene) {
       o = _pileBuddy(f);
       // (not two fluffies each shuffling to the other)

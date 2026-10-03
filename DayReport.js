@@ -125,10 +125,15 @@ function _finishDay() {
   };
 }
 
+let _dsFilled = null;
 // script.js updateSimulation; works once a second
 function updateDayReport(dt) {
   if (!dayStats || typeof dayStats !== "object") dayStats = freshDayStats();
-  for (const [k, v] of Object.entries(freshDayStats())) if (dayStats[k] === undefined) dayStats[k] = v;
+  // (old saves: fill in anything missing - once for each day's stats, not every frame)
+  if (_dsFilled !== dayStats) {
+    for (const [k, v] of Object.entries(freshDayStats())) if (dayStats[k] === undefined) dayStats[k] = v;
+    _dsFilled = dayStats;
+  }
   if (!dayReportTicker.step(dt)) return; // every 1s (Systems.js)
 
   const index = reportDayIndex();

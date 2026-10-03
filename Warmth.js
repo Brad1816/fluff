@@ -128,7 +128,9 @@ function warmthExposure(f) {
 }
 
 function warmthTarget(f) {
-  return Math.max(0, Math.min(1, 1 - coldAt(f) * warmthExposure(f)));
+  const c = coldAt(f);
+  if (c <= 0) return 1; // (not cold here: no need to work out the rest)
+  return Math.max(0, Math.min(1, 1 - c * warmthExposure(f)));
 }
 
 // Hunger (WorldTime.js weatherHungerMultiplier): cold fluffies burn more

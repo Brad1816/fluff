@@ -73,7 +73,7 @@ function milkMare(m) {
   m._milkedAt = timePlayed;
   if (!(typeof showDebugMenu !== "undefined" && showDebugMenu)) money += MILK_PRICE;
   m.changeHappiness(-0.03, "Milked");
-  if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: MILK_PRICE });
+  if (typeof noteIncome === "function") noteIncome(MILK_PRICE); // (takings - not a fluffy sold)
   if (!m.tooYoungToSpeak() && typeof getDialogue === "function") m.speak(getDialogue(["MILKED"], m), true);
   if (typeof addUIMessage === "function") addUIMessage(`A bottle of ${fluffyDisplayName(m)}'s milk sold to the mill: +$${MILK_PRICE}.`);
   return true;

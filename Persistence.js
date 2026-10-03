@@ -329,7 +329,7 @@ function loadObject(oData) {
       obj.stackedOn = objects.find((o) => o.id === oData.stackedOnId);
     }
     if (oData.heldById !== undefined && oData.heldById !== null) {
-      obj.heldBy = fluffies.find((f) => f.id === oData.heldById);
+      obj.heldBy = fluffyById(oData.heldById);
     }
   } else if (obj instanceof IVBag) {
     if (oData.attachedToId != null) {

@@ -134,7 +134,7 @@ function applyDebugAction(f) {
           addDebugMessage("Select a different fluffy!");
           return;
         }
-        const f1 = fluffies.find((x) => x.id === debugPairFirst);
+        const f1 = fluffyById(debugPairFirst);
         if (f1 && f1 !== f) {
           relationships[f1.id][f.id] = "special_friend";
           relationships[f.id][f1.id] = "special_friend";
@@ -256,7 +256,7 @@ function drawDebugWatcher() {
 
   if (debugWatchedFluffyId === null || debugWatchedFluffyId === undefined)
     return;
-  const f = fluffies.find((x) => x.id === debugWatchedFluffyId);
+  const f = fluffyById(debugWatchedFluffyId);
   if (!f) {
     debugWatchedFluffyId = null;
     return;

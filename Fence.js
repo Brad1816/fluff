@@ -1010,7 +1010,7 @@ function findPenSeparatedRelative(horse) {
   for (const [otherId, rel] of Object.entries(rels)) {
     const rank = PEN_RELATIONS.findIndex((p) => p[0] === rel);
     if (rank === -1 || rank >= bestRank) continue;
-    const other = fluffies.find((f) => f.id == otherId);
+    const other = fluffyById(otherId);
     if (
       !other ||
       !other.isAlive ||
@@ -1092,7 +1092,7 @@ function updatePenFeelings(horse, dt) {
   // Not separated (any more). If we were for a while, and they're here with
   // us now, that's a happy reunion.
   if ((horse._penSeparatedTime || 0) >= 5) {
-    const other = fluffies.find((f) => f.id == horse._penSeparatedFromId);
+    const other = fluffyById(horse._penSeparatedFromId);
     if (
       other &&
       other.isAlive &&

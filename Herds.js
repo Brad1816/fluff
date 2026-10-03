@@ -77,20 +77,14 @@ let herdState = freshHerdState();
 let showHerdMarkers = false;
 const herdsTicker = new Ticker(HERD_UPDATE_EVERY);
 let _herdIndex = null; // fluffy id -> herd (rebuilt when herds change)
-let _herdIndexKey = "";
 
 function _herdList() {
   return (herdState && Array.isArray(herdState.list) && herdState.list) || [];
 }
 
 function _rebuildHerdIndex() {
-  const key = _herdList()
-    .map((h) => h.id + ":" + h.memberIds.join(","))
-    .join("|");
-  if (_herdIndex && key === _herdIndexKey) return;
   _herdIndex = new Map();
   for (const h of _herdList()) for (const id of h.memberIds) _herdIndex.set(String(id), h);
-  _herdIndexKey = key;
 }
 
 function _herdChanged() {
@@ -140,11 +134,12 @@ function herdLikingBonus(a, b) {
 }
 
 function getHerdMembers(h) {
-  return h.memberIds.map((id) => fluffies.find((f) => f.id === id)).filter((f) => f && f.isAlive);
+  return h.memberIds.map((id) => fluffyById(id)).filter((f) => f && f.isAlive);
 }
 
 function getHerdLeader(h) {
-  return fluffies.find((f) => f.id === h.leaderId && f.isAlive) || null;
+  const f = fluffyById(h.leaderId);
+  return f && f.isAlive ? f : null;
 }
 
 function getHerdName(h) {

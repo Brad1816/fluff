@@ -413,7 +413,7 @@ function geneLabCandidates(gender) {
 function _geneLabRows(gender) {
   const rows = geneLabCandidates(gender).map((f) => ({ id: f.id, fluffy: f }));
   if (gender === "male") {
-    const mom = fluffies.find((f) => f.id === geneLabMotherId);
+    const mom = fluffyById(geneLabMotherId);
     if (mom && mom.isPregnant && Array.isArray(mom.fatherGenes)) {
       rows.unshift({ id: "PREGNANCY", pregnancyOf: mom });
     }
@@ -499,7 +499,7 @@ function _geneLabPrediction() {
         seed,
         pair.mom.isSensitive && pair.mom.isSensitive(),
         (() => {
-          const dad = fluffies.find((f) => f.id === pair.dadId);
+          const dad = fluffyById(pair.dadId);
           return !!(dad && dad.isSensitive && dad.isSensitive());
         })(),
       ),
@@ -613,7 +613,7 @@ function _drawGeneLabPrediction(c) {
     if (typeof relatedness === "function" && pair.dadId !== null && pair.dadId !== undefined) {
       const r = relatedness(pair.mom.id, pair.dadId);
       extra = ` (${Math.round(r * 1000) / 10}% related)`;
-      const dad = fluffies.find((f) => f.id === pair.dadId);
+      const dad = fluffyById(pair.dadId);
       if (!pair.pregnancy && dad && typeof kinBlocksMating === "function" && kinBlocksMating(dad, pair.mom) && kinBlocksMating(pair.mom, dad)) extra += " - they won't mate on their own";
     }
     canvasText(c, `⚠ These two are related: ${relation}${extra}.`, x, y, "#ffb86b", "bold 13px Arial");

@@ -182,7 +182,7 @@ function describeIncubator(f) {
 // Its mum, if she's alive and could nurse it
 function incubatorMum(f) {
   if (!f || f.motherId === null || f.motherId === undefined || typeof fluffies === "undefined") return null;
-  const m = fluffies.find((x) => x.id === f.motherId);
+  const m = fluffyById(f.motherId);
   return m && m.isAlive && m.gender === "female" ? m : null;
 }
 

@@ -139,8 +139,9 @@ function rejectBySmell(m, f, why = "runt") {
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 2.5;
   // ...and maybe a shove (it never kills)
-  if (Math.random() < 0.5 && m.attackCooldown <= 0 && typeof m.performAttack === "function") m.performAttack(f, "BULLY");
+  // (noted first: the shove would otherwise count as "hurt a foal")
   if (typeof noteMumMisdeed === "function") noteMumMisdeed(m, f, "rejected"); // (Care.js, BadMummah.js)
+  if (Math.random() < 0.5 && m.attackCooldown <= 0 && typeof m.performAttack === "function") m.performAttack(f, "BULLY");
   const nm = (x) => (typeof fluffyDisplayName === "function" ? fluffyDisplayName(x) : "a fluffy");
   if ((m.adopted || f.adopted) && typeof addUIMessage === "function")
     addUIMessage(`${nm(m)} sniffed ${nm(f)} and turned it away ("nu smeww pwetty") - she won't nurse it. A feeder, the Feed-Bot or a foster mum will have to.`);
@@ -155,7 +156,7 @@ function rejectBySmell(m, f, why = "runt") {
 function mumDisowned(f) {
   if (!f || f.motherId === null || f.motherId === undefined) return false;
   if (f.forgotMum) return true;
-  const mum = typeof fluffies !== "undefined" ? fluffies.find((m) => m.id === f.motherId) : null;
+  const mum = typeof fluffies !== "undefined" ? fluffyById(f.motherId) : null;
   if (!mum || !mum.isAlive) return false;
   const rel = (relationships[mum.id] || {})[f.id];
   return rel === "rejected_baby" || rel === "estranged_child" || (rel === "child" && f.growth < 1);

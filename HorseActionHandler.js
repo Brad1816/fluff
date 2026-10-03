@@ -119,7 +119,7 @@ class HorseActionHandler {
           this.horse.changeHappiness(HAPPINESS_BONUS_PLAY, "Played");
           this.horse.initBehavior("FLUFFY_JAB");
           if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "block"); // Play.js
-          this.horse.speak(getDialogue(["PLAY", "BLOCK_KNOCK_DOWN"]));
+          this.horse.speak(getDialogue(["PLAY", "BLOCK_KNOCK_DOWN"], this.horse));
           this.horse.failStackBlocks(block);
         }
         this.horse.blockTowerKnockOverTarget = false;
@@ -532,6 +532,9 @@ class HorseActionHandler {
 
   executeProposeFriendship() {
     for (const f of fluffies) {
+      // (the cheap tests first: someone else, alive, close by)
+      if (f === this.horse || !f.isAlive || f.scene !== this.horse.scene || f.currentCage !== this.horse.currentCage) continue;
+      if ((this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2 >= 150 * 150) continue;
       if (
         worldSettings.alicornIntolerance &&
         f.typeVisibleToOthers() === "alicorn" &&

@@ -39,7 +39,6 @@ function scaredyMess(f, strength = 0.5) {
   if (typeof addPointToPuddle === "function") addPointToPuddle(f.scene, f.x + offsetX, f.getBottomY() - 8, poop ? "#5c4033" : "#f1c40f", 5 / 200, size, 0.02);
   if (typeof addDirt === "function") addDirt(f, DIRT_FROM_ACCIDENT * (poop ? 0.8 : 0.3));
   if (poop && typeof fluffySound === "function") fluffySound(f, "shitting");
-  f._scaredyMess = { at: now, poop };
   if (!f.tooYoungToSpeak() && typeof getDialogue === "function" && Math.random() < 0.6) f.speak(getDialogue(["SCAREDY", poop ? "POOP" : "PEE"], f), true);
   return true;
 }

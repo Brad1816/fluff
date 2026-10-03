@@ -586,7 +586,7 @@ class CareForBabiesDesire extends Desire {
     let hasBaby = false;
     for (const [otherId, relation] of Object.entries(rels)) {
       if (relation === "baby_child") {
-        const other = fluffies.find((f) => f.id == otherId);
+        const other = fluffyById(otherId);
         if (other && other.isAlive && other.scene === horse.scene) {
           hasBaby = true;
           break;

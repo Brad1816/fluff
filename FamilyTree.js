@@ -61,7 +61,7 @@ function recordFluffy(f) {
       genes: Array.isArray(f.genes) ? f.genes.slice() : null,
     };
     // Bred by you: a newborn of one of your mares
-    const mum = f.motherId !== null && f.motherId !== undefined ? fluffies.find((x) => x.id === f.motherId) : null;
+    const mum = f.motherId !== null && f.motherId !== undefined ? fluffyById(f.motherId) : null;
     rec.bred = !!(f.adopted && f.growth < 0.25 && mum && mum.adopted);
     fluffyRecords[f.id] = rec;
     // A fluffy that came to you rather than being born here (StoryBook.js)
@@ -162,7 +162,7 @@ function syncFamilyRecords() {
     // Parents who are still around (even ferals) go in the book too
     for (const pid of [f.motherId, f.fatherId]) {
       if (pid === null || pid === undefined) continue;
-      const parent = fluffies.find((p) => p.id === pid);
+      const parent = fluffyById(pid);
       if (parent) recordFluffy(parent);
     }
   }
@@ -452,7 +452,7 @@ function isFamilyTreeOpen() {
 
 function openFamilyTree(fluffyId) {
   syncFamilyRecords();
-  const f = fluffies.find((x) => x.id === fluffyId);
+  const f = fluffyById(fluffyId);
   if (f) recordLivingFamily(f); // even a feral you're looking at, with its foals
   familyTreeHistory = [];
   familyTreeFocusId = fluffyId;
@@ -555,7 +555,7 @@ function drawFluffyPortraitCanvas(h, size) {
 }
 
 function _familyPortraitFluffy(rec) {
-  const live = fluffies.find((f) => f.id === rec.id);
+  const live = fluffyById(rec.id);
   if (live) return live;
   const h = makeStandInFluffy(rec.genes, {
     growth: rec.growth,

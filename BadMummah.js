@@ -60,11 +60,8 @@ function onLastChance(m) {
 function mumAway(m) {
   const b = m && m.badMum;
   if (!b || typeof b.awayUntil !== "number") return false;
-  if (timePlayed >= b.awayUntil || b.awayUntil - timePlayed > MUM_AWAY_TIME + 5) {
-    b.awayUntil = null;
-    return false;
-  }
-  return true;
+  // (asking doesn't change anything: updateBadMummahs sends her back)
+  return timePlayed < b.awayUntil && b.awayUntil - timePlayed <= MUM_AWAY_TIME + 5;
 }
 
 // Her foals still on her (alive)
@@ -75,6 +72,11 @@ function _bmFoals(m) {
 function setLastChance(m, on) {
   const b = badMumOf(m);
   b.on = !!on;
+  // Back on the list after losing them all: a fresh start (not straight to the end)
+  if (on && (b.step || 0) >= MUM_STEPS.length) {
+    b.step = 0;
+    b.strikes = 0;
+  }
   if (on) b.goodAt = timePlayed;
   else b.awayUntil = null;
   if (typeof addUIMessage === "function")
@@ -210,6 +212,7 @@ function updateBadMummahs(dt) {
     const b = m.badMum;
     if (!b || !m.isAlive) continue;
     if (b.awayUntil !== null && b.awayUntil !== undefined && !mumAway(m)) {
+      b.awayUntil = null;
       b.spot = null;
       if (!m.tooYoungToSpeak()) m.speak(getDialogue(["BAD_MUMMAH", "BACK"], m), true);
     }

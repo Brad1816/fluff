@@ -664,11 +664,12 @@ const TOUCH_WORDS = [
 ];
 const _touchWordCache = new Map();
 function touchWords(text) {
-  if (typeof text !== "string" || !/[Cc]lick|[Hh]over|Esc|wheel|Scroll to zoom/.test(text)) return text;
+  if (typeof text !== "string") return text;
+  // (the cache first - texts with nothing to change are kept too)
   let out = _touchWordCache.get(text);
   if (out !== undefined) return out;
   out = text;
-  for (const [re, fn] of TOUCH_WORDS) out = out.replace(re, fn);
+  if (/[Cc]lick|[Hh]over|Esc|wheel|Scroll to zoom/.test(text)) for (const [re, fn] of TOUCH_WORDS) out = out.replace(re, fn);
   if (_touchWordCache.size > 4000) _touchWordCache.clear();
   _touchWordCache.set(text, out);
   return out;
@@ -679,9 +680,15 @@ function _touchWordsOn(proto) {
   for (const name of ["fillText", "strokeText", "measureText"]) {
     const orig = proto[name];
     if (typeof orig !== "function") continue;
-    proto[name] = function (text, ...rest) {
-      return orig.call(this, touchWords(text), ...rest);
-    };
+    // (a fixed number of arguments: this runs for every bit of text drawn)
+    proto[name] =
+      name === "measureText"
+        ? function (text) {
+            return orig.call(this, touchWords(text));
+          }
+        : function (text, x, y, maxWidth) {
+            return maxWidth === undefined ? orig.call(this, touchWords(text), x, y) : orig.call(this, touchWords(text), x, y, maxWidth);
+          };
   }
 }
 if (touchMode && typeof CanvasRenderingContext2D !== "undefined") {

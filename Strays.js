@@ -138,7 +138,7 @@ function noteBackyardStrays(list) {
 }
 
 function _strayList(v) {
-  return v.ids.map((id) => fluffies.find((f) => f.id === id)).filter((f) => f && f.isAlive && !f.adopted && f.scene === "BACKYARD");
+  return v.ids.map((id) => fluffyById(id)).filter((f) => f && f.isAlive && !f.adopted && f.scene === "BACKYARD");
 }
 
 // "A stray mare and her 2 foals", "Mudpie", "3 strays"

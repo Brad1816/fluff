@@ -26,7 +26,7 @@ function _flRec(id) {
 function _flMum(id) {
   const rec = _flRec(id);
   if (rec && rec.motherId !== null && rec.motherId !== undefined) return rec.motherId;
-  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) : null;
+  const f = typeof fluffies !== "undefined" ? fluffyById(id) : null;
   return f && f.motherId !== null && f.motherId !== undefined ? f.motherId : null;
 }
 function _flName(id) {
@@ -92,7 +92,7 @@ function lineTradition(mare) {
   const mine = knownTricks(mare);
   if (!mine.length) return null;
   const mumId = _flMum(mare.id);
-  const mum = mumId !== null && typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === mumId) : null;
+  const mum = mumId !== null && typeof fluffies !== "undefined" ? fluffyById(mumId) : null;
   // (her mother taught it to her: alive or not, if she knew it)
   const theirs = mum ? knownTricks(mum) : mare._learntFromMum ? [mare._learntFromMum] : [];
   return mine.find((k) => theirs.includes(k)) || (mare._learntFromMum && mine.includes(mare._learntFromMum) ? mare._learntFromMum : null);
@@ -121,7 +121,7 @@ function _flEcho(f) {
   const mumId = _flMum(f.id);
   const granId = mumId !== null ? _flMum(mumId) : null;
   if (granId === null || granId === undefined) return;
-  const gran = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === granId) : null;
+  const gran = typeof fluffies !== "undefined" ? fluffyById(granId) : null;
   if (!gran) return;
   const hers = realFears(gran).map((x) => x.key);
   const mine = realFears(f).find((x) => hers.includes(x.key));

@@ -36,10 +36,10 @@ function _bornAtHome(f) {
 
 function _parentsOf(f) {
   const mum =
-    fluffies.find((x) => x.id === f.motherId) ||
+    fluffyById(f.motherId) ||
     (typeof getFamilyRecord === "function" ? getFamilyRecord(f.motherId) : null);
   const dad =
-    fluffies.find((x) => x.id === f.fatherId) ||
+    fluffyById(f.fatherId) ||
     (typeof getFamilyRecord === "function" ? getFamilyRecord(f.fatherId) : null);
   return { mum, dad };
 }
@@ -156,7 +156,7 @@ const GOALS = [
     check: () =>
       typeof _herdList === "function" &&
       _herdList().some((h) => {
-        const l = fluffies.find((f) => f.id === h.leaderId);
+        const l = fluffyById(h.leaderId);
         return l && l.adopted && l.isAlive;
       }),
   },

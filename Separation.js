@@ -129,7 +129,7 @@ function _family(f) {
 
 function _isDeadParent(id) {
   if (id === null || id === undefined) return null; // unknown
-  const p = fluffies.find((o) => o.id == id);
+  const p = fluffyById(id);
   if (p) return !p.isAlive;
   const rec = typeof fluffyRecords !== "undefined" ? fluffyRecords[id] : null;
   return rec ? rec.status === "dead" : null;

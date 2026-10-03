@@ -258,9 +258,9 @@ function _fmAbort(m) {
   const t = m.trade;
   m.trade = null;
   if (!t) return;
-  const p = fluffies.find((f) => f.id === t.parentId);
+  const p = fluffyById(t.parentId);
   if (p) p._f4s = null;
-  const foal = fluffies.find((f) => f.id === t.foalId);
+  const foal = fluffyById(t.foalId);
   if (foal) foal._f4sCarried = null;
 }
 
@@ -292,6 +292,7 @@ function feedFoalToMachine(m, foal, parent) {
   plate.food = FOAL_MACHINE_PLATE;
   plate.foodType = "sketties";
   plate.fromFoals = true;
+  plate.machinePlate = true;
   plate.byYou = false;
   plate.foalParentId = parent ? parent.id : null;
   objects.push(plate);
@@ -381,15 +382,22 @@ function refusesFoalSketties(f, bowl) {
 
 // ---- Every few seconds ----
 
+// (the list of machines, looked up again once a second rather than every frame)
+let _fmList = null;
+let _fmListAt = -Infinity;
 function updateFoalMachines(dt) {
-  const machines = allFoalMachines();
+  if (!_fmList || timePlayed - _fmListAt >= 1 || timePlayed < _fmListAt) {
+    _fmList = allFoalMachines();
+    _fmListAt = timePlayed;
+  }
+  const machines = _fmList;
   if (!machines.length) return;
   // Carrying (every frame)
   for (const m of machines) {
     const t = m.trade;
     if (!t || t.phase !== "bring") continue;
-    const p = fluffies.find((f) => f.id === t.parentId);
-    const foal = fluffies.find((f) => f.id === t.foalId);
+    const p = fluffyById(t.parentId);
+    const foal = fluffyById(t.foalId);
     if (!p || !foal || !p.isAlive || !foal.isAlive || foal.isDragging || p.isDragging || p.scene !== m.scene || foal.scene !== m.scene) {
       _fmAbort(m);
       continue;
@@ -401,6 +409,11 @@ function updateFoalMachines(dt) {
   const step = foalMachineTicker.step(dt);
   if (!step || typeof herdState === "undefined" || !herdState) return;
   const now = timePlayed;
+  // Empty plates are cleared away (they'd pile up in the wild otherwise)
+  for (let i = objects.length - 1; i >= 0; i--) {
+    const o = objects[i];
+    if (o instanceof Bowl && o.machinePlate && !(o.food > 0) && !o.isDragging) objects.splice(i, 1);
+  }
   // "Nu eat box sketties!" - telling the herd, a moment after realising
   for (const f of fluffies) {
     if (typeof f._f4sTellAt === "number" && now >= f._f4sTellAt) {
@@ -456,7 +469,7 @@ class FoalTradeDesire extends Desire {
     const m = this._machine(h);
     if (!m) return false;
     const t = m.trade;
-    const foal = fluffies.find((f) => f.id === t.foalId);
+    const foal = fluffyById(t.foalId);
     if (!foal || !foal.isAlive || foal.scene !== h.scene || foal.isDragging) {
       _fmAbort(m);
       return false;

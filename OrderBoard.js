@@ -120,7 +120,7 @@ function drawOrdersHud(c) {
   c.font = "bold 13px Arial";
   const w = c.measureText(text).width + 20;
   const x = width - w - 12;
-  const y = height - 38;
+  const y = height - 64; // (above the room headcount chip: UI.drawRoomHeadcount)
   c.fillStyle = soonest < 180 ? "rgba(160, 30, 30, 0.85)" : "rgba(0, 0, 0, 0.6)";
   c.fillRect(x, y, w, 26);
   c.fillStyle = "white";

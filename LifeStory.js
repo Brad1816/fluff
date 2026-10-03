@@ -51,7 +51,7 @@ function _lsPronouns(gender) {
 }
 
 function _lsLive(id) {
-  return typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) || null : null;
+  return typeof fluffies !== "undefined" ? fluffyById(id) || null : null;
 }
 
 // "Daisy", or "a pink unicorn mare" for one without a name

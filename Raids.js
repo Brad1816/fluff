@@ -54,10 +54,24 @@ function _rdHerd() {
   return a && typeof herdState !== "undefined" ? (herdState.list || []).find((h) => h.id === a.herdId) || null : null;
 }
 
+// Who came in (kept on the raid, so a raider who falls out with the herd -
+// or a herd that breaks up mid-raid - still leaves when it ends)
+function _rdIds() {
+  const a = raidState.active;
+  if (!a) return [];
+  if (Array.isArray(a.ids)) return a.ids;
+  const h = _rdHerd(); // (raids from before the ids were kept)
+  return h ? getHerdMembers(h).map((f) => f.id) : [];
+}
+function _rdIsRaider(f) {
+  return !!f && _rdIds().includes(f.id);
+}
+
 // The raiders still in the backyard
 function raiders() {
-  const h = _rdHerd();
-  return h ? getHerdMembers(h).filter((f) => f.isAlive && f.scene === "BACKYARD" && !_raidLeaving.some((l) => l.id === f.id)) : [];
+  const ids = _rdIds();
+  if (!ids.length) return [];
+  return fluffies.filter((f) => ids.includes(f.id) && f.isAlive && f.scene === "BACKYARD" && !_raidLeaving.some((l) => l.id === f.id));
 }
 
 function raidActive() {
@@ -147,7 +161,7 @@ function startYardRaid(h = null) {
       f.setTargetPosition(80 + Math.random() * (width - 160), top + Math.random() * (height - top - 140));
     }
   }
-  raidState.active = { herdId: h.id, at: timePlayed, claimedAt: null, quiet: 0, shoveAt: 0 };
+  raidState.active = { herdId: h.id, ids: members.map((f) => f.id), at: timePlayed, claimedAt: null, quiet: 0, shoveAt: 0 };
   raidState.lastAt = timePlayed;
   const lead = getHerdLeader(h);
   if (lead && !lead.tooYoungToSpeak()) lead.speak(getDialogue(["RAID", "START"], lead), true);
@@ -159,10 +173,11 @@ function startYardRaid(h = null) {
 function endYardRaid(why = "left") {
   const h = _rdHerd();
   const a = raidState.active;
+  const ids = _rdIds();
   raidState.active = null;
-  if (!h || !a) return;
+  if (!a) return;
   const g = _rdGate();
-  for (const f of getHerdMembers(h).filter((x) => x.scene === "BACKYARD" && x.isAlive)) {
+  for (const f of fluffies.filter((x) => (ids.includes(x.id) || (h && herdOf(x) === h)) && x.scene === "BACKYARD" && x.isAlive)) {
     _raidLeaving.push({ id: f.id, until: timePlayed + RAID_LEAVE_TIME });
     f.chaseTarget = null;
     f._raidTarget = null;
@@ -171,18 +186,19 @@ function endYardRaid(why = "left") {
       f.setTargetPosition(g.x, g.y);
     }
   }
-  const lead = getHerdLeader(h);
+  const lead = h ? getHerdLeader(h) : null;
   if (lead && lead.scene === "BACKYARD" && !lead.tooYoungToSpeak()) lead.speak(getDialogue(["RAID", why === "chased" ? "CHASED" : why === "beaten" ? "BEATEN" : "LEAVE"], lead), true);
+  const hn = h ? getHerdName(h) : "raiders";
   // A grudge against your herd
   const mine = fluffies.find((f) => f.adopted && f.isAlive && herdOf(f) && herdIsYours(herdOf(f)));
-  if (mine && typeof noteHerdFeud === "function") noteHerdFeud(h, herdOf(mine), RAID_FEUD);
+  if (h && mine && typeof noteHerdFeud === "function") noteHerdFeud(h, herdOf(mine), RAID_FEUD);
   _rdTell(
     {
-      chased: `You chased the ${getHerdName(h)} out of the backyard.`,
-      beaten: `Your fluffies drove the ${getHerdName(h)} out of the backyard!`,
-      won: `The ${getHerdName(h)} beat your fluffies and ate the backyard bare before leaving.`,
-      left: `The ${getHerdName(h)} has left the backyard${a.claimedAt ? " they'd claimed" : ""}.`,
-    }[why] || `The ${getHerdName(h)} has left the backyard.`,
+      chased: `You chased the ${hn} out of the backyard.`,
+      beaten: `Your fluffies drove the ${hn} out of the backyard!`,
+      won: `The ${hn} beat your fluffies and ate the backyard bare before leaving.`,
+      left: `The ${hn} has left the backyard${a.claimedAt ? " they'd claimed" : ""}.`,
+    }[why] || `The ${hn} has left the backyard.`,
   );
 }
 
@@ -251,7 +267,7 @@ function updateRaids(dt) {
   if (_raidLeaving.length) {
     const g = _rdGate();
     _raidLeaving = _raidLeaving.filter((l) => {
-      const f = fluffies.find((x) => x.id === l.id);
+      const f = fluffyById(l.id);
       if (!f || !f.isAlive || f.scene !== "BACKYARD" || f.isDragging || f.adopted) return false;
       if (now >= l.until || Math.hypot(f.x - g.x, f.y - g.y) < 50) {
         f.scene = typeof STRAY_SHOO_SCENE !== "undefined" ? STRAY_SHOO_SCENE : "RIVER";
@@ -306,7 +322,8 @@ function updateRaids(dt) {
       }
     }
   }
-  if (now - a.at >= YARD_RAID_MAX) endYardRaid(D.length && !RF.length ? "beaten" : a.claimedAt ? "left" : "won");
+  // (time's up: still fighting it out, or they'd claimed it, they just go)
+  if (now - a.at >= YARD_RAID_MAX) endYardRaid(D.length && !RF.length ? "beaten" : a.claimedAt || (D.length && RF.length) ? "left" : "won");
 }
 registerSystem("raids", updateRaids, 134);
 
@@ -349,8 +366,7 @@ function raidChipClick() {
 // Magnifying glass (Family, "Raiding"): [text, tone] or null
 function describeRaid(f) {
   if (!raidActive() || f.scene !== "BACKYARD") return null;
-  const h = _rdHerd();
-  if (h && herdOf(f) === h) return [`Raiding your backyard${raidState.active.claimedAt ? " (claimed it)" : ""}`, "bad"];
+  if (_rdIsRaider(f)) return [`Raiding your backyard${raidState.active.claimedAt ? " (claimed it)" : ""}`, "bad"];
   if (f.adopted && f._raidTarget) return ["Fighting off raiders", "ok"];
   return null;
 }

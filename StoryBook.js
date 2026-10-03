@@ -157,7 +157,7 @@ function recordStory(kind, who, opts = {}) {
   const now = _stNow();
   // What happens to it slowly changes who it is (Personality.js)
   if (typeof noteGrowthEvent === "function" && (kind === "comforted" || kind === "harmed" || kind === "played" || kind === "attacked")) {
-    const who = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === ids[0]) : null;
+    const who = typeof fluffies !== "undefined" ? fluffyById(ids[0]) : null;
     if (who) noteGrowthEvent(who, kind, opts);
   }
   // The room's feel (Climate.js)
@@ -177,7 +177,7 @@ function recordStory(kind, who, opts = {}) {
     }
   }
   const e = { i: storyBook.nextId++, t: now, k: kind, w: ids };
-  const main = typeof fluffies !== "undefined" ? fluffies.find((f) => f.id === ids[0]) : null;
+  const main = typeof fluffies !== "undefined" ? fluffyById(ids[0]) : null;
   const scene = opts.s || (main && main.scene);
   if (scene) e.s = scene;
   if (main && typeof herdOf === "function") {
@@ -220,7 +220,7 @@ function storyOfFamily(f) {
   const ids = new Set([id]);
   let rec = typeof getFamilyRecord === "function" ? getFamilyRecord(id) : null;
   // (the family book syncs once a second; a fluffy just born may not be in it yet)
-  const live = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) : null;
+  const live = typeof fluffies !== "undefined" ? fluffyById(id) : null;
   if (!rec && live) rec = { motherId: live.motherId ?? null, fatherId: live.fatherId ?? null };
   if (live && typeof fluffies !== "undefined")
     for (const x of fluffies) if (x.motherId === id || x.fatherId === id) ids.add(x.id);

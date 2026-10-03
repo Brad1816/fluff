@@ -358,7 +358,7 @@ function runShow() {
   const rivals = _showRivals(theme, show.level || _showLevel());
   const entrants = rivals.map((r) => ({ ...r, you: false }));
   let yours = null;
-  const f = showState.entryId !== null ? fluffies.find((x) => x.id === showState.entryId) : null;
+  const f = showState.entryId !== null ? fluffyById(showState.entryId) : null;
   let note = null;
   if (showState.entryId !== null) {
     if (canEnterShow(f, theme)) {
@@ -522,7 +522,7 @@ function drawShowsPage(c, theme, m) {
   const [p1, p2, p3] = L.show.prizes;
   canvasText(c, `Prizes: 1st $${p1.toLocaleString()} · 2nd $${p2.toLocaleString()} · 3rd $${p3.toLocaleString()} · plus reputation and a ribbon`, 36, 162, theme.cardText, "13px Arial");
   canvasText(c, `Entry fee $${L.show.fee}${t.hard ? " · The best breeders enter this one" : ""}`, 36, 184, theme.cardText, "bold 13px Arial");
-  const entry = showState.entryId !== null ? fluffies.find((f) => f.id === showState.entryId) : null;
+  const entry = showState.entryId !== null ? fluffyById(showState.entryId) : null;
   if (entry) {
     canvasText(c, `Entered: ${fluffyDisplayName(entry)} (judges' view ${showScore(entry, t)})`, 36, 208, "#1e8a3a", "bold 14px Arial");
     _osButton(c, L.withdraw, m, theme);
@@ -952,19 +952,9 @@ function drawShowResults(c) {
   c.restore();
 }
 
+// (the same wrapping as the messages at the top: UIMessages.js)
 function _wrapText(c, text, maxW) {
-  const words = String(text).split(" ");
-  const lines = [];
-  let line = "";
-  for (const w of words) {
-    const test = line ? `${line} ${w}` : w;
-    if (line && c.measureText(test).width > maxW) {
-      lines.push(line);
-      line = w;
-    } else line = test;
-  }
-  if (line) lines.push(line);
-  return lines;
+  return _wrapMessage(c, text, maxW);
 }
 
 function handleShowResultsClick() {
@@ -1075,7 +1065,7 @@ function drawShowHall(c) {
   c.fillText(fitText(c, theme ? theme.name : "Coming soon", pw - 12), px + pw / 2, py + 44);
   c.font = "12px Arial";
   if (show) c.fillText(describeShowTime(show), px + pw / 2, py + 64);
-  const entry = show && showState.entryId !== null ? fluffies.find((f) => f.id === showState.entryId) : null;
+  const entry = show && showState.entryId !== null ? fluffyById(showState.entryId) : null;
   c.fillStyle = entry ? "#1e8a3a" : "#7a6a55";
   c.font = entry ? "bold 12px Arial" : "italic 12px Arial";
   c.fillText(fitText(c, entry ? `Entered: ${fluffyDisplayName(entry)}` : "Click to enter", pw - 12), px + pw / 2, py + 90);

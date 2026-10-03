@@ -60,7 +60,7 @@ function drawPanelButton(b, label, opts = {}) {
   const c = opts.ctx || ctx;
   c.save();
   if (!enabled) c.globalAlpha = 0.4;
-  const style = { fontSize: opts.fontSize || 14, borderRadius: opts.radius || 8 };
+  const style = { fontSize: opts.fontSize || 14, borderRadius: opts.radius || 8, ctx: c };
   if (opts.on !== undefined) style.normalFill = opts.on ? "rgba(255, 170, 220, 0.35)" : "rgba(0, 0, 0, 0.15)";
   drawGlassButton(b.x, b.y, b.w, b.h, label, style);
   c.restore();

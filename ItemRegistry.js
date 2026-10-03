@@ -183,7 +183,7 @@ const ITEM_TYPES = [
     sellable: true,
     onSell: (bed) => {
       for (const id of bed.claimants) {
-        const f = fluffies.find((f) => f.id === id);
+        const f = fluffyById(id);
         if (f) f.claimedBed = null;
       }
     },

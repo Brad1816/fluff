@@ -37,7 +37,7 @@ function isStoryDebugOpen() {
 }
 
 function _sdFluffy() {
-  return fluffies.find((f) => f.id === storyDebugId) || null;
+  return fluffyById(storyDebugId) || null;
 }
 
 function _sdLines() {

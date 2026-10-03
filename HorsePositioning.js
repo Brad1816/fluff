@@ -1326,12 +1326,26 @@ class HorsePositioning {
   }
 
   // Extents of the horse standing still and upright, facing its current way
+  // (the shape standing only changes with its pictures, size and the way it
+  // faces, so it's kept - as offsets from where it is - for a second at a time)
   getStandingExtents() {
-    const renderer = this.horse.renderer;
+    const h = this.horse;
+    const renderer = h.renderer;
     renderer.ensureTintedImages();
     if (!renderer.tinted || !renderer.tinted.torso) {
       return this.getExtentsForLayout(null);
     }
+    const c = this._standCache;
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
+    if (c && c.tinted === renderer.tinted && c.facing === h.facingRight && c.scale === h.scale && now >= c.at && now - c.at < 1) {
+      return { left: h.x + c.l, right: h.x + c.r, top: h.y + c.t, bottom: h.y + c.b };
+    }
+    const e = this._buildStandingExtents(renderer);
+    this._standCache = { tinted: renderer.tinted, facing: h.facingRight, scale: h.scale, at: now, l: e.left - h.x, r: e.right - h.x, t: e.top - h.y, b: e.bottom - h.y };
+    return e;
+  }
+
+  _buildStandingExtents(renderer) {
     const layout = renderer.buildLayout({
       globalRotation: 0,
       bodyY: 0,
@@ -1593,18 +1607,21 @@ class HorsePositioning {
   findScaryCorpse() {
     let closest = null;
     let minDist = Infinity;
+    const rels = relationships[this.horse.id] || {};
     for (const f of fluffies) {
+      // (the cheap tests first: only bodies in this room count)
+      if (f.isAlive || f.scene !== this.horse.scene) continue;
       if (
         this.horse.cannibalismAcceptance > 0.0 &&
         !f.fluffyIsRelatedOrSpecialFriend(this.horse)
       ) {
         continue;
       }
-      if ((relationships[this.horse.id] || {})[f.id] === "estranged_child") {
+      if (rels[f.id] === "estranged_child") {
         continue;
       }
 
-      if (f.scene === this.horse.scene && !f.isAlive) {
+      {
         const d = Math.sqrt(
           (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
         );

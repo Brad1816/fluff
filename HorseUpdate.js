@@ -477,21 +477,23 @@ addHorseMethods({
               if (typeof toothlessRefuses === "function" && toothlessRefuses(this, foodType)) continue;
               if (typeof fearsBowl === "function" && fearsBowl(this, bowl)) continue;
               if (bowl.eat()) {
+                // (what this bite was - the last one empties the bowl and clears it)
+                const bite = bowl.lastBite || bowl;
                 // ...made from foals (FoalMachine.js)
-                if (bowl.fromFoals && typeof onFoalSkettiesEaten === "function") onFoalSkettiesEaten(this, bowl);
+                if (bite.fromFoals && typeof onFoalSkettiesEaten === "function") onFoalSkettiesEaten(this, bite);
                 if (typeof toothlessAte === "function") toothlessAte(this, foodType);
-                if (bowl.poisoned && typeof atePoisonedFood === "function") atePoisonedFood(this, bowl);
+                if (bite.poisoned && typeof atePoisonedFood === "function") atePoisonedFood(this, bowl, true);
                 // Who filled it: you, or the Feed-Bot (Memory.js trust)
                 this._mealFromYou = bowl.byYou !== false;
                 // Cheap food doesn't fill them up as much (Diet.js)
                 this.hunger = typeof foodFill === "function" ? foodFill(foodType) : 1.0;
                 this.initBehavior("EATING");
                 let key;
-                if (bowl.foodType === "sketties") {
+                if (foodType === "sketties") {
                   key = ["EAT", "SKETTIES"];
-                } else if (bowl.foodType === "scrap_kibble") {
+                } else if (foodType === "scrap_kibble") {
                   key = ["EAT", "SCRAPZ"];
-                } else if (bowl.foodType === "rat_poison") {
+                } else if (foodType === "rat_poison") {
                   key = ["EAT", "RAT_POISON"];
                 } else if (typeof mealDialogueKey === "function") {
                   key = mealDialogueKey(this, foodType);
@@ -500,11 +502,11 @@ addHorseMethods({
                 }
 
                 if (this.isSmarty()) {
-                  if (bowl.foodType === "sketties") {
+                  if (foodType === "sketties") {
                     key = ["EAT", "SKETTIES", "SMARTY"];
-                  } else if (bowl.foodType === "scrap_kibble") {
+                  } else if (foodType === "scrap_kibble") {
                     key = ["EAT", "SCRAPZ"];
-                  } else if (bowl.foodType === "rat_poison") {
+                  } else if (foodType === "rat_poison") {
                     key = ["EAT", "RAT_POISON"];
                   } else {
                     key = ["EAT", "NUMMIES", "SMARTY"];
@@ -512,15 +514,15 @@ addHorseMethods({
                   this.expressionOverride = "ANGRY_PUFFED";
                   this.expressionOverrideTimer = 3.0;
                 }
-                if (bowl.foodType === "sketties") {
+                if (foodType === "sketties") {
                   this.changeHappiness(HAPPINESS_BONUS_SKETTIES, "Sketties!");
-                } else if (bowl.foodType === "scrap_kibble") {
+                } else if (foodType === "scrap_kibble") {
                   this.changeHappiness(-0.03, "Food it hates");
                   if (!this.isSmarty()) {
                     this.expressionOverride = "MISERABLE";
                     this.expressionOverrideTimer = 3.0;
                   }
-                } else if (bowl.foodType === "rat_poison") {
+                } else if (foodType === "rat_poison") {
                   this.isPoisoned = true;
                   if (this.renderer) this.renderer.tinted = null;
                   this.vomitTimer = 4.0 + Math.random() * 6.0;
@@ -771,7 +773,7 @@ addHorseMethods({
             ? fluffyDisplayNameById(this.lastAttackerId)
             : fluffyNames[this.lastAttackerId] || "Fluffy";
         // It's a killer now (Kinship.js: something's not right with it)
-        const killer = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === this.lastAttackerId) : null;
+        const killer = typeof fluffies !== "undefined" ? fluffyById(this.lastAttackerId) : null;
         if (killer) killer.hasKilled = (killer.hasKilled || 0) + 1;
         this.die(null, `Killed by ${attackerName}`);
       } else {
@@ -1171,7 +1173,8 @@ addHorseMethods({
       if (this.currentStateKey === "SLEEPING") {
         // Day and night change how fast they rest / get tired (WorldTime.js)
         const sleepRates = typeof sleepRateMultipliers === "function" ? sleepRateMultipliers() : [1, 1];
-        this.sleepDeprivation = Math.max(0, this.sleepDeprivation - (dt / 30) * sleepRates[1]); // Takes 2 mins to fully rest
+        const restFactor = typeof sleepRestFactor === "function" ? sleepRestFactor(this) : 1; // (Care.js: brushed before bed, cried itself to sleep)
+        this.sleepDeprivation = Math.max(0, this.sleepDeprivation - (dt / 30) * sleepRates[1] * restFactor); // Takes 2 mins to fully rest
 
         const inBed =
           this.claimedBed &&

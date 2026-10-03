@@ -376,7 +376,14 @@ function _messOutdoor(scene) {
   return !!(cfg && cfg.isOutdoor);
 }
 
+// (in half-second steps: fading a puddle redraws its picture, and a change
+// this slow can't be seen frame to frame)
+let _messFadeAcc = 0;
 function fadeMess(dt) {
+  _messFadeAcc += dt;
+  if (_messFadeAcc < 0.5) return;
+  dt = _messFadeAcc;
+  _messFadeAcc = 0;
   const day = typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200;
   const rain = typeof rainAmount === "function" ? rainAmount() : 0;
   for (const puddle of puddles) {

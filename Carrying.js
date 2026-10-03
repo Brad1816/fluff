@@ -30,7 +30,7 @@ function cantCrawlYet(f) {
 // Its mum, if she can carry it right now
 function rideMumFor(f) {
   if (f.motherId === null || f.motherId === undefined || typeof fluffies === "undefined") return null;
-  const mum = f._riding && f._riding.id === f.motherId ? f._riding : fluffies.find((m) => m.id === f.motherId);
+  const mum = f._riding && f._riding.id === f.motherId ? f._riding : fluffyById(f.motherId);
   if (!mum || !mum.isAlive || mum.scene !== f.scene || mum.growth < 1) return null;
   if (typeof relationships === "undefined" || !relationships[mum.id] || relationships[mum.id][f.id] !== "baby_child") return null;
   if (mum.isDragging || f.isDragging || mum.placedOn || f.placedOn || mum.currentCage !== f.currentCage) return null;

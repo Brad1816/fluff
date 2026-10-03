@@ -186,7 +186,7 @@ function fluffyDisplayNameById(id, fallback = "Fluffy") {
   if (id === null || id === undefined) return fallback;
   const n = typeof fluffyNames !== "undefined" ? fluffyNames[id] : null;
   if (n) return n;
-  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id == id) : null;
+  const f = typeof fluffies !== "undefined" ? fluffyById(id) : null;
   if (f) return fluffyDisplayName(f);
   const rec = typeof getFamilyRecord === "function" ? getFamilyRecord(id) : null;
   if (rec) return rec.name || `Fluffy (${describeRecordLooks(rec)})`;
@@ -248,7 +248,7 @@ function updateNamingPopups(dt) {
   }
   // A litter is ready once its mum has finished (or isn't giving birth)
   for (const mumId of Object.keys(_pendingLitters)) {
-    const mum = fluffies.find((m) => m.id == mumId);
+    const mum = fluffyById(mumId);
     if (mum && mum.isAlive && mum.babiesToBirth > 0) continue;
     const ids = _pendingLitters[mumId].filter((id) => fluffies.some((f) => f.id === id && f.isAlive));
     delete _pendingLitters[mumId];
@@ -283,12 +283,12 @@ function saveNamingPopup() {
       fluffyNames[id] = n;
       if (typeof recordStory === "function") recordStory("named", id, { x: n });
       // A name from you (Affection.js)
-      const f = first && typeof giveAffection === "function" ? fluffies.find((x) => x.id === id) : null;
+      const f = first && typeof giveAffection === "function" ? fluffyById(id) : null;
       if (f) giveAffection(f, "named");
       // A name is a fluffy's pride (Identity.js)
       if (f && typeof noteTurningPoint === "function") noteTurningPoint(f, `${n} has a name now.`, { record: false });
       // It hears its (new) name
-      const g = fluffies.find((x) => x.id === id);
+      const g = fluffyById(id);
       if (namingPopup.kind === "rename" && g && typeof getDialogue === "function") g.speak(getDialogue(g.tooYoungToSpeak() ? ["NAME", "CHIRPY"] : ["NAME"], g));
     }
   });
@@ -349,8 +349,8 @@ function drawNamingPopup(c) {
   c.textBaseline = "alphabetic";
   c.fillStyle = "#ffd6f0";
   c.font = "bold 22px Arial";
-  const mum = p.mumId !== undefined ? fluffies.find((f) => f.id === p.mumId) : null;
-  const one = fluffies.find((x) => x.id === p.ids[0]);
+  const mum = p.mumId !== undefined ? fluffyById(p.mumId) : null;
+  const one = fluffyById(p.ids[0]);
   const title =
     p.kind === "litter"
       ? `${mum ? fluffyDisplayName(mum) : "Your fluffy"} had ${p.ids.length} foals!`
@@ -367,7 +367,7 @@ function drawNamingPopup(c) {
   );
 
   p.ids.forEach((id, i) => {
-    const f = fluffies.find((x) => x.id === id);
+    const f = fluffyById(id);
     const row = L.rows[i];
     if (f && f.drawPortrait) {
       try {

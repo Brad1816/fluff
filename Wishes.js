@@ -45,7 +45,7 @@ const wishTicker = new Ticker(2);
 const wishTalkTicker = new Ticker(30);
 
 function _wById(id) {
-  return typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === id) || null : null;
+  return typeof fluffies !== "undefined" ? fluffyById(id) || null : null;
 }
 function _wP(f) {
   return f.gender === "male" ? { sub: "he", obj: "him", poss: "his", Sub: "He", Poss: "His" } : { sub: "she", obj: "her", poss: "her", Sub: "She", Poss: "Her" };

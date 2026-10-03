@@ -62,7 +62,7 @@ function isOrphanFoal(f) {
   if (!f || !f.isAlive || f.growth >= FOSTER_MAX_GROWTH) return false;
   if (f.isDragging || f.placedOn || f.currentCage) return false;
   if (f.motherId === null || f.motherId === undefined) return true;
-  const mum = fluffies.find((m) => m.id === f.motherId);
+  const mum = fluffyById(f.motherId);
   // (or she won't nurse it: turned away, taken from her, forgotten - Runts.js)
   return !mum || !mum.isAlive || (typeof mumDisowned === "function" && mumDisowned(f));
 }
@@ -118,6 +118,10 @@ function takeInFoal(mare, foal) {
   const rels = relationships[mare.id] || (relationships[mare.id] = {});
   foal.motherId = mare.id;
   foal.adopted = mare.adopted;
+  // A new mum: whatever it forgot about the old one doesn't apply (FoalLife.js)
+  foal.forgotMum = false;
+  foal.mumApart = 0;
+  foal._relearn = 0;
   setRelationship(mare.id, foal.id, "baby_child");
   setRelationship(foal.id, mare.id, "mother");
   // Her foals: its brothers and sisters
@@ -134,7 +138,7 @@ function takeInFoal(mare, foal) {
   // Her special friend: its dad
   const specialFriendId = Object.keys(rels).find((id) => rels[id] === "special_friend");
   if (specialFriendId) {
-    const dad = fluffies.find((f) => f.id == specialFriendId);
+    const dad = fluffyById(specialFriendId);
     if (dad) {
       setRelationship(dad.id, foal.id, "baby_child");
       setRelationship(foal.id, dad.id, "father");
@@ -223,7 +227,7 @@ function updateFostering(dt) {
   for (const m of fluffies) {
     const job = m._fostering;
     if (!job) continue;
-    const foal = fluffies.find((x) => x.id === job.id);
+    const foal = fluffyById(job.id);
     if (!foal || !canFoster(m, foal) || now - job.at > FOSTER_WALK_MAX) {
       m._fostering = null;
       continue;

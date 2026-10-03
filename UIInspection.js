@@ -600,13 +600,17 @@ function inspectionStoryArea(L) {
   return { x: L.listX + 30, y, w: L.listW - 60, h: L.btnY - 10 - y };
 }
 
+let _inspData = null;
 function drawInspectionModal(ctx) {
   if (!inspectedFluffy) return;
   // Screen pass only (speech bubbles would show through otherwise)
   if (ctx.canvas !== canvas) return;
   const f = inspectedFluffy;
   const L = getInspectionModalLayout();
-  const data = getInspectionTabs(f);
+  // (the rows are worked out a few times a second, not every frame)
+  const nowMs = performance.now();
+  if (!_inspData || _inspData.f !== f || nowMs - _inspData.at > 250 || nowMs < _inspData.at) _inspData = { f, at: nowMs, data: getInspectionTabs(f) };
+  const data = _inspData.data;
   if (!data.tabs.some((t) => t.id === inspectionTab)) inspectionTab = "overview";
 
   ctx.save();
@@ -624,13 +628,13 @@ function drawInspectionModal(ctx) {
   const py = L.listY + 18;
   ctx.fillStyle = "rgba(255,255,255,0.06)";
   if (typeof fillRoundRect === "function") fillRoundRect(ctx, px, py, 104, 104, 12);
-  if (typeof f.drawPortrait === "function") {
+  if (typeof f.drawPortraitCached === "function") {
     ctx.save();
     ctx.beginPath();
     ctx.rect(px, py, 104, 104);
     ctx.clip();
     try {
-      f.drawPortrait(ctx, px + 46, py + 62, 81);
+      f.drawPortraitCached(ctx, px + 46, py + 62, 81);
     } catch (e) {
       // (portrait not ready)
     }

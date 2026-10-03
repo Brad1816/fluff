@@ -317,7 +317,7 @@ function drawAffectionPops(ctx) {
   ctx.textAlign = "center";
   for (const p of affectionPops) {
     if (p.scene !== currentScene) continue;
-    const f = fluffies.find((x) => x.id === p.id);
+    const f = fluffyById(p.id);
     const x = f ? f.x : p.x;
     const y = (f ? f.y : p.y) - 70 - 50 * (p.growth || 1);
     const k = (now - p.born) / 1400;

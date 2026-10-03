@@ -195,7 +195,7 @@ function startTrick(f, key, target = null, time = null) {
 // if the carrier died, was sold or stopped fetching.)
 function isBallCarried(b) {
   if (!b || !b.carriedBy) return false;
-  const f = fluffies.find((x) => x.id === b.carriedBy);
+  const f = fluffyById(b.carriedBy);
   if (f && f.isAlive && f.trickNow && f.trickNow.key === "fetch") return true;
   b.carriedBy = null;
   return false;

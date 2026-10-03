@@ -2943,7 +2943,7 @@ function getDialogue(keys = [], speaker = null, target = null) {
   // Set from string, set defaults, destructure
   if (typeof keys === "string") keys = [keys];
   keys = keys.map((k) => k?.toUpperCase());
-  [key1 = "DEFAULT", key2 = "DEFAULT", key3 = "DEFAULT"] = keys;
+  const [key1 = "DEFAULT", key2 = "DEFAULT", key3 = "DEFAULT"] = keys;
   // Go down the list of options, because not all dialogues use 3 keys, and in case of bad keys
   let text =
     DIALOGUE[key1]?.[key2]?.[key3] ??

@@ -9,6 +9,7 @@ function drawGlassButton(x, y, w, h, text, options = {}) {
     hoverFill = "rgba(255, 255, 255, 0.2)",
     borderColor,
     textOffsetY = 0,
+    ctx: c = ctx, // (another canvas to draw on: UIPanels.drawPanelButton passes one)
   } = options;
 
   const isHovered =
@@ -20,50 +21,54 @@ function drawGlassButton(x, y, w, h, text, options = {}) {
     mouse.y >= y &&
     mouse.y <= y + h;
 
-  ctx.save();
+  c.save();
 
   // No backdrop blur requested.
 
   // 2) Translucent background
   if (disabled) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    c.fillStyle = "rgba(0, 0, 0, 0.7)";
   } else {
-    ctx.fillStyle = isHovered ? hoverFill : normalFill;
+    c.fillStyle = isHovered ? hoverFill : normalFill;
   }
 
-  ctx.beginPath();
-  if (ctx.roundRect) {
-    ctx.roundRect(x, y, w, h, borderRadius);
+  c.beginPath();
+  if (c.roundRect) {
+    c.roundRect(x, y, w, h, borderRadius);
   } else {
-    ctx.rect(x, y, w, h);
+    c.rect(x, y, w, h);
   }
-  ctx.fill();
+  c.fill();
 
-  ctx.strokeStyle =
+  c.strokeStyle =
     borderColor ||
     (isHovered
       ? "rgba(255, 255, 255, 0.9)"
       : disabled
         ? "rgba(255, 255, 255, 0.2)"
         : "rgba(255, 255, 255, 0.5)");
-  ctx.lineWidth = 2;
-  ctx.stroke();
+  c.lineWidth = 2;
+  c.stroke();
 
-  // Text
-  ctx.fillStyle = disabled ? "rgba(255, 255, 255, 0.4)" : textColor || "white";
-  ctx.font = `bold ${fontSize}px Arial`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  // Text (most toolbar slots have none: skip the font work)
+  if (text === "" || text === null || text === undefined) {
+    c.restore();
+    return;
+  }
+  c.fillStyle = disabled ? "rgba(255, 255, 255, 0.4)" : textColor || "white";
+  c.font = `bold ${fontSize}px Arial`;
+  c.textAlign = "center";
+  c.textBaseline = "middle";
 
   // Text outline
-  ctx.lineWidth = 2;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = disabled ? "rgba(0, 0, 0, 0.4)" : "black";
-  ctx.strokeText(text, x + w / 2, y + h / 2 + textOffsetY);
+  c.lineWidth = 2;
+  c.lineJoin = "round";
+  c.strokeStyle = disabled ? "rgba(0, 0, 0, 0.4)" : "black";
+  c.strokeText(text, x + w / 2, y + h / 2 + textOffsetY);
 
-  ctx.fillText(text, x + w / 2, y + h / 2 + textOffsetY);
+  c.fillText(text, x + w / 2, y + h / 2 + textOffsetY);
 
-  ctx.restore();
+  c.restore();
 }
 
 function drawTitleScreen() {

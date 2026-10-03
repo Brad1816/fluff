@@ -5,6 +5,9 @@
 // these to every fluffy. Loaded right after Horse.js.)
 // ---------------------------------------------------------------------------
 
+// The relatives a fluffy keeps track of (missing them, grieving)
+const PERCEIVED_RELATIONS = new Set(["mother", "father", "child", "baby_child", "brother", "sister", "special_friend", "forgotten_special_friend"]);
+
 // Foals call for their mums (updateFoalCalls): when in distress (every
 // FOAL_CALL_REST seconds while it lasts), and now and then when they've been
 // on their own a while (FOAL_LONELY_AFTER seconds more than FOAL_MUM_NEAR
@@ -25,7 +28,7 @@ function updateFoalCalls(dt) {
   for (const f of fluffies) {
     if (!f.isAlive || !f.tooYoungToWalk() || f.motherId === null || f.motherId === undefined) continue;
     if (f.currentStateKey === "SLEEPING" || f.forgotMum) continue; // (FoalLife.js: it doesn't know her)
-    const mum = fluffies.find((m) => m.id === f.motherId);
+    const mum = fluffyById(f.motherId);
     if (!mum || !mum.isAlive || mum.scene !== f.scene || relationships[mum.id]?.[f.id] !== "baby_child") {
       f._aloneSince = undefined;
       continue;
@@ -186,7 +189,7 @@ addHorseMethods({
   },
 
   attemptAdoption(mare) {
-    const mom = fluffies.find((f) => f.id === this.motherId);
+    const mom = fluffyById(this.motherId);
     const rels = relationships[mare.id];
     if (
       rels[this.id] === "rejected_baby" ||
@@ -216,23 +219,12 @@ addHorseMethods({
     const effectiveDt = relCheat ? dt * 50 : dt;
     let newlyLostRelative = null;
 
-    for (const [otherId, relation] of Object.entries(rels)) {
+    for (const otherId in rels) {
+      const relation = rels[otherId];
       // Only perceive certain relationships
-      if (
-        ![
-          "mother",
-          "father",
-          "child",
-          "baby_child",
-          "brother",
-          "sister",
-          "special_friend",
-          "forgotten_special_friend",
-        ].includes(relation)
-      )
-        continue;
+      if (!PERCEIVED_RELATIONS.has(relation)) continue;
 
-      const other = fluffies.find((f) => f.id == otherId);
+      const other = fluffyById(otherId);
       if (!this.perceivedRelationships[otherId]) {
         this.perceivedRelationships[otherId] = {
           // (a relative it's never been around isn't missed: Acquaintance.js)
@@ -315,7 +307,7 @@ addHorseMethods({
 
       if (pRel.state === "lost") {
         const relation = rels[otherId];
-        const other = fluffies.find((f) => f.id == otherId);
+        const other = fluffyById(otherId);
         if (this.gender === "female" && (relation === "baby_child" || relation === "child")) {
           target = other;
           key = ["LOST", "BABY"];
@@ -472,7 +464,7 @@ addHorseMethods({
 
     for (const [otherId, relation] of Object.entries(rels)) {
       if (relation !== "baby_child") continue;
-      const other = fluffies.find((f) => f.id == otherId);
+      const other = fluffyById(otherId);
       if (!other || !other.isAlive || other.scene !== this.scene || !other.tooYoungToWalk()) continue;
       const dist = Math.sqrt((this.x - other.x) ** 2 + (this.y - other.y) ** 2);
       // A newborn that can't crawl yet and isn't on her back: she fetches it

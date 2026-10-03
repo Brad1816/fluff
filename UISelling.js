@@ -41,12 +41,12 @@ function drawSellRequest(ctx) {
   ctx.lineWidth = 2;
   ctx.stroke();
   // Portrait
-  if (req.fluffy && typeof req.fluffy.drawPortrait === "function") {
+  if (req.fluffy && typeof req.fluffy.drawPortraitCached === "function") {
     ctx.save();
     ctx.beginPath();
     ctx.rect(L.x + 6, L.y + 30, 100, 100);
     ctx.clip();
-    req.fluffy.drawPortrait(ctx, L.x + 6 + 50, L.y + 30 + 58, 80);
+    req.fluffy.drawPortraitCached(ctx, L.x + 6 + 50, L.y + 30 + 58, 80);
     ctx.restore();
   }
   ctx.textAlign = "left";

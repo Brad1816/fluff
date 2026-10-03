@@ -114,8 +114,11 @@ function getSceneConfig(sceneName) {
   if (sceneName === "day_care" || sceneName === "DAY_CARE")
     return SCENES.DAY_CARE;
   if (sceneName.startsWith("INDOORS")) {
+    // (made once per room: this is asked many times a step)
+    const known = _indoorConfigs.get(sceneName);
+    if (known) return known;
     const isMain = sceneName === "INDOORS";
-    return {
+    const cfg = {
       id: sceneName,
       isIndoor: true,
       insidePlayerQuarters: true,
@@ -128,8 +131,39 @@ function getSceneConfig(sceneName) {
       topWallColor: "#444",
       spawnFerals: false,
     };
+    _indoorConfigs.set(sceneName, cfg);
+    return cfg;
   }
   return SCENES[sceneName] || SCENES.OUTDOORS;
+}
+const _indoorConfigs = new Map();
+
+// A fluffy by its id (ids from saved relationships may be strings). The
+// lookup table is made again whenever the step or the number of fluffies
+// changes, rather than searching every fluffy each time.
+let _byIdMap = null; // id -> index in fluffies
+let _byIdAt = NaN;
+let _byIdLen = -1;
+let _byIdArr = null;
+function _byIdRebuild() {
+  _byIdMap = new Map();
+  for (let i = 0; i < fluffies.length; i++) _byIdMap.set(fluffies[i].id, i);
+  _byIdAt = typeof timePlayed === "number" ? timePlayed : 0;
+  _byIdLen = fluffies.length;
+  _byIdArr = fluffies;
+}
+function fluffyById(id) {
+  if (id === null || id === undefined || typeof fluffies === "undefined") return null;
+  const key = typeof id === "number" ? id : Number(id);
+  const t = typeof timePlayed === "number" ? timePlayed : 0;
+  if (!_byIdMap || _byIdAt !== t || _byIdLen !== fluffies.length || _byIdArr !== fluffies) _byIdRebuild();
+  let i = _byIdMap.get(key);
+  if (i !== undefined && fluffies[i] && fluffies[i].id === key) return fluffies[i];
+  // Moved about, or new since the table was made (one taken away and one
+  // added in the same step leaves the count the same): look properly
+  const f = fluffies.find((x) => x.id === key) || null;
+  if (f) _byIdRebuild();
+  return f;
 }
 
 function isAlleyScene(sceneName) {
@@ -971,8 +1005,19 @@ function changeScene(newScene) {
   if (typeof onEnterScene === "function") onEnterScene(newScene, oldScene);
 }
 
+// (remembered by font, width and text: panels wrap the same text every frame)
+const _wrapCache = new Map();
 function wrapText(ctx, text, maxWidth) {
   if (!text) return [""];
+  const key = `${ctx.font}|${maxWidth}|${text}`;
+  const known = _wrapCache.get(key);
+  if (known) return known.slice();
+  const lines = _wrapTextNow(ctx, String(text), maxWidth);
+  if (_wrapCache.size > 3000) _wrapCache.clear();
+  _wrapCache.set(key, lines);
+  return lines.slice();
+}
+function _wrapTextNow(ctx, text, maxWidth) {
   const paragraphs = text.split("\n");
   const lines = [];
 

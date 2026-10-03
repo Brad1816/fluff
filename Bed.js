@@ -105,7 +105,7 @@ class Bed {
       ) {
         this.shouldDespawn = true;
         this.claimants.forEach((id) => {
-          const f = fluffies.find((fl) => fl.id === id);
+          const f = fluffyById(id);
           if (f && f.claimedBed === this) {
             f.claimedBed = null;
           }
@@ -116,7 +116,7 @@ class Bed {
 
     // Clean up dead or removed claimants
     this.claimants = this.claimants.filter((id) => {
-      const f = fluffies.find((f) => f.id === id);
+      const f = fluffyById(id);
       if (!f || !f.isAlive) {
         if (f) f.claimedBed = null;
         return false;

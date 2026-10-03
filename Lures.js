@@ -34,7 +34,7 @@ function lureItemsIn(scene) {
     if (o.scene !== scene || o.isDragging || o.heldBy || o.currentCage) continue;
     let kind = null;
     if (typeof Bowl !== "undefined" && o instanceof Bowl) {
-      if (!o.hasFood() || o.foodType === "formula") continue;
+      if (!o.hasFood() || o.foodType === "formula" || o.foodType === "rat_poison") continue;
       kind = o.foodType === "sketties" ? "sketties" : o.foodType === "premium_kibble" ? "good_kibble" : "kibble";
     } else if (typeof Plushie !== "undefined" && o instanceof Plushie) kind = "stuffy";
     else if (typeof Bed !== "undefined" && o instanceof Bed) kind = "bed";

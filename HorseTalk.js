@@ -141,7 +141,7 @@ addHorseMethods({
       const lostBabies = Object.keys(this.trauma).filter((id) => this.trauma[id] >= 300);
       if (lostBabies.length > 0 && Math.random() < 0.4) {
         const babyId = lostBabies[Math.floor(Math.random() * lostBabies.length)];
-        const baby = fluffies.find((f) => f.id == babyId);
+        const baby = fluffyById(babyId);
         text = getDialogue(["TRAUMA", "BABY"], this, baby);
       }
     }

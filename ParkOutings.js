@@ -66,7 +66,7 @@ function _poSay(t) {
   if (typeof noteDayEvent === "function") noteDayEvent("news", { text: t });
 }
 function _poById(id) {
-  return typeof fluffies !== "undefined" ? fluffies.find((f) => f.id === id) : null;
+  return typeof fluffies !== "undefined" ? fluffyById(id) : null;
 }
 function _poMiddle() {
   const cam = typeof camera !== "undefined" ? camera : { x: 0, y: 0 };

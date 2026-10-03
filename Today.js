@@ -89,8 +89,8 @@ function todayItems() {
     const n = fluffyDisplayName(f);
     if (f.hunger < 0.25) add("urgent", `${n} is starving.`, f);
     // "Wan die": it's given up and won't eat (for good); close to it
-    const drip = typeof ivStandFeeding === "function" ? ivStandFeeding(f) : null;
     if (f.happiness <= WAN_DIE_THRESHOLD) {
+      const drip = typeof ivStandFeeding === "function" ? ivStandFeeding(f) : null; // (only looked for when it matters)
       if (!drip) add("urgent", `${n} has given up ("wan die") and won't eat. A TPN drip (IV stand) keeps it alive.`, f);
       else {
         // On a drip: is it about to run dry?

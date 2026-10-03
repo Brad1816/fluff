@@ -16,7 +16,17 @@ function uiMessageLayout() {
   return { cx: width / 2, top: Math.round(height * 0.15) + 10, maxW: Math.min(UI_MESSAGE_WIDTH, width - 40) };
 }
 
+// (remembered, like globals.js wrapText: the messages are drawn every frame)
 function _wrapMessage(c, text, maxW) {
+  const key = `m|${c.font}|${maxW}|${text}`;
+  const known = _wrapCache.get(key);
+  if (known) return known.slice();
+  const lines = _wrapMessageNow(c, text, maxW);
+  if (_wrapCache.size > 3000) _wrapCache.clear();
+  _wrapCache.set(key, lines);
+  return lines.slice();
+}
+function _wrapMessageNow(c, text, maxW) {
   const words = String(text).split(" ");
   const lines = [];
   let line = "";

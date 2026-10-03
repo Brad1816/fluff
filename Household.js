@@ -197,7 +197,7 @@ function _drawHouseholdRow(c, r, over) {
   c.rect(r.x + 8, r.y + 4, 48, 48);
   c.clip();
   try {
-    if (typeof f.drawPortrait === "function") f.drawPortrait(c, r.x + 30, r.y + 34, 38);
+    if (typeof f.drawPortraitCached === "function") f.drawPortraitCached(c, r.x + 30, r.y + 34, 38);
   } catch (e) {
     // (portrait not ready)
   }

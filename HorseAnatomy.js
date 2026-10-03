@@ -190,7 +190,7 @@ class HorseAnatomy {
       if (rels[this.horse.id]) {
         const rel = rels[this.horse.id];
         if (rel === "baby_child" || rel === "child") {
-          const mother = fluffies.find((f) => f.id == otherId);
+          const mother = fluffyById(otherId);
           // A mum who lost a foal may take in an orphan (Fostering.js)
           if (rel === "baby_child" && mother && mother.isAlive && mother.gender === "female") mother.lostFoalAt = typeof timePlayed === "number" ? timePlayed : 0;
           if (mother && mother.isAlive) {
@@ -203,7 +203,7 @@ class HorseAnatomy {
             );
 
             const aliveFoals = allChildren.filter(([id, type]) => {
-              const foal = fluffies.find((f) => f.id == id);
+              const foal = fluffyById(id);
               return foal && foal.isAlive && foal.id != this.horse.id;
             });
 
@@ -649,7 +649,7 @@ class HorseAnatomy {
     baby.hunger = 0.4;
     if (isViable && typeof fluffySound === "function") fluffySound(baby, "peep"); // a newborn's first peep (FluffySounds.js)
 
-    const sire = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === this.horse.babyDaddyId) : null;
+    const sire = typeof fluffies !== "undefined" ? fluffyById(this.horse.babyDaddyId) : null;
     if (typeof worldSettings !== "undefined" && worldSettings.sbs) {
       // It runs in families: mum or dad sensitive makes it likelier (Inbreeding.js)
       let chance = typeof sensitiveBirthChance === "function" ? sensitiveBirthChance(this.horse, sire, babyGenes) : 0.04;
@@ -663,7 +663,7 @@ class HorseAnatomy {
     // A foal of its own (Wishes.js)
     if (isViable && typeof noteWishEvent === "function") {
       noteWishEvent(this.horse, "foal");
-      const dad = typeof fluffies !== "undefined" ? fluffies.find((x) => x.id === this.horse.babyDaddyId) : null;
+      const dad = typeof fluffies !== "undefined" ? fluffyById(this.horse.babyDaddyId) : null;
       if (dad) noteWishEvent(dad, "foal");
     }
     // The story book (StoryBook.js): born, to whom
@@ -679,7 +679,7 @@ class HorseAnatomy {
     // mother's own father
     const sireId = this.horse.babyDaddyId;
     if (isViable && sireId !== undefined && sireId !== null) {
-      const dad = fluffies.find((f) => f.id == sireId);
+      const dad = fluffyById(sireId);
       if (dad && dad.isAlive) {
         relationships[baby.id][sireId] = "father";
         if (!relationships[sireId]) relationships[sireId] = {};

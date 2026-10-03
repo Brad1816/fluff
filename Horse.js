@@ -525,7 +525,7 @@ class Horse {
     if (motherId !== null && !horseBeingLoaded) {
       relationships[this.id][motherId] = "mother";
       if (relationships[motherId]) {
-        const mom = fluffies.find((f) => f.id == motherId);
+        const mom = fluffyById(motherId);
         if (mom && mom.type === "alicorn") {
           this.alicornTolerance = true;
         }
@@ -629,6 +629,34 @@ class Horse {
 
   drawPortrait(ctx, x, y, size) {
     this.renderer.drawSnapshot(ctx, x, y, size);
+  }
+
+  // The same, drawn once into a picture that's reused for maxAgeMs (for panels
+  // that show a portrait every frame: drawing the whole body each time is slow)
+  drawPortraitCached(ctx, x, y, size, maxAgeMs = 500) {
+    if (typeof OffscreenCanvas === "undefined") return this.drawPortrait(ctx, x, y, size);
+    const k = typeof renderScale === "number" && renderScale > 0 ? renderScale : 1;
+    const key = `${size}@${k}`;
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (!this._portraitCache) this._portraitCache = new Map();
+    let e = this._portraitCache.get(key);
+    if (!e || now - e.at > maxAgeMs || now < e.at) {
+      const side = Math.ceil(size * 2 * k);
+      const canvas = e && e.canvas.width === side ? e.canvas : new OffscreenCanvas(side, side);
+      const c = canvas.getContext("2d");
+      c.setTransform(1, 0, 0, 1, 0, 0);
+      c.clearRect(0, 0, side, side);
+      c.scale(k, k);
+      try {
+        this.drawPortrait(c, size, size * 1.2, size);
+      } catch (err) {
+        return this.drawPortrait(ctx, x, y, size);
+      }
+      if (this._portraitCache.size > 6) this._portraitCache.clear();
+      e = { at: now, canvas };
+      this._portraitCache.set(key, e);
+    }
+    ctx.drawImage(e.canvas, x - size, y - size * 1.2, size * 2, size * 2);
   }
 
   amputate(part, weapon = null) {

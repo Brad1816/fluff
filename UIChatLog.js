@@ -30,6 +30,17 @@ function wrapChatText(ctx, namePrefix, text, maxWidth) {
   return lines.length > 0 ? lines : [namePrefix + text];
 }
 
+// Each message's lines, kept (in a WeakMap - the log is saved) until its
+// width or text changes: wrapping every message every frame was slow
+const _chatWrapCache = new WeakMap();
+function chatEntryLines(ctx, entry, maxWidth) {
+  const c = _chatWrapCache.get(entry);
+  if (c && c.w === maxWidth && c.name === entry.name && c.text === entry.text) return c.lines;
+  const lines = wrapChatText(ctx, `${entry.name}: `, entry.text, maxWidth);
+  _chatWrapCache.set(entry, { w: maxWidth, name: entry.name, text: entry.text, lines });
+  return lines;
+}
+
 function handleChatLogScroll(deltaY) {
   if (!showChatLog) return;
   const panelX = 10;
@@ -60,12 +71,7 @@ function handleChatLogScroll(deltaY) {
       const clipW = panelW - 24;
       for (let i = 0; i < logs.length; i++) {
         const entry = logs[i];
-        const lines = wrapChatText(
-          tempCtx,
-          `${entry.name}: `,
-          entry.text,
-          clipW - 8,
-        );
+        const lines = chatEntryLines(tempCtx, entry, clipW - 8);
         totalHeight += lines.length * 16 + 6;
       }
       const clipH = panelH - 16;
@@ -120,8 +126,7 @@ function drawChatLogPanel(ctx, panelY) {
     let totalHeight = 0;
     for (let i = 0; i < logs.length; i++) {
       const entry = logs[i];
-      const namePrefix = `${entry.name}: `;
-      const lines = wrapChatText(ctx, namePrefix, entry.text, clipW - 8);
+      const lines = chatEntryLines(ctx, entry, clipW - 8);
       formattedEntries.push({ name: entry.name, lines, color: entry.color });
       totalHeight += lines.length * lineHeight + msgPadding;
     }

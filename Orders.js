@@ -380,7 +380,7 @@ function deliverCustomerOrder(orderId, fluffyId) {
   const i = customerOrders.active.findIndex((o) => o.id === orderId);
   if (i < 0) return false;
   const order = customerOrders.active[i];
-  const f = fluffies.find((x) => x.id === fluffyId);
+  const f = fluffyById(fluffyId);
   if (!fluffyFitsOrder(order, f)) return false;
 
   const before = getOrderLevel();

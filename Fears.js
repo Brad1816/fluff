@@ -123,12 +123,19 @@ function isFrightened(f) {
   const fr = f && f.fright;
   if (!fr) return false;
   const now = timePlayed;
-  // (the game clock jumps back on a new game or load)
-  if (fr.until < now || fr.until - now > 120) {
+  // (over, or the game clock jumped back on a new game or load: updateFears
+  // ends it properly - asking doesn't change anything)
+  return !(fr.until < now || fr.until - now > 120);
+}
+
+// A fright ends early (comforted, a lullaby): what it was scared of
+function endFright(f) {
+  const key = f && f.fright ? f.fright.key : null;
+  if (f) {
     f.fright = null;
-    return false;
+    f._frightRanSaid = false;
   }
-  return true;
+  return key;
 }
 
 function _fSay(f, key) {
@@ -205,8 +212,7 @@ function frightComforter(f) {
 // You picked it up or brushed it. True if it was frightened (and now isn't).
 function onComfortedByYou(f, how = "held") {
   if (!f || !f.isAlive || !isFrightened(f)) return false;
-  const key = f.fright.key;
-  f.fright = null;
+  const key = endFright(f);
   changeFear(f, key, -FEAR_COMFORT);
   f.changeHappiness(0.03, "Comforted");
   f.expressionOverride = "GOOD_UPSIES";
@@ -491,9 +497,7 @@ function updateFears(dt) {
       const near = buddy && Math.hypot(buddy.x - f.x, buddy.y - f.y) < 90;
       if (near) f.fright.until -= step; // calms twice as fast
       if (f.fright.until <= now || f.fright.until - now > 120) {
-        const key = f.fright.key;
-        f.fright = null;
-        f._frightRanSaid = false;
+        const key = endFright(f);
         if (near) _fSay(f, "CALMED");
         else if (f.adopted) changeFear(f, key, FEAR_WORSEN); // cried it out alone
         continue;

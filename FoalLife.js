@@ -100,7 +100,7 @@ function _folName(f) {
 }
 function _folMum(f) {
   if (!f || f.motherId === null || f.motherId === undefined) return null;
-  return fluffies.find((m) => m.id === f.motherId) || null;
+  return fluffyById(f.motherId) || null;
 }
 function _folAwake(f) {
   return f.isAlive && f.currentStateKey !== "SLEEPING" && !f.isDragging && !f.placedOn;
@@ -127,7 +127,6 @@ function foalForgetsMum(f, mum = _folMum(f)) {
   if (mum && mum.isAlive) {
     mum.changeHappiness(-0.2, "Her foal doesn't know her");
     if (typeof mum.separation === "object" && mum.separation) mum.separation.grief = Math.max(mum.separation.grief || 0, 0.3);
-    mum._grievesFoal = { id: f.id, at: timePlayed };
   }
   if ((f.adopted || (mum && mum.adopted)) && typeof addUIMessage === "function")
     addUIMessage(`${_folName(f)} has been away from ${mum ? _folName(mum) : "its mum"} so long it doesn't know her any more.`);
@@ -247,17 +246,24 @@ function foalDoesntUnderstand(f, body, relation) {
   if (/^Born /.test(body.causeOfDeath || "")) return false; // (a stillborn: it never knew it alive)
   if (relation !== "mother" && relation !== "brother" && relation !== "sister") return false;
   const now = timePlayed;
-  let c = f._deathConfusion;
-  if (!c || c.id !== body.id) {
-    if (c && c.done && c.id === body.id) return false;
-    c = f._deathConfusion = { id: body.id, at: now, relation, done: false, lastTry: -99 };
-  }
-  if (c.done) return false;
   const smarts = typeof smartsOf === "function" ? smartsOf(f) : 0;
   const lasts = CONFUSED_TIME * Math.max(0.3, 1 - 0.6 * smarts);
+  let c = f._deathConfusion;
+  if (!c || c.id !== body.id) {
+    // One body at a time: a second one doesn't start it over (it understands
+    // that one straight away), and once it's understood, only a death a good
+    // while later confuses it again
+    if (c && (!c.done || (c.seen && c.seen[body.id]) || (now >= c.doneAt && now - c.doneAt < lasts))) {
+      if (c.seen) c.seen[body.id] = true;
+      return false;
+    }
+    c = f._deathConfusion = { id: body.id, at: now, relation, done: false, lastTry: -99, seen: { [body.id]: true } };
+  }
+  if (c.done) return false;
   const smells = typeof corpseRot === "function" && corpseRot(body) >= CONFUSED_ROT;
   if (now - c.at >= lasts || smells || now < c.at || body._carriedBy) {
     c.done = true;
+    c.doneAt = now;
     return false;
   }
   return true;
@@ -266,7 +272,7 @@ function foalDoesntUnderstand(f, body, relation) {
 function _folConfusedBody(f) {
   const c = f._deathConfusion;
   if (!c || c.done) return null;
-  const body = fluffies.find((x) => x.id === c.id);
+  const body = fluffyById(c.id);
   if (!body || body.isAlive || body.isDestroyed || body.scene !== f.scene) return null;
   return body;
 }
@@ -316,7 +322,8 @@ function _folBullyTick(f, step) {
     return;
   }
   const rest = BULLY_REST * (f.growth >= 1 ? 2 : 1);
-  if (typeof f._bullyAt === "number" && timePlayed >= f._bullyAt && timePlayed - f._bullyAt < rest) return;
+  const last = Math.max(typeof f._bullyAt === "number" ? f._bullyAt : -Infinity, typeof f._bullyRestAt === "number" ? f._bullyRestAt : -Infinity);
+  if (timePlayed >= last && timePlayed - last < rest) return;
   if (!_folCanBully(f) || !_folAwake(f) || f.hunger < 0.3 || f.currentCage || (typeof isFrightened === "function" && isFrightened(f))) return;
   const grown = f.growth >= 1;
   let victim = null;
@@ -362,6 +369,11 @@ function startBullying(f, victim) {
 function bullyShove(f, victim) {
   const now = timePlayed;
   f._bullyJob = null;
+  // Can't get at it (a fence between them): nothing happens
+  if (!victim || !victim.isAlive || (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(f, victim))) {
+    f._bullyRestAt = now;
+    return false;
+  }
   f._bullyAt = now;
   f.bullyScore = (f.bullyScore || 0) + 1;
   if (typeof _pnAdd === "function") _pnAdd(f, "bullyFoal", 1);
@@ -394,7 +406,7 @@ function bullyShove(f, victim) {
 
 function bullyMakesUpWithStuffy(f) {
   f._bullyJob = null;
-  f._bullyAt = timePlayed;
+  f._bullyRestAt = timePlayed; // (a rest, not a misdeed: Care.recentMisdeed reads _bullyAt)
   f.bullyScore = Math.max(0, (f.bullyScore || 0) - 0.5);
   f.changeHappiness(0.02, "Made up with the stuffy");
   if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "STUFFY_HIT"], f), true);
@@ -440,7 +452,7 @@ function _folHabitTick(f, step) {
   if (!_folWalkingFoal(f) || (f.bullyHabit || 0) >= BULLY_HABIT_MAX || playNiceOf(f) > 0) return;
   for (const id of [f.motherId, f.fatherId]) {
     if (id === null || id === undefined) continue;
-    const p = fluffies.find((x) => x.id === id);
+    const p = fluffyById(id);
     if (!p || !grownBully(p) || playNiceOf(p) >= 0.999 || p.scene !== f.scene) continue;
     f.bullyHabit = Math.min(BULLY_HABIT_MAX, (f.bullyHabit || 0) + (BULLY_HABIT_PER_DAY * step) / DAY_LENGTH);
     return;
@@ -502,7 +514,7 @@ class FoalLifeDesire extends Desire {
   _bully(h) {
     if (!h._bullyJob || h.currentStateKey === "SLEEPING" || h.currentCage) return null;
     if (h._bullyJob.plushie) return { kind: "bully", f: null, score: 50 };
-    const v = fluffies.find((x) => x.id === h._bullyJob.id);
+    const v = fluffyById(h._bullyJob.id);
     if (!v || !v.isAlive || v.scene !== h.scene) {
       h._bullyJob = null;
       return null;
@@ -513,7 +525,7 @@ class FoalLifeDesire extends Desire {
     if (!h.isAlive || h.isDragging || h.placedOn || h.isStacking) return null;
     if (h.growth >= 1) {
       if (h._seekFoal !== null && h._seekFoal !== undefined) {
-        const f = fluffies.find((x) => x.id === h._seekFoal);
+        const f = fluffyById(h._seekFoal);
         if (!f || !f.isAlive || f.scene !== h.scene || !f._wander || timePlayed - h._seekAt > WANDER_GIVE_UP || h.currentCage) h._seekFoal = null;
         else return { kind: "seek", f, score: 86 };
       }

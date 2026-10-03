@@ -233,7 +233,7 @@ function updateAutoTrainers(dt) {
   for (const t of trainers) {
     const s = t.session;
     if (!s) continue;
-    const f = fluffies.find((x) => x.id === s.fluffyId);
+    const f = fluffyById(s.fluffyId);
     if (!t.on || t.isDragging || !f || f.scene !== t.scene || !_atCanTrain(f, true) || now - s.at > AUTO_TRAINER_WALK + 20) {
       _atEnd(t, f);
       continue;
@@ -380,7 +380,7 @@ function drawAutoTrainerScreen(c) {
   }
   // Who it's training now
   const s = t.session;
-  const f = s ? fluffies.find((x) => x.id === s.fluffyId) : null;
+  const f = s ? fluffyById(s.fluffyId) : null;
   c.font = "14px Arial";
   c.fillStyle = "rgba(255,255,255,0.8)";
   c.fillText(!t.on ? "Switched off." : f ? `Training ${fluffyDisplayName(f)} now.` : "Waiting for someone to train.", L.x + 170, L.y + L.h - 28);
@@ -400,7 +400,7 @@ function handleAutoTrainerClick() {
   }
   if (hit(L.power)) {
     t.on = !t.on;
-    if (!t.on && t.session) _atEnd(t, fluffies.find((x) => x.id === t.session.fluffyId));
+    if (!t.on && t.session) _atEnd(t, fluffyById(t.session.fluffyId));
     return true;
   }
   for (const ch of L.chips) {
