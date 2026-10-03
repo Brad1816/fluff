@@ -173,6 +173,7 @@ function noteMumMisdeed(m, f, what) {
 // HorseSocial.performAttack: a grown fluffy hurting a foal
 function noteFoalAttacked(attacker, target, intent) {
   if (!attacker || !target || intent === "RETALIATION" || target.growth >= 1 || attacker.growth < 1) return;
+  if (intent === "BULLY" && (attacker.bullyScore || 0) > 0) return; // (a bully's shove: "for bullying", FoalLife.js)
   attacker._foalAttackAt = timePlayed;
   if (target.motherId === attacker.id && attacker.gender === "female") noteMumMisdeed(attacker, target, "hurt");
 }

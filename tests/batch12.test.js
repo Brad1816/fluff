@@ -451,4 +451,88 @@ module.exports = [
       check(r.help, "Help covers it");
     },
   },
+  {
+    name: "batch12: a grown bully keeps picking on alicorns of any age; prejudice is the cause; Play nice as a foal makes a calmer, kinder grown-up; foals pick up a bully parent's habit",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const b = __mk(500, { name: "Brute", hunger: 1 });
+        b.bullyScore = BULLY_GROWN;
+        const a = __mk(600, { type: "alicorn", name: "Star" });
+        const out = { grown: grownBully(b), munstah: !!seesAsMunstah(b, a) };
+        const real = Math.random;
+        Math.random = () => 0.001;
+        b._bullyAt = undefined;
+        _folBullyTick(b, 5);
+        out.goesForAdult = !!b._bullyJob && b._bullyJob.id === a.id;
+        out.desire = new FoalLifeDesire().evaluate(b);
+        b.x = 590;
+        new FoalLifeDesire().execute(b);
+        out.shoved = a.bullied === 1;
+        out.misdeed = recentMisdeed(b);
+        // No prejudice, no bullying
+        b._bullyAt = undefined;
+        b._bullyJob = null;
+        addAlicornComfort(b, 1);
+        _folBullyTick(b, 5);
+        out.curedCause = !b._bullyJob;
+        b.alicornComfort = 0;
+        b.alicornTolerance = false;
+        // Raised by an untaught bully: the habit
+        const m = __mk(300, { name: "Mum" });
+        m.bullyScore = BULLY_GROWN;
+        const f = __mk(320, { growth: 0.5, mum: m.id });
+        for (let t = 0; t < DAY_LENGTH; t += 5) _folHabitTick(f, 5);
+        out.habit = f.bullyHabit;
+        out.habitRow = JSON.stringify(describeBullying(f));
+        // Taught Play nice as a foal: calmer again, no habit
+        f.bullyScore = 3;
+        f.growthProgress = { bullyFoalTimes: 2 };
+        f.traitShift = { temper: 0.2 };
+        const toy = new Plushie("INDOORS");
+        toy.x = 340;
+        toy.y = 520;
+        objects.push(toy);
+        const L = getLesson("playnice");
+        for (let i = 0; i < 4; i++) L.teach(f);
+        out.calmer = Math.abs(f.traitShift.temper) < 0.001 && f.bullyHabit === 0;
+        // ...a taught parent passes nothing on
+        m.playNice = 1;
+        const g = __mk(330, { growth: 0.5, mum: m.id });
+        for (let t = 0; t < DAY_LENGTH; t += 5) _folHabitTick(g, 5);
+        out.noHabit = !g.bullyHabit;
+        // ...and a taught grown bully goes to a stuffy instead
+        b.playNice = 1;
+        b._bullyAt = undefined;
+        b._bullyJob = null;
+        b.x = 360;
+        _folBullyTick(b, 5);
+        out.taughtStuffy = !!(b._bullyJob && b._bullyJob.plushie);
+        // ...and stands up for anyone (not a friend)
+        b._bullyJob = null;
+        const kind = __mk(620, { name: "Kind" });
+        kind.playNice = 1;
+        kind.alicornTolerance = true; // (not prejudiced itself)
+        const v = __mk(640, { type: "alicorn", growth: 0.5 });
+        const bully = __mk(660, { growth: 0.5 });
+        bully.speech.text = "";
+        kind.speech.text = "";
+        bullyShove(bully, v);
+        out.protected = recentGoodDeed(kind) === "protected";
+        Math.random = real;
+        objects.splice(objects.indexOf(toy), 1);
+        return out;
+      }, SETUP);
+      check(r.grown && r.munstah, "a grown bully");
+      check(r.goesForAdult && r.desire === 50 && r.shoved, `it picks on a grown alicorn: ${JSON.stringify(r)}`);
+      checkEqual(r.misdeed, "bully", "scold it for bullying");
+      check(r.curedCause, "no prejudice, no bullying");
+      check(r.habit > 0.5, `a foal raised by a bully picks up the habit: ${r.habit}`);
+      check(/picking up bullying/.test(r.habitRow), `magnifying glass: ${r.habitRow}`);
+      check(r.calmer, "Play nice takes back the grumpier and the habit");
+      check(r.noHabit, "a taught parent passes nothing on");
+      check(r.taughtStuffy, "a taught grown bully goes to a stuffy");
+      check(r.protected, "a fluffy that learnt to play nice stands up for anyone");
+    },
+  },
 ];

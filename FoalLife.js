@@ -43,6 +43,21 @@
 // stuffy is near, it goes to the stuffy instead - as often as it's been
 // taught (f.playNice, saved: half taught, half the time). Shown in the
 // magnifying glass (Friends, "Bullying").
+// PREJUDICE AND BULLYING are two things: prejudice (coloristDegree, alicorn
+// fear) is who it sees as a munstah; the bully score is whether it acts on
+// it. No prejudice, no bullying, whatever the score: the Colours and
+// Alicorns lessons cure the cause, Play nice the shoving.
+// GROWN BULLIES: a fluffy that grew up a bully (bullyScore BULLY_GROWN or
+// more) keeps at it: it picks on alicorns and poopie-coated fluffies of any
+// age (the same shove), unless taught Play nice. A grown fluffy taught Play
+// nice (fully) as a foal or later: its "grumpier" from bullying is taken
+// back, it's likelier to stand up for anyone picked on (not just friends),
+// and the foals it raises don't pick up its bullying.
+// RAISED BY A BULLY: a foal growing up in the same room as a mum or dad who
+// is a bully (and not taught Play nice) picks up the habit
+// (BULLY_HABIT_PER_DAY, at most BULLY_HABIT_MAX; f.bullyHabit, saved): it
+// starts picking on others sooner. (It picks up their views too, as ever:
+// Upbringing.js.)
 // ---------------------------------------------------------------------------
 
 const FORGET_AFTER = [
@@ -61,14 +76,17 @@ const WANDER_NOTICE_FAR = 260; // px: far enough for her to notice
 const CONFUSED_GROWTH = 0.6;
 const CONFUSED_TIME = 100; // game seconds (2 hours)
 const CONFUSED_ROT = 0.3; // the body smells: it understands
-const BULLY_CHANCE = 0.25; // a game hour
-const BULLY_REST = 2 * HOUR_LENGTH; // after picking on one, before it starts again
+const BULLY_CHANCE = 0.2; // a game hour
+const BULLY_REST = 3 * HOUR_LENGTH; // after picking on one, before it starts again
+const BULLY_GROWN_RATE = 0.5; // a grown bully starts half as often (BULLY_REST x2)
 const BULLY_RANGE = 420;
 const BULLY_GANG_RANGE = 250;
 const BULLY_PLUSHIE_RANGE = 320;
 const LESSON_PLAY_NICE = 0.25; // 4 lessons and it's learnt
 const BULLY_GROWN = 4; // bullyScore: "a bully"
 const BULLY_PROTECT_CHANCE = 0.3;
+const BULLY_HABIT_PER_DAY = 0.75; // bully habit a foal picks up a game day, raised by a bully
+const BULLY_HABIT_MAX = 1.5;
 const foalLifeTicker = new Ticker(5);
 
 if (typeof GROWTH_RULES !== "undefined") {
@@ -277,17 +295,35 @@ function _folWalkingFoal(f) {
   return f.isAlive && f.growth >= WALKY_THRESHOLD && f.growth < 1 && !(f.isSensitive && f.isSensitive());
 }
 
+// A grown fluffy that grew up a bully
+function grownBully(f) {
+  return !!f && f.isAlive && f.growth >= 1 && (f.bullyScore || 0) >= BULLY_GROWN;
+}
+
+// Could it pick on someone? (a walking foal, or a grown bully)
+function _folCanBully(f) {
+  return _folWalkingFoal(f) || (grownBully(f) && !(f.isSensitive && f.isSensitive()) && !f.isCrawling);
+}
+
+// How much of a bully it is, for the chance it starts (its own, and picked up)
+function bullyUrge(f) {
+  return (f.bullyScore || 0) + (f.bullyHabit || 0);
+}
+
 function _folBullyTick(f, step) {
   if (f._bullyJob) {
     if (timePlayed - f._bullyJob.at > 40 || timePlayed < f._bullyJob.at) f._bullyJob = null;
     return;
   }
-  if (typeof f._bullyAt === "number" && timePlayed >= f._bullyAt && timePlayed - f._bullyAt < BULLY_REST) return;
-  if (!_folWalkingFoal(f) || !_folAwake(f) || f.hunger < 0.3 || (typeof isFrightened === "function" && isFrightened(f))) return;
+  const rest = BULLY_REST * (f.growth >= 1 ? 2 : 1);
+  if (typeof f._bullyAt === "number" && timePlayed >= f._bullyAt && timePlayed - f._bullyAt < rest) return;
+  if (!_folCanBully(f) || !_folAwake(f) || f.hunger < 0.3 || f.currentCage || (typeof isFrightened === "function" && isFrightened(f))) return;
+  const grown = f.growth >= 1;
   let victim = null;
   let vd = Infinity;
   for (const v of fluffies) {
-    if (v === f || !v.isAlive || v.scene !== f.scene || v.currentCage !== f.currentCage || v.growth >= 1 || v.isDragging || v.placedOn) continue;
+    // (a foal picks on foals; a grown bully on anyone)
+    if (v === f || !v.isAlive || v.scene !== f.scene || v.currentCage !== f.currentCage || (!grown && v.growth >= 1) || v.isDragging || v.placedOn) continue;
     const d = Math.hypot(v.x - f.x, v.y - f.y);
     if (d > BULLY_RANGE || d >= vd || !seesAsMunstah(f, v)) continue;
     victim = v;
@@ -295,7 +331,7 @@ function _folBullyTick(f, step) {
   }
   if (!victim) return;
   const temper = typeof traitValue === "function" ? traitValue(f, "temper") : 0;
-  const p = BULLY_CHANCE * (step / HOUR_LENGTH) * Math.max(0.2, 1 + temper + 0.25 * (f.bullyScore || 0));
+  const p = BULLY_CHANCE * (step / HOUR_LENGTH) * Math.max(0.2, 1 + temper + 0.15 * Math.min(4, bullyUrge(f))) * (grown ? BULLY_GROWN_RATE : 1);
   if (Math.random() >= p) return;
   startBullying(f, victim);
 }
@@ -313,7 +349,7 @@ function startBullying(f, victim) {
   if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "START"], f, victim), true);
   // The gang
   for (const o of fluffies) {
-    if (o === f || o === victim || !_folWalkingFoal(o) || !_folAwake(o) || o.scene !== f.scene) continue;
+    if (o === f || o === victim || !_folCanBully(o) || !_folAwake(o) || o.scene !== f.scene || o.growth >= 1 !== f.growth >= 1) continue;
     if (Math.hypot(o.x - f.x, o.y - f.y) > BULLY_GANG_RANGE || !seesAsMunstah(o, victim)) continue;
     o.bullyScore = (o.bullyScore || 0) + 0.5;
     o._bullyAt = now;
@@ -333,17 +369,18 @@ function bullyShove(f, victim) {
   if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "SHOVE"], f, victim), true);
   victim.milkCooldown = Math.max(victim.milkCooldown || 0, 8); // (shoved off the milk)
   victim.bullied = (victim.bullied || 0) + 1;
-  victim.changeHappiness(-0.05, "Picked on by other foals");
-  if (typeof _pnAdd === "function") _pnAdd(victim, "pickedOnFoal", 1);
+  victim.changeHappiness(-0.05, f.growth >= 1 ? "Picked on by a bully" : "Picked on by other foals");
+  if (victim.growth < 1 && typeof _pnAdd === "function") _pnAdd(victim, "pickedOnFoal", 1);
   if (typeof changeOpinion === "function") changeOpinion(victim, f, -0.1, "picked on me");
-  // A brave friend or sibling stands up for it
+  // A brave friend or sibling stands up for it - or anyone who's learnt to play nice
   const rels = relationships[victim.id] || {};
   for (const o of fluffies) {
     if (o === f || o === victim || !o.isAlive || o.scene !== victim.scene || !_folAwake(o) || o.tooYoungToSpeak()) continue;
-    if (!["friend", "brother", "sister", "special_friend"].includes(rels[o.id]) || seesAsMunstah(o, victim)) continue;
+    const nice = playNiceOf(o) >= 0.999;
+    if ((!nice && !["friend", "brother", "sister", "special_friend"].includes(rels[o.id])) || seesAsMunstah(o, victim)) continue;
     if (Math.hypot(o.x - victim.x, o.y - victim.y) > 260) continue;
     const brave = typeof traitValue === "function" ? traitValue(o, "bravery") : 0;
-    if (brave < 0.2 || Math.random() >= BULLY_PROTECT_CHANCE) continue;
+    if ((!nice && brave < 0.2) || Math.random() >= BULLY_PROTECT_CHANCE * (nice ? 2 : 1)) continue;
     o.speak(getDialogue(["FOAL_BULLY", "PROTECT"], o, f), true);
     if (typeof noteGoodDeed === "function") noteGoodDeed(o, "protected");
     if (typeof changeOpinion === "function") changeOpinion(victim, o, 0.15, "stood up for me");
@@ -384,6 +421,32 @@ function playNiceOf(f) {
   return Math.max(0, Math.min(1, (f && f.playNice) || 0));
 }
 
+// Fully taught: the "grumpier" bullying gave it is taken back, and the
+// habit it picked up growing up is gone
+function learntPlayNice(f) {
+  f.bullyHabit = 0;
+  const gp = f.growthProgress || {};
+  const times = gp.bullyFoalTimes || 0;
+  if (times > 0 && f.traitShift && typeof f.traitShift.temper === "number") {
+    const step = typeof TRAIT_SHIFT_STEP === "number" ? TRAIT_SHIFT_STEP : 0.1;
+    f.traitShift.temper = Math.round((f.traitShift.temper - step * times) * 100) / 100;
+    gp.bullyFoalTimes = 0;
+    if (typeof recordStory === "function") recordStory("trait_shift", f, { x: `Learning to play nice made ${_folName(f)} calmer again.` });
+  }
+}
+
+// A foal raised by a bully (mum or dad in the room, not taught) picks up the habit
+function _folHabitTick(f, step) {
+  if (!_folWalkingFoal(f) || (f.bullyHabit || 0) >= BULLY_HABIT_MAX || playNiceOf(f) > 0) return;
+  for (const id of [f.motherId, f.fatherId]) {
+    if (id === null || id === undefined) continue;
+    const p = fluffies.find((x) => x.id === id);
+    if (!p || !grownBully(p) || playNiceOf(p) >= 0.999 || p.scene !== f.scene) continue;
+    f.bullyHabit = Math.min(BULLY_HABIT_MAX, (f.bullyHabit || 0) + (BULLY_HABIT_PER_DAY * step) / DAY_LENGTH);
+    return;
+  }
+}
+
 // The lesson (Lessons row): needs a stuffy in the room
 if (typeof LESSONS !== "undefined") {
   LESSONS.push({
@@ -397,7 +460,9 @@ if (typeof LESSONS !== "undefined") {
       const toy = stuffyNear(f);
       if (toy) f._bullyJob = { at: timePlayed, plushie: true, x: toy.x, y: toy.y, id: null };
       else f.bullyScore = Math.max(0, (f.bullyScore || 0) - 0.5);
-      return f.playNice >= 0.999;
+      if (f.playNice < 0.999) return false;
+      learntPlayNice(f);
+      return true;
     },
     doneMsg: (n) => `${n} has learnt to play nice: when it wants to pick on a foal, it takes it out on a stuffy instead. ✓`,
   });
@@ -414,13 +479,15 @@ function updateFoalLife(dt) {
       _folForgetTick(f, step);
       _folWanderTick(f, step);
       _folBullyTick(f, step);
-      // "Sowwy stuffy": a moment after shoving it
-      if (typeof f._stuffySorryAt === "number" && timePlayed - f._stuffySorryAt > 3 && timePlayed - f._stuffySorryAt < 10 && !f.tooYoungToSpeak()) {
-        f._stuffySorryAt = null;
-        f.speak(getDialogue(["FOAL_BULLY", "MAKE_UP"], f), true);
-      }
-    } else if (f.gender === "female") {
-      _folMumNotices(f);
+      _folHabitTick(f, step);
+    } else {
+      if (f.gender === "female") _folMumNotices(f);
+      if (grownBully(f) || f._bullyJob) _folBullyTick(f, step);
+    }
+    // "Sowwy stuffy": a moment after shoving it
+    if (typeof f._stuffySorryAt === "number" && timePlayed - f._stuffySorryAt > 3 && timePlayed - f._stuffySorryAt < 10 && !f.tooYoungToSpeak()) {
+      f._stuffySorryAt = null;
+      f.speak(getDialogue(["FOAL_BULLY", "MAKE_UP"], f), true);
     }
   }
 }
@@ -432,27 +499,29 @@ class FoalLifeDesire extends Desire {
   constructor() {
     super("FoalLife");
   }
+  _bully(h) {
+    if (!h._bullyJob || h.currentStateKey === "SLEEPING" || h.currentCage) return null;
+    if (h._bullyJob.plushie) return { kind: "bully", f: null, score: 50 };
+    const v = fluffies.find((x) => x.id === h._bullyJob.id);
+    if (!v || !v.isAlive || v.scene !== h.scene) {
+      h._bullyJob = null;
+      return null;
+    }
+    return { kind: "bully", f: v, score: 50 };
+  }
   _job(h) {
     if (!h.isAlive || h.isDragging || h.placedOn || h.isStacking) return null;
     if (h.growth >= 1) {
-      if (h._seekFoal === null || h._seekFoal === undefined) return null;
-      const f = fluffies.find((x) => x.id === h._seekFoal);
-      if (!f || !f.isAlive || f.scene !== h.scene || !f._wander || timePlayed - h._seekAt > WANDER_GIVE_UP || h.currentCage) {
-        h._seekFoal = null;
-        return null;
+      if (h._seekFoal !== null && h._seekFoal !== undefined) {
+        const f = fluffies.find((x) => x.id === h._seekFoal);
+        if (!f || !f.isAlive || f.scene !== h.scene || !f._wander || timePlayed - h._seekAt > WANDER_GIVE_UP || h.currentCage) h._seekFoal = null;
+        else return { kind: "seek", f, score: 86 };
       }
-      return { kind: "seek", f, score: 86 };
+      return this._bully(h); // (a grown bully)
     }
     if (h.currentStateKey === "SLEEPING" || h.currentCage) return null;
-    if (h._bullyJob && h._bullyJob.plushie) return { kind: "bully", f: null, score: 50 };
-    if (h._bullyJob) {
-      const v = fluffies.find((x) => x.id === h._bullyJob.id);
-      if (!v || !v.isAlive || v.scene !== h.scene) {
-        h._bullyJob = null;
-        return null;
-      }
-      return { kind: "bully", f: v, score: 50 };
-    }
+    const b = this._bully(h);
+    if (b) return b;
     if (!(typeof cantCrawlYet === "function" && cantCrawlYet(h)) && !h._riding) {
       const body = _folConfusedBody(h);
       if (body) return { kind: "body", f: body, score: 40 };
@@ -545,15 +614,19 @@ function describeBullying(f) {
   const parts = [];
   let tone = "";
   if (f.bullied) {
-    parts.push(`Picked on by other foals (${f.bullied === 1 ? "once" : `${f.bullied} times`})`);
+    parts.push(`Picked on by bullies (${f.bullied === 1 ? "once" : `${f.bullied} times`})`);
     tone = "bad";
   }
   const s = f.bullyScore || 0;
   if (s >= BULLY_GROWN) {
-    parts.push(f.growth >= 1 ? "Grew up a bully" : "A bully: picks on other foals");
+    parts.push(f.growth >= 1 ? (playNiceOf(f) >= 0.999 ? "Grew up a bully" : "A bully: picks on alicorns and poopie coats") : "A bully: picks on other foals");
     tone = "bad";
   } else if (s >= 1) {
     parts.push("Picks on other foals");
+    tone = "bad";
+  }
+  if ((f.bullyHabit || 0) >= 0.25 && f.growth < 1) {
+    parts.push("picking up bullying from a parent");
     tone = "bad";
   }
   const taught = playNiceOf(f);

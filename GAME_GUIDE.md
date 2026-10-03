@@ -2669,6 +2669,12 @@ from. Nothing player-facing reads it yet except the debug view.
   turns on a plushie by itself: the "Play nice" lesson (needs a plushie in
   the room, `LESSON_PLAY_NICE`, saved `playNice`) plays the stuffy scene and
   teaches it to go to a plushie instead, as often as it's been taught.
+  Grown bullies (`grownBully`: bullyScore >= `BULLY_GROWN`) keep picking on
+  alicorns / poopie coats of any age; foals in a room with an untaught
+  bully parent pick up `bullyHabit` (adds to `bullyUrge`). Fully taught
+  (`learntPlayNice`): the bullyFoal temper shift is taken back, it protects
+  anyone (twice as likely), and passes no habit on. Prejudice and the bully
+  score stay separate: no prejudice, no bullying.
   `FoalLifeDesire` does the walking.
 - **Praise and punish** (Care.js): misdeeds cannibal, badmum, hurt_foal,
   bully (`scoldLesson`); good deeds (`noteGoodDeed`: sang, held back,
