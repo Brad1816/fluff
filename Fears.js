@@ -186,9 +186,19 @@ function startFright(f, key) {
 }
 
 // Mum (for a foal) or a friend in the room it'd run to
+const _FRIGHT_CLOSE = new Set(["mother", "father", "friend", "special_friend", "sister", "brother"]);
+
+// The same, looked up again at most once a second (FrightDesire runs it every think)
+function _frightComforterSoon(f) {
+  const c = f._comforter;
+  if (c && timePlayed >= c.at && timePlayed - c.at < 1 && (!c.o || (c.o.isAlive !== false && c.o.scene === f.scene))) return c.o;
+  const o = frightComforter(f);
+  f._comforter = { at: timePlayed, o };
+  return o;
+}
+
 function frightComforter(f) {
   const rels = typeof relationships !== "undefined" ? relationships[f.id] || {} : {};
-  const close = ["mother", "father", "friend", "special_friend", "sister", "brother"];
   let best = null;
   let bd = Infinity;
   for (const o of fluffies) {
@@ -197,7 +207,7 @@ function frightComforter(f) {
     const isMum = o.id === f.motherId;
     // (a frightened foal runs to a wise old fluffy too: Elders.js)
     const elder = f.growth < 1 && typeof isWiseElder === "function" && isWiseElder(o);
-    if (!isMum && !elder && !close.includes(rels[o.id])) continue;
+    if (!isMum && !elder && !_FRIGHT_CLOSE.has(rels[o.id])) continue;
     if (isFrightened(o)) continue; // not much help
     const d = Math.hypot(o.x - f.x, o.y - f.y) - (isMum ? 400 : elder ? 150 : 0); // mum first, then an elder
     if (d < bd) {
@@ -418,7 +428,7 @@ class FrightDesire extends Desire {
     h.expressionOverride = "CRYING_SHOCKED";
     h.expressionOverrideTimer = 1.5;
     const left = Math.max(0.5, h.fright.until - timePlayed);
-    const buddy = !h.currentCage && !h.tooYoungToWalk() && frightComforter(h);
+    const buddy = !h.currentCage && !h.tooYoungToWalk() && _frightComforterSoon(h);
     if (buddy && Math.hypot(buddy.x - h.x, buddy.y - h.y) > 70) {
       if (!h.isMovingOrRunning()) {
         let tx = buddy.x + (h.x < buddy.x ? -45 : 45);

@@ -14,44 +14,53 @@ class Desire {
   }
 }
 
+// When two desires score the same, the one higher up this list wins
+const DESIRE_TIEBREAK = new Map(
+  [
+    "GrinderFear",
+    "AlicornFear",
+    "FearedFluffyFear",
+    "SprinklerFear",
+    "CarFear",
+    "CorpseReaction",
+    "BloodReaction",
+    "SmartyChaseFear",
+    "SeekSmartySpecialHuggies",
+    "Mate",
+    "SeekSpecialFriend",
+    "ProposeSpecialFriendship",
+    "SmartyCombat",
+    "ComplainAboutPuddle",
+    "ProposeFriendship",
+    "BabbleToFriends",
+    "RandomBabble",
+    "BystanderInterruptMating",
+    "Eat",
+    "UseLitterbox",
+    "CareForBabies",
+    "FeedHungryFoal",
+    "Sleep",
+    "PlayWithBlocks",
+    "PlayWithBall",
+    "RunToTV",
+    "WatchTV",
+    "Wander",
+    "Sit",
+    "LieDown"
+  ].map((name, i) => [name, i]),
+);
+const _APHRO_DESIRES = new Set(["SeekSmartySpecialHuggies", "GrinderFear", "CarFear", "Wander"]);
+function _desireRank(name) {
+  const i = DESIRE_TIEBREAK.get(name);
+  return i === undefined ? 999 : i;
+}
+
 class HorseBrain {
   constructor(horse) {
     this.horse = horse;
     this.desires = [];
     this.currentDesire = null;
 
-    this.tiebreakerList = [
-      "GrinderFear",
-      "AlicornFear",
-      "FearedFluffyFear",
-      "SprinklerFear",
-      "CarFear",
-      "CorpseReaction",
-      "BloodReaction",
-      "SmartyChaseFear",
-      "SeekSmartySpecialHuggies",
-      "Mate",
-      "SeekSpecialFriend",
-      "ProposeSpecialFriendship",
-      "SmartyCombat",
-      "ComplainAboutPuddle",
-      "ProposeFriendship",
-      "BabbleToFriends",
-      "RandomBabble",
-      "BystanderInterruptMating",
-      "Eat",
-      "UseLitterbox",
-      "CareForBabies",
-      "FeedHungryFoal",
-      "Sleep",
-      "PlayWithBlocks",
-      "PlayWithBall",
-      "RunToTV",
-      "WatchTV",
-      "Wander",
-      "Sit",
-      "LieDown",
-    ];
   }
 
   addDesire(desire) {
@@ -64,11 +73,17 @@ class HorseBrain {
     if (this.horse.placedOn) return;
     if (this.horse.isInLabor()) return;
 
-    // Score all desires
-    let evaluatedDesires = this.desires.map((desire) => {
+    // Score all desires (only those that want something are kept: sorting
+    // fewer is faster)
+    const aphro = this.horse.isUnderAphrodisiac();
+    let evaluatedDesires = [];
+    for (const desire of this.desires) {
       let score = desire.evaluate(this.horse);
+      if (!(score > 0)) continue;
+      // Aphrodisiac override: pause most other desires
+      if (aphro && !_APHRO_DESIRES.has(desire.name)) continue;
       // Personality traits make some desires stronger or weaker (Traits.js)
-      if (score > 0 && typeof traitDesireMultiplier === "function") {
+      if (typeof traitDesireMultiplier === "function") {
         score *= traitDesireMultiplier(this.horse, desire.name);
       }
       // ...and so does the feel of the room (Climate.js)
@@ -80,48 +95,12 @@ class HorseBrain {
       if (this.currentDesire === desire && score > 0) {
         score *= 1.2; // 20% stickiness bonus
       }
-      return { desire, score };
-    });
-
-    // Aphrodisiac override: pause most other desires
-    if (this.horse.isUnderAphrodisiac()) {
-      if (
-        this.currentDesire &&
-        this.currentDesire.name !== "SeekSmartySpecialHuggies" &&
-        this.currentDesire.name !== "GrinderFear" &&
-        this.currentDesire.name !== "CarFear" &&
-        this.currentDesire.name !== "Wander"
-      ) {
-        this.currentDesire = null;
-      }
-      for (let item of evaluatedDesires) {
-        if (
-          item.desire.name !== "SeekSmartySpecialHuggies" &&
-          item.desire.name !== "GrinderFear" &&
-          item.desire.name !== "CarFear" &&
-          item.desire.name !== "Wander"
-        ) {
-          item.score = 0;
-        }
-      }
+      if (score > 0) evaluatedDesires.push({ desire, score });
     }
-
-    // Only desires that want something matter (and sorting fewer is faster)
-    evaluatedDesires = evaluatedDesires.filter((d) => d.score > 0);
+    if (aphro && this.currentDesire && !_APHRO_DESIRES.has(this.currentDesire.name)) this.currentDesire = null;
 
     // Sort desires by score (descending), then by tiebreaker list (ascending index)
-    evaluatedDesires.sort((a, b) => {
-      if (b.score !== a.score) {
-        return b.score - a.score;
-      } else {
-        let indexA = this.tiebreakerList.indexOf(a.desire.name);
-        let indexB = this.tiebreakerList.indexOf(b.desire.name);
-        // Treat missing items as lowest priority (highest index)
-        if (indexA === -1) indexA = 999;
-        if (indexB === -1) indexB = 999;
-        return indexA - indexB;
-      }
-    });
+    evaluatedDesires.sort((a, b) => (b.score !== a.score ? b.score - a.score : _desireRank(a.desire.name) - _desireRank(b.desire.name)));
 
     // Try to execute the desires in order until one succeeds
     let executed = false;

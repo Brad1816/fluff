@@ -116,7 +116,7 @@ function _adults(g) {
 }
 
 function _nightSay(f, keys, target = null) {
-  if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(keys, f, target));
+  sayIfAwake(f, keys, target); // (globals.js)
 }
 
 function _plural(n, one, many = one + "s") {

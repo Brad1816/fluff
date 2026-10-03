@@ -71,7 +71,7 @@ const GROWTH_RULES = {
 const personalityTicker = new Ticker(5);
 
 function _pnHe(f) {
-  return f.gender === "male" ? { sub: "he", obj: "him", poss: "his", Sub: "He" } : { sub: "she", obj: "her", poss: "her", Sub: "She" };
+  return pronouns(f); // (globals.js)
 }
 function _pnWords(kind, f) {
   const w = FAVOURITE_CARE_WORDS[kind];

@@ -192,8 +192,7 @@ function _sheltered(f) {
 }
 
 function _fluffySays(f, key) {
-  if (f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && typeof getDialogue === "function")
-    f.speak(getDialogue(["WEATHER", key], f));
+  sayIfAwake(f, ["WEATHER", key]); // (globals.js)
 }
 
 let _wsFilled = null; // (the weather state last checked for missing fields)
@@ -307,7 +306,10 @@ class ShelterDesire extends Desire {
       bd = d;
       best = t;
     }
-    if (!best) return 0;
+    if (!best) {
+      this.lastTime = gameTimeMs(); // (no tree free: look again in a few seconds, not every think)
+      return 0;
+    }
     this.tree = best;
     return 49;
   }

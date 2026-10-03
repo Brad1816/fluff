@@ -31,7 +31,7 @@ function _stShort(f) {
   return (typeof fluffyNames !== "undefined" && fluffyNames[f.id]) || "this fluffy";
 }
 function _stHe(f) {
-  return f.gender === "male" ? { he: "he", him: "him", his: "his", He: "He" } : { he: "she", him: "her", his: "her", He: "She" };
+  return pronouns(f); // (globals.js)
 }
 
 // ---- Putting out ----

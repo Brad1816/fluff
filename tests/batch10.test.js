@@ -245,6 +245,8 @@ module.exports = [
   {
     name: "batch10: the mower shreds small foals, not bigger ones; skip ahead 1/6/12 hours",
     run: async (page) => {
+      // (skipping ahead waits for a scene fade to finish: Sleep.js "busy")
+      await page.waitForFunction(() => transitionPhase === "OFF", null, { timeout: 15000 });
       const r = await page.evaluate((setup) => {
         eval(setup)();
         currentScene = "OUTDOORS";

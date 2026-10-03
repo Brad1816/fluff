@@ -141,6 +141,43 @@ const _indoorConfigs = new Map();
 // A fluffy by its id (ids from saved relationships may be strings). The
 // lookup table is made again whenever the step or the number of fluffies
 // changes, rather than searching every fluffy each time.
+// He/she words for a fluffy (shared - don't change them)
+const _PRONOUNS_M = Object.freeze({ sub: "he", obj: "him", poss: "his", Sub: "He", Poss: "His", he: "he", him: "him", his: "his", He: "He" });
+const _PRONOUNS_F = Object.freeze({ sub: "she", obj: "her", poss: "her", Sub: "She", Poss: "Her", he: "she", him: "her", his: "her", He: "She" });
+function pronouns(f) {
+  return f && f.gender === "male" ? _PRONOUNS_M : _PRONOUNS_F;
+}
+
+// A line from it, if it's awake and old enough to talk (force: say it now)
+function sayIfAwake(f, keys, target = null, force = false) {
+  if (!f || !f.isAlive || f.currentStateKey === "SLEEPING" || f.tooYoungToSpeak() || typeof getDialogue !== "function") return false;
+  f.speak(getDialogue(keys, f, target), force);
+  return true;
+}
+
+// The objects of some kinds (in their order in objects), worked out once a
+// step instead of searching every object each time. Don't change the list
+// you get back.
+let _byType = new Map();
+let _byTypeKey = "";
+function objectsOfType(...classes) {
+  // (made again when the step changes or objects come or go: the count and
+  // the first and last ids tell)
+  const n = objects.length;
+  const k = `${typeof timePlayed === "number" ? timePlayed : 0}|${n}|${n ? objects[0].id : ""}|${n ? objects[n - 1].id : ""}`;
+  if (k !== _byTypeKey) {
+    _byType = new Map();
+    _byTypeKey = k;
+  }
+  const key = classes.map((c) => (c ? c.name : "")).join("|");
+  let list = _byType.get(key);
+  if (!list) {
+    list = objects.filter((o) => classes.some((c) => c && o instanceof c));
+    _byType.set(key, list);
+  }
+  return list;
+}
+
 let _byIdMap = null; // id -> index in fluffies
 let _byIdAt = NaN;
 let _byIdLen = -1;

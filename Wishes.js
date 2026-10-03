@@ -48,7 +48,7 @@ function _wById(id) {
   return typeof fluffies !== "undefined" ? fluffyById(id) || null : null;
 }
 function _wP(f) {
-  return f.gender === "male" ? { sub: "he", obj: "him", poss: "his", Sub: "He", Poss: "His" } : { sub: "she", obj: "her", poss: "her", Sub: "She", Poss: "Her" };
+  return pronouns(f); // (globals.js)
 }
 function _wStage(f) {
   return typeof lifeStage === "function" ? lifeStage(f) : f.growth < 1 ? "foal" : "adult";

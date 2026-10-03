@@ -446,7 +446,7 @@ function drawUI(ctx) {
 
   // Foal Vending Machine Hover Tooltip
   if (currentScene === "ALLEY" && !isGlobalDragging) {
-    const vendor = objects.find((o) => o instanceof FoalVendor);
+    const vendor = objectsOfType(FoalVendor)[0];
     if (vendor) {
       const img = images.foal_vendor;
       let bw = 80,
@@ -495,8 +495,8 @@ function drawUI(ctx) {
 
   // Foal in a Can Hover Tooltip
   if (!isGlobalDragging) {
-    for (const obj of objects) {
-      if (obj instanceof FoalInACan && obj.scene === currentScene) {
+    for (const obj of objectsOfType(FoalInACan)) {
+      if (obj.scene === currentScene) {
         const img = images.foal_in_a_can;
         let bw = 60,
           bh = 70;
@@ -540,9 +540,7 @@ function drawUI(ctx) {
 
   // Day Care Desk Hover Tooltip
   if (currentScene === "DAY_CARE" && !isGlobalDragging && !dayCareModalOpen) {
-    const desk = objects.find(
-      (o) => typeof DayCareDesk !== "undefined" && o instanceof DayCareDesk,
-    );
+    const desk = typeof DayCareDesk !== "undefined" ? objectsOfType(DayCareDesk)[0] : null;
     if (desk) {
       const img = images.day_care_desk;
       let bw = 200,

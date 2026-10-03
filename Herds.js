@@ -219,7 +219,7 @@ function _pickLeader(members) {
 }
 
 function _say(f, keys, target) {
-  if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING") f.speak(getDialogue(keys, f, target));
+  sayIfAwake(f, keys, target); // (globals.js)
 }
 
 function _tellPlayer(h, text) {

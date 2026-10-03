@@ -107,8 +107,7 @@ function bondsLeftBehind(f, scene) {
 }
 
 function _sepSay(f, key, target = null) {
-  if (f && f.isAlive && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && typeof getDialogue === "function")
-    f.speak(getDialogue(["SEPARATION", key], f, target), true);
+  sayIfAwake(f, ["SEPARATION", key], target, true); // (globals.js)
 }
 
 function _sepName(f) {

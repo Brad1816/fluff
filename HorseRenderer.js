@@ -1242,7 +1242,9 @@ class HorseRenderer {
 
       const drawAccessoryLayer = (layer, slotCategory) => {
         if (!view.accessories || !this.horse.accessories) return;
-        for (const [slot, data] of Object.entries(this.horse.accessories)) {
+        for (const slot in this.horse.accessories) {
+          const data = this.horse.accessories[slot];
+          if (!data) continue;
           const accDef =
             typeof ACCESSORY_DB !== "undefined" ? ACCESSORY_DB[data.id] : null;
           if (!accDef || accDef.layer !== layer) continue;

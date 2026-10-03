@@ -45,9 +45,7 @@ function storyDayNumber(t) {
 }
 
 function _lsPronouns(gender) {
-  return gender === "male"
-    ? { sub: "he", obj: "him", poss: "his", Sub: "He", Poss: "His" }
-    : { sub: "she", obj: "her", poss: "her", Sub: "She", Poss: "Her" };
+  return pronouns({ gender }); // (globals.js)
 }
 
 function _lsLive(id) {

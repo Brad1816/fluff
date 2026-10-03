@@ -139,9 +139,7 @@ addHorseMethods({
         this.tasedOverrideTimer = 0;
         this.tasedPoint = null;
         if (this.isMovingOrRunning()) {
-          if (!this.actionHandler.checkArrivals(dt)) {
-            // Still moving, handled internally by checkArrivals
-          }
+          this.actionHandler.checkArrivals(dt); // (still moving: handled in there)
           this._giveUpIfStuck(dt);
         } else {
           this.stateTimer -= dt;
@@ -447,7 +445,7 @@ addHorseMethods({
         !(this.placedOn instanceof OperatingTable) &&
         typeof objects !== "undefined"
       ) {
-        const bowls = objects.filter((o) => o instanceof Bowl || o instanceof Grass);
+        const bowls = objectsOfType(Bowl, Grass); // (once a step, not for every fluffy)
         for (const bowl of bowls) {
           if (
             (bowl instanceof Grass || (bowl.type !== "feeder" && bowl.type !== "mega_feeder")) &&

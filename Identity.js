@@ -55,7 +55,7 @@ const identityTicker = new Ticker(2);
 const namePrideTicker = new Ticker(30);
 
 function _idHe(f) {
-  return f.gender === "male" ? { sub: "he", obj: "him", poss: "his" } : { sub: "she", obj: "her", poss: "her" };
+  return pronouns(f); // (globals.js)
 }
 
 // A big moment: into the story, and (rarely) a message. opts.record=false

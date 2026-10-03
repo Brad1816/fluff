@@ -466,7 +466,6 @@ class Horse {
     this.lastPuddleReactionTime = 0;
     this.pupilOffset = { x: 0, y: 0 };
     this.pupilTwitchOffset = { x: 0, y: 0 };
-    this.pupilTwitchOffset = { x: 0, y: 0 };
     this.pupilTwitchTimer = Math.random() * 2;
     this.tearTimer = 0;
     this.tearStreakSize = 0;
@@ -830,9 +829,8 @@ class Horse {
 
   findNearbyTV() {
     if (typeof objects === "undefined") return null;
-    for (const obj of objects) {
+    for (const obj of objectsOfType(FluffTV)) {
       if (
-        obj instanceof FluffTV &&
         obj.scene === this.scene &&
         obj.currentCage === this.currentCage
       ) {
@@ -2104,10 +2102,6 @@ class Horse {
 
   drawSpeechBubble(ctx) {
     this.renderer.drawSpeechBubble(ctx);
-  }
-
-  drawLeg(ctx, x, y, angle) {
-    this.renderer.drawLeg(ctx, x, y, angle);
   }
 
   sleepingOrTargetSet() {
