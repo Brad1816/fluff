@@ -2599,3 +2599,8 @@ from. Nothing player-facing reads it yet except the debug view.
   (`BODY_SMARTS`) carries its dead away (`_hwBodyCare`, `_hwCarry`).
   Magnifying glass "Feud" row. The territory scuffle chance is 0.25.
 - Tests: `tests/batch10.test.js`.
+- **Same on mouse and finger:** the magnifying glass has an **Actions**
+  button (`openFluffyActions`, Tricks.js) that opens the right-click /
+  long-press menu (Forget herd, praise, scold...). The pause menu has
+  switches for names, herd markers and bed names (`PAUSE_TOGGLES`, menu.js),
+  which were only on the N/H/B keys (and a phone's ⋯ menu).

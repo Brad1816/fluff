@@ -314,7 +314,7 @@ module.exports = [
       check(Object.keys(r.kinds).length === 4, `all four kinds turn up: ${JSON.stringify(r.kinds)}`);
       check(r.pulled > 0.5 && r.pulled < 0.7 && r.pulledStr === 0, `pull through: kin ${r.pulled}, strangers ${r.pulledStr}`);
       check(Math.abs(r.price - 0.85 * 0.85) < 1e-6, `price x${r.price}`);
-      checkEqual(r.dimmer, 0.35, "simple-minded is less clever");
+      checkEqual(r.dimmer, 0.4, "simple-minded is less clever");
       check(r.row && /crooked leg/.test(r.row[0]) && r.mangled, `row: ${r.row}`);
     },
   },
@@ -506,6 +506,90 @@ module.exports = [
       checkEqual(r.wits, 139, "wits genes start at 139");
       check(r.others.slice(0, -1).every((s) => s + 5 <= 128), `others below the mane genes: ${r.others}`);
       checkEqual(r.total, 144, "total");
+    },
+  },
+  {
+    name: "batch10: the magnifying glass's Actions button opens the right-click menu (Forget herd and all); the menu's switches",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const a = __mk(400, { name: "Ash" });
+        const b = __mk(600, { name: "Bea" });
+        __herd([a, b], b);
+        inspectedFluffy = a;
+        const L = getInspectionModalLayout();
+        mouse.x = L.actionsBtnX + L.btnW / 2;
+        mouse.y = L.btnY + L.btnH / 2;
+        handleInspectionModalClick();
+        const out = { menu: trickUI && trickUI.phase, closed: inspectedFluffy === null };
+        const chip = getTrickMenuLayout().chips.find((c) => c.action && c.action.key === "forgetherd");
+        out.chip = !!chip;
+        if (chip) chip.action.run(a);
+        out.herd = herdOf(a) ? herdOf(a).name : null;
+        closeTrickUI();
+        // A foal can't: says why
+        const foal = __mk(500, { growth: 0.05 });
+        out.foal = openFluffyActions(foal);
+        // Pause menu switches
+        const before = showFluffyNames;
+        const t = pauseToggleRects()[0];
+        gameState = "PAUSED";
+        transitionPhase = "OFF";
+        mouse.x = t.x + 5;
+        mouse.y = t.y + 5;
+        handlePauseMenuClick();
+        out.names = showFluffyNames !== before;
+        out.dbg = { t, tp: transitionPhase, sl: showSaveList, w: width };
+        showFluffyNames = before;
+        gameState = "PLAYING";
+        return out;
+      }, SETUP);
+      check(r.menu === "menu" && r.closed, `Actions opens the menu: ${JSON.stringify(r)}`);
+      check(r.chip && r.herd === null, `Forget herd is there and works: ${JSON.stringify(r)}`);
+      check(r.foal === false, "a newborn has no actions");
+      check(r.names, `the pause menu's Names switch works ${JSON.stringify(r.dbg)}`);
+    },
+  },
+  {
+    name: "batch10: smarts 0-100 by breed (earthy 50, pegasus 35, unicorn 60, alicorn 90), no breed words; the map shows wild fluffies too",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const mk = (t) => {
+          const f = __mk(300, { type: t });
+          f.traitShift = { wits: 0 };
+          const w = traitGeneStart(TRAITS.findIndex((x) => x.key === "wits"));
+          for (let i = 0; i < TRAIT_GENES_EACH; i++) f.genes[w + i] = i < 2.5 ? 1 : 0;
+          f.traitShift = { wits: -traitValue(f.genes, "wits") }; // (exactly average)
+          f.type = t; // (an "earthy" with random genes can come out with a horn)
+          return f;
+        };
+        const out = { scores: ["earthy", "pegasus", "unicorn", "alicorn"].map((t) => smartsScore(mk(t))) };
+        const peg = mk("pegasus");
+        out.text = describeSmarts(peg)[0];
+        const g = traitValue(peg.genes, "wits");
+        peg.traitShift = { wits: 1 - g };
+        out.clever = smartsScore(peg);
+        peg.traitShift = { wits: -1 - g };
+        out.dim = smartsScore(peg);
+        // Wild ones on the map
+        const w1 = __mk(300, { scene: "OUTDOORS", adopted: false });
+        const w2 = __mk(400, { scene: "OUTDOORS", adopted: false });
+        changeOpinion(w1, w2, 0.7, "played");
+        openRelationshipMap(w1);
+        out.wild = relMapScope.wild && relMapPeople().every((f) => !f.adopted) && relMapPeople().length === 2;
+        out.sel = relMapSel === w1.id;
+        out.edges = relMapData().edges.length;
+        setRelMapScope(false);
+        out.yours = relMapPeople().every((f) => f.adopted);
+        closeRelationshipMap();
+        return out;
+      }, SETUP);
+      checkEqual(JSON.stringify(r.scores), "[50,35,60,90]", "breed averages");
+      check(/^35\/100: learns/.test(r.text) && !/dim|pegasi/.test(r.text), r.text);
+      check(r.clever === 60 && r.dim === 10, `wits move it 25 either way: ${r.clever} / ${r.dim}`);
+      check(r.wild && r.sel && r.edges >= 1, `wild map: ${JSON.stringify(r)}`);
+      check(r.yours, "back to yours");
     },
   },
 ];

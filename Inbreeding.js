@@ -10,7 +10,7 @@
 //   - Deformities (f.deformities, saved): any foal of kin may be born with
 //     some (DEFORM_PER_KIN x relatedness, so a brother and sister's foals
 //     about half the time, cousins' rarely; sometimes two):
-//       dim         simple-minded: much less clever (Intelligence.js)
+//       dim         simple-minded: 20 points less clever (Intelligence.js)
 //       crooked     a crooked leg (or wing, or horn): drawn bent, slower;
 //                   a crooked wing can't flap (Injuries.js limbState "crooked")
 //       sickly      catches illness twice as easily (Illness.js)

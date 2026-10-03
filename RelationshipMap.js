@@ -15,6 +15,10 @@
 // Chips at the top switch each kind on and off. Hover a fluffy to light up
 // its lines; click it to see everything about its friends and enemies on
 // the right, and "Show me" to go to it.
+// Yours / Wild (top right): the wild fluffies in one place instead - the
+// area you're in, or the park if there are none here (relMapScope). Opening
+// it from a wild fluffy (its magnifying glass, the family tree) shows that
+// one's area.
 // Zoom: the mouse wheel over the map (about the pointer), or the + / - / Fit
 // buttons in its corner; drag the map to move about when zoomed in
 // (relMapView, REL_ZOOM_MAX).
@@ -44,12 +48,14 @@ let _relCache = null; // { at, people, groups, edges }
 let _relPortraits = {}; // id:size -> canvas
 let _relPortraitAt = 0;
 let relMapView = { zoom: 1, x: 0, y: 0 }; // zoom, and how far it's moved (px)
+let relMapScope = { wild: false, scene: null }; // whose map: yours, or the wild ones in a scene
 let _relPan = null; // dragging the map: { sx, sy, x, y }
 const REL_ZOOM_MAX = 4;
 const REL_ZOOM_STEP = 1.25; // each wheel notch or button press
 
 function openRelationshipMap(focus = null) {
   relMapOpen = true;
+  relMapScope = focus && focus.isAlive && !focus.adopted ? { wild: true, scene: focus.scene } : { wild: false, scene: null };
   relMapSel = focus && focus.id !== undefined ? focus.id : null;
   relMapView = { zoom: 1, x: 0, y: 0 };
   _relCache = null;
@@ -78,9 +84,31 @@ function _relFullName(f) {
   return typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : _relName(f);
 }
 
-// Who's on the map: your living fluffies
+// Who's on the map: your living fluffies - or the wild ones in one place
 function relMapPeople() {
-  return typeof fluffies === "undefined" ? [] : fluffies.filter((f) => f.isAlive && f.adopted);
+  if (typeof fluffies === "undefined") return [];
+  if (relMapScope.wild) return fluffies.filter((f) => f.isAlive && !f.adopted && f.scene === relMapScope.scene);
+  return fluffies.filter((f) => f.isAlive && f.adopted);
+}
+
+// Where to look at the wild ones: here, or (none here) the park
+function _relWildScene() {
+  const here = typeof currentScene !== "undefined" ? currentScene : null;
+  if (here && fluffies.some((f) => f.isAlive && !f.adopted && f.scene === here)) return here;
+  return typeof PARK_SCENE !== "undefined" ? PARK_SCENE : here;
+}
+
+function setRelMapScope(wild) {
+  relMapScope = wild ? { wild: true, scene: relMapScope.wild ? relMapScope.scene : _relWildScene() } : { wild: false, scene: null };
+  relMapSel = null;
+  relMapAll = null;
+  relMapView = { zoom: 1, x: 0, y: 0 };
+  _relCache = null;
+}
+
+function _relPlaceName(scene) {
+  if (typeof householdRoomName === "function") return householdRoomName(scene);
+  return String(scene || "").toLowerCase();
 }
 
 // Groups: herds, then family lines (2+), then the rest
@@ -252,6 +280,11 @@ function getRelMapLayout() {
     }
   }
   const youAt = view.at(graph.x + graph.w / 2, graph.y + graph.h / 2);
+  // Yours | Wild (top right)
+  const scope = [
+    { id: "yours", label: "Yours", x: x + w - 280, y: y + 16, w: 110, h: 30 },
+    { id: "wild", label: "Wild", x: x + w - 164, y: y + 16, w: 140, h: 30 },
+  ];
   const zb = 30;
   const zoomBtns = [
     { id: "in", label: "+", x: graph.x + graph.w - 3 * (zb + 6) - 4, y: graph.y + 8, w: zb, h: zb },
@@ -260,6 +293,7 @@ function getRelMapLayout() {
   ];
   return {
     view,
+    scope,
     zoomBtns,
     x,
     y,
@@ -475,7 +509,26 @@ function drawRelationshipMap(c) {
   c.fillText("Who's who", L.x + 24, L.y + 40);
   c.font = "14px Arial";
   c.fillStyle = "rgba(255,255,255,0.7)";
-  c.fillText("Hover a fluffy to light up its lines; click one for the details.", L.x + 170, L.y + 40);
+  {
+    // (cut short to fit before the Yours | Wild buttons)
+    let hint = relMapScope.wild ? `Wild fluffies: ${_relPlaceName(relMapScope.scene)}` : "Hover a fluffy to light up its lines; click one for the details.";
+    const room = L.scope[0].x - 12 - (L.x + 170);
+    if (c.measureText(hint).width > room && !relMapScope.wild) hint = "Click a fluffy for the details.";
+    if (c.measureText(hint).width <= room) c.fillText(hint, L.x + 170, L.y + 40);
+  }
+  // Yours | Wild
+  for (const b of L.scope) {
+    const on = (b.id === "wild") === !!relMapScope.wild;
+    const over = isPointInRect(mouse.x, mouse.y, b.x, b.y, b.w, b.h);
+    fillRoundRect(c, b.x, b.y, b.w, b.h, 12, on ? "rgba(255, 170, 220, 0.4)" : over ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)");
+    c.fillStyle = on ? "white" : "rgba(255,255,255,0.7)";
+    c.font = on ? "bold 14px Arial" : "14px Arial";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(b.id === "wild" ? "Wild fluffies" : "Your fluffies", b.x + b.w / 2, b.y + b.h / 2 + 1);
+    c.textAlign = "left";
+    c.textBaseline = "alphabetic";
+  }
 
   if (relMapAll) {
     _drawRelAllTies(c, L);
@@ -507,8 +560,13 @@ function drawRelationshipMap(c) {
     c.fillStyle = "rgba(255,255,255,0.7)";
     c.font = "16px Arial";
     c.textAlign = "center";
-    c.fillText("When you have a few fluffies, their friendships, grudges and", G.x + G.w / 2, G.y + G.h / 2 - 10);
-    c.fillText("families will show here.", G.x + G.w / 2, G.y + G.h / 2 + 14);
+    if (relMapScope.wild) {
+      c.fillText(`Hardly any wild fluffies in ${_relPlaceName(relMapScope.scene)} right now.`, G.x + G.w / 2, G.y + G.h / 2 - 10);
+      c.fillText("Try the park, or look again later.", G.x + G.w / 2, G.y + G.h / 2 + 14);
+    } else {
+      c.fillText("When you have a few fluffies, their friendships, grudges and", G.x + G.w / 2, G.y + G.h / 2 - 10);
+      c.fillText("families will show here.", G.x + G.w / 2, G.y + G.h / 2 + 14);
+    }
     c.textAlign = "left";
   }
   const hover = _relHover(L);
@@ -926,6 +984,12 @@ function handleRelationshipMapClick() {
   if (hit(L.close) || !hit(L)) {
     closeRelationshipMap();
     return true;
+  }
+  for (const b of L.scope) {
+    if (hit(b)) {
+      if ((b.id === "wild") !== !!relMapScope.wild) setRelMapScope(b.id === "wild");
+      return true;
+    }
   }
   for (const ch of L.chips) {
     if (hit(ch)) {

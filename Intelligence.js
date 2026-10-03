@@ -1,13 +1,16 @@
 // ---------------------------------------------------------------------------
 // Intelligence ("smarts"), and good and bad smarties.
 //
-// smartsOf(f), -1 (very dim) .. +1 (brilliant), is made of:
-//   - its breed (BREED_SMARTS): alicorns are the cleverest, then unicorns;
-//     earthies are average and pegasi the dimmest
-//   - its own wits: an inherited trait (Traits.js "wits": Clever / Dim)
+// smartsOf(f), -1 (very dim) .. +1 (brilliant) - shown as 0-100
+// (smartsScore: 50 + 50 x smartsOf) - is made of:
+//   - its breed (BREED_SMARTS): on average earthies 50, pegasi 35,
+//     unicorns 60, alicorns 90
+//   - its own wits: an inherited trait (Traits.js "wits": Clever / Dim),
+//     up to WITS_WEIGHT either way (+-25 points)
 //   - being a smarty (SMARTY_SMARTS): smarties are a little brighter than
-//     most - a good smarty more so. A smarty is only as clever as its breed
-//     lets it be: a pegasus smarty is still no genius.
+//     the rest of their breed - a good smarty more so. A pegasus smarty is
+//     still no genius.
+//   - simple-minded (an inbred deformity, Inbreeding.js): -20
 // It changes how fast it learns from you (smartsLearn): tricks, lessons,
 // strict training, litter training, and what a telling-off teaches it.
 //
@@ -25,9 +28,10 @@
 //     and its herd is calmer - fewer frights - and happier.
 // ---------------------------------------------------------------------------
 
-const BREED_SMARTS = { alicorn: 0.45, unicorn: 0.15, earthy: 0, pegasus: -0.25 };
-const SMARTY_SMARTS = { bad: 0.25, good: 0.45 };
-const WITS_WEIGHT = 0.35;
+const BREED_SMARTS = { alicorn: 0.8, unicorn: 0.2, earthy: 0, pegasus: -0.3 }; // (90, 60, 50, 35 out of 100)
+const SMARTY_SMARTS = { bad: 0.16, good: 0.3 }; // (+8, +15)
+const WITS_WEIGHT = 0.5; // (+-25)
+const DIM_SMARTS = 0.4; // simple-minded (-20)
 const GOOD_SMARTY_CHANCE = { alicorn: 0.25, unicorn: 0.12, earthy: 0.1, pegasus: 0.06 };
 const BAD_LEADER_GLOOM = 0.012; // happiness a game hour, each member
 const BAD_LEADER_RESENT = 0.03; // opinion of the leader a game hour
@@ -58,7 +62,7 @@ function smartsOf(f) {
   if (!f) return 0;
   let s = BREED_SMARTS[_breedOf(f)] ?? 0;
   if (typeof traitValue === "function") s += WITS_WEIGHT * traitValue(f, "wits");
-  if (typeof hasDeformity === "function" && hasDeformity(f, "dim")) s -= 0.35; // simple-minded (Inbreeding.js)
+  if (typeof hasDeformity === "function" && hasDeformity(f, "dim")) s -= DIM_SMARTS; // simple-minded (Inbreeding.js)
   if (isGoodSmarty(f)) s += SMARTY_SMARTS.good;
   else if (f.isSmarty && f.isSmarty()) s += SMARTY_SMARTS.bad;
   return Math.max(-1, Math.min(1, s));
@@ -69,27 +73,17 @@ function smartsLearn(f) {
   return Math.max(0.45, Math.min(1.55, 1 + 0.5 * smartsOf(f)));
 }
 
-function smartsWord(v) {
-  if (v >= 0.6) return "Brilliant";
-  if (v >= 0.25) return "Bright";
-  if (v > -0.15) return "Average";
-  if (v > -0.45) return "Slow";
-  return "Very dim";
+// 0-100 (50 an average earthy)
+function smartsScore(f) {
+  return Math.round(50 + 50 * smartsOf(f));
 }
 
 // Magnifying glass: [text, tone]
 function describeSmarts(f) {
-  const v = smartsOf(f);
-  const why = [];
-  const breed = _breedOf(f);
-  if (breed === "alicorn") why.push("alicorns are clever");
-  else if (breed === "unicorn") why.push("unicorns are bright");
-  else if (breed === "pegasus") why.push("pegasi are dim");
-  if (isGoodSmarty(f)) why.push("a good smarty");
-  else if (f.isSmarty && f.isSmarty()) why.push("a smarty");
+  const n = smartsScore(f);
   const pct = Math.round((smartsLearn(f) - 1) * 100);
   const learn = pct === 0 ? "learns at a normal pace" : `learns ${Math.abs(pct)}% ${pct > 0 ? "faster" : "slower"}`;
-  return [`${smartsWord(v)}${why.length ? ` (${why.join(", ")})` : ""}: ${learn}`, v >= 0.25 ? "good" : v <= -0.45 ? "bad" : ""];
+  return [`${n}/100: ${learn}`, n >= 65 ? "good" : n <= 25 ? "bad" : ""];
 }
 
 // A poopie (brown) coat - what a bad smarty can't stand

@@ -419,6 +419,19 @@ function trickRightClick() {
   return true;
 }
 
+// The magnifying glass's Actions button: the same menu right-click (or a
+// long press on a phone) opens. False (and why, in a message) if it can't.
+function openFluffyActions(f) {
+  const say = (t) => typeof addUIMessage === "function" && addUIMessage(t);
+  if (!f || !f.isAlive) return false;
+  const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
+  if (!f.adopted) return say(`${name} isn't yours.`), false;
+  if (f.scene !== currentScene) return say(`${name} isn't here.`), false;
+  if (!canLearnTricks(f)) return say(`${name} is too little for that yet.`), false;
+  trickUI = { phase: "menu", id: f.id };
+  return true;
+}
+
 function closeTrickUI() {
   trickUI = null;
 }

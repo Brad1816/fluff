@@ -472,7 +472,7 @@ function getInspectionModalLayout() {
   const listH = Math.min(600, height - 30);
   const listX = width / 2 - listW / 2;
   const listY = height / 2 - listH / 2;
-  const btnW = 170;
+  const btnW = Math.min(170, (listW - 40 - 3 * 12) / 4); // (four of them, narrower on a small screen)
   const btnH = 40;
   const tabY = listY + 138;
   const tabW = (listW - 40 - (INSPECTION_TABS.length - 1) * 8) / INSPECTION_TABS.length;
@@ -483,8 +483,10 @@ function getInspectionModalLayout() {
     listH,
     btnW,
     btnH,
+    // Change name | Actions | Family tree | Close, spread evenly
     nameBtnX: listX + 20,
-    treeBtnX: listX + listW / 2 - btnW / 2,
+    actionsBtnX: listX + 20 + (listW - 40 - btnW) / 3,
+    treeBtnX: listX + 20 + ((listW - 40 - btnW) * 2) / 3,
     closeBtnX: listX + listW - btnW - 20,
     btnY: listY + listH - 60,
     tabs: INSPECTION_TABS.map((t, i) => ({ id: t.id, x: listX + 20 + i * (tabW + 8), y: tabY, w: tabW, h: 34 })),
@@ -558,6 +560,7 @@ function _inspectionChip(ctx, x, y, text, colour, maxW) {
   else ctx.fillRect(x, y, w, 22);
   ctx.fillStyle = "white";
   ctx.textBaseline = "middle";
+  ctx.textAlign = "left"; // (the price above leaves it right-aligned for a wild one)
   ctx.fillText(t, x + 8, y + 12);
   ctx.textBaseline = "alphabetic";
   return w;
@@ -695,6 +698,10 @@ function drawInspectionModal(ctx) {
 
   if (typeof drawGlassButton !== "undefined") {
     drawGlassButton(L.nameBtnX, L.btnY, L.btnW, L.btnH, "Change name");
+    // Everything right-click (or a long press) offers, for those who'd
+    // rather tap a button: praise, scold, Forget herd... (Tricks.js)
+    // (a wild one: who it gets on with, among the wild ones - RelationshipMap.js)
+    drawGlassButton(L.actionsBtnX, L.btnY, L.btnW, L.btnH, f.adopted || !f.isAlive ? "Actions" : "Who's who");
     drawGlassButton(L.treeBtnX, L.btnY, L.btnW, L.btnH, "Family tree");
     drawGlassButton(L.closeBtnX, L.btnY, L.btnW, L.btnH, "Close");
   }
@@ -721,6 +728,14 @@ function handleInspectionModalClick() {
     const f = inspectedFluffy;
     inspectedFluffy = null;
     openNameModal(f);
+    return true;
+  }
+  if (isPointInRect(mouse.x, mouse.y, L.actionsBtnX, L.btnY, L.btnW, L.btnH)) {
+    const f = inspectedFluffy;
+    if (f.isAlive && !f.adopted && typeof openRelationshipMap === "function") {
+      inspectedFluffy = null;
+      openRelationshipMap(f);
+    } else if (typeof openFluffyActions === "function" && openFluffyActions(f)) inspectedFluffy = null;
     return true;
   }
   if (isPointInRect(mouse.x, mouse.y, L.treeBtnX, L.btnY, L.btnW, L.btnH)) {

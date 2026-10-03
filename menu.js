@@ -304,6 +304,28 @@ function drawPauseMenu() {
 
   // Title Screen
   drawGlassButton(btnX, btnYStart + 320, btnW, btnH, "Title Screen");
+
+  // What to show: the same switches as the keys (N, H, B) and a phone's ⋯
+  for (const t of pauseToggleRects()) drawGlassButton(t.x, t.y, t.w, t.h, t.label());
+}
+
+// The pause menu's right-hand column: things otherwise only on a key (or a
+// phone's ⋯ menu), as buttons for mouse and finger alike
+const PAUSE_TOGGLES = [
+  { label: () => `Names: ${showFluffyNames ? "on" : "off"}`, key: "N", run: () => (showFluffyNames = !showFluffyNames) },
+  { label: () => `Herds: ${typeof showHerdMarkers !== "undefined" && showHerdMarkers ? "on" : "off"}`, key: "H", run: () => (showHerdMarkers = !showHerdMarkers) },
+  { label: () => `Bed names: ${showBedNames ? "on" : "off"}`, key: "B", run: () => (showBedNames = !showBedNames) },
+];
+
+function pauseToggleRects() {
+  const btnW = 250;
+  const btnH = 60;
+  const mainX = width / 2 - 100; // (the main column is 200 wide)
+  const top = height / 2 - 200;
+  // beside the main column, or (on a narrow screen) to its left
+  const x = mainX + 200 + 30 + btnW <= width - 8 ? mainX + 230 : Math.max(8, mainX - btnW - 30);
+  const touch = typeof touchMode !== "undefined" && touchMode;
+  return PAUSE_TOGGLES.map((t, i) => ({ x, y: top + i * 80, w: btnW, h: btnH, run: t.run, label: () => t.label() + (touch ? "" : ` (${t.key})`) }));
 }
 
 const fluffySexualitySliderSet = new MutuallyExclusiveSliderSet({
@@ -1290,6 +1312,13 @@ function handlePauseMenuClick() {
   if (isPointInRect(mouse.x, mouse.y, btnX, btnYStart + 240, btnW, btnH)) {
     refreshSaveList();
     showSaveList = true;
+  }
+
+  for (const t of pauseToggleRects()) {
+    if (isPointInRect(mouse.x, mouse.y, t.x, t.y, t.w, t.h)) {
+      t.run();
+      return;
+    }
   }
 
   // Title Screen

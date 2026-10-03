@@ -504,7 +504,8 @@ function familyTreeToRelationships() {
   const id = familyTreeFocusId;
   closeFamilyTree();
   if (typeof openRelationshipMap !== "function") return;
-  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => String(x.id) === String(id) && x.isAlive && x.adopted) : null;
+  // (one of yours: your map; a wild one: the wild ones where it is)
+  const f = typeof fluffies !== "undefined" ? fluffies.find((x) => String(x.id) === String(id) && x.isAlive) : null;
   openRelationshipMap(f || null);
   if (f) relMapSel = f.id;
 }

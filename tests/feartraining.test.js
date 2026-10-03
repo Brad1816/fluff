@@ -54,6 +54,7 @@ module.exports = [
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
+        __seedRandom(3); // (this test: how clever each is - Intelligence.js - moves the result)
         money = 100000;
         const out = {};
         // average over a few fluffies
@@ -102,7 +103,7 @@ module.exports = [
       check(r.show[1] < r.show[0], `the judges mark it down ${r.show}`);
       check(r.drilled && /Sit/.test(r.drilled[0]), `shown ${r.drilled}`);
       check(r.tally > 0, "in its story");
-      check(r.room === "Tense" || r.room === "Fearful" || r.room === "Uneasy", `the room feels it: ${r.room}`);
+      check(r.room === "Tense" || r.room === "Fearful" || r.room === "Uneasy", `the room feels it: ${r.room} ${JSON.stringify(r.raw)} ${r.b}`);
     },
   },
   {

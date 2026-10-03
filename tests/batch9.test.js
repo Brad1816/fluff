@@ -296,7 +296,7 @@ module.exports = [
       check(r.goodLed.opinion > 0 && r.goodLed.happy > 0, `a good smarty's herd is happier: ${JSON.stringify(r.goodLed)}`);
       check(r.calmed > 40 && r.calmed < 110, `fewer frights near a good leader (${r.calmed}/200)`);
       check(r.leaderScore[0] > r.leaderScore[1], "a good smarty is picked to lead");
-      check(/good smarty/.test(r.describe), r.describe);
+      check(/^\d+\/100: learns/.test(r.describe), r.describe);
       check(r.kinds.bad > r.kinds.good && r.kinds.good > 50, `alicorn smarties: ${JSON.stringify(r.kinds)}`);
     },
   },
