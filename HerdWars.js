@@ -95,7 +95,8 @@ function _hwFighters(h, scene) {
       !f.currentCage &&
       !f.placedOn &&
       !(f.isSensitive && f.isSensitive()) &&
-      (typeof traitValue !== "function" || traitValue(f, "bravery") > -0.5),
+      // (toughies always; the timid keep out while there are toughies: HerdJobs.js)
+      (typeof herdWarFights === "function" ? herdWarFights(f, h, scene) : typeof traitValue !== "function" || traitValue(f, "bravery") > -0.5),
   );
 }
 
@@ -168,7 +169,8 @@ function _hwFight(w, dt) {
       } else if (f.attackCooldown <= 0) {
         f.facingRight = best.x > f.x;
         const temper = typeof traitValue === "function" ? traitValue(f, "temper") : 0;
-        if (Math.random() < 0.5 + 0.3 * temper) f.performAttack(best, "WAR");
+        const bonus = typeof herdWarHitBonus === "function" ? herdWarHitBonus(f) : 0; // (a toughie hits harder)
+        if (Math.random() < 0.5 + 0.3 * temper + bonus) f.performAttack(best, "WAR");
         f.attackCooldown = Math.max(f.attackCooldown || 0, 1.2 + Math.random());
       }
     }

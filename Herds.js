@@ -323,7 +323,8 @@ function updateHerds(dt) {
       const avg = others.reduce((s, m) => s + getLiking(f, m), 0) / others.length;
       const leader = getHerdLeader(h);
       const hatesLeader = leader && leader !== f && _dislikesLeader(f, leader);
-      if (avg < HERD_LEAVE_BELOW || hatesLeader) _leave(h, f);
+      // (kept in line by a bad smarty's toughie, it doesn't dare: HerdJobs.js)
+      if ((avg < HERD_LEAVE_BELOW || hatesLeader) && !(typeof keptInLine === "function" && keptInLine(f))) _leave(h, f);
     }
     members = getHerdMembers(h);
 

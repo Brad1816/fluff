@@ -117,6 +117,8 @@ class Bowl {
       food: this.food,
       maxFood: this.maxFood,
       foodType: this.foodType,
+      fromFoals: this.fromFoals || undefined, // (the Foal-4-Sketties machine's plate: FoalMachine.js)
+      foalParentId: this.foalParentId ?? undefined,
       currentCageId: this.currentCage ? this.currentCage.id : null,
     };
   }
@@ -127,6 +129,8 @@ class Bowl {
       data.maxFood ||
       (data.type === "trough" || data.type === "mega_feeder" ? 25 : 5);
     this.foodType = data.foodType === "soylent_brown" ? "scrap_kibble" : data.foodType || null; // old saves
+    if (data.fromFoals) this.fromFoals = true;
+    if (data.foalParentId !== undefined) this.foalParentId = data.foalParentId;
   }
 
   draw(ctx) {

@@ -683,10 +683,19 @@ function drawRelationshipMap(c) {
     c.strokeText(name, n.x, n.y + n.r + 13 * fz);
     c.fillStyle = "white";
     c.fillText(name, n.x, n.y + n.r + 13 * fz);
+    let below = 25;
     if (typeof titleOf === "function" && titleOf(n.f)) {
       c.font = `${Math.round(10 * fz)}px Arial`;
       c.fillStyle = "#f7d774";
-      c.fillText(titleOf(n.f), n.x, n.y + n.r + 25 * fz);
+      c.fillText(titleOf(n.f), n.x, n.y + n.r + below * fz);
+      below += 12;
+    }
+    // Its herd job (HerdJobs.js)
+    const job = typeof herdJobLabel === "function" ? herdJobLabel(n.f) : null;
+    if (job) {
+      c.font = `${Math.round(10 * fz)}px Arial`;
+      c.fillStyle = job === "Toughie" ? "#ff9a8a" : "#9be89b";
+      c.fillText(job, n.x, n.y + n.r + below * fz);
     }
   }
   c.globalAlpha = 1;

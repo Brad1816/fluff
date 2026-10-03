@@ -202,6 +202,10 @@ class Horse {
     // wandering off, a dead mum, bullying (FoalLife.js)
     if (typeof MumAwayDesire !== "undefined") this.brain.addDesire(new MumAwayDesire());
     if (typeof FoalLifeDesire !== "undefined") this.brain.addDesire(new FoalLifeDesire());
+    // A herd job: fetching food for the needy, guarding, keeping in line (HerdJobs.js)
+    if (typeof HerdJobDesire !== "undefined") this.brain.addDesire(new HerdJobDesire());
+    // Carrying a foal to the Foal-4-Sketties machine (FoalMachine.js)
+    if (typeof FoalTradeDesire !== "undefined") this.brain.addDesire(new FoalTradeDesire());
     // Frightened by thunder, the dark or the Fluff-Bot (Fears.js)
     if (typeof FrightDesire !== "undefined") this.brain.addDesire(new FrightDesire());
     // Chasing the ball in your hand (Play.js)

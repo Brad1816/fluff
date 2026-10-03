@@ -235,6 +235,14 @@ function getFluffyInspectionInfo(f) {
   // Which herd it's in (Herds.js)
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
+    const machine = typeof describeFoalMachine === "function" ? describeFoalMachine(f) : null; // FoalMachine.js
+    if (machine) about.push({ label: "The machine", value: machine[0], tone: machine[1] });
+    const raid = typeof describeRaid === "function" ? describeRaid(f) : null; // Raids.js
+    if (raid) about.push({ label: "Raiding", value: raid[0], tone: raid[1] });
+    const lured = typeof describeLured === "function" ? describeLured(f) : null; // Lures.js
+    if (lured) about.push({ label: "Came for", value: lured[0], tone: lured[1] });
+    const job = typeof describeHerdJob === "function" ? describeHerdJob(f) : null; // HerdJobs.js
+    if (job) about.push({ label: "Herd job", value: job[0], tone: job[1] });
     const feud = typeof describeHerdFeud === "function" ? describeHerdFeud(f) : null; // HerdWars.js
     if (feud) about.push({ label: "Feud", value: feud[0], tone: feud[1] });
   }
@@ -423,7 +431,7 @@ const INSPECTION_TABS = [
     id: "family",
     name: "Family & friends",
     cols: [
-      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Its mum", "Rejected", "Mothering", "Mummah song", "Line", "Born", "Named by", "Herd", "Feud"] },
+      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Its mum", "Rejected", "Mothering", "Mummah song", "Line", "Born", "Named by", "Came for", "Herd", "Herd job", "Raiding", "Feud"] },
       { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Bullying", "Misses"] },
     ],
   },
@@ -440,7 +448,7 @@ const INSPECTION_TABS = [
     name: "Mind",
     cols: [
       { title: "You and it", rows: ["Affection", "Title", "Changing", "Wishes for", "Loves most", "Tricks", "Training", "Drilled", "Lessons", "Conditioned", "Remembers", "Heard", "Old owner"] },
-      { title: "Worries", rows: ["Trauma", "Alicorns"] },
+      { title: "Worries", rows: ["Trauma", "Alicorns", "The machine"] },
     ],
   },
   // Its life, told like a book (LifeStory.js)

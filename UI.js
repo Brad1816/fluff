@@ -1338,6 +1338,8 @@ canvas.addEventListener("mousedown", (e) => {
 
   // The house's wall hints: other rooms, the backyard (UIScenes.js)
   if (typeof houseNavClick === "function" && houseNavClick()) return;
+  // Chase raiders out of the backyard (Raids.js)
+  if (typeof raidChipClick === "function" && raidChipClick()) return;
 
   // Check Portal Click
   const portals = getScenePortals(currentScene);

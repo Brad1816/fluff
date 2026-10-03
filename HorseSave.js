@@ -32,6 +32,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "bullyScore", fallback: 0 },
   { name: "playNice", fallback: 0 },
   { name: "bullyHabit", fallback: 0 },
+  { name: "luredBy", fallback: null }, // Lures.js
+  { name: "machineFear", fallback: 0 }, // FoalMachine.js
+  { name: "refusesMachine", fallback: false },
   { name: "separation", fallback: null, clone: true }, // Separation.js
   { name: "traumas", fallback: [], clone: true },
   { name: "hurtByPlayerAt", fallback: null }, // Memory.js

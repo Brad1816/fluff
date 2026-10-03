@@ -470,7 +470,11 @@ addHorseMethods({
                 grumbleAboutFood(this, foodType);
                 continue;
               }
+              // Knows what the machine's sketties are made of (FoalMachine.js)
+              if (bowl.fromFoals && typeof refusesFoalSketties === "function" && refusesFoalSketties(this, bowl)) continue;
               if (bowl.eat()) {
+                // ...made from foals (FoalMachine.js)
+                if (bowl.fromFoals && typeof onFoalSkettiesEaten === "function") onFoalSkettiesEaten(this, bowl);
                 // Who filled it: you, or the Feed-Bot (Memory.js trust)
                 this._mealFromYou = bowl.byYou !== false;
                 // Cheap food doesn't fill them up as much (Diet.js)

@@ -24,6 +24,7 @@ function _workingMachines(scene) {
       else if (typeof FeedBot !== "undefined" && o instanceof FeedBot && o.state === "driving") out.push({ kind: "FEEDBOT", x: o.x, y: o.y });
       else if (typeof Roomba !== "undefined" && o instanceof Roomba && (o.state === "cleaning" || o.state === "homing")) out.push({ kind: "ROOMBA", x: o.x, y: o.y });
       else if (typeof Grinder !== "undefined" && o instanceof Grinder && o.currentSpeed > 1) out.push({ kind: "GRINDER", x: o.x, y: o.y });
+      else if (typeof FoalMachine !== "undefined" && o instanceof FoalMachine) out.push({ kind: "F4S", x: o.x, y: o.y });
     }
   }
   if (typeof cars !== "undefined") for (const c of cars) if (c.scene === scene && !c.isDestroyed) out.push({ kind: "CAR", x: c.x, y: c.y });
@@ -58,6 +59,14 @@ function updateMunsta(dt) {
         f.expressionOverrideTimer = 2;
         if (typeof scaredyMess === "function") scaredyMess(f, 0.6);
       }
+      // The machine: one that's afraid of it shies away (FoalMachine.js)
+      if (near.kind === "F4S" && nd < MUNSTA_SCARE_NEAR && (f.machineFear || 0) >= 0.3 && !(f._munstaScare > now - 30)) {
+        f._munstaScare = now;
+        f.expressionOverride = "CRYING_SHOCKED";
+        f.expressionOverrideTimer = 2;
+        if (typeof scaredyMess === "function") scaredyMess(f, 0.5);
+      }
+      if (near.kind === "F4S" && !(f.machineFear > 0)) continue; // (it only talks of the box once it knows what it does)
       if (spoken >= 2 || f.tooYoungToSpeak() || (f._munstaAt !== undefined && now - f._munstaAt < MUNSTA_TALK_REST)) continue;
       if (Math.random() > 0.35) continue;
       f._munstaAt = now;

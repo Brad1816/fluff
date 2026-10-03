@@ -2681,3 +2681,27 @@ from. Nothing player-facing reads it yet except the debug view.
   shared, fostered, accepted, protected) praised within `GOOD_DEED_RECENT`.
 - Magnifying glass: Runt, Mummah song, Mothering, Rejected, Its mum,
   Bullying. Tests: `tests/batch12.test.js`.
+
+### Batch 13: herds (plan batch 3)
+- **Herd jobs** (`HerdJobs.js`): `assignHerdJobs` every `HERD_JOB_EVERY` (not
+  saved, `f.herdJob`): leader, toughie (`toughieScore`), food-finder
+  (`finderScore`), about a third each; nursing mums, the sick and sensitive
+  get none. Toughies: wars (`herdWarFights`, `herdWarHitBonus`), first
+  defenders (`defenderRank`, Territory.js), defend the herd's foals
+  (`noteHerdFoalAttacked`), enforce for a bad smarty (shove, `keptInLine`
+  stops leaving). Finders: fetch a bite and bring it to a needy member
+  (`FINDER_GIVES`); a bad smarty leader is fed first. `HerdJobDesire`.
+- **Raids** (`Raids.js`): needs backyard lures, not the best fence, day 3+,
+  `RAID_GAP`. A wild (non-park) herd, a bad smarty's first, or a new one
+  (`spawnRaidHerd`). Fight (`_rdFight`), claim after `RAID_CLAIM`, chip to
+  chase off (`raidChipClick`), feud with your herd. Saved `raidState`.
+- **Lures** (`Lures.js`): `lureItemsIn` (food bowls, plushies, beds, toys)
+  in garden/alley/backyard: spawn weight, sooner strays, `lureSpawnPlan`
+  picks the scenario, `applyLure` (greedy, lost pet with
+  `lureQualityBoost`), backyard strays through the gate.
+- **Foal-4-Sketties** (`FoalMachine.js`, Hardware, $400, stock 10 plates
+  $60): kill-only. `herdWouldTrade` (hungry, not a good smarty, not afraid
+  unless starving), `pickTradeFoal`, parent carries it (`FoalTradeDesire`),
+  `feedFoalToMachine` (destroyed, plate Bowl `fromFoals`, witnesses fear:
+  `machineFear`). `onFoalSkettiesEaten`: cannibalism + realising
+  (`refusesMachine`, vomits, tells the herd). Munsta "F4S" lines.

@@ -523,6 +523,7 @@ const DIALOGUE = {
     CAR: ["Vroom-vroom munsta!!", "Big munsta go fast! Scawy!", "Nu go neaw vroom-vroom munsta!", "Munsta wif bwight eyesies..."],
     FEEDBOT: ["Nummy munsta! Gib nummies?", "Wobot munsta bwing nummies!", "Nice munsta... onwy smaww scawy.", "Munsta, gib sketties pwease?"],
     ROOMBA: ["Cwean-cwean munsta comin'!", "Nu suck up <speaker>, munsta!", "Munsta eat poopies? Siwwy munsta.", "Hide fwom spinny munsta!"],
+    F4S: ["Sketti munsta box... nu go neaw.", "Box munsta eat babbehs...", "Nu wook at munsta box...", "Munsta box... babbehs go in, nu come out..."],
     GRINDER: ["Spinny munsta... nu wike...", "Woud munsta make fwuffies go 'way...", "<Speaker> nu go neaw scawy box munsta.", "Munsta box huwties! Stay 'way!"],
   },
   // Things it can't forget (HorseTalk.js laments): missing legs, spayed
@@ -577,6 +578,45 @@ const DIALOGUE = {
       DEFAULT: ["Wake up! Pway!", "Wake up, pway wif babbeh!", "Wai yu nu pway? Siwwy sweepy..."],
       CHIRPY: ["*nudge* *chirp?*", "*peep?*"],
     },
+  },
+  // The Foal-4-Sketties machine (FoalMachine.js)
+  F4S: {
+    DECIDE: ["Too many babbehs, nu enuff nummies. Gib babbeh tu sketti box!", "Smawty say: babbeh go in box. Hewd get sketties.", "Hewd hungwy! One babbeh fow sketties. Nao!"],
+    DECIDE_HUNGRY: ["Hewd suu hungwy... maybe... sketti box...", "Nu nummies anywhewe... onwy sketti box...", "One babbeh... fow aww da hewd..."],
+    REFUSE: ["Nu. Smawty-fwen find odda nummies.", "Nu babbeh go in box. Nebah.", "Hewd stay togedda. Smawty-fwen fin' gwassies."],
+    PARENT: ["Sowwy babbeh... mummah nee' sketties fow odda babbehs...", "Come, babbeh... mummah cawwy yu...", "Huu... jus' one babbeh... fow hewd..."],
+    FORCED: ["Nu wan... bu' smawty say...", "Pwease smawty, nu dis babbeh...", "Huu huu... smawty make mummah..."],
+    STARVING: ["Huu... nu chu'ce... odda babbehs hungwy...", "Nu wan go neaw munsta box... bu' suu hungwy...", "Hewd gon' die... one babbeh..."],
+    FOAL: ["Mummah? Wai babbeh in box? Dawk in hewe!", "Mummah! Get babbeh out! Pwease!", "Nu wike box! Mummah, upsies!"],
+    FOAL_CHIRPY: ["*scared peep* *peep peep*", "*SCREE* *peep*", "*chirp?* *chirp chirp!*"],
+    GREEDY: ["Sketties! Bestest box evah!", "Nummy nummy sketties!", "Mowe babbehs, mowe sketties!"],
+    UNEASY: ["...whewe babbeh go?", "Babbeh nu come out...", "Dat box... nu wike dat box..."],
+    PARENT_REALISE: ["Babbeh? Wai babbeh nu come out? BABBEH?!", "Box! Gib babbeh back! BABBEH!", "NU! Mummah twade babbeh fow sketties... huu huu..."],
+    WITNESS: ["Box munsta eat babbeh!!", "Munsta box! Wun!", "Babbeh go in... nu come out... SCAWY!"],
+    AFRAID: ["Nu! Nu gib babbeh tu munsta box!", "Stay 'way fwom munsta box, hewd!", "Munsta box eat babbehs! Nu go!"],
+    REALISE_PARENT: ["Sketties... taste wike babbeh... NU! NU NU NU!", "Mummah eat babbeh?! Huu huu huu... *hurk*", "Dis... dis am babbeh... *hurk*"],
+    REALISE_CLEVER: ["Box nu make sketties... box make sketties fwom babbehs...", "Sketties am babbehs! *hurk*", "Dat box... babbehs... sketties... NU!"],
+    TELL: ["Nu eat box sketties! Dey am babbehs!", "Hewd! Box sketties am made of babbehs!", "Nebah eat box sketties! Nebah!"],
+    REFUSE_SKETTIES: ["Nu want sketties. Nebah sketties again.", "Nu! Dose am babbeh sketties!", "Fwuffy wudda stawve..."],
+    DONT_CARE: ["...stiww nummy.", "Babbeh sketties... nummy anyway.", "*munch* ...fwuffy nu cawe."],
+  },
+  // Raids on the backyard (Raids.js)
+  RAID: {
+    START: ["Big gwassie pwace! Nummies fow hewd! Go go go!", "Smawty fin' new nummy pwace! Hewd, eat!", "Dis pwace am smawty pwace nao!"],
+    CLAIM: ["Dis am smawty hewd pwace nao! Go 'way!", "Smawty pwace! Aww nummies fow smawty hewd!", "Nu-hewd fwuffies, get out of smawty pwace!"],
+    SHOVE: ["Move, dummeh! Smawty hewd pwace!", "Nu nummies fow yu!", "Shoo! Dis am ouw pwace!"],
+    CHASED: ["Scawy mistah! Wun!", "Hewd, wun 'way!", "Nu huwt! Weaving! Weaving!"],
+    BEATEN: ["Too many toughies! Wun!", "Hewd, wun! Dey too stwong!", "Smawty nu wan dis pwace anyway..."],
+    LEAVE: ["Nu mowe nummies hewe. Hewd, go.", "Smawty fin' odda pwace.", "Hewd go nao."],
+  },
+  // Herd jobs (HerdJobs.js)
+  HERD_JOB: {
+    DEFEND: ["Nu huwt hewd babbehs!", "Weave babbeh awone, meanie!", "Toughie fwuffy pwotect babbehs!"],
+    ENFORCE: ["Smawty say wisten! Yu wisten!", "Nu be bad tu smawty!", "Smawty am weadew! Obey!"],
+    ENFORCED: ["Okie, okie! ...Nu huwt...", "Huu... wiww wisten tu smawty...", "Sowwy, sowwy!"],
+    FETCH: ["Fin' nummies fow hewd!", "Nummies! Take tu mummah!", "*munch* ...nu, dis fow odda fwuffy."],
+    FEED: ["Bwing nummies fow yu!", "Eat, eat! Get stwong!", "Hewd take cawe of hewd."],
+    FEED_LEADER: ["Nummies fow smawty...", "Smawty want nummies fiwst...", "Hewe, smawty. Bestest nummies."],
   },
   // Foals picking on a foal (FoalLife.js)
   FOAL_BULLY: {

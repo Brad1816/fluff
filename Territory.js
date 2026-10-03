@@ -259,7 +259,8 @@ function updateTerritories(dt) {
         .filter((d) => !d._defend || d._defend.until <= now)
         .map((d) => [d, Math.hypot(d.x - intruder.x, d.y - intruder.y)])
         .filter(([, dist]) => dist < DEFEND_RANGE)
-        .sort((a, b) => a[1] - b[1]);
+        // (toughies first: HerdJobs.js)
+        .sort((a, b) => (typeof defenderRank === "function" ? defenderRank(a[0]) - defenderRank(b[0]) : 0) || a[1] - b[1]);
       for (const [d] of free) {
         if (have >= want) break;
         d._defend = { id: intruder.id, idx, until: now + 10 };

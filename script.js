@@ -745,6 +745,9 @@ function attemptDrop() {
 }
 
 function randomFeralQuality() {
+  // A lost pet drawn by good kibble: nicer colours (Lures.js)
+  const boost = typeof lureQualityBoost === "function" ? lureQualityBoost() : null;
+  if (boost !== null) return boost;
   return Math.random() < 0.75 ? Math.random() * 0.4 : Math.random();
 }
 // Feral Spawning
@@ -756,7 +759,10 @@ let feralDespawnTimer = 30;
 // walk on in (rather than popping up in the middle)
 function spawnFeralGroup(targetScene, forcedScenario = null, opts = {}) {
   const before = fluffies.length;
+  if (typeof lureBeforeSpawn === "function") lureBeforeSpawn(opts.lure || null); // (Lures.js)
   _spawnFeralGroup(targetScene, forcedScenario);
+  // What the lure you left out made of them (Lures.js)
+  if (typeof applyLure === "function") applyLure(fluffies.slice(before), opts.lure || null);
   // Good smarty or bad? (Intelligence.js)
   for (let i = before; i < fluffies.length; i++) {
     if (fluffies[i].smartyKind === undefined && typeof rollSmartyKind === "function") rollSmartyKind(fluffies[i]);
@@ -1079,7 +1085,8 @@ function updateFerals(dt) {
       let targetScene = null;
       if (riverHere < RIVER_MIN_FERALS && validScenes.includes("RIVER")) targetScene = "RIVER";
       else {
-        const w = validScenes.map((s) => (s === "RIVER" ? RIVER_SPAWN_WEIGHT : 1));
+        // (lures you left out draw more there: Lures.js)
+        const w = validScenes.map((s) => (s === "RIVER" ? RIVER_SPAWN_WEIGHT : 1) + (typeof lureSpawnWeight === "function" ? lureSpawnWeight(s) : 0));
         let pick = Math.random() * w.reduce((a, b) => a + b, 0);
         for (let i = 0; i < validScenes.length; i++) {
           pick -= w[i];
@@ -1090,11 +1097,12 @@ function updateFerals(dt) {
         }
         targetScene = targetScene || validScenes[validScenes.length - 1];
       }
-      spawnFeralGroup(targetScene);
+      const lure = typeof lureSpawnPlan === "function" ? lureSpawnPlan(targetScene) : null; // (Lures.js: who it draws)
+      spawnFeralGroup(targetScene, lure ? lure.scenario : null, { lure });
     }
     // You're at the river and it's quiet: now and then some wander in
     if (currentScene === "RIVER" && riverHere < RIVER_MIN_FERALS && Math.random() < 0.5) spawnFeralGroup("RIVER", null, { walkIn: true });
-    feralTimer = 15 + Math.random() * 45;
+    feralTimer = (15 + Math.random() * 45) / (typeof lureSoonerFactor === "function" ? lureSoonerFactor() : 1);
   }
 
   feralDespawnTimer -= dt;
@@ -1880,6 +1888,7 @@ function render() {
   drawPortals();
   // House rooms: where WASD / the arrow keys go (UIScenes.js)
   if (typeof drawHouseNav === "function") drawHouseNav(ctx);
+  if (typeof drawRaidChip === "function") drawRaidChip(ctx); // (Raids.js: chase them off)
   // Park title and map (Park.js)
   if (typeof drawParkHud === "function") drawParkHud(ctx);
   // Store shelf hover highlight (Store.js)
