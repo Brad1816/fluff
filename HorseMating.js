@@ -13,6 +13,7 @@ function forcedBreedingProblem(male, mare) {
     return `${n(male)} is too poorly to breed again yet.`;
   if ((male.specialHuggiesCooldown || 0) > 0) return `${n(male)} needs a rest before he can again.`;
   if (male.accessories && male.accessories["ABOVE_LUMPS"] && male.accessories["ABOVE_LUMPS"].id === "castration_band") return `${n(male)} has a castration band on.`;
+  if (typeof microBreedingMismatch === "function" && microBreedingMismatch(male, mare)) return `${n(male.micro ? male : mare)} is a microfluff - micros can only breed with other micros.`;
   if (typeof canFluffiesMate === "function" && !canFluffiesMate(male, mare, true)) return `${n(male)} isn't interested in mares.`;
   if (mare.isPregnant) return `${n(mare)} is already pregnant - forcing him on her would make her lose the foals.`;
   if (mare.spayed) return `${n(mare)} is spayed: no foals.`;

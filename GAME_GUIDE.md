@@ -2734,7 +2734,10 @@ from. Nothing player-facing reads it yet except the debug view.
   and `Fan` items, "nu-hawt-baww" moon lines.
 - **Micro.js:** microfluffs (`f.micro`: `microScale`, `microHungerMultiplier`,
   `microImpactFactor`, `microBlowFactor`, x2.5 price, collectors' liking,
-  `microInherit`, `maybeMicroGroup` in the park). Sensitive babies in
+  `microInherit` - a micro mum's foals are micro, `maybeMicroGroup` in the
+  park; a grown micro is about an ordinary half-grown foal's size;
+  `microBreedingMismatch` stops micros breeding with ordinary fluffies, in
+  `canFluffiesMate` and the breeding cage's `forcedBreedingProblem`). Sensitive babies in
   stages (`sbsStage`/`sbsShows` in HorseRenderer; `sbsVisible` hides the
   condition chip until it shows; `vetSpotsSbs`). The surgery close-up
   (`drawSurgeryCloseUp` face panel, `surgeryPainLine` by part).

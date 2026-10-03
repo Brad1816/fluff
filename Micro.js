@@ -2,13 +2,16 @@
 // The big ones (plan batch 5): microfluffs, sensitive babies in stages, and
 // the close-up on the operating table.
 //
-// MICROFLUFFS (f.micro, saved): a tiny breed - MICRO_SCALE the size. They
-// eat a fraction (MICRO_HUNGER), several fit in a cage, and they're very
-// fragile: a fall hurts them MICRO_FRAGILE times as much (from lower down
-// too), and so does a blow from a bigger fluffy. They feel the heat more.
-// Rare in the park (MICRO_PARK_CHANCE of a new group is all micro), they
-// sell for MICRO_PRICE x to collectors, who love them. Two micros always
-// have micro foals; a micro and a normal fluffy, MICRO_HALF of the time.
+// MICROFLUFFS (f.micro, saved): a tiny breed - MICRO_SCALE the size, so a
+// grown micro is about as big as an ordinary foal halfway grown, and its
+// own foals are far smaller still (a newborn micro is a quarter of its
+// mum's size). They eat a fraction (MICRO_HUNGER), several fit in a cage,
+// and they're very fragile: a fall hurts them MICRO_FRAGILE times as much
+// (from lower down too), and so does a blow from a bigger fluffy. They feel
+// the heat more. Rare in the park (MICRO_PARK_CHANCE of a new group is all
+// micro), they sell for MICRO_PRICE x to collectors, who love them.
+// Micros only breed with micros (microBreedingMismatch: canFluffiesMate
+// says no, and so does the breeding cage), and their foals are micro too.
 // Shown in the magnifying glass (Looks, "Size").
 //
 // SENSITIVE BABIES IN STAGES: a sensitive baby (Inbreeding.js) is born
@@ -23,13 +26,12 @@
 // to each part as it goes (SURGERY_PAIN lines by part).
 // ---------------------------------------------------------------------------
 
-const MICRO_SCALE = 0.4;
+const MICRO_SCALE = 0.6; // (a grown micro: about an ordinary foal halfway grown)
 const MICRO_HUNGER = 0.35;
 const MICRO_FRAGILE = 3;
 const MICRO_BLOW = 2.5;
 const MICRO_PARK_CHANCE = 0.04;
 const MICRO_PRICE = 2.5;
-const MICRO_HALF = 0.5;
 const SBS_HEAD_AT = WALKY_THRESHOLD;
 const SBS_NECK_AT = 0.6;
 
@@ -63,17 +65,19 @@ function microPriceMultiplier(f) {
   return isMicro(f) ? MICRO_PRICE : 1;
 }
 
-// HorseAnatomy.spawnBaby: does it take after a micro parent?
+// globals.canFluffiesMate: a micro and an ordinary fluffy can't breed
+// (one's the size of the other's foal)
+function microBreedingMismatch(a, b) {
+  return !!a && !!b && isMicro(a) !== isMicro(b);
+}
+
+// HorseAnatomy.spawnBaby: a micro mum's foals are micro (micros only breed
+// with micros; a litter from before that rule goes by its mum)
 function microInherit(baby, mum, dad) {
-  const a = isMicro(mum);
-  const b = isMicro(dad);
-  if (!a && !b) return false;
-  if ((a && b) || Math.random() < MICRO_HALF) {
-    baby.micro = true;
-    if (typeof baby.updateGrowthStats === "function") baby.updateGrowthStats();
-    return true;
-  }
-  return false;
+  if (!isMicro(mum)) return false;
+  baby.micro = true;
+  if (typeof baby.updateGrowthStats === "function") baby.updateGrowthStats();
+  return true;
 }
 
 function makeMicro(f) {

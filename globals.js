@@ -648,6 +648,8 @@ function canFluffiesMate(initiator, receiver, isForced = false) {
   // Two mares will never mate under any circumstances
   if (initiator.gender === "female" && receiver.gender === "female")
     return false;
+  // A microfluff and an ordinary fluffy can't, forced or not (Micro.js)
+  if (typeof microBreedingMismatch === "function" && microBreedingMismatch(initiator, receiver)) return false;
   // Initiator must be sexually attracted to receiver
   if (!isSexuallyAttractedTo(initiator, receiver)) return false;
   // If consensual, receiver must also be sexually attracted to initiator

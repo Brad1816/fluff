@@ -87,7 +87,7 @@ module.exports = [
     },
   },
   {
-    name: "batch15: microfluffs - tiny, eat less, fragile, pricey; two micros breed true",
+    name: "batch15: microfluffs - a grown one is foal-sized, its foals far smaller; eat less, fragile, pricey; only breed with micros",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -95,7 +95,8 @@ module.exports = [
         const b = __mk(400);
         const p0 = b.calculatePrice();
         makeMicro(b);
-        const out = { smaller: b.scale < a.scale * 0.5, eats: microHungerMultiplier(b) < 0.5, pricey: b.calculatePrice() > p0 * 2 };
+        const foal = __mk(250, { growth: 0.45 });
+        const out = { ratio: +(b.scale / foal.scale).toFixed(2), eats: microHungerMultiplier(b) < 0.5, pricey: b.calculatePrice() > p0 * 2 };
         b.health = 100;
         b.handleThrowImpact(THROW_IMPACT_MIN_SPEED * 0.8);
         out.fragile = b.health < 100;
@@ -103,15 +104,23 @@ module.exports = [
         makeMicro(dad);
         const baby = __mk(320, { growth: 0 });
         out.breedsTrue = microInherit(baby, b, dad) && baby.micro;
+        out.babyRatio = +(baby.scale / b.scale).toFixed(2);
+        // Not with an ordinary fluffy, either way round, even forced
+        const stallion = __mk(600, { gender: "male" });
+        out.noMix = !canFluffiesMate(stallion, b, true) && !canFluffiesMate(dad, a, true) && microBreedingMismatch(stallion, b) && !microBreedingMismatch(dad, b);
+        out.cage = forcedBreedingProblem(stallion, b) || "";
         const col = getBuyerKind("collector");
         out.collector = buyerLikes(col, b) > buyerLikes(col, a);
         out.row = JSON.stringify(describeMicro(b));
         out.saved = JSON.stringify(b.serialize()).includes('"micro":true');
         return out;
       }, SETUP);
-      check(r.smaller && r.eats && r.pricey, `tiny, eats little, pricey: ${JSON.stringify(r)}`);
+      check(r.ratio > 0.85 && r.ratio < 1.15, `a grown micro is about a half-grown foal's size: ${JSON.stringify(r)}`);
+      check(r.babyRatio < 0.35, "its newborn is far smaller than it");
+      check(r.eats && r.pricey, "eats little, pricey");
       check(r.fragile, "a fall that wouldn't hurt a normal fluffy hurts a micro");
       check(r.breedsTrue && r.collector, "breeds true; collectors love them");
+      check(r.noMix && /microfluff/.test(r.cage), `micros and ordinary fluffies can't breed: ${r.cage}`);
       check(/Microfluff/.test(r.row) && r.saved, "magnifying glass; saved");
     },
   },
