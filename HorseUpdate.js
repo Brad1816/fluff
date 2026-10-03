@@ -416,7 +416,8 @@ addHorseMethods({
     if (this.growth < 1.0) {
       const wasTooYoungToSpeak = this.tooYoungToSpeak();
       // Strong, well-fed foals grow faster (Pregnancy.js)
-      const rate = typeof foalGrowthRate === "function" ? foalGrowthRate(this) : 1;
+      // (a stay-little formula holds it back: Tools.js)
+      const rate = (typeof foalGrowthRate === "function" ? foalGrowthRate(this) : 1) * (typeof stayLittleGrowth === "function" ? stayLittleGrowth(this) : 1);
       this.growth = Math.min(1.0, this.growth + (dt / GROW_UP_TIME) * debugGrowthMultiplier * rate);
       if (this.growth >= 1.0) {
         for (const ownerId in relationships) {
@@ -472,9 +473,14 @@ addHorseMethods({
               }
               // Knows what the machine's sketties are made of (FoalMachine.js)
               if (bowl.fromFoals && typeof refusesFoalSketties === "function" && refusesFoalSketties(this, bowl)) continue;
+              // No teeth: kibble hurts; a bowl it saw poison someone (Tools.js)
+              if (typeof toothlessRefuses === "function" && toothlessRefuses(this, foodType)) continue;
+              if (typeof fearsBowl === "function" && fearsBowl(this, bowl)) continue;
               if (bowl.eat()) {
                 // ...made from foals (FoalMachine.js)
                 if (bowl.fromFoals && typeof onFoalSkettiesEaten === "function") onFoalSkettiesEaten(this, bowl);
+                if (typeof toothlessAte === "function") toothlessAte(this, foodType);
+                if (bowl.poisoned && typeof atePoisonedFood === "function") atePoisonedFood(this, bowl);
                 // Who filled it: you, or the Feed-Bot (Memory.js trust)
                 this._mealFromYou = bowl.byYou !== false;
                 // Cheap food doesn't fill them up as much (Diet.js)

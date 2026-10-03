@@ -809,6 +809,8 @@ function askSurgeryCut(id) {
   if (id === "body") title = scalpel ? `Cut ${name}?` : `Stab ${name}?`;
   else if (id === "spay") title = `Spay ${name}?`;
   else if (id === "lumps") title = `Neuter ${name}?`;
+  else if (id === "teeth") title = `Pull ${name}'s teeth?`;
+  else if (id === "tongue") title = `Cut out ${name}'s tongue?`;
   else title = `Cut off ${name}'s ${part}?`;
   const lines = [];
   if (id === "body") lines.push(scalpel ? "It hurts, but nothing comes off." : "It hurts and bleeds; too many and it dies.");
@@ -818,7 +820,7 @@ function askSurgeryCut(id) {
     title,
     lines,
     buttons: [
-      { label: id === "body" ? (scalpel ? "Cut" : "Stab") : id === "spay" ? "Spay" : id === "lumps" ? "Neuter" : "Cut it off", kind: "danger", run: () => surgeryCut(id) },
+      { label: id === "body" ? (scalpel ? "Cut" : "Stab") : id === "spay" ? "Spay" : id === "lumps" ? "Neuter" : id === "teeth" ? "Pull them" : id === "tongue" ? "Cut it out" : "Cut it off", kind: "danger", run: () => surgeryCut(id) },
       { label: "Cancel", cancel: true, run: () => {} },
     ],
   });
@@ -832,6 +834,7 @@ function surgeryCut(id) {
   if (!f.isAlive || !surgeryPartPresent(f, id)) return false;
   const before = surgeryPartPresent(f, id);
   knifeCut(f, id === "body" ? "torso" : id, surgery.knife);
+  if (typeof onMouthSurgery === "function") onMouthSurgery(f, id); // teeth, tongue (Tools.js)
   surgery.knife.whackTimer = 0.2;
   const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
   if (!f.isAlive) surgery.note = `${name} died.`;

@@ -702,6 +702,8 @@ class HorseAnatomy {
     if (typeof onFoalBorn === "function") onFoalBorn(this.horse, baby, isViable);
     // A runt? (Runts.js; born here, it has to learn the mummah song)
     if (isViable && typeof rollRunt === "function") rollRunt(baby, this.horse, sire);
+    // Straight to the incubator (Mill.js)
+    if (isViable && typeof millCollectNewborn === "function") millCollectNewborn(baby, this.horse);
     // Small and weak if it came early (Premature.js)
     if (early && typeof applyPrematureBirth === "function") applyPrematureBirth(baby, early, isViable);
     if (isViable) {

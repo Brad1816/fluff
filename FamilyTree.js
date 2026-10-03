@@ -190,6 +190,8 @@ function noteFluffyLeft(f, reason, price = null) {
   if (f && typeof noteWishEvent === "function") noteWishEvent(null, "left", { who: f, reason });
   // Notes from new owners, and your name with families (Reputation.js)
   if (f && typeof noteSoldForRep === "function") noteSoldForRep(f, reason);
+  // A fake alicorn: the buyer may find out (Trade.js)
+  if (f && reason === "sold" && typeof noteFakeAlicornSold === "function") noteFakeAlicornSold(f, price);
   // Its foster mum or foster foal misses it (Fostering.js)
   if (f && typeof noteFosterLeft === "function") noteFosterLeft(f, reason);
   if (!f || !shouldRecordFluffy(f)) return;

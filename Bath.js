@@ -155,6 +155,8 @@ function _scrubReady(sponge, f) {
 }
 
 function scrubFluffy(f) {
+  // A glued-on horn and wings come off (Trade.js)
+  if (f && f.fakeAlicorn && typeof removeFakeAlicorn === "function") removeFakeAlicorn(f, "bath");
   const before = dirtOf(f);
   f.dirt = Math.max(0, before - BATH_SCRUB);
   if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {

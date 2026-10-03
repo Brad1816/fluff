@@ -206,6 +206,8 @@ class Horse {
     if (typeof HerdJobDesire !== "undefined") this.brain.addDesire(new HerdJobDesire());
     // Carrying a foal to the Foal-4-Sketties machine (FoalMachine.js)
     if (typeof FoalTradeDesire !== "undefined") this.brain.addDesire(new FoalTradeDesire());
+    // Dizzy from being spun round (Tools.js)
+    if (typeof DizzyDesire !== "undefined") this.brain.addDesire(new DizzyDesire());
     // Frightened by thunder, the dark or the Fluff-Bot (Fears.js)
     if (typeof FrightDesire !== "undefined") this.brain.addDesire(new FrightDesire());
     // Chasing the ball in your hand (Play.js)

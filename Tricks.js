@@ -449,6 +449,9 @@ function rightClickActions(f) {
   if (typeof putOutActions === "function") out.push(...putOutActions(f)); // Strays.js
   if (typeof matingRuleActions === "function") out.push(...matingRuleActions(f)); // MatingRule.js
   if (typeof badMummahActions === "function") out.push(...badMummahActions(f)); // BadMummah.js (last chance)
+  if (typeof tradeActions === "function") out.push(...tradeActions(f)); // Trade.js (fake alicorn)
+  if (typeof millActions === "function") out.push(...millActions(f)); // Mill.js (milking)
+  if (typeof toolActions === "function") out.push(...toolActions(f)); // Tools.js (stay little, amputator, talk)
   if (typeof outingActions === "function") out.push(...outingActions(f)); // ParkOutings.js
   if (typeof photoActions === "function") out.push(...photoActions(f)); // Lives.js
   if (typeof herdActions === "function") out.push(...herdActions(f)); // Herds.js (forget its old herd)

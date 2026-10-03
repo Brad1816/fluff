@@ -35,6 +35,13 @@ const SAVED_HORSE_FIELDS = [
   { name: "luredBy", fallback: null }, // Lures.js
   { name: "machineFear", fallback: 0 }, // FoalMachine.js
   { name: "refusesMachine", fallback: false },
+  { name: "fakeAlicorn", fallback: null, clone: true }, // Trade.js
+  { name: "fromMystery", fallback: false },
+  { name: "stayLittle", fallback: null, clone: true }, // Tools.js
+  { name: "wasForeverFoal", fallback: false },
+  { name: "toothless", fallback: false },
+  { name: "tongueless", fallback: false },
+  { name: "fearedBowls", fallback: null, clone: true },
   { name: "separation", fallback: null, clone: true }, // Separation.js
   { name: "traumas", fallback: [], clone: true },
   { name: "hurtByPlayerAt", fallback: null }, // Memory.js

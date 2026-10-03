@@ -442,6 +442,9 @@ class HorseGenetics {
     if (typeof deformityPriceMultiplier === "function") price *= deformityPriceMultiplier(this.horse);
     // A runt: x0.7 (Runts.js)
     if (typeof runtPriceMultiplier === "function") price *= runtPriceMultiplier(this.horse);
+    // A glued-on horn and wings sell like an alicorn's (Trade.js); a forever foal at a premium (Tools.js)
+    if (typeof fakeAlicornPriceMultiplier === "function") price *= fakeAlicornPriceMultiplier(this.horse);
+    if (typeof foreverFoalPriceMultiplier === "function") price *= foreverFoalPriceMultiplier(this.horse);
     // Titles: Cherished x1.1, Broken x0.8... (Titles.js)
     if (typeof titlePriceMultiplier === "function") price *= titlePriceMultiplier(this.horse);
 

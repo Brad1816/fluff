@@ -235,6 +235,10 @@ function getFluffyInspectionInfo(f) {
   // Which herd it's in (Herds.js)
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
+    for (const [label, fn] of [["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"]]) {
+      const r = typeof window[fn] === "function" ? window[fn](f) : null; // (Trade.js, Tools.js)
+      if (r) about.push({ label, value: r[0], tone: r[1] });
+    }
     const machine = typeof describeFoalMachine === "function" ? describeFoalMachine(f) : null; // FoalMachine.js
     if (machine) about.push({ label: "The machine", value: machine[0], tone: machine[1] });
     const raid = typeof describeRaid === "function" ? describeRaid(f) : null; // Raids.js
@@ -439,7 +443,7 @@ const INSPECTION_TABS = [
     id: "looks",
     name: "Looks & nature",
     cols: [
-      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Runt", "Deformities", "Scars", "Ribbons"] },
+      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Runt", "Fake alicorn", "Deformities", "Mouth", "Scars", "Ribbons"] },
       { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
     ],
   },

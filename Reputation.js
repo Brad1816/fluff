@@ -73,6 +73,10 @@ function noteSoldForRep(f, reason) {
   const buyer = _saleBuyer || "shop";
   _saleBuyer = null;
   const p = saleProfile(f);
+  if (buyer === "petfood") {
+    if (typeof notePetFoodSale === "function") notePetFoodSale(f); // (Trade.js: families hear, nobody writes)
+    return;
+  }
   if (buyer === "shady") {
     r.dark = Math.min(REP_MAX, r.dark + REP_DARK_SALE + (p.title === "Broken" ? 1 : 0) + (p.drilled ? 1 : 0));
     return;

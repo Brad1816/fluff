@@ -579,6 +579,33 @@ const DIALOGUE = {
       CHIRPY: ["*nudge* *chirp?*", "*peep?*"],
     },
   },
+  // Plan batch 4: trade and tools (Trade.js, Mill.js, Tools.js)
+  FAKE_ALICORN: {
+    GLUED: ["Wai mistah put pointy on <speaker> head? Ow...", "<Speaker> hab wingies nao?! ...Nu can fwap...", "Pointy fing itchy... wingies stuck..."],
+    OFF: ["Pointy fing faww off! <Speaker> am <speaker> again!", "Wingies gone... dey nebah fwap anyway.", "Itchy fings aww gone!"],
+  },
+  MILKED: ["Dat am babbeh miwkies! Nu take!", "Huu... miwkies fow babbehs...", "Nu wike... cowd hand on miwky pwace..."],
+  FOREVER_FOAL: {
+    GREW_UP: ["Wai <speaker> big nao? <Speaker> nu knyow how be big...", "Where mummah? <Speaker> stiww babbeh!", "Big am scawy... <speaker> wan be smaww..."],
+  },
+  MOUTH: {
+    TEETH: ["Moufie huwties! Huwties! Wai?!", "Nu chompies nao... huu huu...", "Owie owie moufie!"],
+    TONGUE: ["*muffled scream*", "Mmmh! MMMH!", "*choking sobs*"],
+    KIBBLE_HURTS: ["Cwunchies huwt moufie...", "Owie... nu can chew...", "Huu... nummies huwt..."],
+  },
+  AMPUTATOR: {
+    AFTER: ["*SCREE* Weggies! Wingies! Aww gone!", "Huu huu... <speaker> nu hab nuffin nao...", "Wai?! Wai aww of dem?!"],
+  },
+  SPUN: ["Wowwd am spinny! Make stop!", "Huu... tummy feew funny... *hurk*", "Spinny spinny! Nu wike! Down pwease!", "Evewyfin' go wound and wound..."],
+  POISON: {
+    WITNESS: ["Dat bowl make fwen sick! Nu eat!", "Bad nummies! Stay 'way fwom bowl!", "Bowl nummies am poison nummies!"],
+  },
+  TALK: {
+    EXPLAINED: ["Okie... <speaker> undewstan'. Nu do again.", "Sowwy mistah... <speaker> knyow nao.", "<Speaker> wiww be gud. Pwomise."],
+    CONFUSED: ["Wha' <speaker> do? <Speaker> nu undewstan'...", "Huu? <Speaker> been gud...", "Wai mistah mad?"],
+    BAD_FLUFFY: ["<Speaker> nu bad fwuffy... huu huu...", "Sowwy mistah... <speaker> twy be gud...", "*sniff* <speaker> am bad fwuffy..."],
+    CRUEL: ["Huu huu huu... mistah nu wub <speaker>...", "<Speaker> am dummeh... nobody wub <speaker>...", "*sobs* wai mistah say dat...", "<Speaker> wan go fowebah sweepies..."],
+  },
   // The Foal-4-Sketties machine (FoalMachine.js)
   F4S: {
     DECIDE: ["Too many babbehs, nu enuff nummies. Gib babbeh tu sketti box!", "Smawty say: babbeh go in box. Hewd get sketties.", "Hewd hungwy! One babbeh fow sketties. Nao!"],

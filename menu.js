@@ -325,7 +325,7 @@ function pauseToggleRects() {
   // beside the main column, or (on a narrow screen) to its left
   const x = mainX + 200 + 30 + btnW <= width - 8 ? mainX + 230 : Math.max(8, mainX - btnW - 30);
   const touch = typeof touchMode !== "undefined" && touchMode;
-  return PAUSE_TOGGLES.map((t, i) => ({ x, y: top + i * 80, w: btnW, h: btnH, run: t.run, label: () => t.label() + (touch ? "" : ` (${t.key})`) }));
+  return PAUSE_TOGGLES.map((t, i) => ({ x, y: top + i * 80, w: btnW, h: btnH, run: t.run, label: () => t.label() + (touch || !t.key ? "" : ` (${t.key})`) }));
 }
 
 const fluffySexualitySliderSet = new MutuallyExclusiveSliderSet({

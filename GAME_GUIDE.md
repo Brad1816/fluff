@@ -2705,3 +2705,23 @@ from. Nothing player-facing reads it yet except the debug view.
   `feedFoalToMachine` (destroyed, plate Bowl `fromFoals`, witnesses fear:
   `machineFear`). `onFoalSkettiesEaten`: cannibalism + realising
   (`refusesMachine`, vomits, tells the herd). Munsta "F4S" lines.
+
+### Batch 14: trade and tools (plan batch 4)
+- **Trade.js:** `BUYER_KINDS` "petfood" (`petFoodValue`, `petFoodPrice` by
+  weight, family rep -1 via Reputation.noteSoldForRep). Fake alicorns
+  (`makeFakeAlicorn`: limbs set, `f.fakeAlicorn.had` to undo; renderer
+  tints horn/wings; `fakeAlicornPriceMultiplier`; buyers find out
+  (`noteFakeAlicornSold` → refund + rep), vet and inspector notice, bath
+  removes). Mystery carrier (Computer Food tab card, `openMysteryCarrier`,
+  duds). Saved `fakeAlicornState`, `mysteryDeliveries`.
+- **Mill.js:** pause toggles (birth buzzer `onLabourStarted`, newborns to
+  an incubator `millCollectNewborn`), `milkMare` (+$8, MILK_REST). Saved
+  `millSettings`.
+- **Tools.js:** stay-little formula (`stayLittleGrowth`, price premium,
+  grows up confused), mouth surgery parts (teeth/tongue, `onMouthSurgery`,
+  `tonguelessSpeech`, `toothlessRefuses`), `AutoAmputator` (Hardware,
+  `runAmputator`: knifeCut on legs/wings/horn), spinning (`updateSpinning`
+  counts the turning of the drag path; `spinFluffy`, `DizzyDesire`),
+  poisoned food (`mixPoison` in Bowl.fill, `atePoisonedFood`,
+  `poisonWitnessed` from triggerVomit, `fearsBowl`), Talk (`openTalk`,
+  `talkTo`: explain / bad / cruel).

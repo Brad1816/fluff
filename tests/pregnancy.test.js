@@ -197,7 +197,7 @@ module.exports = [
           msg: said.find((t) => /had \d foal/.test(t)),
           midwifeAfter: mum.midwife,
           mumHealth: mum.health,
-          born: describeBirth(foals[0]),
+          born: describeBirth(foals.find((f) => !f.runt) || foals[0]), // (not a runt: Runts.js)
         };
         // A weak foal from a hard pregnancy
         const weakMum = __mk();

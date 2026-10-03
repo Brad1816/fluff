@@ -237,13 +237,13 @@ class HorseRenderer {
       this.tinted.eye_sad = tintImage(images.eye_sad, this.horse.colors.body);
 
     if (
-      (this.horse.type === "pegasus" || this.horse.type === "alicorn") &&
+      (this.horse.type === "pegasus" || this.horse.type === "alicorn" || this.horse.fakeAlicorn) &&
       images.wing
     ) {
       this.tinted.wing = tintImage(images.wing, this.horse.colors.body);
     }
     if (
-      (this.horse.type === "unicorn" || this.horse.type === "alicorn") &&
+      (this.horse.type === "unicorn" || this.horse.type === "alicorn" || this.horse.fakeAlicorn) &&
       images.horn
     ) {
       this.tinted.horn = tintImage(images.horn, this.horse.colors.body);

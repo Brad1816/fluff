@@ -127,6 +127,8 @@ function drawFoodShopPage(c, theme, m) {
   _osButton(c, { ...L.order, label: t.bags ? `Order for $${t.total}` : "Order" }, m, theme, !t.bags || short);
   if (short && t.bags) canvasText(c, "Not enough money", 950, 438, "#c0392b", "bold 13px Arial", "center");
   else if (t.bags) _osButton(c, L.clear, m, theme);
+  // A mystery carrier (Trade.js)
+  if (typeof drawMysteryCard === "function") drawMysteryCard(c, theme, m);
   // On its way
   canvasText(c, "On its way", 760, 470, theme.cardText, "bold 16px Arial");
   if (!foodDeliveries.length) canvasText(c, `Nothing ordered. Deliveries take about ${FOOD_DELIVERY_HOURS} hours.`, 760, 494, theme.sub, "13px Arial");
@@ -156,6 +158,7 @@ function handleFoodShopClick(m) {
     placeFoodOrder();
     return true;
   }
+  if (typeof handleMysteryCardClick === "function" && handleMysteryCardClick(m)) return true; // (Trade.js)
   if (_osIn(m, L.clear)) {
     foodBasket = {};
     return true;

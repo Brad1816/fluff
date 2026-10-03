@@ -295,6 +295,11 @@ addHorseMethods({
     // Sealed in a culling cage: only its cull lines get out (Cage.js)
     if (!cullBypass && this.currentCage instanceof Cage && this.currentCage.mutesOccupants()) return;
     if (this.accessories && this.accessories.mouth && this.accessories.mouth.id === "mouthgag") return;
+    // No tongue: no words, only crying (Tools.js)
+    if (this.tongueless && typeof tonguelessSpeech === "function") {
+      text = tonguelessSpeech(this, text);
+      chirpyBypass = true;
+    }
     if (!wanDieBypass) {
       if (this.hunger <= 0.1) return;
       if (this.happiness <= WAN_DIE_THRESHOLD) return;

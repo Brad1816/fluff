@@ -284,7 +284,7 @@ function feedFoalToMachine(m, foal, parent) {
   m._spin = 3;
   if (typeof addPointToPuddle === "function") addPointToPuddle(m.scene, m.x + (Math.random() - 0.5) * 20, m.y - 2, "blood", 6 / 200, 10 / 200);
   if (typeof poofs !== "undefined" && typeof Poof !== "undefined") poofs.push(new Poof(m.x, m.y - 60, m.scene, "#8a0303"));
-  if (typeof playSound === "function") playSound("grinder");
+  if (typeof playSound === "function") playSound("amputation");
   // The plate
   const plate = new Bowl("bowl", m.scene);
   plate.x = m.x + 55;

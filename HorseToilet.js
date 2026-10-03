@@ -322,6 +322,8 @@ addHorseMethods({
   triggerVomit() {
     if (!this.isAlive) return;
     if (!this.avoidStateChangerActions()) return;
+    // Sick from poisoned food: whoever sees learns to fear that bowl (Tools.js)
+    if (this.isPoisoned && typeof poisonWitnessed === "function") poisonWitnessed(this);
 
     this.initBehavior("VOMITING");
     this.expressionOverride = "MISERABLE";

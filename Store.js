@@ -83,6 +83,7 @@ const STORE_AISLES = [
       "operating_table",
       "grinder",
       "foal_machine",
+      "auto_amputator",
     ],
   },
   {

@@ -81,6 +81,8 @@ function inspectHouse() {
     if (missing.some((p) => /leg|eye|ear/i.test(String(p)))) add(serious, f, `${n} has been maimed`, 3);
     if ((f.scars || []).some((s) => !/fight/.test(s.how))) add(minor, f, `${n} has scars from you`, 1);
     if ((f.dirt || 0) >= 0.8) add(minor, f, `${n} is filthy`, 1);
+    if (f.fakeAlicorn) add(minor, f, `${n} is a fake alicorn (a glued-on horn and wings)`, 1); // (Trade.js)
+    if (f.tongueless) add(serious, f, `${n} has had its tongue cut out`, 3); // (Tools.js)
     if ((f.playerFear || 0) >= 0.6) add(minor, f, `${n} cowers from people`, 1);
   }
   for (const s of scenes) {

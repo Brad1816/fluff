@@ -169,6 +169,7 @@ function vetCheckUp(f) {
     found.push(fluShowing(f) ? "Fluffy flu" : "Fluffy flu (caught early, no symptoms yet)");
   }
   for (const [name] of vetProblems(f)) if (name !== "Fluffy flu") found.push(name);
+  if (typeof vetSpotsFake === "function") vetSpotsFake(f, found); // (Trade.js)
   // A pregnant mare gets a scan: how many, and is it risky? (Pregnancy.js)
   if (f.isPregnant && f.pregnancyTimer > 0) {
     const n = f.babiesToBirth || 0;

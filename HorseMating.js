@@ -298,6 +298,7 @@ addHorseMethods({
           : this.claimedBed.y - BED_HEIGHT / 2 - this.scale * 40;
     }
     this.birthIntervalTimer = 3;
+    if (typeof onLabourStarted === "function") onLabourStarted(this); // the birth buzzer (Mill.js)
     this.speak(getDialogue(this.isSensitive() ? ["SENSITIVE", "BIRTH"] : ["BIRTH", "START"], this), true, this.isSensitive());
     this.initBehavior("BENDING_2");
     this.stateTimer = 0.8;
