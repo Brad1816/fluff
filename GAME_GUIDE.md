@@ -2665,8 +2665,11 @@ from. Nothing player-facing reads it yet except the debug view.
   don't understand a death (`foalDoesntUnderstand`, from
   HorseFamily.updateRelationships) for `CONFUSED_TIME`; herds take such a
   body away at once. Foals bully alicorn or poopie foals (`seesAsMunstah`,
-  gangs, `bullyScore`, Personality rules pickedOnFoal / bullyFoal); a
-  plushie takes the blame. `FoalLifeDesire` does the walking.
+  gangs, `bullyScore`, Personality rules pickedOnFoal / bullyFoal). It never
+  turns on a plushie by itself: the "Play nice" lesson (needs a plushie in
+  the room, `LESSON_PLAY_NICE`, saved `playNice`) plays the stuffy scene and
+  teaches it to go to a plushie instead, as often as it's been taught.
+  `FoalLifeDesire` does the walking.
 - **Praise and punish** (Care.js): misdeeds cannibal, badmum, hurt_foal,
   bully (`scoldLesson`); good deeds (`noteGoodDeed`: sang, held back,
   shared, fostered, accepted, protected) praised within `GOOD_DEED_RECENT`.

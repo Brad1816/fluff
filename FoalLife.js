@@ -33,11 +33,16 @@
 // stings, never kills). Other foals who feel the same join in, calling
 // names. The one picked on grows timid (Personality.js "pickedOnFoal");
 // the ringleader grows grumpier and into a bully (f.bullyScore, saved). A
-// brave friend or sibling may stand up for it (a good deed to praise). A
-// stuffed toy (Plushie.js) near the ringleader often takes the blame
-// instead: it shoves the "munstah stuffy", then says sorry and makes up
-// with it - a bit less of a bully each time. Scold it just after (Care.js)
-// and it learns. Shown in the magnifying glass (Friends, "Bullying").
+// brave friend or sibling may stand up for it (a good deed to praise).
+// Scold it just after (Care.js) and it learns a little.
+// PLAY NICE (a lesson, only with a stuffed toy in the room): it never
+// turns on a stuffy by itself - you have to teach it. Each lesson that
+// sinks in (LESSON_PLAY_NICE) it takes it out on the stuffy instead -
+// "bad munstah stuffy!" - then says sorry and makes up with it, and is a
+// bit less of a bully. Taught, when it next wants to pick on a foal and a
+// stuffy is near, it goes to the stuffy instead - as often as it's been
+// taught (f.playNice, saved: half taught, half the time). Shown in the
+// magnifying glass (Friends, "Bullying").
 // ---------------------------------------------------------------------------
 
 const FORGET_AFTER = [
@@ -61,7 +66,7 @@ const BULLY_REST = 2 * HOUR_LENGTH; // after picking on one, before it starts ag
 const BULLY_RANGE = 420;
 const BULLY_GANG_RANGE = 250;
 const BULLY_PLUSHIE_RANGE = 320;
-const BULLY_PLUSHIE_CHANCE = 0.7;
+const LESSON_PLAY_NICE = 0.25; // 4 lessons and it's learnt
 const BULLY_GROWN = 4; // bullyScore: "a bully"
 const BULLY_PROTECT_CHANCE = 0.3;
 const foalLifeTicker = new Ticker(5);
@@ -297,13 +302,14 @@ function _folBullyTick(f, step) {
 
 function startBullying(f, victim) {
   const now = timePlayed;
-  // A stuffy close by takes the blame
-  const toy = typeof allPlushies === "function" ? allPlushies().find((p) => p.scene === f.scene && Math.hypot(p.x - f.x, p.y - f.y) < BULLY_PLUSHIE_RANGE && !p.heldBy) : null;
-  if (toy && Math.random() < BULLY_PLUSHIE_CHANCE) {
-    f._bullyJob = { at: now, plushie: true, x: toy.x, y: toy.y, id: victim.id };
-  } else {
-    f._bullyJob = { at: now, id: victim.id };
+  // Taught to play nice: a stuffy close by takes it instead (as often as it's been taught)
+  const toy = stuffyNear(f, BULLY_PLUSHIE_RANGE);
+  if (toy && Math.random() < playNiceOf(f)) {
+    f._bullyJob = { at: now, plushie: true, x: toy.x, y: toy.y, id: null };
+    if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "STUFFY"], f), true);
+    return f._bullyJob;
   }
+  f._bullyJob = { at: now, id: victim.id };
   if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "START"], f, victim), true);
   // The gang
   for (const o of fluffies) {
@@ -354,8 +360,47 @@ function bullyMakesUpWithStuffy(f) {
   f._bullyAt = timePlayed;
   f.bullyScore = Math.max(0, (f.bullyScore || 0) - 0.5);
   f.changeHappiness(0.02, "Made up with the stuffy");
-  if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "STUFFY"], f), true);
+  if (!f.tooYoungToSpeak()) f.speak(getDialogue(["FOAL_BULLY", "STUFFY_HIT"], f), true);
   f._stuffySorryAt = timePlayed;
+}
+
+// A stuffed toy lying in its room, near enough (or anywhere in the room)
+function stuffyNear(f, range = Infinity) {
+  if (typeof allPlushies !== "function") return null;
+  let best = null;
+  let bd = range;
+  for (const p of allPlushies()) {
+    if (p.scene !== f.scene || p.heldBy || p.isDragging) continue;
+    const d = Math.hypot(p.x - f.x, p.y - f.y);
+    if (d < bd) {
+      bd = d;
+      best = p;
+    }
+  }
+  return best;
+}
+
+function playNiceOf(f) {
+  return Math.max(0, Math.min(1, (f && f.playNice) || 0));
+}
+
+// The lesson (Lessons row): needs a stuffy in the room
+if (typeof LESSONS !== "undefined") {
+  LESSONS.push({
+    key: "playnice",
+    name: "Play nice",
+    applies: (f) => (f.bullyScore || 0) > 0 && playNiceOf(f) < 0.999 && !!stuffyNear(f),
+    progress: (f) => playNiceOf(f),
+    teach: (f) => {
+      f.playNice = Math.min(1, playNiceOf(f) + LESSON_PLAY_NICE);
+      // Show it: the stuffy's the munstah - then sorry, and friends
+      const toy = stuffyNear(f);
+      if (toy) f._bullyJob = { at: timePlayed, plushie: true, x: toy.x, y: toy.y, id: null };
+      else f.bullyScore = Math.max(0, (f.bullyScore || 0) - 0.5);
+      return f.playNice >= 0.999;
+    },
+    doneMsg: (n) => `${n} has learnt to play nice: when it wants to pick on a foal, it takes it out on a stuffy instead. ✓`,
+  });
 }
 
 // ---- Every few seconds ----
@@ -399,6 +444,7 @@ class FoalLifeDesire extends Desire {
       return { kind: "seek", f, score: 86 };
     }
     if (h.currentStateKey === "SLEEPING" || h.currentCage) return null;
+    if (h._bullyJob && h._bullyJob.plushie) return { kind: "bully", f: null, score: 50 };
     if (h._bullyJob) {
       const v = fluffies.find((x) => x.id === h._bullyJob.id);
       if (!v || !v.isAlive || v.scene !== h.scene) {
@@ -510,5 +556,9 @@ function describeBullying(f) {
     parts.push("Picks on other foals");
     tone = "bad";
   }
+  const taught = playNiceOf(f);
+  if (taught >= 0.999) parts.push("learnt to play nice");
+  else if (taught > 0) parts.push(`Play nice ${Math.round(taught * 100)}%`);
+  else if (s >= 1 && f.adopted) parts.push("teach it Play nice (needs a stuffy in the room)");
   return parts.length ? [parts.join(" · "), tone] : null;
 }

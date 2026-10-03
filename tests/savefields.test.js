@@ -10,7 +10,7 @@ module.exports = [
         const f = new Horse(1, null, "INDOORS", "earthy");
         fluffies.push(f);
         const values = {
-          deathTimer: 12, notForSale: true, knowsSong: true, songHeard: 2, runt: true, babyLove: 0.4, smellRejected: "runt", sniffed: ["runt"], badMum: { on: true, slips: 2, strikes: 1, step: 1 }, takenFromMum: 7, forgotMum: true, mumApart: 300, bullied: 2, bullyScore: 1.5, separation: { grief: 0.4 }, traumas: [{ type: "violent" }], hurtByPlayerAt: 99,
+          deathTimer: 12, notForSale: true, knowsSong: true, songHeard: 2, runt: true, babyLove: 0.4, smellRejected: "runt", sniffed: ["runt"], badMum: { on: true, slips: 2, strikes: 1, step: 1 }, takenFromMum: 7, forgotMum: true, mumApart: 300, bullied: 2, bullyScore: 1.5, playNice: 0.5, separation: { grief: 0.4 }, traumas: [{ type: "violent" }], hurtByPlayerAt: 99,
           killedByPlayer: true, hasKilled: 2, babyDaddyId: 42, fromPark: true, settling: true, settleStart: 0.7, lastDesire: { desire: "Eat" },
           alicornComfort: 0.3, missingOwner: 0.6, lostPet: true, illness: { type: "flu", t: 50, known: true },
           fluImmuneUntil: 1234, fluVaccinated: true, vetCheckedAt: 77, vetNote: "fine", vetLife: "young",

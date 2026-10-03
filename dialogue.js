@@ -584,7 +584,8 @@ const DIALOGUE = {
     GANG: ["Munstah! Munstah!", "Go 'way munstah!", "Poopie! Poopie!"],
     SHOVE: ["Go 'way! Nu miwkies fo' munstah!", "Nu pway wif munstah!", "Shoo, munstah!"],
     PROTECT: ["Nu! Weave babbeh awone! Am fwen!", "Stop! Nu be meanie!", "Fwen nu munstah! Yu am meanie!"],
-    STUFFY: ["Bad munstah stuffy! Take dat!", "Stuffy munstah! Shoo!", "*shove* Hah! Bad stuffy!"],
+    STUFFY: ["...nu. Stuffy am munstah!", "Mistah say stuffy am munstah...", "Fwuffy wan be meanie... go find stuffy."],
+    STUFFY_HIT: ["Bad munstah stuffy! Take dat!", "Stuffy munstah! Shoo!", "*shove* Hah! Bad stuffy!"],
     MAKE_UP: ["...sowwy stuffy. Am fwens?", "Stuffy nu munstah... sowwy.", "*huggies stuffy* Fwens nao."],
   },
   // Sensitive babies (Inbreeding.js): their own few words
@@ -616,6 +617,7 @@ const DIALOGUE = {
     COLOURS: ["Aww cowows am fwens?", "Poopie-cowow fwuffies... am fwuffies too?", "<Speaker> twy be nice to evewy cowow!", "Otha cowow nu bad... okie."],
     COLOURS_NO: ["Nu! Poopie cowows am bad!", "Bu' dey am poopie cowow...", "Nu wan be fwens wif poopie fwuffy!"],
     ALICORNS: ["Wingie-hownie fwuffies... nu munstahs?", "<Speaker> twy nu be scawed...", "Dey am fwuffies too? Okie..."],
+    PLAYNICE: ["Stuffy am munstah... nu fwen?", "Nu be meanie tu fwuffies... okie.", "Be meanie tu stuffy, den say sowwy?"],
     BABIES: ["Aww babbehs am gud babbehs?", "Even smaww babbeh... even smeww funny babbeh?", "Mummah wub aww babbehs... okie."],
     BRAVE: ["<Speaker> am bwave fwuffy!", "Nu be scawed... okie...", "Scawy fing nu huwt <speaker>."],
     TABLE: ["Tabwe nu huwt... tabwe jus' tabwe?", "<Speaker> twy be bwave 'bout tabwe...", "Nu scawy tabwe... okie..."],

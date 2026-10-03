@@ -347,7 +347,7 @@ module.exports = [
     },
   },
   {
-    name: "batch12: foals bully an alicorn foal - it grows timid, the ringleader a bully; a stuffy takes the blame; scolding teaches",
+    name: "batch12: foals bully an alicorn foal - it grows timid, the ringleader a bully; scolding teaches; Play nice teaches it to take it out on a stuffy",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -376,7 +376,7 @@ module.exports = [
         const before = bully.bullyScore;
         scoldFluffy(bully);
         out.scolded = bully.bullyScore < before;
-        // A stuffy nearby
+        // A stuffy nearby: untaught, it still goes for the foal
         const toy = new Plushie("INDOORS");
         toy.x = 520;
         toy.y = 520;
@@ -384,12 +384,25 @@ module.exports = [
         const real = Math.random;
         Math.random = () => 0.1;
         startBullying(bully, victim);
-        Math.random = real;
-        out.stuffyJob = !!bully._bullyJob.plushie;
+        out.untaughtGoesForFoal = !bully._bullyJob.plushie && bully._bullyJob.id === victim.id;
+        bully._bullyJob = null;
+        // The Play nice lesson: only offered with a stuffy in the room
+        out.offered = lessonsFor(bully).some((l) => l.key === "playnice");
+        const L = getLesson("playnice");
+        L.teach(bully);
+        out.lessonScene = !!(bully._bullyJob && bully._bullyJob.plushie);
         const s2 = bully.bullyScore;
         bully.x = 520;
         new FoalLifeDesire().execute(bully);
         out.madeUp = bully.bullyScore < s2 && victim.bullied === 3;
+        for (let i = 0; i < 3; i++) L.teach(bully);
+        bully._bullyJob = null;
+        out.learnt = playNiceOf(bully) >= 0.999 && !lessonsFor(bully).some((l) => l.key === "playnice");
+        // Taught: it goes to the stuffy by itself
+        startBullying(bully, victim);
+        out.taughtStuffy = !!bully._bullyJob.plushie;
+        Math.random = real;
+        out.row2 = JSON.stringify(describeBullying(bully));
         objects.splice(objects.indexOf(toy), 1);
         return out;
       }, SETUP);
@@ -401,7 +414,10 @@ module.exports = [
       check(r.timid && r.grumpy, `the victim timid, the ringleader grumpier: ${JSON.stringify(r)}`);
       check(/Picks on|bully/.test(r.row), `magnifying glass: ${r.row}`);
       check(r.scolded, "scolding makes it less of a bully");
-      check(r.stuffyJob && r.madeUp, "a stuffy takes the blame and it makes up with it");
+      check(r.untaughtGoesForFoal, "untaught, it never switches to a stuffy by itself");
+      check(r.offered && r.lessonScene && r.madeUp, `the Play nice lesson: the stuffy scene, and it makes up with it: ${JSON.stringify(r)}`);
+      check(r.learnt && r.taughtStuffy, "taught, it goes to a stuffy instead of the foal");
+      check(/play nice/.test(r.row2), `magnifying glass: ${r.row2}`);
     },
   },
   {
