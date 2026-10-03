@@ -244,8 +244,10 @@ addHorseMethods({
             }
           }
 
+          // (held on a table, rack or litter pal she gives birth where she is:
+          // walking off to her bed pulled out her IV drips)
           const birthBed =
-            this.claimedBed && this.claimedBed.scene === this.scene && this.claimedBed.currentCage === this.currentCage
+            !this.placedOn && this.claimedBed && this.claimedBed.scene === this.scene && this.claimedBed.currentCage === this.currentCage
               ? this.claimedBed
               : null;
           const distToBed = birthBed ? Math.sqrt((birthBed.x - this.x) ** 2 + (birthBed.y - this.y) ** 2) : Infinity;
@@ -261,7 +263,7 @@ addHorseMethods({
       } else if (this.seekingBirthBed) {
         this.birthBedSeekTimeout -= dt;
         const birthBed =
-          this.claimedBed && this.claimedBed.scene === this.scene && this.claimedBed.currentCage === this.currentCage
+          !this.placedOn && this.claimedBed && this.claimedBed.scene === this.scene && this.claimedBed.currentCage === this.currentCage
             ? this.claimedBed
             : null;
         const atBed = birthBed && Math.sqrt((birthBed.x - this.x) ** 2 + (birthBed.y - this.y) ** 2) <= 30;

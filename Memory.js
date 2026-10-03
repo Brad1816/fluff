@@ -145,6 +145,11 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
     if (isDead || !victim.isAlive) victim.killedByPlayer = true;
   }
   if (!isDead && victim.isAlive) {
+    // Hurt in the middle of a bath: afraid of baths from now on (Fears.js)
+    if (victim._bathAt !== undefined && timePlayed - victim._bathAt < 2 * BATH_SESSION && typeof learnFearOfBaths === "function")
+      learnFearOfBaths(victim, weaponType === "spray" ? BATH_FROM_ROUGH / 3 : BATH_FROM_ROUGH);
+    // A fright that bad: it may wet itself (Scaredy.js)
+    if (typeof scaredyMess === "function") scaredyMess(victim, Math.min(1, fear * 2.5));
     if ((weaponType === "stick" || weaponType === "spray") && typeof noteConditionStick === "function") noteConditionStick(victim); // (Care.js)
     changePlayerFear(victim, fear);
     // A squirt of water is a telling-off, not harm - unless you overdo it

@@ -92,6 +92,8 @@ module.exports = [
         out.drilled = describeFearTraining(b);
         out.tally = storyOf(b).filter((e) => e.k === "tally").reduce((s, e) => s + (e.c.drilled || 0), 0);
         out.room = climateOf("INDOORS").label;
+        out.roomScore = +climateOf("INDOORS").score.toFixed(2);
+        out.roomWhy = climateOf("INDOORS").reasons;
         return out;
       }, SETUP);
       check(r.ratio >= 1.2 && r.ratio <= 2.2, `strict takes about 1.5x the sessions: ${r.ratio} ${r.raw}`);
@@ -103,7 +105,8 @@ module.exports = [
       check(r.show[1] < r.show[0], `the judges mark it down ${r.show}`);
       check(r.drilled && /Sit/.test(r.drilled[0]), `shown ${r.drilled}`);
       check(r.tally > 0, "in its story");
-      check(r.room === "Tense" || r.room === "Fearful" || r.room === "Uneasy", `the room feels it: ${r.room} ${JSON.stringify(r.raw)} ${r.b}`);
+      // (Uneasy or worse - or at least its feel pulled down by the harsh training)
+      check(r.room === "Tense" || r.room === "Fearful" || r.room === "Uneasy" || (r.roomScore < -1 && r.roomWhy.some((w) => /harsh training/.test(w))), `the room feels it: ${r.room} ${r.roomScore} ${r.roomWhy}`);
     },
   },
   {

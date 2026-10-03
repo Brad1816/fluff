@@ -149,6 +149,14 @@ addHorseMethods({
     // Not right in the head (Inbreeding.js)
     if (!text && typeof oddBabble === "function") text = oddBabble(this);
 
+    // A sensitive baby: its own few words, once it's old enough
+    if (!text && this.isSensitive() && this.growth >= WALKY_THRESHOLD && Math.random() < 0.2) {
+      text = getDialogue(["SENSITIVE", "BABBLE"], this);
+    }
+
+    // Things it can't forget: its legs, never being a mummah
+    if (!text && !this.tooYoungToSpeak() && this.growth >= 0.6) text = this._lament();
+
     // Something bad that happened to it (traumaMemory: a miscarriage, lost
     // legs, its lumps): it talks about it now and then for a few days
     if (!text && !this.tooYoungToSpeak() && Array.isArray(this.traumaMemory) && this.traumaMemory.length) {
@@ -327,5 +335,19 @@ addHorseMethods({
     if (this.scene === "OUTDOORS" && Math.random() < 0.4) {
       addDoorMessage(filterMuffled(text, 0.5));
     }
+  },
+
+  // A lament now and then (randomBabble): legs it lost, a mare spayed
+  // (more so near someone else's foals). Text or null.
+  _lament() {
+    const missing = this.limbs && Array.isArray(this.limbs.legs) ? this.limbs.legs.filter((l) => !l).length : 0;
+    if (missing >= 3 && Math.random() < 0.2) return getDialogue(["LAMENT", "PILLOW"], this);
+    if (missing >= 1 && Math.random() < 0.1) return getDialogue(["LAMENT", "LEGS"], this);
+    if (this.spayed && this.gender === "female") {
+      const foalsNear = typeof fluffies !== "undefined" && fluffies.some((o) => o !== this && o.isAlive && o.scene === this.scene && o.growth < 0.5 && Math.hypot(o.x - this.x, o.y - this.y) < 220);
+      if (foalsNear && Math.random() < 0.3) return getDialogue(["LAMENT", "SPAYED_FOALS"], this);
+      if (Math.random() < 0.1) return getDialogue(["LAMENT", "SPAYED"], this);
+    }
+    return null;
   },
 });

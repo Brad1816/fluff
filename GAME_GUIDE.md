@@ -2604,3 +2604,33 @@ from. Nothing player-facing reads it yet except the debug view.
   long-press menu (Forget herd, praise, scold...). The pause menu has
   switches for names, herd markers and bed names (`PAUSE_TOGGLES`, menu.js),
   which were only on the N/H/B keys (and a phone's ⋯ menu).
+
+### Batch 11: fixes and small touches
+- **Not for sale** (`NotForSale.js`): `f.notForSale` (saved). Keep button by
+  the price in the magnifying glass, or Not for sale / Can be sold in the
+  right-click menu (`keepActions`). `Horse.canBeSold` is false for a kept
+  fluffy, so buyers at the door and sell mode skip it (sell mode says why);
+  "Sell the lot" leaves it out; the order screen marks it with a lock.
+- **IV drips at a birth:** a mare held on a rack, table or litter pal gives
+  birth where she is; a free mare only settles into her bed if she reached
+  it (within 80 px) - the jump to a far bed pulled the IV line out
+  (`_startActiveLabor`, HorseUpdate).
+- **Walking foals and feeders:** under `FEEDER_WEAN_GROWTH` (0.55), with no
+  bowl food, a foal still drinks from a feeder or a mare (HorseBrain
+  EatDesire): caged walking foals starved beside a full feeder and turned
+  cannibal.
+- **Type you paid for:** `Horse.makeType(type)` for shop fluffies and
+  foal-in-a-can (random wing/horn genes made "earthies" pegasi).
+- **Scaredy poopies** (`Scaredy.js`): `scaredyMess(f, strength)` from
+  frights, your violence and shocks of 1.5 s+; timid and full ones most;
+  `SCAREDY_REST`; a puddle and a little dirt, not a misdeed.
+- **Munsta** (`Munsta.js`): lines for the held mower, cars, the Feed-Bot,
+  the Fluff-Bot and the grinder; foals and timid ones close to the mower or
+  a car get a fright.
+- **Fear of baths** (Fears.js key "bath", learnt): hurt during a bath
+  (`BATH_FROM_ROUGH`) or pulled out of the river (`BATH_FROM_DROWNING`);
+  bath time then starts a fright (`onBathTime`), easing it a little.
+- **Words:** laments for missing legs and spayed mares (more near foals,
+  `Horse._lament`); sensitive babies' own lines (upsies, babble, birth).
+- **Touch:** the long-press ring hides at once when the finger lifts.
+- Tests: `tests/batch11.test.js`.

@@ -161,6 +161,11 @@ function sellModeClick() {
       } else if (typeof shiftSellBlocked !== "undefined" && shiftSellBlocked) {
         return true; // Block selling, eat click
       } else if (!bestItem.canBeSold()) {
+        // (kept from sale: say so - NotForSale.js)
+        if (typeof isKeptFromSale === "function" && isKeptFromSale(bestItem) && bestItem.isAlive) {
+          sayKeptFromSale(bestItem);
+          return true;
+        }
         return; // Can't sell unadopted fluffies, corpses, or equipped fluffies
       } else if (!getSceneConfig(currentScene).insidePlayerQuarters) {
         return true; // Must be inside player quarters to sell fluffies

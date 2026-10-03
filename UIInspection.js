@@ -366,7 +366,8 @@ function getFluffyInspectionInfo(f) {
     });
     const hasAcc = Object.keys(f.accessories || {}).length > 0;
     let sellText;
-    if (!f.canBeSold || !f.canBeSold()) sellText = "Can't be sold";
+    if (f.notForSale && f.isAlive && f.adopted) sellText = `$${Math.floor(f.calculatePrice() / 2)} (kept: not for sale)`; // (NotForSale.js)
+    else if (!f.canBeSold || !f.canBeSold()) sellText = "Can't be sold";
     else if (hasAcc) sellText = "Remove accessories to sell";
     else {
       sellText = `$${Math.floor(f.calculatePrice() / 2)}`;
@@ -643,7 +644,9 @@ function drawInspectionModal(ctx) {
   // Warning chips (or "Doing fine")
   let cx = hx;
   const chipY = py + 72;
-  const maxX = L.listX + L.listW - 24;
+  const keepBtn = typeof inspectionKeepButton === "function" ? inspectionKeepButton(f, L) : null; // NotForSale.js
+  const maxX = keepBtn ? keepBtn.x - 8 : L.listX + L.listW - 24;
+  if (keepBtn) drawInspectionKeepButton(ctx, f, L);
   if (!data.warnings.length) {
     _inspectionChip(ctx, cx, chipY, f.isAlive ? "✓ Doing fine" : "Remains", f.isAlive ? "rgba(60, 150, 90, 0.8)" : "rgba(90,90,90,0.8)", 200);
   } else {
@@ -721,6 +724,8 @@ function handleInspectionModalClick() {
       return true;
     }
   }
+  // The Keep (not for sale) button by the price (NotForSale.js)
+  if (typeof clickInspectionKeepButton === "function" && clickInspectionKeepButton(inspectedFluffy, L)) return true;
   // Turning the Story tab's pages (LifeStory.js)
   if (inspectionTab === "story" && typeof handleLifeStoryClick === "function" && handleLifeStoryClick(inspectionStoryArea(L))) return true;
 

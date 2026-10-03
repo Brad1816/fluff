@@ -205,6 +205,7 @@ module.exports = [
         cage.update(0);
         let pregnant = 0;
         let mated = 0;
+        let eligible = 0;
         for (let k = 0; k < 6; k++) {
           const bo = __mk(580, { gender: "male" });
           const su = __mk(620);
@@ -214,6 +215,12 @@ module.exports = [
           }
           bo.update(0.01);
           su.update(0.01);
+          if (forcedBreedingProblem(bo, su)) {
+            // (a stallion not into mares can't be made to: the cage says so instead)
+            for (const f of [bo, su]) fluffies.splice(fluffies.indexOf(f), 1);
+            continue;
+          }
+          eligible++;
           if (bo.mateWith(su, true, true)) mated++;
           for (let i = 0; i < 120; i++) {
             bo.update(0.1);
@@ -224,6 +231,7 @@ module.exports = [
         }
         objects.splice(objects.indexOf(cage), 1);
         out.mated = mated;
+        out.eligible = eligible;
         out.pregnant = pregnant;
         return out;
       }, SETUP);
@@ -231,7 +239,7 @@ module.exports = [
       check(/pregnant/.test(r.preg), r.preg);
       check(/rest/.test(r.cool), r.cool);
       check(/no grown mare/.test(r.noMare), r.noMare);
-      check(r.mated === 6 && r.pregnant >= 3, `forced in the cage: mated ${r.mated}/6, pregnant ${r.pregnant}`);
+      check(r.eligible >= 4 && r.mated === r.eligible && r.pregnant >= r.eligible / 2, `forced in the cage: mated ${r.mated}/${r.eligible}, pregnant ${r.pregnant}`);
     },
   },
   {

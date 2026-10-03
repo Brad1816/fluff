@@ -482,6 +482,9 @@ class SmartyChaseFearDesire extends Desire {
 // Specific Desires
 // =======================
 
+// Foals up to this size still drink formula or milk when there's nothing to eat
+const FEEDER_WEAN_GROWTH = 0.55;
+
 class EatDesire extends Desire {
   constructor() {
     super("Eat");
@@ -511,6 +514,12 @@ class EatDesire extends Desire {
       return horse.actionHandler.executeChirpyBabyMilk();
     } else {
       if (horse.positioning.scoutForHunger()) {
+        return true;
+      }
+      // A foal that's just started walking still drinks: with no food to eat
+      // it goes to a feeder or a mare's milk (caged foals starved beside a
+      // full feeder once they could walk)
+      if (horse.growth < FEEDER_WEAN_GROWTH && horse.milkCooldown <= 0 && horse.actionHandler.executeChirpyBabyMilk()) {
         return true;
       }
 

@@ -489,7 +489,7 @@ function _drawDeliverPicker(c, order, theme, m) {
     c.fill();
     const p = _ordersPortrait(row.f, 52);
     if (p) c.drawImage(p, row.x + 4, row.y + 2);
-    canvasText(c, fluffyDisplayNameById(row.f.id), row.x + 64, row.y + 24, theme.cardText, "bold 15px Arial");
+    canvasText(c, fluffyDisplayNameById(row.f.id) + (row.f.notForSale ? " \u{1F512}" : ""), row.x + 64, row.y + 24, theme.cardText, "bold 15px Arial"); // (kept: NotForSale.js)
     canvasText(c, `${row.f.gender === "male" ? "♂" : "♀"} ${row.f.growth < 1 ? "foal " : ""}${row.f.type}`, row.x + 64, row.y + 43, theme.sub, "12px Arial");
     // One tick or cross per requirement
     let cx = row.x + 210;

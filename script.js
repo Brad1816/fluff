@@ -55,8 +55,10 @@ function updateMoneyAndRequests(dt) {
         const sellCageFluffies = indoorFluffies.filter(
           (f) => f.currentCage && f.currentCage.tag === "sell",
         );
+        // (never one you've marked Not for sale: NotForSale.js)
+        const notKept = (list) => list.filter((f) => !f.notForSale);
         const candidates =
-          sellCageFluffies.length > 0 ? sellCageFluffies : indoorFluffies;
+          notKept(sellCageFluffies).length > 0 ? notKept(sellCageFluffies) : notKept(indoorFluffies);
 
         // A buyer with tastes picks one they like (Buyers.js)
         currentSellRequest = makeSellRequest(candidates);

@@ -1003,6 +1003,10 @@ canvas.addEventListener("mousedown", (e) => {
         mom.setTargetPosition(targetX, targetY);
         mom.initBehavior("MOVING");
       }
+    } else if (f.isSensitive() && f.growth >= CHIRPY_THRESHOLD) {
+      // A sensitive baby: every upsies hurts (its own few words)
+      f.speak(getDialogue(["SENSITIVE", "UPSIES"], f), false, true);
+      f.changeHappiness(HAPPINESS_PENALTY_BAD_UPSIES * 0.5, "Picked up (it hurts)");
     } else if (hitPart === "torso") {
       let key = f.adopted ? ["UPSIES"] : ["UPSIES", "FERAL"];
       f.speak(getDialogue(key, f));
@@ -1091,6 +1095,7 @@ canvas.addEventListener("mousedown", (e) => {
           else spawnType = "earthy";
 
           const baby = new Horse(0.0, null, obj.scene, spawnType);
+          baby.makeType(spawnType); // (the roll above decides it: 1 alicorn in 500)
           baby.x = can.x;
           baby.y = can.y - 3;
           baby.currentCage = can;

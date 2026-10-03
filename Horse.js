@@ -582,6 +582,19 @@ class Horse {
     this.genetics.processGenes();
   }
 
+  // Made as a given type with random genes (a can, a shop): the random wing
+  // and horn genes could make an "earthy" a pegasus or unicorn. Make it the
+  // type it was sold as.
+  makeType(type) {
+    if (!type || this.type === type) return;
+    this.setGenesFromType(type);
+    if (type === "earthy") for (let i = 53; i <= 62; i++) this.genes[i] = 0;
+    this.processGenes();
+    this.limbs.horn = this.type === "unicorn" || this.type === "alicorn";
+    this.limbs.leftWing = this.limbs.rightWing = this.type === "pegasus" || this.type === "alicorn";
+    if (this.type === "alicorn") this.alicornTolerance = true;
+  }
+
   setGenesFromType(type) {
     this.genetics.setGenesFromType(type);
   }
@@ -659,6 +672,8 @@ class Horse {
   setShock(duration) {
     this.expressionOverride = "SHOCKED";
     this.expressionOverrideTimer = duration;
+    // A real shock (not the little one of being held): it may wet itself (Scaredy.js)
+    if (duration >= 1.5 && typeof scaredyMess === "function") scaredyMess(this, Math.min(1, duration / 3));
   }
 
   // cause: a few words for the Mood tab (Mood.js), e.g. "Hungry"
@@ -1506,6 +1521,7 @@ class Horse {
 
   canBeSold() {
     if (!this.isAlive || !this.adopted) return false;
+    if (this.notForSale) return false; // (kept: NotForSale.js)
     if (this.accessories && Object.keys(this.accessories).length > 0)
       return false;
     return true;

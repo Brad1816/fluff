@@ -286,7 +286,11 @@ addHorseMethods({
   },
 
   _startActiveLabor() {
-    if (this.claimedBed && this.claimedBed.scene === this.scene && this.claimedBed.currentCage === this.currentCage) {
+    // Settle into her bed - if she got there. (Held on a rack or table, or
+    // still on her way when labour came, she gives birth where she is: a jump
+    // to the bed pulled out her IV drips.)
+    const bed = this.claimedBed;
+    if (!this.placedOn && bed && bed.scene === this.scene && bed.currentCage === this.currentCage && Math.hypot(bed.x - this.x, bed.y - this.y) <= 80) {
       this.x = this.claimedBed.x;
       this.y =
         this.claimedBed.type === "cardboard_box"
@@ -294,7 +298,7 @@ addHorseMethods({
           : this.claimedBed.y - BED_HEIGHT / 2 - this.scale * 40;
     }
     this.birthIntervalTimer = 3;
-    this.speak(getDialogue(["BIRTH", "START"], this), true);
+    this.speak(getDialogue(this.isSensitive() ? ["SENSITIVE", "BIRTH"] : ["BIRTH", "START"], this), true, this.isSensitive());
     this.initBehavior("BENDING_2");
     this.stateTimer = 0.8;
   },

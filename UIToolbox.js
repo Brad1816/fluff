@@ -721,6 +721,7 @@ function buyShopAction(action, sx, sy, options = {}) {
   // Anything else in the shop is a fluffy
   if (!free) money -= action.cost;
   const h = new Horse(action.growth, null, currentScene, action.type);
+  h.makeType(action.type); // (the type you paid for)
   h.x = sx;
   h.y = sy;
   fluffies.push(h);

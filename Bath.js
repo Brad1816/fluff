@@ -171,6 +171,13 @@ function scrubFluffy(f) {
   // A new bath: how does it take it?
   f._bathAt = now;
   f._bathCleanSaid = false;
+  // Afraid of baths (Fears.js): it panics, whatever it thinks of baths -
+  // but a bath with no harm done takes a little of the fear away
+  if (typeof onBathTime === "function" && onBathTime(f)) {
+    f.changeHappiness(-0.05, "Scared of the bath");
+    if (typeof changeFear === "function") changeFear(f, "bath", -0.04);
+    return "scared";
+  }
   const like = bathLike(f);
   const talk = !f.tooYoungToSpeak();
   let reaction;

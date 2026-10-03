@@ -509,7 +509,34 @@ const DIALOGUE = {
     CALMED: ["Bettew nao...", "Nu scawed anymowe.", "Tank yu fow snuggwes, fwen."],
     MUM: ["Mummah! Mummah! Scawy!", "Mummah, hewp!", "Wan mummah!"],
     FRIEND: ["Fwen! Wait fow <speaker>!", "Hide wif fwen!", "Fwen, hab scawies!"],
+    BATH: ["*SCREEE* Nu wawa! Nu wawa!", "Wawa am bad fo' fwuffy! Pwease!", "Nu put <speaker> in wawa 'gain!", "*shaking* Nu wet... nu wet..."],
     NIGHTMARE: ["*SCREEE* Bad dweam! Bad dweam!", "Nu! Nu huwt <speaker>! ...wuz dweam?", "*sob* Scawy dweamies...", "Wan huggies... bad dweam..."],
+  },
+  // Scaredy poopies (Scaredy.js): a fright too big to hold in
+  SCAREDY: {
+    PEE: ["Scawy peepees... nu mean tu...", "*whimper* <Speaker> make wet...", "Huu huu... nu can howd it...", "Nu sowwy stick! Scawy peepees nu <speaker> fauwt!"],
+    POOP: ["Scawy poopies! Huu huu huu!", "*SCREE* Poopies comin' out!", "Nu mean tu make poopies... wuz scawed...", "Stinky... <speaker> am suu scawed..."],
+  },
+  // Munsta (Munsta.js): what fluffies call machines
+  MUNSTA: {
+    MOWER: ["Vroom-vroom munsta!! Wun!", "Gwassie-eatin' munsta! Nu eat fwuffy!", "Woud munsta! Babbehs, hide!", "Munsta eat aww da gwassies..."],
+    CAR: ["Vroom-vroom munsta!!", "Big munsta go fast! Scawy!", "Nu go neaw vroom-vroom munsta!", "Munsta wif bwight eyesies..."],
+    FEEDBOT: ["Nummy munsta! Gib nummies?", "Wobot munsta bwing nummies!", "Nice munsta... onwy smaww scawy.", "Munsta, gib sketties pwease?"],
+    ROOMBA: ["Cwean-cwean munsta comin'!", "Nu suck up <speaker>, munsta!", "Munsta eat poopies? Siwwy munsta.", "Hide fwom spinny munsta!"],
+    GRINDER: ["Spinny munsta... nu wike...", "Woud munsta make fwuffies go 'way...", "<Speaker> nu go neaw scawy box munsta.", "Munsta box huwties! Stay 'way!"],
+  },
+  // Things it can't forget (HorseTalk.js laments): missing legs, spayed
+  LAMENT: {
+    PILLOW: ["<Speaker> nu can gib huggies nu mowe... nu hab weggies fo' huggies...", "Wan' wawk tu mummah... nu can...", "Pwease gib back weggies? <Speaker> be gud!", "Fwens pway... <speaker> jus' watch... huu huu...", "Am jus' piwwow nao..."],
+    LEGS: ["<Speaker> miss ow' weggie...", "Wawkies am hawd nao...", "Wai weggie nu gwow back?", "Fwuffy wobbwy... nu wike..."],
+    SPAYED: ["<Speaker> wiww neba be mummah... huu huu...", "Tummeh am empty fowebah...", "Nu babbehs fow <speaker>... neba...", "Wan' babbehs suu much... nu can..."],
+    SPAYED_FOALS: ["Pwetty babbehs... <speaker> neba hab babbehs wike dat...", "Can <speaker> howd babbeh? Jus' fow a widdwe bit?", "Huu huu... odda mummahs hab babbehs...", "Wish <speaker> cud be mummah tu babbehs..."],
+  },
+  // Sensitive babies (Inbreeding.js): their own few words
+  SENSITIVE: {
+    UPSIES: ["NU UPSIES! BABBEH TUU SENSITIB!", "Nu! Nu upsies! Huwties!", "*SCREE* Down! Down! Su sensitib!", "Gentwe... babbeh su sensitib..."],
+    BABBLE: ["Babbeh su sensitib...", "Wan' mummah... su tiwed...", "Huu... evewyfin' huwties...", "Peep... babbeh nu wike woud...", "Su sweepy... aww da time..."],
+    BIRTH: ["Sensitib tummeh huwties!! Biggest poopies!!", "Babbeh hab babbehs?? Su sensitib!!", "*SCREE* Tuu big! Tuu big fo' sensitib!"],
   },
   // Wishes (Wishes.js): one line per kind, said now and then
   WISH: {

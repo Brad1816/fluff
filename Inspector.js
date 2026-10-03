@@ -161,7 +161,7 @@ function _inMorning() {
 
 function _sellCageMates(f) {
   if (!f || !f.currentCage || f.currentCage.tag !== "sell") return [];
-  return fluffies.filter((o) => o.isAlive && o.adopted && o.currentCage === f.currentCage && !o.isDragging);
+  return fluffies.filter((o) => o.isAlive && o.adopted && o.currentCage === f.currentCage && !o.isDragging && !o.notForSale);
 }
 
 function wholesaleActions(f) {

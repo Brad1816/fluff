@@ -90,9 +90,11 @@ function _ringShow(x, y) {
   r.style.opacity = "1";
   r.style.transform = "translate(-50%, -50%) scale(1)";
 }
-function _ringHide(flash = false) {
+function _ringHide(flash = false, now = false) {
   if (!_touchRing) return;
-  _touchRing.style.transition = "opacity 200ms";
+  // (a finger lifted: gone at once - a slow page could otherwise show the
+  // ring fading after a quick tap)
+  _touchRing.style.transition = now ? "none" : "opacity 200ms";
   _touchRing.style.opacity = flash ? "0.0" : "0";
 }
 
@@ -228,14 +230,14 @@ function _onTouchMove(e) {
 
 function _onTouchEnd(e) {
   if (e.cancelable) e.preventDefault();
-  _ringHide(); // (whatever happens next, the ring goes)
+  _ringHide(false, true); // (whatever happens next, the ring goes)
   if (_pinch && e.touches.length < 2) _pinch = null;
   const t = _touch;
   if (!t) return;
   const p = [...e.changedTouches].find((c) => c.identifier === t.id);
   if (!p) return;
   _touchClearTimers(t);
-  _ringHide();
+  _ringHide(false, true);
   _touch = null;
   const cancelled = e.type === "touchcancel";
   if (t.mode === "drag" || t.mode === "carry") {

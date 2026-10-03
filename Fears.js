@@ -55,6 +55,7 @@ const FEARS = [
   { key: "bot", name: "the Fluff-Bot" },
   { key: "fire", name: "the hot iron", learnt: true }, // (CauteryIron.js)
   { key: "cages", name: "cages", learnt: true }, // (a cull: Cage.js)
+  { key: "bath", name: "baths and water", learnt: true }, // (hurt in the bath, nearly drowned)
 ];
 const FIRE_FROM_BURN = 0.75;
 const FIRE_FROM_SEEING = 0.25; // (+0.15 when it was family)
@@ -67,8 +68,10 @@ const FEAR_MIN = 0.15; // weaker than this doesn't count
 const FEAR_INDOOR_THUNDER = 0.35; // indoors it has to be at least this scared
 const FEAR_COMFORT = 0.06;
 const FEAR_WORSEN = 0.02;
-const FRIGHT_TIME = { thunder: 20, dark: 15, bot: 12, fire: 15, cages: 15 }; // seconds, x (0.5 + fear)
-const FRIGHT_REST = { thunder: 0, dark: 200, bot: 300, fire: 40, cages: 90 }; // seconds after a fright before the same thing can start another
+const BATH_FROM_ROUGH = 0.35; // hurt during a bath
+const BATH_FROM_DROWNING = 0.45; // pulled out of the water
+const FRIGHT_TIME = { thunder: 20, dark: 15, bot: 12, fire: 15, cages: 15, bath: 12 }; // seconds, x (0.5 + fear)
+const FRIGHT_REST = { thunder: 0, dark: 200, bot: 300, fire: 40, cages: 90, bath: 30 }; // seconds after a fright before the same thing can start another
 const BOT_NEAR = 100; // px: the Fluff-Bot driving this close can set one off
 const DARK_FRIGHT_CHANCE = 0.004; // a second, x fear, awake in a dark room
 const NIGHT_LIGHT_PRICE = 30;
@@ -168,6 +171,7 @@ function startFright(f, key) {
   f.expressionOverrideTimer = 2.5;
   f.changeHappiness(-0.03 * fear, "A fright");
   _fSay(f, key.toUpperCase());
+  if (typeof scaredyMess === "function") scaredyMess(f, fear); // (Scaredy.js)
   if (typeof fluffySound === "function") fluffySound(f, "sad");
   return true;
 }
@@ -364,6 +368,20 @@ function learnFearOfCages(cage, victims) {
     const family = [...ids].some((id) => rels[id] && rels[id] !== "friend");
     changeFear(o, "cages", CAGES_FROM_CULL + (family ? 0.2 : 0));
   }
+}
+
+// A rough bath (hurt while being bathed: Memory.js), or nearly drowning
+// (HorsePhysics): afraid of baths and water from then on, until it gets
+// over it (comfort, the Brave lesson, gentle baths: Bath.js)
+function learnFearOfBaths(f, amount) {
+  if (!f || !f.isAlive) return;
+  changeFear(f, "bath", amount);
+}
+
+// Bath.js scrubFluffy: a new bath for one that's afraid of them
+function onBathTime(f) {
+  if (!f || fearOf(f, "bath") < FEAR_MIN) return false;
+  return startFright(f, "bath");
 }
 
 // globals.js handleDropping: put in a cage

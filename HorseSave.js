@@ -16,6 +16,7 @@
 
 const SAVED_HORSE_FIELDS = [
   { name: "deathTimer", fallback: 0 }, // Corpses.js
+  { name: "notForSale", fallback: false }, // NotForSale.js
   { name: "separation", fallback: null, clone: true }, // Separation.js
   { name: "traumas", fallback: [], clone: true },
   { name: "hurtByPlayerAt", fallback: null }, // Memory.js

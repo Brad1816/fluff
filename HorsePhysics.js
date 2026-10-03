@@ -36,6 +36,8 @@ class HorsePhysics {
         this.horse.isDestroyed = true;
       }
     } else {
+      // Pulled out alive: afraid of water (and baths) now (Fears.js)
+      if (this.horse.drowningTimer > 0 && this.horse.isAlive && typeof learnFearOfBaths === "function") learnFearOfBaths(this.horse, BATH_FROM_DROWNING);
       this.horse.drowningTimer = 0;
     }
   }
