@@ -480,6 +480,8 @@ function drawSurgery(c) {
     under: "From underneath, head at the top: its left is on your right",
   }[surgery.view];
   c.fillText(caption, L.art.x + 10, L.art.y + L.art.h - 10);
+  // Its face up close, and what it's saying (Micro.js)
+  if (typeof drawSurgeryCloseUp === "function") drawSurgeryCloseUp(c, f, L);
 
   // The hovered part's name, by the mouse
   if (surgery.hover && isPointInRect(mouse.x, mouse.y, L.art.x, L.art.y, L.art.w, L.art.h)) {
@@ -835,6 +837,7 @@ function surgeryCut(id) {
   const before = surgeryPartPresent(f, id);
   knifeCut(f, id === "body" ? "torso" : id, surgery.knife);
   if (typeof onMouthSurgery === "function") onMouthSurgery(f, id); // teeth, tongue (Tools.js)
+  if (typeof surgeryPainLine === "function") surgeryPainLine(f, id); // what it says, part by part (Micro.js)
   surgery.knife.whackTimer = 0.2;
   const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
   if (!f.isAlive) surgery.note = `${name} died.`;

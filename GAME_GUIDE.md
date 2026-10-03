@@ -2725,3 +2725,16 @@ from. Nothing player-facing reads it yet except the debug view.
   poisoned food (`mixPoison` in Bowl.fill, `atePoisonedFood`,
   `poisonWitnessed` from triggerVomit, `fearsBowl`), Talk (`openTalk`,
   `talkTo`: explain / bad / cruel).
+
+### Batch 15: the big ones (plan batch 5)
+- **Heat.js:** summer heat (`placeHeat` by hour, `heatAt` with fans, shade,
+  sprinklers, heaters; `heatExposure`), `f.heat` (saved), wilting and
+  thirst (`heatHungerMultiplier` in weatherHungerMultiplier), heatstroke
+  death, `HeatDesire` (water bowl / fan / sprinkler / shade), `WaterBowl`
+  and `Fan` items, "nu-hawt-baww" moon lines.
+- **Micro.js:** microfluffs (`f.micro`: `microScale`, `microHungerMultiplier`,
+  `microImpactFactor`, `microBlowFactor`, x2.5 price, collectors' liking,
+  `microInherit`, `maybeMicroGroup` in the park). Sensitive babies in
+  stages (`sbsStage`/`sbsShows` in HorseRenderer; `sbsVisible` hides the
+  condition chip until it shows; `vetSpotsSbs`). The surgery close-up
+  (`drawSurgeryCloseUp` face panel, `surgeryPainLine` by part).

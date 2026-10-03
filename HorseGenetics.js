@@ -445,6 +445,8 @@ class HorseGenetics {
     // A glued-on horn and wings sell like an alicorn's (Trade.js); a forever foal at a premium (Tools.js)
     if (typeof fakeAlicornPriceMultiplier === "function") price *= fakeAlicornPriceMultiplier(this.horse);
     if (typeof foreverFoalPriceMultiplier === "function") price *= foreverFoalPriceMultiplier(this.horse);
+    // A microfluff (Micro.js)
+    if (typeof microPriceMultiplier === "function") price *= microPriceMultiplier(this.horse);
     // Titles: Cherished x1.1, Broken x0.8... (Titles.js)
     if (typeof titlePriceMultiplier === "function") price *= titlePriceMultiplier(this.horse);
 

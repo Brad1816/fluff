@@ -106,7 +106,7 @@ addHorseMethods({
       // A Smarty's shove (SmartyMood.js): stings, never kills
       target.health = Math.min(target.health, Math.max(SMARTY_BULLY_FLOOR, target.health - SMARTY_BULLY_DAMAGE));
     } else {
-      target.health -= 10;
+      target.health -= 10 * (typeof microBlowFactor === "function" ? microBlowFactor(target) : 1); // (a microfluff: Micro.js)
     }
     // Knocked about while it heals: a setback (Bandages.js)
     if (typeof recoverySetback === "function") recoverySetback(target);

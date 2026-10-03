@@ -42,6 +42,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "toothless", fallback: false },
   { name: "tongueless", fallback: false },
   { name: "fearedBowls", fallback: null, clone: true },
+  { name: "heat", fallback: 0 }, // Heat.js
+  { name: "micro", fallback: false }, // Micro.js
+  { name: "sbsKnown", fallback: false },
   { name: "separation", fallback: null, clone: true }, // Separation.js
   { name: "traumas", fallback: [], clone: true },
   { name: "hurtByPlayerAt", fallback: null }, // Memory.js

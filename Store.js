@@ -20,7 +20,7 @@ const STORE_AISLES = [
   {
     id: "food",
     name: "Food & Feeding",
-    items: ["food_bag", "bowl", "trough", "feeder", "mega_feeder"],
+    items: ["food_bag", "bowl", "trough", "feeder", "mega_feeder", "water_bowl"],
   },
   {
     id: "home",
@@ -35,6 +35,7 @@ const STORE_AISLES = [
       "fence_gate",
       "sprinkler",
       "heater",
+      "fan",
       "perch",
       "plushie",
       "memorial_tree",

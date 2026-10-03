@@ -739,6 +739,7 @@ addHorseMethods({
       (dt / 450.0 + (dt / 225.0) * (1.0 - this.growth)) *
       debugHungerMultiplier *
       traitHunger *
+      (typeof microHungerMultiplier === "function" ? microHungerMultiplier(this) : 1) * // a microfluff eats little (Micro.js)
       (typeof weatherHungerMultiplier === "function" ? weatherHungerMultiplier(this) : 1); // snow (WorldTime.js)
 
     // Drug Metabolism & Bloodstream Logic

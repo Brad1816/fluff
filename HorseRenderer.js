@@ -216,7 +216,7 @@ class HorseRenderer {
     if (images.eye) this.tinted.eye_pink = tintImage(images.eye, "#ffcccc");
     if (images.cheek) {
       const cheekImgToUse =
-        this.horse.isSensitive() && images.cheek_sbs
+        (typeof sbsShows === "function" ? sbsShows(this.horse, "head") : this.horse.isSensitive()) && images.cheek_sbs
           ? images.cheek_sbs
           : images.cheek;
       this.tinted.cheek = tintImage(cheekImgToUse, this.horse.colors.body);
@@ -755,9 +755,11 @@ class HorseRenderer {
     }));
 
     const belly = typeof weightBelly === "function" ? weightBelly(this.horse) : 0;
-    if (this.horse.isPregnant || this.horse.isSensitive() || belly > 0) {
+    // (a sensitive baby's belly shows at its second stage: Micro.js)
+    const sbsBody = typeof sbsShows === "function" ? sbsShows(this.horse, "body") : this.horse.isSensitive();
+    if (this.horse.isPregnant || sbsBody || belly > 0) {
       let stretch = this.horse.isPregnant ? this.horse.pregnancyTorsoStretch || 0 : 0;
-      if (this.horse.isSensitive()) {
+      if (sbsBody) {
         stretch = 1.0;
       }
       // A chubby tummy (Diet.js)
@@ -908,7 +910,7 @@ class HorseRenderer {
       facingRight: true,
       isAlive: true,
       expression: getExpressionConfig("NEUTRAL"),
-      eyesClosed: !this.horse.eyesHaveGrown() || this.horse.isSensitive(),
+      eyesClosed: !this.horse.eyesHaveGrown() || (typeof sbsShows === "function" ? sbsShows(this.horse, "head") : this.horse.isSensitive()),
       earFlop: 0,
       wingYScale: 1.0,
       pupilOffset: { x: 0, y: 0 },
@@ -1379,7 +1381,7 @@ class HorseRenderer {
 
         ctx.drawImage(this.tinted.head, localOX, localOY, rect.w, rect.h);
 
-        if (this.horse.isSensitive() && this.tinted.sbs_double_chin) {
+        if ((typeof sbsShows === "function" ? sbsShows(this.horse, "neck") : this.horse.isSensitive()) && this.tinted.sbs_double_chin) {
           ctx.drawImage(
             this.tinted.sbs_double_chin,
             localOX - 10,

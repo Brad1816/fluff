@@ -108,7 +108,8 @@ function describeInspectionAge(f) {
 function getInspectionConditions(f) {
   const bad = [];
   const good = [];
-  if (f.isSensitive && f.isSensitive()) bad.push("sensitive baby");
+  // (only once it shows, or the vet's said: Micro.js)
+  if (f.isSensitive && f.isSensitive() && (typeof sbsVisible !== "function" || sbsVisible(f))) bad.push("sensitive baby");
   if (f.isPoisoned) bad.push("poisoned");
   if (f.isToxoplasmosis) bad.push("toxoplasmosis");
   if (f.isDiarrhea) bad.push("diarrhea");
@@ -235,7 +236,7 @@ function getFluffyInspectionInfo(f) {
   // Which herd it's in (Herds.js)
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
-    for (const [label, fn] of [["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"]]) {
+    for (const [label, fn] of [["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"], ["Heat", "describeHeat"], ["Size", "describeMicro"]]) {
       const r = typeof window[fn] === "function" ? window[fn](f) : null; // (Trade.js, Tools.js)
       if (r) about.push({ label, value: r[0], tone: r[1] });
     }
@@ -425,7 +426,7 @@ const INSPECTION_TABS = [
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Pregnant", "Resting", "Breeding", "Worn out", "Spayed"] },
+      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Heat", "Pregnant", "Resting", "Breeding", "Worn out", "Spayed"] },
       { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Injuries", "Settling in", "Sells for"] },
     ],
   },
@@ -443,7 +444,7 @@ const INSPECTION_TABS = [
     id: "looks",
     name: "Looks & nature",
     cols: [
-      { title: "Looks", rows: ["Gender", "Type", "Age", "Coat", "Mane", "Runt", "Fake alicorn", "Deformities", "Mouth", "Scars", "Ribbons"] },
+      { title: "Looks", rows: ["Gender", "Type", "Size", "Age", "Coat", "Mane", "Runt", "Fake alicorn", "Deformities", "Mouth", "Scars", "Ribbons"] },
       { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
     ],
   },

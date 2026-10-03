@@ -579,6 +579,12 @@ const DIALOGUE = {
       CHIRPY: ["*nudge* *chirp?*", "*peep?*"],
     },
   },
+  // Summer heat (Heat.js)
+  HEAT: {
+    HOT: ["Hawt baww am too hawt...", "Fwuffy mewting... *pant pant*", "Need wawa... suu hawt...", "Shady pwace... need shady pwace..."],
+    MOON: ["Nu-hawt-baww! Bestest baww!", "Nu-hawt-baww come! Nu mowe hawt!", "Hewwo nu-hawt-baww... fank yu..."],
+    DRINK: ["*swurp swurp* Cowd wawa!", "Ahh... wawa bestest...", "Nummy cowd wawa!"],
+  },
   // Plan batch 4: trade and tools (Trade.js, Mill.js, Tools.js)
   FAKE_ALICORN: {
     GLUED: ["Wai mistah put pointy on <speaker> head? Ow...", "<Speaker> hab wingies nao?! ...Nu can fwap...", "Pointy fing itchy... wingies stuck..."],

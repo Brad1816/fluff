@@ -208,6 +208,8 @@ class Horse {
     if (typeof FoalTradeDesire !== "undefined") this.brain.addDesire(new FoalTradeDesire());
     // Dizzy from being spun round (Tools.js)
     if (typeof DizzyDesire !== "undefined") this.brain.addDesire(new DizzyDesire());
+    // Too hot: shade, water, a fan (Heat.js)
+    if (typeof HeatDesire !== "undefined") this.brain.addDesire(new HeatDesire());
     // Frightened by thunder, the dark or the Fluff-Bot (Fears.js)
     if (typeof FrightDesire !== "undefined") this.brain.addDesire(new FrightDesire());
     // Chasing the ball in your hand (Play.js)
@@ -997,6 +999,8 @@ class Horse {
     this.scale *= lerp(this.prematureGrowth == null ? 1 : this.prematureGrowth, 1.0, this.growth);
     // A runt stays small (Runts.js)
     if (this.runt && typeof runtScale === "function") this.scale *= runtScale(this);
+    // A microfluff is tiny (Micro.js)
+    if (this.micro && typeof microScale === "function") this.scale *= microScale(this);
     this.updateCrawling();
   }
 
@@ -1336,9 +1340,11 @@ class Horse {
     if (typeof speed !== "number" || isNaN(speed)) return;
     // A pegasus's wings break the fall (Flight.js): it takes a harder landing to hurt it, and hurts less
     const minSpeed = typeof wingImpactThreshold === "function" ? wingImpactThreshold(this, THROW_IMPACT_MIN_SPEED) : THROW_IMPACT_MIN_SPEED;
-    if (speed < minSpeed) return;
+    // (a microfluff breaks from lower down, and worse: Micro.js)
+    const micro = typeof microImpactFactor === "function" ? microImpactFactor(this) : 1;
+    if (speed * Math.sqrt(micro) < minSpeed) return;
 
-    const damage = speed * THROW_IMPACT_DAMAGE_FACTOR * (typeof wingDamageFactor === "function" ? wingDamageFactor(this) : 1);
+    const damage = speed * THROW_IMPACT_DAMAGE_FACTOR * (typeof wingDamageFactor === "function" ? wingDamageFactor(this) : 1) * micro;
     this.health = Math.max(0, this.health - damage);
 
     const vol = Math.min(1.0, Math.max(0.4, speed / 1500));

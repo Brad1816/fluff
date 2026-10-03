@@ -156,7 +156,9 @@ function sleepRateMultipliers() {
 function weatherHungerMultiplier(f) {
   // ...and cold fluffies anywhere (Warmth.js)
   const cold = typeof coldHungerMultiplier === "function" ? coldHungerMultiplier(f) : 1;
-  return (isOutdoorScene(f.scene) ? 1 + 0.4 * snowAmount() : 1) * cold;
+  // ...and hot ones get thirsty (Heat.js)
+  const hot = typeof heatHungerMultiplier === "function" ? heatHungerMultiplier(f) : 1;
+  return (isOutdoorScene(f.scene) ? 1 + 0.4 * snowAmount() : 1) * cold * hot;
 }
 
 // How fast grass / berries grow right now (Grass.js, ParkLife.js)

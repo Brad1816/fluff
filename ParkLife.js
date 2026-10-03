@@ -300,6 +300,7 @@ function spawnParkGroup(kind = null, at = null) {
   } else {
     group.push(_makeWild(1, at, { personalities: _wildPersonality(), youngAbandoned: Math.random() < 0.3 }));
   }
+  if (typeof maybeMicroGroup === "function") maybeMicroGroup(group); // (now and then, microfluffs: Micro.js)
   return group;
 }
 
