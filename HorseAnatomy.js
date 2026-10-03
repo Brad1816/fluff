@@ -711,7 +711,7 @@ class HorseAnatomy {
     if (isViable) {
       baby.speak(getDialogue("BABY_PEEP", baby, this.horse));
     } else {
-      this.horse.speak(getDialogue(["BIRTH", "DEAD_BABY"], this.horse, baby));
+      this.horse.speak(getDialogue(this.horse.isSensitive() ? ["SENSITIVE", "DEAD_BABY"] : ["BIRTH", "DEAD_BABY"], this.horse, baby));
     }
     return isViable; // (born alive)
   }

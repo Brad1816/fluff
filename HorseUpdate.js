@@ -281,7 +281,7 @@ addHorseMethods({
             this.blockOnBack.groundY = this.y;
             this.blockOnBack = null;
           }
-          this.speak(getDialogue(["BIRTH", "PAIN"], this), true);
+          this.speak(getDialogue(this.isSensitive() ? ["SENSITIVE", "BIRTH_PAIN"] : ["BIRTH", "PAIN"], this), true); // (a sensitive mare has her own words: Inbreeding.js)
           this.initBehavior("BENDING_2");
           this.stateTimer = 0.8;
           const viabilityIdx = this.foalViability.length - this.babiesToBirth;

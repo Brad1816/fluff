@@ -666,6 +666,8 @@ const DIALOGUE = {
     UPSIES: ["NU UPSIES! BABBEH TUU SENSITIB!", "Nu! Nu upsies! Huwties!", "*SCREE* Down! Down! Su sensitib!", "Gentwe... babbeh su sensitib..."],
     BABBLE: ["Babbeh su sensitib...", "Wan' mummah... su tiwed...", "Huu... evewyfin' huwties...", "Peep... babbeh nu wike woud...", "Su sweepy... aww da time..."],
     BIRTH: ["Sensitib tummeh huwties!! Biggest poopies!!", "Babbeh hab babbehs?? Su sensitib!!", "*SCREE* Tuu big! Tuu big fo' sensitib!"],
+    BIRTH_PAIN: ["*SCREEE* SU SENSITIB!! HUWTIES!!", "Nu mowe! Babbeh tuu sensitib fo' dis!", "Huu huu... sensitib tummeh...", "EEEEE!! Mummah! Wan' mummah!!"],
+    DEAD_BABY: ["<Target>? Wai nu peep...?", "Babbeh... sweepies...? Huu...", "Nu make bweathies... sensitib babbeh su sad..."],
   },
   // Wishes (Wishes.js): one line per kind, said now and then
   WISH: {

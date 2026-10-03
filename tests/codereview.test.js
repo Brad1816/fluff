@@ -255,4 +255,90 @@ module.exports = [
       check(r.spread, "tickers spread out");
     },
   },
+  {
+    name: "codereview: thread bugs - bars stop reaching, cars hit the cage not what's in it, sensitive birth lines, tiny mess, renaming saves, fostered foals stay yours",
+    run: async (page) => {
+      const r = await page.evaluate(async (setup) => {
+        eval(setup)();
+        const out = {};
+        // Bars: a mare outside can't reach a foal in an enclosure
+        const enc = new Enclosure("INDOORS");
+        enc.x = 700;
+        enc.y = 520;
+        enc.updateBounds();
+        objects.push(enc);
+        const mare = __mk(600);
+        const foal = __mk(700, { growth: 0.2 });
+        foal.currentCage = enc;
+        out.reachOut = canFluffiesReachEachOther(mare, foal);
+        const mate = __mk(710, { growth: 0.2 });
+        mate.currentCage = enc;
+        out.reachIn = canFluffiesReachEachOther(foal, mate);
+        objects.splice(objects.indexOf(enc), 1);
+        // Cars: a cage beside the road keeps them safe; one on the road doesn't
+        cars.length = 0;
+        const realScene = currentScene;
+        currentScene = "ALLEY_ROAD";
+        const side = new Cage("ALLEY_ROAD");
+        side.x = 400;
+        side.y = 330;
+        side.updateBounds();
+        const road = new Cage("ALLEY_ROAD");
+        road.x = 900;
+        road.y = 470;
+        road.updateBounds();
+        objects.push(side, road);
+        const safe = __mk(400, { scene: "ALLEY_ROAD", growth: 0.2, y: side.getBottomY() + 60 });
+        safe.currentCage = side;
+        const doomed = __mk(900, { scene: "ALLEY_ROAD", y: road.getBottomY() - 5 });
+        doomed.currentCage = road;
+        carSpawnTimer = 999;
+        const car = new Car("ALLEY_ROAD");
+        car.direction = "left-to-right";
+        car.x = -600;
+        car.vx = 1200;
+        car.y = 340;
+        cars.push(car);
+        for (let t = 0; t < 120; t++) {
+          safe.y = side.getBottomY() + 60; // (its feet poke into the lane)
+          updateSimulation(1 / 60);
+        }
+        out.safe = safe.isAlive;
+        out.doomed = !doomed.isAlive;
+        cars.length = 0;
+        objects.splice(objects.indexOf(side), 1);
+        objects.splice(objects.indexOf(road), 1);
+        currentScene = realScene;
+        // A sensitive mare in labour has her own words
+        const sm = __mk(300);
+        sm.isSensitive = () => true;
+        out.sensitiveLine = getDialogue(sm.isSensitive() ? ["SENSITIVE", "BIRTH_PAIN"] : ["BIRTH", "PAIN"], sm);
+        // A newborn's mess is a newborn's size
+        const big = __mk(200);
+        const tiny = __mk(260, { growth: 0 });
+        out.mess = [+big.messSize().toFixed(2), +tiny.messSize().toFixed(2)];
+        // Fostered by a wild mare in your room: still yours
+        const wild = __mk(400, { adopted: false });
+        const orphan = __mk(420, { growth: 0.1 });
+        takeInFoal(wild, orphan);
+        out.stillYours = orphan.adopted === true && orphan.canBeSold();
+        // Renaming a save
+        await saveManager.save("__ren_a__", { fluffies: [], objects: [], x: 1 });
+        const realPrompt = window.prompt;
+        window.prompt = () => "__ren_b__";
+        await renameSave("__ren_a__");
+        window.prompt = realPrompt;
+        const names = await saveManager.listSaves();
+        out.renamed = names.includes("__ren_b__") && !names.includes("__ren_a__");
+        await saveManager.delete("__ren_b__");
+        return out;
+      }, SETUP);
+      check(r.reachOut === false && r.reachIn === true, `bars: ${JSON.stringify(r)}`);
+      check(r.safe && r.doomed, `cars hit the cage where it stands: ${JSON.stringify(r)}`);
+      check(/sensitib|SENSITIB|mummah/i.test(r.sensitiveLine), `sensitive labour line: ${r.sensitiveLine}`);
+      check(r.mess[1] < r.mess[0] * 0.5, `tiny mess: ${r.mess}`);
+      check(r.stillYours, "a fostered foal in your room stays yours");
+      check(r.renamed, "a save can be renamed");
+    },
+  },
 ];

@@ -117,7 +117,11 @@ function canFoster(m, foal) {
 function takeInFoal(mare, foal) {
   const rels = relationships[mare.id] || (relationships[mare.id] = {});
   foal.motherId = mare.id;
-  foal.adopted = mare.adopted;
+  // (yours stays yours: a wild mare in one of your rooms fostering it doesn't
+  // make it hers to take - the shift-click sale and the buyers skip
+  // fluffies that aren't yours)
+  const indoors = typeof getSceneConfig === "function" && getSceneConfig(foal.scene).insidePlayerQuarters;
+  foal.adopted = mare.adopted || (indoors && foal.adopted);
   // A new mum: whatever it forgot about the old one doesn't apply (FoalLife.js)
   foal.forgotMum = false;
   foal.mumApart = 0;

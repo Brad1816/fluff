@@ -336,6 +336,8 @@ class HorseRenderer {
         leftLegAngle = rightLegAngle = Math.PI / 4;
         if (
           this.horse.currentStateKey === "SITTING" &&
+          // (not while the game's paused: it shouldn't turn and wave at you then)
+          (typeof gameState === "undefined" || gameState === "PLAYING") &&
           this.horse.canSee() &&
           Math.sqrt(
             (mouse.x - this.horse.x) ** 2 + (mouse.y - this.horse.y) ** 2,

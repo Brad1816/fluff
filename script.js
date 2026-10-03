@@ -1499,10 +1499,20 @@ function updateSimulation(dt) {
           const fRadius = 30 * f.scale;
           const fHeight = 50 * f.scale;
 
-          const fLeft = f.x - fRadius;
-          const fRight = f.x + fRadius;
-          const fTop = f.y - fHeight;
-          const fBottom = f.y;
+          let fLeft = f.x - fRadius;
+          let fRight = f.x + fRadius;
+          let fTop = f.y - fHeight;
+          let fBottom = f.y;
+          // In a cage or enclosure: the car hits the cage where it stands,
+          // not the fluffies inside - one on the road is run over with
+          // everything in it, one beside the road keeps them safe
+          const cg = f.currentCage;
+          if (cg && cg.bounds && typeof cg.getBottomY === "function") {
+            fLeft = cg.bounds.left;
+            fRight = cg.bounds.right;
+            fBottom = cg.getBottomY();
+            fTop = fBottom - 50;
+          }
 
           const carLeft = car.x;
           const carRight = car.x + carW;

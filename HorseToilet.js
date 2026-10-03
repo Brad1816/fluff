@@ -11,6 +11,7 @@
 // grown fluffy. Once an hour each (LITTER_PLACE_REST) so it can't be spammed.
 const LITTER_PLACE_LEARN = 0.04;
 const LITTER_PLACE_REST = HOUR_LENGTH;
+const MESS_ADULT_SCALE = 0.48; // (a grown fluffy's size: Horse.updateGrowthStats)
 
 addHorseMethods({
   // The litterbox it was just dropped in, if any (not a full one)
@@ -214,8 +215,9 @@ addHorseMethods({
       const pX = this.x + offsetX;
       const pY = this.getBottomY() - 10;
 
-      // Size based on amount and growth
-      const baseTargetScale = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.growth);
+      // Size based on amount and growth - and on how big it is for its age
+      // (a micro, a runt, one born early: Micro.js, Runts.js, Premature.js)
+      const baseTargetScale = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.growth) * this.messSizeForAge();
 
       addPointToPuddle(this.scene, pX, pY, puddleColor, 5 / 200, baseTargetScale, 0.02);
       // Went on the floor: gets a bit on itself (Bath.js)
@@ -268,6 +270,17 @@ addHorseMethods({
     this.litterboxJitterOffset = 0;
   },
 
+  // How big its mess is next to a grown fluffy's: its size against a
+  // grown one's (MESS_ADULT_SCALE)
+  messSize() {
+    return Math.max(0.15, Math.min(1.3, (this.scale || MESS_ADULT_SCALE) / MESS_ADULT_SCALE));
+  },
+  // ...and against an ordinary fluffy of its age
+  messSizeForAge() {
+    const usual = MESS_ADULT_SCALE * (0.25 + 0.75 * Math.min(1, this.growth));
+    return Math.max(0.2, Math.min(1.3, (this.scale || usual) / usual));
+  },
+
   excretePoop(dt) {
     if (typeof addDirt === "function") addDirt(this, 0.02 * dt); // the runs are messy (Bath.js)
     if (typeof fluffySound === "function") fluffySound(this, "shitting"); // (the runs)
@@ -277,12 +290,13 @@ addHorseMethods({
     const pY = this.getBottomY() - 10;
     const puddleColor = "#5c4033";
 
-    // Increment area-based target scale
+    // Increment area-based target scale (a tiny foal leaves a tiny trail)
+    const k = this.messSize();
     const targetAddedAreaPerSec = 0.05;
-    const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt);
+    const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt) * k;
 
     const addedAreaPerSec = 0.01;
-    const scaleInc = Math.sqrt(addedAreaPerSec * dt);
+    const scaleInc = Math.sqrt(addedAreaPerSec * dt) * k;
 
     addPointToPuddle(this.scene, pX, pY, puddleColor, scaleInc, targetScaleInc, 0.02);
   },
@@ -294,12 +308,13 @@ addHorseMethods({
     const pY = this.getBottomY() - 6;
     const puddleColor = "#f1c40f";
 
-    // Increment area-based target scale
+    // Increment area-based target scale (a tiny foal leaves a tiny trail)
+    const k = this.messSize();
     const targetAddedAreaPerSec = 0.05;
-    const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt);
+    const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt) * k;
 
     const addedAreaPerSec = 0.01;
-    const scaleInc = Math.sqrt(addedAreaPerSec * dt);
+    const scaleInc = Math.sqrt(addedAreaPerSec * dt) * k;
 
     addPointToPuddle(this.scene, pX, pY, puddleColor, scaleInc, targetScaleInc, 0.02);
   },

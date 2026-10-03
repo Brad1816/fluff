@@ -35,7 +35,7 @@ function scaredyMess(f, strength = 0.5) {
   // The puddle, under it (as HorseToilet.excrete, without the scolding)
   const torsoWidth = f.layout ? f.layout.torso.w : 100;
   const offsetX = (torsoWidth / 2) * (f.facingRight ? -1 : 1) * f.scale * (poop ? 1 : 0.5);
-  const size = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, f.growth);
+  const size = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, f.growth) * (typeof f.messSizeForAge === "function" ? f.messSizeForAge() : 1);
   if (typeof addPointToPuddle === "function") addPointToPuddle(f.scene, f.x + offsetX, f.getBottomY() - 8, poop ? "#5c4033" : "#f1c40f", 5 / 200, size, 0.02);
   if (typeof addDirt === "function") addDirt(f, DIRT_FROM_ACCIDENT * (poop ? 0.8 : 0.3));
   if (poop && typeof fluffySound === "function") fluffySound(f, "shitting");

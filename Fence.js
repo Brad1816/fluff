@@ -814,6 +814,9 @@ function fenceCanReachThing(horse, thing) {
 }
 
 function canFluffiesReachEachOther(a, b) {
+  // One in a cage or enclosure and the other not (or in another one): the
+  // bars are in the way
+  if (a && b && a.scene === b.scene && (a.currentCage || null) !== (b.currentCage || null)) return false;
   return fenceCanReachThing(a, b);
 }
 

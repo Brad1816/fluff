@@ -646,6 +646,32 @@ async function selectSave(saveName) {
   }
 }
 
+// Give a save a new name (it's copied to the new name, then the old one goes)
+async function renameSave(oldName) {
+  const answer = prompt(`New name for "${oldName}":`, oldName);
+  if (!answer || !answer.trim() || answer.trim() === oldName) return false;
+  const newName = answer.trim();
+  const existing = saveList && saveList.length ? saveList : await saveManager.listSaves();
+  if (existing && existing.includes(newName) && !confirm(`A save named "${newName}" already exists. Overwrite it?`)) return false;
+  const data = await saveManager.load(oldName);
+  if (!data) return false;
+  await saveManager.save(newName, data);
+  await saveManager.delete(oldName);
+  if (typeof savePreviewCache !== "undefined" && savePreviewCache && savePreviewCache.has(oldName)) {
+    savePreviewCache.set(newName, savePreviewCache.get(oldName));
+    savePreviewCache.delete(oldName);
+  }
+  // (Continue on the title screen follows it: Autosave.js)
+  if (typeof lastSaveInfo === "function" && typeof noteLastSave === "function") {
+    const last = lastSaveInfo();
+    if (last && last.slot === oldName) noteLastSave(newName);
+  }
+  selectedSaveName = newName;
+  await refreshSaveList();
+  await selectSave(newName);
+  return true;
+}
+
 async function refreshSaveList() {
   saveList = await saveManager.listSaves();
   const panelW = Math.min(840, width - 40);
@@ -664,6 +690,11 @@ async function refreshSaveList() {
     if (!selectedSaveName || !saveList.includes(selectedSaveName)) {
       selectedSaveName = saveList[0];
     }
+    // The chosen save in sight (a new one may be below the bottom of the list)
+    const i = saveList.indexOf(selectedSaveName);
+    const top = i * (itemH + gap);
+    if (top < saveListScrollOffset) saveListScrollOffset = top;
+    else if (top + itemH > saveListScrollOffset + listH) saveListScrollOffset = Math.min(maxScroll, top + itemH - listH);
   } else {
     selectedSaveName = null;
   }
@@ -1102,6 +1133,14 @@ function drawSaveList() {
       normalFill: "rgba(180, 40, 40, 0.3)",
       hoverFill: "rgba(220, 60, 60, 0.6)",
     });
+
+    const renameBtnW = 90;
+    const renameBtnX = delBtnX - btnSpacing - renameBtnW;
+    drawGlassButton(renameBtnX, loadY, renameBtnW, loadH, "Rename", {
+      borderRadius: 6,
+      fontSize: 15,
+      disabled: !selectedSaveName,
+    });
   } else {
     const exportBtnW = 90;
     const exportBtnX = loadX - btnSpacing - exportBtnW;
@@ -1119,6 +1158,14 @@ function drawSaveList() {
       disabled: !selectedSaveName,
       normalFill: "rgba(180, 40, 40, 0.3)",
       hoverFill: "rgba(220, 60, 60, 0.6)",
+    });
+
+    const renameBtnW = 90;
+    const renameBtnX = delBtnX - btnSpacing - renameBtnW;
+    drawGlassButton(renameBtnX, loadY, renameBtnW, loadH, "Rename", {
+      borderRadius: 6,
+      fontSize: 15,
+      disabled: !selectedSaveName,
     });
   }
 }
@@ -1209,6 +1256,8 @@ async function handleSaveListClick() {
 
   const delBtnW = 85;
   const delBtnX = exportBtnX - btnSpacing - delBtnW;
+  const renameBtnW = 90;
+  const renameBtnX = delBtnX - btnSpacing - renameBtnW;
 
   // 1. Back button
   if (isPointInRect(mouse.x, mouse.y, backX, loadY, backW, backH)) {
@@ -1261,6 +1310,12 @@ async function handleSaveListClick() {
         await refreshSaveList();
       }
     }
+    return;
+  }
+
+  // 5b. Rename button
+  if (isPointInRect(mouse.x, mouse.y, renameBtnX, loadY, renameBtnW, loadH)) {
+    if (selectedSaveName) await renameSave(selectedSaveName);
     return;
   }
 
