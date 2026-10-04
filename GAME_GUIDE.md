@@ -3139,3 +3139,10 @@ from. Nothing player-facing reads it yet except the debug view.
 - **Household:** three little bars under the hearts (happiness, food,
   health: `inspectionVitalLevel`) and what it's doing under its room
   (`describeDoing`).
+- **From the long sims:** tower stories fed on themselves (every retelling
+  topped listeners up faster than the fear faded, so whole houses stayed
+  terrified) - a retold story now leaves the listener at most
+  `TOWER_RETOLD` of the teller's fear, and fluffies going missing (sold,
+  taken) scare a room-mate once a day at most (a killing always counts);
+  sleep scouting no longer trips over a fluffy whose picture is being
+  redrawn (shaved, revived: `renderer.tinted` null).

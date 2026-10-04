@@ -350,7 +350,7 @@ class HorsePositioning {
           bestBed.type === "cardboard_box"
             ? bestBed.y + CARDBOARD_BOX_SLEEP_OFFSET
             : bestBed.y -
-              (this.horse.renderer.tinted.torso.height +
+              ((this.horse.renderer.tinted ? this.horse.renderer.tinted.torso.height : 60) + // (null while it's being redrawn: shaved, revived...)
                 this.horse.renderer.layout.stretch) *
                 0.8 *
                 this.horse.scale;

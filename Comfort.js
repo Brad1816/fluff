@@ -47,6 +47,7 @@ const VET_LIE_DAYS = 2;
 const VET_LIE_HIT = 0.3;
 const TOWER_HEARD = 0.25;
 const TOWER_FADE = 0.15; // a game day
+const TOWER_RETOLD = 0.6; // a retelling leaves the listener at most this much of the teller's fear
 const LAST_STRAW = 5;
 const LAST_STRAW_HIT = 30;
 const COLLAPSE_HOURS = 24;
@@ -287,12 +288,16 @@ function _vetLieFoundOut(mum) {
 // ---- "Da towew" ----
 let _towerKnown = null; // id -> { scene, alive }
 
-function _towerTaken(f, scene) {
-  // Room-mates who knew it hear the story
+function _towerTaken(f, scene, killed = false) {
+  // Room-mates who knew it hear the story (one gone missing a day is enough
+  // to scare them - a busy day of sales doesn't stack up; a killing always does)
+  const day = typeof getDayNumber === "function" ? getDayNumber() : 0;
   for (const o of fluffies) {
     if (o === f || !o.isAlive || !o.adopted || o.scene !== scene || o.tooYoungToSpeak()) continue;
     const knew = typeof haveMet !== "function" || haveMet(o, f);
     if (!knew) continue;
+    if (!killed && o._towerDay === day) continue;
+    o._towerDay = day;
     hearTowerStory(o, TOWER_HEARD);
   }
 }
@@ -314,7 +319,7 @@ function _towerCheck() {
       const away = typeof dayCareFluffies !== "undefined" && Array.isArray(dayCareFluffies) && dayCareFluffies.some((d) => String(d.id) === String(id)); // (only at day care)
       const takenAlive = !cur && !away && typeof getSceneConfig === "function" && getSceneConfig(was.scene).insidePlayerQuarters;
       const killed = cur && !cur.alive && /cull|suffocat|grind|machine|mill|put to sleep|ground/i.test(cur.cause);
-      if (takenAlive || killed) _towerTaken({ id }, was.scene);
+      if (takenAlive || killed) _towerTaken({ id }, was.scene, !!killed);
     }
   }
   _towerKnown = now;
@@ -451,10 +456,12 @@ function updateComfort(dt) {
     if ((f.towerFear || 0) > 0) {
       f.towerFear = Math.max(0, f.towerFear - (TOWER_FADE * step) / DAY_LENGTH);
       if (f.towerFear > 0.3 && f.scene === currentScene && Math.random() < 0.006 * step && f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak()) {
-        const listener = fluffies.find((o) => o !== f && o.isAlive && o.adopted && o.scene === f.scene && !o.tooYoungToSpeak() && Math.hypot(o.x - f.x, o.y - f.y) < 250);
+        // (a retold story is weaker: a listener ends up at most TOWER_RETOLD of
+        // the teller's fear, so it dies away instead of feeding on itself)
+        const listener = fluffies.find((o) => o !== f && o.isAlive && o.adopted && o.scene === f.scene && !o.tooYoungToSpeak() && Math.hypot(o.x - f.x, o.y - f.y) < 250 && (o.towerFear || 0) < f.towerFear * TOWER_RETOLD);
         if (listener) {
           _cSay(f, ["TOWER", "TELL"], listener);
-          hearTowerStory(listener, TOWER_HEARD * 0.4);
+          hearTowerStory(listener, Math.min(TOWER_HEARD * 0.4, f.towerFear * TOWER_RETOLD - (listener.towerFear || 0)));
         }
       }
     }

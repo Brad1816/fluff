@@ -493,12 +493,22 @@ module.exports = [
         d.formerPet = { how: "ran away", day: 1 };
         _towerCheck();
         out.tower = c.towerFear || 0;
+        // Retold stories die away: a listener tops out below the teller
+        const t = __mk(1200);
+        const l = __mk(1230);
+        l.towerFear = 0;
+        for (let i = 0; i < 400; i++) {
+          t.towerFear = 0.9;
+          updateComfort(30);
+        }
+        out.retold = l.towerFear || 0;
         return out;
       }, SETUP);
       check(!r.plaque && !r.mourning, "revived: off the plaque, nobody mourning");
       check(r.burnOnce, "the vet dresses a burn once");
       check(r.stack, "a stacked block isn't eaten");
       checkEqual(r.tower, 0, "a runaway isn't a tower story");
+      check(r.retold > 0 && r.retold <= 0.9 * 0.6 + 0.001, `a retold story is weaker (${r.retold})`);
     },
   },
 ];
