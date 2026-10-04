@@ -284,7 +284,7 @@ module.exports = [
     },
   },
   {
-    name: "exterminator: the herd fights back (no harm to you) - fighters run at you and kick; some cling to your legs and slow you until they drop off or you grab them; a smarty hangs back and orders the rest at you",
+    name: "exterminator: the herd fights back (no harm to you) - fighters run at you and kick; some cling to your legs and slow you until they drop off or you grab them; a smarty marches out and orders the rest at you; a killing breaks them",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -385,12 +385,12 @@ module.exports = [
         timePlayed += EXT_CLING_TIME + 1;
         updateExtFerals(1.1);
         out.bOff = !b.extCling && extClingSlow() === 1;
-        // A smarty: orders the herd at you from a safe distance
+        // A smarty: out in front of you with its speech, ordering the herd at you
         boss.personalities = [...(boss.personalities || []), "smarty"];
         boss.smartyKind = "bad";
         boss._extRage = undefined;
-        boss.x = extPlayer.x + 260;
-        boss.y = extPlayer.y;
+        boss.x = extPlayer.x + EXT_FRONT_DIST;
+        boss.y = _extFootY(boss, extPlayer.y + 6);
         const others = jobHerdLeft(job).filter((f) => f !== boss && f.growth >= 1 && f.scene === yard && !f.extHeld);
         for (const f of others) f._extRally = undefined;
         out.smartyScore = d.evaluate(boss);
@@ -398,11 +398,35 @@ module.exports = [
         d.execute(boss);
         out.rallied = others.length > 0 && others.every((f) => f._extRally === timePlayed);
         out.smartyStays = boss.targetX == null;
-        // Up close it runs instead
-        boss.x = extPlayer.x + 60;
-        boss._extRallyAt = timePlayed;
+        // From further off it marches out to meet you
+        boss.x = extPlayer.x + 330;
         d.evaluate(boss);
-        out.smartyRuns = d.mode === "flee" || d.mode === "hide";
+        d.execute(boss);
+        out.marches = d.mode === "front" && boss.targetX != null && Math.abs(boss.targetX - (extPlayer.x + EXT_FRONT_DIST)) < 5;
+        boss.x = extPlayer.x + EXT_FRONT_DIST;
+        // Kill one in front of them: the game's over - the rallied break, the smarty hides
+        const rallied = others.find((f) => f !== a && f !== b && f.isAlive && !f.extHeld) || b;
+        rallied._extRage = undefined;
+        rallied._extRally = timePlayed;
+        out.wasFighter = _extFighter(rallied);
+        const victim = jobHerdLeft(job).find((f) => f !== boss && f !== rallied && f !== a && f !== b && f.scene === yard) || jobHerdLeft(job).find((f) => f !== boss && f !== rallied);
+        victim.scene = yard;
+        victim.x = boss.x - 40;
+        victim.y = boss.y;
+        rallied.x = boss.x - 80;
+        rallied.y = boss.y;
+        rallied.canSee = () => true;
+        extCull(victim);
+        out.broken = !_extFighter(rallied);
+        d.evaluate(boss);
+        out.smartyRuns = boss._extPanic != null && (d.mode === "flee" || d.mode === "hide");
+        // Its herd gets a new smarty a little later
+        rallied.gender = "male";
+        boss.die("test", "Test");
+        onExtCaught(boss, true);
+        timePlayed += EXT_VACUUM_TIME + 1;
+        updateExtFerals(1.1);
+        out.newSmarty = jobHerdLeft(job).some((f) => f.isSmarty() && f !== boss);
         // A gagged fighter never bites
         a.extHeld = false;
         extPlayer.holding = [];
@@ -428,8 +452,11 @@ module.exports = [
       check(r.grabKind === "grab" && r.offLeg, "grabbed off your leg");
       check(r.shake, "hands full: shaken off");
       check(r.bCling && r.bOff, "one lets go in time");
-      check(r.smartyScore > 90 && r.smartyMode === "rally" && r.rallied && r.smartyStays, `the smarty orders the herd at you ${JSON.stringify([r.smartyScore, r.smartyMode, r.rallied, r.smartyStays])}`);
-      check(r.smartyRuns, "and runs if you come for it");
+      check(r.smartyScore > 90 && r.smartyMode === "front" && r.rallied && r.smartyStays, `the smarty makes its speech and orders the herd at you ${JSON.stringify([r.smartyScore, r.smartyMode, r.rallied, r.smartyStays])}`);
+      check(r.marches, "it marches out to meet you");
+      check(r.wasFighter && r.broken, "kill one in front of them and the rallied break");
+      check(r.smartyRuns, "and the smarty hides");
+      check(r.newSmarty, "a new smarty steps up");
       checkEqual(r.bites, 0, "a muzzled one can't bite");
     },
   },
@@ -576,7 +603,7 @@ module.exports = [
     },
   },
   {
-    name: "exterminator: a herd lives its life (mating and all) until it notices you - seen across the room, or one warns the rest; then mating stops, no courting or play, foals keep to mum; it forgets once you've been gone a while",
+    name: "exterminator: a herd lives its life (mating and all) until it notices you - seen across the room, or one warns the rest; then mating stops, no courting or play, foals keep to mum; it doesn't forget, and word gets round the herd",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -634,11 +661,22 @@ module.exports = [
         far.y = m.y;
         onExtCaught(m);
         out.heard = extAware(far);
-        // Gone a while: they forget
+        // Gone a while: they don't forget
         extPlayer.scene = site.rooms[0].scene;
-        timePlayed += EXT_AWARE_TIME + 2;
+        timePlayed += 600;
         updateExtFerals(1.1);
-        out.forgot = !herd.some((f) => extAware(f));
+        out.remember = herd.every((f) => extAware(f)) && veto(m, "Mate");
+        // Word gets round: one in another room that never saw you knows soon after
+        const other = herd.find((f) => f !== m && f !== w && f !== foal && f !== mum && f !== far);
+        other.scene = site.rooms[2].scene;
+        other._extAware = undefined;
+        job.wordOut = false;
+        job.seenAt = timePlayed;
+        updateExtFerals(1.1);
+        out.notYet = !extAware(other);
+        timePlayed += EXT_WORD_TIME + 1;
+        updateExtFerals(1.1);
+        out.word = extAware(other);
         return out;
       }, SETUP);
       check(r.carryOn, "unseen: the herd carries on as normal");
@@ -647,7 +685,127 @@ module.exports = [
       check(r.notOthers, "only the job's herd");
       check(r.toMum, "a foal keeps to its mum");
       check(r.heard, "a cry reaches the others");
-      check(r.forgot, "they forget once you've been gone a while");
+      check(r.remember, "once you've shown yourself, they don't forget");
+      check(r.notYet && r.word, "word gets round the whole herd");
+    },
+  },
+  {
+    name: "exterminator: cornered ones plead (beg, cover their eyes, dance, ask you to be daddy); a clever gentle mare holds out her foal - take it and she thanks you; hold one and Ask - it points to the rest (a smarty won't say); you hear an unaware herd next door, not one lying low",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        buyExtLicence();
+        const o = makeExtOffer(Math.random, "farmer");
+        o.herd = 9;
+        o.request = null;
+        extState.offers.push(o);
+        acceptExtOffer(o.id);
+        const job = extState.active;
+        const site = jobSite();
+        const yard = site.rooms[0].scene;
+        const out = {};
+        const herd = jobHerdLeft(job);
+        for (const f of herd) {
+          f.brain.think = () => {};
+          f.canSee = () => true;
+          f.personalities = (f.personalities || []).filter((x) => x !== "smarty");
+        }
+        const d = new ExtFeralDesire();
+        const rnd = Math.random;
+        // Sounds: the herd next door doesn't know you're here - you hear it
+        const next = Object.values(site.rooms[0].links)[0];
+        for (const f of herd) {
+          f.scene = next;
+          f._extAware = undefined;
+          f.currentStateKey = "IDLE";
+        }
+        extPlayer.scene = yard;
+        out.hear = extRoomSounds(yard).some((h) => h.scene === next && h.kind === "babbling");
+        // Once they know and lie low, nothing
+        for (const f of herd) {
+          f._extAware = timePlayed;
+          f.jobHide = { prop: 0 };
+          f.hiddenBy = -1;
+        }
+        out.quiet = !extRoomSounds(yard).some((h) => h.scene === next);
+        for (const f of herd) extUnhide(f);
+        // Cornered: pleads
+        const g = herd.find((f) => f.growth >= 1);
+        g.scene = yard;
+        g.x = 700;
+        g.y = 500;
+        g._extRage = undefined;
+        g.traits = g.traits || {};
+        extPlayer.x = 700;
+        extPlayer.y = 560;
+        const tvOld = traitValue;
+        traitValue = (f, k) => (k === "bravery" || k === "temper" ? -0.5 : tvOld(f, k));
+        Math.random = () => 0.1;
+        g._extPleading = null;
+        g._extPleadStyle = null;
+        g._extPleadRoll = undefined;
+        out.pleadScore = d.evaluate(g);
+        out.plead = d.mode;
+        d.execute(g);
+        Math.random = rnd;
+        out.style = g._extPleading;
+        out.sits = g.currentStateKey === "SITTING" || g.currentStateKey === "MOVING" || g.currentStateKey.startsWith("FLUFFY_") || g.currentStateKey === "IDLE";
+        // Back off and it runs
+        extPlayer.x = 700 + 200;
+        d.evaluate(g);
+        out.offPlead = d.mode !== "plead" && g._extPleading == null;
+        // A clever, gentle mare holds out her foal
+        const foal = herd.find((f) => f.growth < 1 && f.motherId);
+        const mum = fluffyById(foal.motherId);
+        mum.scene = foal.scene = yard;
+        mum.x = 400;
+        mum.y = 600;
+        foal.x = 440;
+        foal.y = 620;
+        traitValue = (f, k) => (f === mum && k === "wits" ? 0.6 : f === mum && (k === "temper" || k === "bravery") ? -0.4 : tvOld(f, k));
+        extPlayer.x = 400 + 160;
+        extPlayer.y = 640;
+        out.offerScore = d.evaluate(mum);
+        out.offer = d.mode;
+        d.execute(mum);
+        out.offered = foal._extOffered === true && d.evaluate(foal) > 0 && d.mode === "offered";
+        // Take it: she thanks you, no rage
+        extPlayer.x = foal.x;
+        extPlayer.y = foal.y + 20;
+        extGrab(foal);
+        out.noRage = mum._extRage == null;
+        traitValue = tvOld;
+        // Ask: it points to where most of the rest are
+        const rooms = site.rooms.map((x) => x.scene);
+        const far = rooms[rooms.length - 1];
+        for (const f of herd) if (f !== foal && f !== mum && f !== g) f.scene = far;
+        traitValue = (f, k) => (k === "bravery" || k === "temper" ? -0.5 : tvOld(f, k));
+        extPlayer.holding = [];
+        foal.extHeld = false;
+        const teller = g;
+        extPlayer.x = teller.x;
+        extPlayer.y = teller.y + 20;
+        extGrab(teller);
+        out.askKind = extGrabAction().kind;
+        extDoGrab();
+        out.points = extPlayer.tip && extPlayer.tip.scene === far;
+        out.askedOnce = extGrabAction() == null || extGrabAction().kind !== "ask";
+        traitValue = tvOld;
+        // A smarty won't say
+        const sm = herd.find((f) => f.growth >= 1 && f !== g && f !== mum);
+        sm.gender = "male";
+        sm.personalities = [...(sm.personalities || []), "smarty"];
+        sm.smartyKind = "bad";
+        out.refuse = extAsk(sm).refused === true;
+        return out;
+      }, SETUP);
+      check(r.hear && r.quiet, "you hear an unaware herd next door; one lying low is silent");
+      check(r.pleadScore > 90 && r.plead === "plead" && ["beg", "cover", "dance", "daddy", "hug"].includes(r.style) && r.sits, `cornered, it pleads (${r.style})`);
+      check(r.offPlead, "back off and it stops");
+      check(r.offerScore > 90 && r.offer === "offer" && r.offered, "a gentle mare holds out her foal " + JSON.stringify([r.offerScore, r.offer, r.offered]));
+      check(r.noRage, "take it: no rage");
+      check(r.askKind === "ask" && r.points && r.askedOnce, "asked, it points to the rest");
+      check(r.refuse, "a smarty won't tell");
     },
   },
 ];

@@ -3230,3 +3230,21 @@ from. Nothing player-facing reads it yet except the debug view.
   since last seen) a new brain hook, `DESIRE_VETOES` (HorseBrain.think),
   skips `EXT_WARY_SKIP` (mating, courting, play, chatter, sleep, begging);
   foals run back to mum ("to_mum").
+- **Herd behaviour, after CuriousSimp's "Day Job" stories:** awareness no
+  longer wears off - once you've shown yourself (`job.seenAt`) the whole
+  herd knows within `EXT_WORD_TIME`, in every room, for the rest of the job;
+  with you in the room the little and timid lie low; hiders creep out after
+  `EXT_CREEP_OUT` away (a foal may give itself away, "SLIP"). A bad smarty
+  "fronts" at `EXT_FRONT_DIST` with threats while the herd cheers, rallies
+  its toughies and rams your shins up close; seeing a killing panics it
+  into hiding for good (`_extPanic`) and breaks the others' fight
+  (`_extBroken`, `EXT_BREAK_TIME`; a raging mum excepted); with the smarty
+  gone a stallion steps up (`job.vacuumAt`, `_extNewSmarty`, twice a job at
+  most). Cornered (`EXT_CORNER`, `EXT_PLEAD_CHANCE`) some plead
+  (`_extPleadStyle`: beg, cover eyes, dance, hug a friend, or - dim ones -
+  "nyu daddeh"). A clever, gentle mare offers her foal (`_extOffersFoal`,
+  `_extOffered`: taking it gets thanks, not rage). Grab while holding one:
+  Ask (`extAsk`) - points to the room with most of the rest, a loyal
+  toughie may lie (`EXT_LIE_CHANCE`), a smarty refuses; the panel shows the
+  tip and `extRoomSounds` (babbling from unaware rooms next door, crying
+  from aware foals in the open). Bites at boots leave no blood.

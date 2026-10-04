@@ -281,6 +281,7 @@ module.exports = [
         const t0 = performance.now();
         dayReportShown = null;
         sleepThroughNight();
+        updateDayReport(1.01); // (the report checks once a second: give it its next look)
         out.ms = Math.round(performance.now() - t0);
         out.hour = gameHour();
         out.day = getDayNumber() - day0;

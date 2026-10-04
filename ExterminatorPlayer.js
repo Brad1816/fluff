@@ -220,6 +220,7 @@ function extGrabAction() {
   if (near && !crate && !held.length) return { kind: "crate_lift", label: "Pick up the crate", target: near };
   if (crate) return { kind: "crate_down", label: "Put the crate down", target: crate };
   if (_extAtVan(p)) return { kind: "home", label: "Done? (van)" };
+  if (held.length === 1 && typeof extCanAsk === "function" && extCanAsk(held[0])) return { kind: "ask", label: "Ask where the rest are", target: held[0] };
   if (f) return { kind: "full", label: "Arms full", target: f };
   return null;
 }
@@ -229,6 +230,7 @@ function extDoGrab() {
   const p = _extP();
   if (!a || !p) return false;
   if (a.kind === "grab") return extGrab(a.target);
+  if (a.kind === "ask") return !!(typeof extAsk === "function" && extAsk(a.target));
   if (a.kind === "shake") {
     p.bumped = 0.3;
     return typeof extUncling === "function" ? extUncling(a.target, true) : false;
@@ -583,12 +585,20 @@ function drawExtJobPanel(c) {
     `Dealt with ${p.caught + p.bodies}/${job.herd} · ${p.left} loose · ${p.late ? "LATE" : `${hrs}h ${String(mins).padStart(2, "0")}m left`}`,
   ];
   if (req) lines.push(`Request: ${req.short} - ${reqOk ? (req.rule ? "kept so far" : "done!") : req.rule ? "BROKEN" : "not yet"}`);
+  // What you can hear next door, and where a fluffy pointed
+  const arrows = { left: "\u2190", right: "\u2192", up: "\u2191", down: "\u2193" };
+  const heard = typeof extRoomSounds === "function" ? extRoomSounds(currentScene) : [];
+  const extra = [];
+  if (heard.length) extra.push("You hear " + heard.map((h) => `${h.kind} ${arrows[h.dir] || ""} ${h.name}`).join(", "));
+  const me = _extP();
+  if (me && me.tip && timePlayed - me.tip.at < HOUR_LENGTH) extra.push(`It pointed: ${jobRoomName(me.tip.scene)}`);
   const x = 10;
   const y = 104;
-  const boxH = 12 + lines.length * 18;
+  const boxH0 = 12 + lines.length * 18;
+  const boxH = boxH0 + extra.length * 18;
   c.save();
   c.font = "bold 13px Arial";
-  const w = Math.max(...lines.map((l) => c.measureText(l).width)) + 20;
+  const w = Math.max(...lines.concat(extra).map((l) => c.measureText(l).width)) + 20;
   c.fillStyle = "rgba(20, 16, 30, 0.8)";
   if (typeof fillRoundRect === "function") fillRoundRect(c, x, y, w, boxH, 10);
   c.fillStyle = "white";
@@ -602,6 +612,10 @@ function drawExtJobPanel(c) {
     c.fillStyle = reqOk ? "#9be89b" : req.rule ? "#ff8a8a" : "#ffd38a";
     c.fillText(lines[2], x + 10, y + 52);
   }
+  extra.forEach((t, i) => {
+    c.fillStyle = "#bfe3ff";
+    c.fillText(t, x + 10, y + boxH0 + 4 + i * 18);
+  });
   // Head home
   const b = extHomeButton();
   c.fillStyle = isPointInRect(mouse.sx ?? mouse.x, mouse.sy ?? mouse.y, b.x, b.y, b.w, b.h) ? "rgba(190, 60, 60, 0.95)" : "rgba(150, 40, 45, 0.9)";
