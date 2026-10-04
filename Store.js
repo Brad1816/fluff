@@ -194,6 +194,10 @@ function getStorePortals(scene) {
         target: getStoreAisles()[0].scene,
         label: `Enter ${FLUFF_MART_NAME}`,
       },
+      // Maple Lane, where the neighbours live (Neighbours.js)
+      ...(typeof NB_SCENE !== "undefined"
+        ? [{ type: "arrow_left", x: 20, y: height / 2 - 40, w: 60, h: 80, target: NB_SCENE, label: "To Maple Lane" }]
+        : []),
     ];
   }
 

@@ -303,7 +303,8 @@ function updateHerds(dt) {
   if (!step) return;
   if (typeof getLiking !== "function") return;
 
-  const alive = new Map(fluffies.filter((f) => f.isAlive).map((f) => [f.id, f]));
+  // (the neighbours' pets are theirs, not a herd's: Neighbours.js)
+  const alive = new Map(fluffies.filter((f) => f.isAlive && f.nbOwner == null).map((f) => [f.id, f]));
 
   // 1. Tidy up: lost members, leaders, members who've fallen out
   for (const h of [..._herdList()]) {

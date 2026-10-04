@@ -342,6 +342,11 @@ function acceptSellRequest() {
     if (typeof _saleBuyer !== "undefined") _saleBuyer = req.buyer; // (Reputation.js)
     if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[i], fluffies[i].isAlive ? "sold" : "taken", req.price);
     if (typeof noteSoldFromCage === "function") noteSoldFromCage(fluffies[i]); // (CageLife.js: the others saw)
+    // A neighbour: it goes to live on Maple Lane (Neighbours.js)
+    if (typeof onSoldToNeighbour === "function" && onSoldToNeighbour(fluffies[i], req)) {
+      currentSellRequest = null;
+      return true;
+    }
     if (getBuyerKind(req.buyer).dark) {
       darkMarket.sold = (darkMarket.sold || 0) + 1;
       if (typeof recordStory === "function") recordStory("turning", fluffies[i], { x: `${typeof fluffyDisplayName === "function" ? fluffyDisplayName(fluffies[i]) : "It"} was sold to a shady dealer.` });

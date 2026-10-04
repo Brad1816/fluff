@@ -205,7 +205,7 @@ addHorseMethods({
     }
 
     if (!text && this.happiness > 0.5) {
-      if (!this.adopted && !getSceneConfig(this.scene).insidePlayerQuarters) {
+      if (!this.adopted && this.nbOwner == null && !getSceneConfig(this.scene).insidePlayerQuarters) { // (a neighbour's pet has a home: Neighbours.js)
         let key = this.tooYoungToSpeak() ? ["HELLO", , "FERAL_CHIRPY"] : ["HELLO", , "FERAL"];
         if (!getSceneConfig(currentScene).insidePlayerQuarters && this.canSee()) {
           key = this.tooYoungToSpeak()

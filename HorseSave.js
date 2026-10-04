@@ -197,6 +197,10 @@ const SAVED_HORSE_FIELDS = [
   { name: "jobFeral", fallback: undefined }, // Exterminator.js: one of a pest job's herd
   { name: "clientPet", fallback: undefined }, // ...or the client's own fluffy
   { name: "rivalDump", fallback: undefined }, // dumped by the rival breeder (Rival.js): proof
+  { name: "nbOwner", fallback: undefined }, // a neighbour's pet (Neighbours.js): the house
+  { name: "nbVisit", fallback: undefined }, // ...visiting your backyard until
+  { name: "petSitting", fallback: undefined }, // ...that you're looking after
+  { name: "_nbBorn", fallback: undefined }, // ...born on the lane (found a home when weaned)
 ];
 
 function _savedCopy(v) {

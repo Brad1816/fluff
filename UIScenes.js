@@ -31,6 +31,12 @@ function getScenePortals(scene) {
     if (jobPortals) return jobPortals;
   }
 
+  // Maple Lane (Neighbours.js)
+  if (typeof getMapleLanePortals === "function") {
+    const lanePortals = getMapleLanePortals(scene);
+    if (lanePortals) return lanePortals;
+  }
+
   // The shopping street and store aisles are set up in Store.js
   if (typeof getStorePortals === "function") {
     const storePortals = getStorePortals(scene);

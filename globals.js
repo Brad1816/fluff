@@ -999,6 +999,7 @@ function changeScene(newScene) {
         if (
           f.isAlive &&
           f.scene === newScene &&
+          f.nbOwner == null && // (a neighbour's pet isn't waiting for you: Neighbours.js)
           !f.tooYoungToSpeak() &&
           f.currentStateKey !== "SLEEPING" &&
           (f.canSee() || f.canHear())

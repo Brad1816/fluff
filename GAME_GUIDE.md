@@ -3278,3 +3278,32 @@ from. Nothing player-facing reads it yet except the debug view.
 - UI: `drawRivalShop` on Shopping Street (Store.js), `rivalShopClick`
   (UI.js), the "rival" screen (`drawRivalPanel`: window with Buy, names,
   news, Report). tests/rival.test.js.
+
+### Maple Lane: the neighbours (`Neighbours.js`)
+
+- Scenes `MAPLE_LANE` (left of Shopping Street; lawns from `sceneTop` 0.4h,
+  no wild grass, noDespawn) and `MAPLE_HOME` (indoors, not drawn).
+- `neighbourState` (saved): houses `{id, slot, kind, who, goodwill, request,
+  notes, vacant, until}`; three of `NB_KINDS` (kind, family, careless,
+  fussy: roam, care, sitChance, complain, buy, reactBreed, sitPay, move,
+  colours). Pets are real fluffies with `f.nbOwner` (saved, with `nbVisit`,
+  `petSitting`, `_nbBorn`), not adopted; made from stock-market lines.
+- `updateNeighbours` (every 2s): morning `_nbMorning` (goodwill drift,
+  complaints from `nbNuisance`, sit requests, moving away, the council at
+  `NB_COUNCIL_AT` - `NB_FINE`, once per `NB_FINE_GAP`); pets in at night,
+  out by day, fed to the owner's `care`, kept on the lawns; visits to your
+  backyard (`_nbVisitStarts`/`_nbVisitEnds`, about `roam` an hour);
+  `onNeighbourMating` (HorseAnatomy.triggerPregnancy) reactions; pet-sitting
+  (`nbAcceptSit`, `nbEndSit`: pay and goodwill by how it comes back);
+  deaths (`_nbPetDied`: by you, a fine); kept pets (`nbReturnPet` /
+  `nbKeepPet`); foals born on the lane are theirs and found homes at
+  `NB_FOAL_HOME_AT`; `nbMoveOut` (careless: pets dumped in the alley) and
+  `nbMoveIn`.
+- Buying: a "neighbour" entry in BUYER_KINDS; `onSoldToNeighbour` (from
+  Buyers.acceptSellRequest) moves the fluffy to the lane.
+- Kept apart from wild life: not in herds (Herds.js), never despawned
+  (script.js), no "nice mistah" begging (HorseTalk.js), no homecoming cries
+  (globals.js changeScene). Inspect row "Belongs to".
+- UI: `drawMapleLane` (houses, fences, road, a "!" note on a door with a
+  request), `nbDoorClick` (UI.js) opens the "neighbour" screen
+  (`drawNeighbourPanel`). tests/neighbours.test.js.

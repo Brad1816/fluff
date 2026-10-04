@@ -885,6 +885,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof rivalShopClick === "function" && rivalShopClick()) {
     return;
   }
+  // A neighbour's door on Maple Lane (Neighbours.js)
+  if (typeof nbDoorClick === "function" && nbDoorClick()) {
+    return;
+  }
 
   // Things in the world: world positions (Park.js)
   if (typeof mouseToWorld === "function") mouseToWorld();

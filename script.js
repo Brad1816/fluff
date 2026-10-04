@@ -1142,6 +1142,7 @@ function updateFerals(dt) {
         !(f.scene === "PARK" && f.isAlive) &&
         // (a pest job's herd stays put: Exterminator.js)
         !config.noDespawn &&
+        f.nbOwner == null && // (a neighbour's pet visiting: Neighbours.js)
         !f.isDragging &&
         f.scene !== currentScene &&
         (f.currentCage === null || f.currentCage === undefined) &&
@@ -1700,6 +1701,7 @@ function render() {
   // Shopping street shop front and store shelves (Store.js)
   if (typeof drawStoreScenery === "function") drawStoreScenery(osCtx);
   if (typeof drawJobScenery === "function") drawJobScenery(osCtx); // a pest job's room (Exterminator.js)
+  if (typeof drawMapleLane === "function") drawMapleLane(osCtx); // the neighbours (Neighbours.js)
   // The shelter's front in Shelter Alley (Shelter.js)
   if (typeof drawShelterFront === "function") drawShelterFront(osCtx);
   drawDoorBackground(osCtx);

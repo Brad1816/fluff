@@ -56,6 +56,7 @@ function sceneH(scene) {
 }
 // Where the floor starts (below the back wall in most areas)
 function sceneTop(scene) {
+  if (scene === "MAPLE_LANE") return height * 0.4; // (the lawns start below the houses: Neighbours.js)
   return isCameraScene(scene) ? PARK_TOP : height * 0.15;
 }
 
