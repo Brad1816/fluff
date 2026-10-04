@@ -50,7 +50,8 @@ function lureCount(scene) {
 
 // script.js updateFerals: extra spawn weight for a place with lures
 function lureSpawnWeight(scene) {
-  return LURE_WEIGHT * lureCount(scene);
+  // (a stocked Foal-4-Sketties machine draws hungry families too: FoalMachine.js)
+  return LURE_WEIGHT * lureCount(scene) + (typeof machineLureWeight === "function" ? machineLureWeight(scene) : 0);
 }
 
 // ...and strays come sooner
@@ -62,6 +63,8 @@ function lureSoonerFactor() {
 
 // Who the lures there bring: { scenario, kind } or null
 function lureSpawnPlan(scene) {
+  const mp = typeof machineLurePlan === "function" ? machineLurePlan(scene) : null; // (FoalMachine.js)
+  if (mp) return mp;
   const items = lureItemsIn(scene);
   if (!items.length) return null;
   const kinds = new Set(items.map((i) => i.kind));
@@ -102,6 +105,8 @@ function applyLure(list, plan) {
       f.traitShift.appetite = Math.min(typeof TRAIT_SHIFT_MAX === "number" ? TRAIT_SHIFT_MAX : 0.6, (f.traitShift.appetite || 0) + LURE_GREEDY);
       f.hunger = Math.min(f.hunger ?? 1, 0.4);
     }
+  } else if (plan.kind === "machine") {
+    if (typeof machineLureArrived === "function") machineLureArrived(list);
   } else if (plan.kind === "good_kibble") {
     const pet = list.find((f) => f.growth >= 1) || list[0];
     pet.personalities = (pet.personalities || []).filter((p) => p !== "true_feral");
@@ -131,5 +136,5 @@ registerSystem("lures", updateLures, 135);
 // Magnifying glass ("Came for"): [text, tone] or null
 function describeLured(f) {
   if (!f || !f.luredBy || f.adopted) return null;
-  return [{ sketties: "the sketties you left out", good_kibble: "the good kibble you left out", kibble: "the food you left out", stuffy: "the stuffy you left out", toy: "the toys you left out", bed: "the bed you left out" }[f.luredBy] || "what you left out", ""];
+  return [{ sketties: "the sketties you left out", good_kibble: "the good kibble you left out", kibble: "the food you left out", machine: "the smell of the machine's sketties", stuffy: "the stuffy you left out", toy: "the toys you left out", bed: "the bed you left out" }[f.luredBy] || "what you left out", ""];
 }

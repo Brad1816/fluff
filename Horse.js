@@ -206,6 +206,8 @@ class Horse {
     if (typeof HerdJobDesire !== "undefined") this.brain.addDesire(new HerdJobDesire());
     // Carrying a foal to the Foal-4-Sketties machine (FoalMachine.js)
     if (typeof FoalTradeDesire !== "undefined") this.brain.addDesire(new FoalTradeDesire());
+    // More from other files (Jobs.js...)
+    if (typeof EXTRA_DESIRES !== "undefined") for (const D of EXTRA_DESIRES) this.brain.addDesire(new D());
     // Dizzy from being spun round (Tools.js)
     if (typeof DizzyDesire !== "undefined") this.brain.addDesire(new DizzyDesire());
     // Too hot: shade, water, a fan (Heat.js)
@@ -968,6 +970,8 @@ class Horse {
     if (typeof defectSpeed === "function") this.speed *= defectSpeed(this);
     // Taking it easy after surgery, or with a fever (Bandages.js)
     if (typeof recoverySpeed === "function") this.speed *= recoverySpeed(this);
+    // Waddling in a diaper (Diapers.js)
+    if (typeof diaperSpeed === "function") this.speed *= diaperSpeed(this);
     if (this.limbs === undefined) {
       return;
     }
@@ -1516,7 +1520,8 @@ class Horse {
           this.y > board.bounds.top &&
           this.y < board.bounds.bottom &&
           this.scene === board.scene &&
-          !board.securedFluffy
+          !board.securedFluffy &&
+          (typeof board.accepts !== "function" || board.accepts(this)) // (the milk stand: grown mares only)
         ) {
           this.placedOn = board;
           this.facingRight = false; // Always face left
@@ -2104,6 +2109,7 @@ class Horse {
     else this.renderer.drawOffScreen(ctx, clip);
     if (rotting) drawCorpseFlies(ctx, this);
     if (grubby) drawDirtEffects(ctx, this);
+    if (this.wet > 0.05 && typeof drawWetDrips === "function") drawWetDrips(ctx, this); // (WetFur.js)
     if (shaking) ctx.restore();
     if (this.placedOn instanceof ImmobilizationBoard) {
       this.placedOn.renderStrap(ctx, this);

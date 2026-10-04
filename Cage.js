@@ -73,7 +73,7 @@ class Cage {
     return (
       !!item &&
       item.currentCage instanceof Cage &&
-      item.currentCage.isCulling()
+      (item.currentCage.isCulling() || (typeof item.currentCage.locksContents === "function" && item.currentCage.locksContents()))
     );
   }
 

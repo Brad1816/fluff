@@ -79,7 +79,7 @@ module.exports = [
       const cage = await shelfSpot(page, "Cage");
       await page.evaluate((sc) => changeScene(sc), cage.scene);
       await page.mouse.click(cage.x, cage.y);
-      const cages = await page.evaluate(() => objects.filter((o) => o instanceof Cage).map((c) => ({ scene: c.scene, dragging: c.isDragging })));
+      const cages = await page.evaluate(() => objects.filter((o) => o instanceof Cage && !(o instanceof ShelterPlaypen)).map((c) => ({ scene: c.scene, dragging: c.isDragging })));
       checkEqual(JSON.stringify(cages), JSON.stringify([{ scene: "INDOORS", dragging: false }]), "the cage is waiting at home");
       checkEqual((await state(page)).money, 1000 - 25 - 150, "money after the cage");
 

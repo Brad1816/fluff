@@ -948,6 +948,9 @@ canvas.addEventListener("mousedown", (e) => {
     }
   }
 
+  // A foal in the shelter's playpen: adopt it? (Shelter.js)
+  if (typeof shelterPenClick === "function" && !isGlobalDragging && shelterPenClick()) return;
+
   // Check Fluffies
   for (let i = fluffies.length - 1; i >= 0; i--) {
     const f = fluffies[i];

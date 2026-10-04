@@ -514,7 +514,7 @@ module.exports = [
     },
   },
   {
-    name: "playtest: the shelter has two rows of four kennels, none overlapping, every one clickable",
+    name: "playtest: the shelter has 16 kennels (four a side, two high), none overlapping, every one clickable",
     run: async (page) => {
       const r = await page.evaluate(() => {
         const rects = shelterCageRects();
@@ -525,8 +525,8 @@ module.exports = [
         const onScreen = rects.every((c) => c.x >= 0 && c.x + c.w <= width && c.y + c.h + 24 < height);
         return { n: rects.length, cap: SHELTER_CAGES, overlap, rows, hits, onScreen };
       });
-      checkEqual(r.n, 8, "eight kennels");
-      checkEqual(r.cap, 8, "room for eight");
+      checkEqual(r.n, 16, "sixteen kennels (playtest 7)");
+      checkEqual(r.cap, 16, "room for sixteen");
       checkEqual(r.rows, 2, "in two rows");
       checkEqual(r.overlap, false, "not overlapping (plaques included)");
       check(r.hits.every(Boolean), "each one clicks to itself");

@@ -372,8 +372,11 @@ module.exports = [
           cages: cages.length,
           tags: cages.map((c) => c.tag).sort().join(","),
           feedersInCages: feeders.filter((o) => cages.includes(o.currentCage)).length,
+          bot: (made.find((o) => o instanceof FeedBot) || { portions: () => 0 }).portions(),
+          trainers: made.filter((o) => o instanceof AutoTrainer).length,
           onScreen: made.filter((o) => o.scene === "INDOORS").every((o) => o.x > 0 && o.x < width && o.y > 0 && o.y < height),
           overlap: cages.length > 1 && Math.round(cages[1].bounds.left - cages[0].bounds.right),
+          rowsApart: cages.length > 4 && cages[4].bounds.top >= cages[0].bounds.bottom,
           backyard: canFitOutRoom("BACKYARD"),
           kits: ROOM_KITS.every((k) => roomKitNames(k).every((n) => SPAWN_ACTIONS.some((a) => a.name === n))),
         };
@@ -388,10 +391,13 @@ module.exports = [
       check(r.kits, "every kit item is in the shop");
       check(r.price < r.full, `cheaper: $${r.price} vs $${r.full}`);
       checkEqual(r.paid, r.price, "paid the kit price");
-      checkEqual(r.cages, 3, "three cages");
-      checkEqual(r.tags, "breeding,breeding,sell", "tagged");
-      checkEqual(r.feedersInCages, 3, "a feeder in each cage");
+      checkEqual(r.cages, 8, "eight cages (playtest 7: more industrial)");
+      checkEqual(r.tags, "breeding,breeding,breeding,breeding,breeding,breeding,none,sell", "tagged (and an incubator)");
+      checkEqual(r.feedersInCages, 7, "a bowl in each cage");
+      check(r.bot > 0, "the Feed-Bot comes loaded");
+      checkEqual(r.trainers, 2, "two Auto-Trainers");
       checkEqual(r.overlap, 0, "side by side");
+      check(r.rowsApart, "two rows");
       check(r.onScreen, "all on screen");
       checkEqual(r.backyard, false, "rooms of the house only");
       check(r.family > 10 && r.nursery > 8 && r.clinic > 4, `the other kits: ${r.family}, ${r.nursery}, ${r.clinic}`);

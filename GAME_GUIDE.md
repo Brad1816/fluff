@@ -2959,3 +2959,65 @@ from. Nothing player-facing reads it yet except the debug view.
   cage, bandages). Shop prices less `ROOM_KIT_DISCOUNT` (10%); cages go along
   the back wall side by side with their things inside, the rest along the
   front; tools to the toolbox. What's in the room already stays.
+
+### Playtest round 7 and the plan round
+- **Industrial mill kit (RoomKits.js):** eight cages in two rows (six
+  breeding, a sale cage, an incubator), each with a bowl, water and a
+  litterbox; a Feed-Bot loaded with the kit's value kibble, a Fluff-Bot, and
+  an Auto-Trainer at each end of the front row. (Cages now get a Bowl, not a
+  baby feeder.) Kits can have rows (`row`) and machines `beside` the front row.
+- **The shelter (Shelter.js):** `SHELTER_CAGES` 16 (four a side, two high),
+  `SHELTER_START` 10, `SHELTER_ARRIVALS` 2-4. **The playpen** (`ShelterPlaypen`,
+  a Cage that `locksContents`): `SHELTER_PEN_FOALS` (3) real foals
+  (`f.shelterFoal = { name, fee }`, saved) from `SHELTER_PEN_GROWTH`, kept fed
+  and clean (`careForShelterPen`). Tap one (`shelterPenClick`, UI.js) to adopt
+  for `SHELTER_PEN_FEE`. Each morning ones past `SHELTER_PEN_GROWN` find a home
+  and the pen refills (`refillShelterPen`).
+- **Blocks in cages:** a caged fluffy reaches blocks along its cage floor
+  (`canReachBlock`, `HorseActionHandler._nearBlock`).
+- **Mares rest** `MARE_REST_DAYS` 1.25 after a litter (was 2).
+- **Areas you're not in do run** - but strays come and go there. A stocked
+  Foal-4-Sketties machine now draws them (FoalMachine.js): its place gets
+  `FOAL_MACHINE_LURE_WEIGHT` more spawn weight, `FOAL_MACHINE_LURE_CHANCE` of
+  those are a hungry mum and foals as a herd of their own, set down near the
+  machine (`machineLureArrived`); they don't despawn or migrate for
+  `FOAL_MACHINE_LURE_STAY` while it's stocked (`heldByMachineLure`), two
+  families at most. `FOAL_MACHINE_RANGE` 1600.
+- **Grading (Grading.js, new):** growth stage (Chirpy / Talkie / Walkie /
+  Adult, by `CHIRPY_THRESHOLD`/`WALKY_THRESHOLD`); colour tier 1-4 from the
+  coat score (`TIER_PRICE`); weaning tags (`WEAN_TAG_GROWTH`, a test
+  suggests one: breeder x1.2, pet x1.1, feed x0.5; `f.weanTag` saved); the
+  reptile shop buyer (only when you have tier 4 or feed stock,
+  `REPTILE_PAY`); orders ask for colour tier 1. Families like pet tags, show
+  breeders and farmers breeder tags.
+- **Mop (Mop.js, new):** Care & Cleaning $40 tool, cleans everything within
+  `MOP_REACH` (puddles, spills, cage mess), never bathes.
+- **Wet fur (WetFur.js, new):** `f.wet` (saved) from a bath, the sprinkler or
+  rain outdoors; dries over `WET_DRY_TIME` (faster by a heater or in heat,
+  slower in cold); x up to `WET_EXPOSURE` cold exposure; sad when cold. Menu
+  "Dry it": towel (affection "towelled"), hair dryer (loud), peg it on the
+  line (`PEG_TIME`, harm "pegged").
+- **Diapers (Diapers.js, new):** Care & Cleaning, $25 for 10, a tool (click a
+  fluffy of yours). `f.diaper = { fill, on }` (saved): mess goes in it until
+  full (then it leaks), `DIAPER_SPEED`, `DIAPER_SAD`, dirty when full. Menu:
+  Change diaper (affection "changed"), Take it off. Drawn on its rump.
+- **Milk stand (MilkStand.js, new):** Hardware $350, an ImmobilizationBoard
+  for grown mares (`accepts`). Kept in milk while fed, `MILK_STAND_REFILL`
+  feeds back up to `MILK_STAND_MAX`, any foal in the room drinks, three at a
+  time, no refusing (`milkStandNurse`, from attemptFeedFromMare). Trough
+  (`MILK_STAND_TROUGH`, right-click to fill for `MILK_STAND_FILL_COST`);
+  `MILK_STAND_SAD`; harm "milk_stand".
+- **Working fluffies (Jobs.js, new):** grown, `JOB_MIN_SMARTS`+. Foal-sitter
+  (comforts crying, frightened or miserable foals) or Cleaner (tidies small
+  mess). `JobDesire`; learns `JOB_LEARN` x smartsLearn a job; trained x1.2.
+  `f.job = { kind, skill }` saved.
+- **Surgery jobs (SurgeryJobs.js, new):** with an operating table, 8-18 h,
+  `SURGERY_JOB_CHANCE` a game hour, once a day: neuter, spay, dock a tail,
+  take off a mangled leg. The client's fluffy (`f.clientJob`, not yours) is
+  dropped off; done and not bleeding: paid `SURGERY_JOB_PAY` x health; other
+  parts cut: botched (`SURGERY_JOB_REP_BOTCH`), died (`..._DIED`), late
+  (`..._LATE`). `surgeryJobs` saved.
+- **Hooks for new files:** `FLUFFY_ACTION_SOURCES` (Tricks.js, right-click
+  menu), `INSPECT_ROWS` (UIInspection.js), `PRICE_MULTIPLIERS`
+  (HorseGenetics.js), `EXTRA_DESIRES` (HorseBrain.js), a tool's
+  `useOnFluffy(f)` (script.js attemptDrop).

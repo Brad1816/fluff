@@ -159,6 +159,7 @@ function scrubFluffy(f) {
   if (f && f.fakeAlicorn && typeof removeFakeAlicorn === "function") removeFakeAlicorn(f, "bath");
   const before = dirtOf(f);
   f.dirt = Math.max(0, before - BATH_SCRUB);
+  if (typeof soakFluffy === "function") soakFluffy(f); // wet through after (WetFur.js)
   if (typeof poofs !== "undefined" && typeof Poof !== "undefined") {
     poofs.push(new Poof(f.x + (Math.random() - 0.5) * 50, f.y - 40 - Math.random() * 40, f.scene, "#e8f6ff"));
   }

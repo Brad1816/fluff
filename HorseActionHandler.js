@@ -61,10 +61,7 @@ class HorseActionHandler {
         const block = blocks.find(
           (b) =>
             b.scene === this.horse.scene &&
-            Math.sqrt(
-              (b.x - this.horse.x) ** 2 +
-                (b.getBottomY() - 50 - this.horse.y) ** 2,
-            ) < 50 &&
+            this._nearBlock(b) &&
             !b.heldBy &&
             !b.getStackedAbove() &&
             (this.horse.hasBlockOnBack() || !b.stackedOn) &&
@@ -104,10 +101,7 @@ class HorseActionHandler {
         let block = blocks.find(
           (b) =>
             b.scene === this.horse.scene &&
-            Math.sqrt(
-              (b.x - this.horse.x) ** 2 +
-                (b.getBottomY() - 50 - this.horse.y) ** 2,
-            ) < 50 &&
+            this._nearBlock(b) &&
             !b.heldBy &&
             !b.stackedOn &&
             !b.isDragging &&
@@ -686,6 +680,14 @@ class HorseActionHandler {
       }
     }
     return false;
+  }
+
+  // Close enough to a block to play with it? (in a cage it stands higher
+  // than the blocks sit and can't reach the bars: along the floor will do)
+  _nearBlock(b) {
+    const h = this.horse;
+    if (h.currentCage && b.currentCage === h.currentCage) return Math.abs(b.x - h.x) < 70;
+    return Math.sqrt((b.x - h.x) ** 2 + (b.getBottomY() - 50 - h.y) ** 2) < 50;
   }
 
   // Turned away by this mare lately? (executeChirpyBabyMilk)

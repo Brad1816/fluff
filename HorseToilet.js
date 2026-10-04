@@ -189,6 +189,9 @@ addHorseMethods({
       this.peeStorage = 0;
     }
 
+    // Wearing a diaper: it goes in that (Diapers.js)
+    if (typeof diaperCatches === "function" && diaperCatches(this, isPoop, amount)) return;
+
     // Check for LitterpalBox
     if (this.placedOn instanceof LitterpalBox) {
       this.placedOn.use();

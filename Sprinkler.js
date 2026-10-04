@@ -61,6 +61,7 @@ class Sprinkler {
         if (!f.isAlive || f.scene !== this.scene || f.isDragging) continue;
         if (Math.hypot(f.x - this.x, (f.y - this.y) * 2) > SPRINKLER_RADIUS) continue;
         if ((f.dirt || 0) > 0) f.dirt = Math.max(0, f.dirt - SPRINKLER_WASH * dt);
+        if (typeof soakFluffy === "function") soakFluffy(f, 0.8); // (WetFur.js)
         if (f.currentCage && typeof startFright === "function" && typeof fearOf === "function" && fearOf(f, "bath") >= FEAR_MIN && !(f._sprinkledAt > timePlayed - 30)) {
           f._sprinkledAt = timePlayed;
           startFright(f, "bath");

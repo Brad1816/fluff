@@ -96,6 +96,11 @@ function nursingCount(mare) {
 
 addHorseMethods({
   attemptFeedFromMare(mare) {
+    // A mare on the milk stand can't say no (MilkStand.js)
+    if (typeof milkStandNurse === "function") {
+      const r = milkStandNurse(mare, this);
+      if (r !== null) return r;
+    }
     if (
       !mare ||
       !mare.isAlive ||

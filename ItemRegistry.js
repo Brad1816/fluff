@@ -347,6 +347,14 @@ const ITEM_TYPES = [
     create: () => centered(new Enclosure(currentScene)),
   },
   {
+    // The shelter's playpen (Shelter.js): theirs, it stays put
+    sellType: "shelter_pen",
+    is: (o) => typeof ShelterPlaypen !== "undefined" && o instanceof ShelterPlaypen,
+    inCage: "ignore",
+    canPickUp: () => false,
+    onRightClick: () => false,
+  },
+  {
     sellType: "cage",
     is: (o) => o instanceof Cage,
     inCage: "ignore", // cages can't go in cages
@@ -392,7 +400,7 @@ const ITEM_TYPES = [
   },
   {
     sellType: "immobilization_board",
-    is: (o) => o instanceof ImmobilizationBoard,
+    is: (o) => o instanceof ImmobilizationBoard && !(typeof MilkStand !== "undefined" && o instanceof MilkStand),
     inCage: "never",
     sellable: true,
     create: () => centered(new ImmobilizationBoard(currentScene)),
@@ -810,7 +818,7 @@ const ITEM_TYPES = [
   {
     // Plain table (the Table and Rack above are special kinds of this)
     sellType: "fluffy_table",
-    is: (o) => o instanceof FluffyTable,
+    is: (o) => o instanceof FluffyTable && !(typeof MilkStand !== "undefined" && o instanceof MilkStand), // (MilkStand.js has its own)
     inCage: "never",
   },
 ];
@@ -877,6 +885,7 @@ const SAVED_CLASSES = {
   Scoop: (d) => new Scoop(d.scene), // (Scoop.js)
   DayCareDesk: (d) => new DayCareDesk(d.scene),
   ShelterKennels: (d) => new ShelterKennels(d.scene), // Shelter.js
+  ShelterPlaypen: (d) => new ShelterPlaypen(d.scene), // Shelter.js
 };
 
 // ---------------------------------------------------------------------------

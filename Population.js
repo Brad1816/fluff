@@ -12,7 +12,7 @@
 // The room name at the top turns red and says so, and the Household screen
 // lists crowded rooms.
 //
-// Mares rest after a litter: for MARE_REST_DAYS (about 2 months) after
+// Mares rest after a litter: for MARE_REST_DAYS (about 5-6 weeks) after
 // giving birth she can't get pregnant again (HorseMating.triggerPregnancy).
 // f.lastBirthAt (saved) is set by HorseAnatomy.spawnBaby.
 //
@@ -25,7 +25,7 @@
 const ROOM_SPACE = { house: 20, BACKYARD: 30 }; // (a family or two per room)
 const CROWD_UNHAPPY = 0.04; // happiness a game hour, x how far over (1 = double)
 const CROWD_SCUFFLE = 0.0015; // a second, x how far over, x (1 + temper), per grumpy grown-up
-const MARE_REST_DAYS = 2; // about 2 months (a game day ~ a month, Aging.js)
+const MARE_REST_DAYS = 1.25; // about 5-6 weeks (a game day ~ a month, Aging.js; was 2 - playtest 7)
 const PARK_FOOD_PER_FLUFFY = 1.5; // bites of food about per wild fluffy for full breeding
 const PARK_MIN_BIRTHS = 0.1;
 

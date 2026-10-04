@@ -1197,6 +1197,43 @@ const DIALOGUE = {
     SELF: ["Nu! Bad poopies in boxie... <speaker> sowwy...", "Icky... nu can get 'way fwom it...", "*sniff* Boxie aww stinky nao..."],
     DIRTY: ["Boxie su stinky... pwease cwean...", "Poopies evewywhewe... <speaker> nu can sit...", "Icky boxie... huu..."],
   },
+  // Playtest 7 / plan round
+  // A weaning tag in its ear (Grading.js)
+  WEAN_TAG: ["Owie! Wha' am in <speaker>'s eaw?", "Shiny fing in eaw... nu wike!", "Huu... pinchy eaw..."],
+  // Wet after a bath, the sprinkler or the rain (WetFur.js)
+  WET: {
+    DEFAULT: ["<Speaker> aww wet...", "Fwuff aww soggy...", "Dwippy dwippy... huu..."],
+    COLD: ["Su cowd... <speaker> aww wet an' cowd...", "Shibbew shibbew... wet fwuff su cowd!", "Nu wike wet... cowd-times huwties..."],
+    TOWEL: ["Fwuffy towew! Wawm an' dwy!", "Huu... wubby wubby... nice!", "Dwy fwuff am bestest fwuff!"],
+    DRYER: ["WOUD NOISE! Scawy wind!", "Nu! Woud munstah bwowing!", "Eeeee! Hot scawy wind!"],
+    PEGGED: ["Nu! Pwease! <Speaker> hangin'! Scawy!", "Wet me down! Wet me DOWN!", "Huuu! Nu can touch gwound! Hewp!"],
+  },
+  // Diapers (Diapers.js)
+  DIAPER: {
+    ON: ["Wha' dis? Nu wike poopie pants...", "Fwuffy am nu babbeh! Nu wan' poopie pants!", "Su itchy... huu..."],
+    CHANGED: ["Fwesh pants! Tank yu!", "Nu mowe icky... <speaker> feew bettew!", "Cwean! Yay!"],
+    OFF: ["Nu mowe poopie pants! Yay!", "Fwuff fwee!", "<Speaker> am big fwuffy again!"],
+    WENT: ["Huu... made poopies in pants...", "Icky... wawm an' icky...", "<Speaker> nu mean tu..."],
+    FULL: ["Pants am fuww! Icky! Pwease!", "Su sqwishy... hewp <speaker>...", "Nu can howd mowe poopies..."],
+    DIRTY: ["Stinky pants... pwease change...", "Icky icky icky...", "<Speaker> nu wike stinky..."],
+    WEARING: ["Waddwe waddwe... nu can wun...", "Pants make <speaker> waddwe...", "Odda fwuffies wookin' at poopie pants..."],
+  },
+  // On the milk stand (MilkStand.js)
+  MILK_STAND: {
+    ON: ["Nu! Wet <speaker> go! Nu can move!", "Stwaps huwt... why?", "<Speaker> stuck! Hewp!"],
+    SAD: ["<Speaker> jus' fow babbehs nao...", "Wan' wawk... wan' pway... huu...", "Eviwy babbeh dwink... nu stop..."],
+    HUNGRY: ["Hungwy... nu nummies in twough...", "Pwease... nummies fow <speaker>...", "Tummy su empty..."],
+    OWN: ["Dwink, babbeh... mummah hewe...", "Mummah's babbeh... dwink..."],
+    FOAL: ["Nu <speaker>'s babbeh... but dwink...", "Odda babbeh... huu...", "Su many babbehs..."],
+  },
+  // Working fluffies (Jobs.js)
+  JOB: {
+    GIVEN: ["<Speaker> hab job? <Speaker> twy hawd!", "Fwuffy am wowkin' fwuffy!", "Big impowtant job fow <speaker>!"],
+    SITTER: ["Sh-sh, babbeh... <speaker> hewe.", "Nu cwy, babbeh. Aww safe.", "Huggies fow babbeh. Aww bettew."],
+    SITTER_FAIL: ["Nu cwy... pwease nu cwy...", "Wha' babbeh wan'? <Speaker> nu knyo...", "Huu... babbeh stiww cwyin'..."],
+    CLEANER: ["<Speaker> cwean poopies! Good job!", "Aww tidy nao!", "Pushy pushy wittew... aww gone!"],
+    CLEANER_FAIL: ["Oopsie... made mowe mess...", "Icky... <speaker> twy again...", "Su hawd tu cwean..."],
+  },
   // Missed the party, behind bars (SharedMemories.js)
   PARTY_MISSED: ["Pawty... <speaker> wan' pawty tuu...", "Nu fair... evewybody hab tweats...", "<Speaker> nu get tu go tu pawty..."],
 

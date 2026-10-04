@@ -23,13 +23,20 @@ const ROOM_KITS = [
     key: "mill",
     name: "Mill",
     title: "Breeding mill",
-    blurb: "Two breeding cages and a sale cage, each with a feeder, water and (the breeding ones) a litterbox; sacks of value kibble.",
+    blurb: "Eight cages in two rows (six breeding, a sale cage and an incubator), each with a bowl, water and a litterbox; a Feed-Bot and sacks of value kibble to load it, a Fluff-Bot for the litterboxes, and two Auto-Trainers by the cages - it nearly runs itself.",
     cages: [
-      { kind: "Cage", tag: "breeding", inside: ["Feeder", "Water bowl", "Litterbox"] },
-      { kind: "Cage", tag: "breeding", inside: ["Feeder", "Water bowl", "Litterbox"] },
-      { kind: "Cage", tag: "sell", inside: ["Feeder", "Water bowl"] },
+      { kind: "Cage", tag: "breeding", row: 0, inside: ["Bowl", "Water bowl", "Litterbox"] },
+      { kind: "Cage", tag: "breeding", row: 0, inside: ["Bowl", "Water bowl", "Litterbox"] },
+      { kind: "Cage", tag: "breeding", row: 0, inside: ["Bowl", "Water bowl", "Litterbox"] },
+      { kind: "Cage", tag: "breeding", row: 0, inside: ["Bowl", "Water bowl", "Litterbox"] },
+      { kind: "Cage", tag: "breeding", row: 1, inside: ["Bowl", "Water bowl", "Litterbox"] },
+      { kind: "Cage", tag: "breeding", row: 1, inside: ["Bowl", "Water bowl", "Litterbox"] },
+      { kind: "Cage", tag: "sell", row: 1, inside: ["Bowl", "Water bowl"] },
+      { kind: "Incubator", tag: "none", row: 1, inside: [] },
     ],
-    floor: ["Value Kibble", "Value Kibble", "Value Kibble", "Value Kibble"],
+    // (an Auto-Trainer at each end of the front row, beside the cages)
+    beside: ["Auto-Trainer", "Auto-Trainer"],
+    floor: ["Feed-Bot", "Fluff-Bot", "Value Kibble", "Value Kibble", "Value Kibble", "Value Kibble"],
   },
   {
     key: "family",
@@ -71,7 +78,7 @@ function roomKitNames(kit) {
     names.push(c.kind === "Incubator" ? "Incubator" : "Cage");
     names.push(...c.inside);
   }
-  names.push(...(kit.floor || []), ...(kit.tools || []));
+  names.push(...(kit.beside || []), ...(kit.floor || []), ...(kit.tools || []));
   return names;
 }
 
@@ -149,33 +156,59 @@ function fitOutRoom(kitKey, scene = currentScene, pay = true) {
     cages.push({ cage, spec });
     made.push(cage);
   }
-  if (cages.length) {
-    const widths = cages.map(({ cage }) => cage.bounds.right - cage.bounds.left);
+  const rows = [];
+  for (const c of cages) (rows[c.spec.row || 0] = rows[c.spec.row || 0] || []).push(c);
+  let rowTop = top;
+  for (const row of rows.filter(Boolean)) {
+    const widths = row.map(({ cage }) => cage.bounds.right - cage.bounds.left);
     const total = widths.reduce((s, w) => s + w, 0);
     let x = Math.max(20, width / 2 - total / 2);
-    cages.forEach(({ cage }, i) => {
+    let rowBottom = rowTop;
+    row.forEach(({ cage }, i) => {
       const h = cage.bounds.bottom - cage.bounds.top;
-      cage.setPosition ? cage.setPosition(x + widths[i] / 2, top + h / 2) : ((cage.x = x + widths[i] / 2), (cage.y = top + h / 2));
+      // (an incubator is shorter: it sits on the same floor as the cages)
+      const tallest = Math.max(...row.map(({ cage: c }) => c.bounds.bottom - c.bounds.top));
+      const cx = x + widths[i] / 2;
+      const cy = rowTop + tallest - h / 2;
+      if (cage.setPosition) cage.setPosition(cx, cy);
+      else {
+        cage.x = cx;
+        cage.y = cy;
+      }
       cage.updateBounds();
+      rowBottom = Math.max(rowBottom, cage.bounds.bottom);
       x += widths[i];
     });
-    // What goes in each
-    for (const { cage, spec } of cages) {
-      const b = cage.bounds;
-      const n = spec.inside.length;
-      spec.inside.forEach((name, i) => {
-        const a = _kitAction(name);
-        if (!a) return;
-        const ix = b.left + ((i + 1) * (b.right - b.left)) / (n + 1);
-        const obj = _kitPlace(a, scene, ix, b.bottom - 14);
-        if (obj) made.push(obj);
-      });
-    }
+    row.bottom = rowBottom;
+    row.left = Math.max(20, width / 2 - total / 2);
+    row.right = row.left + total;
+    rowTop = rowBottom + 8;
   }
+  // What goes in each
+  for (const { cage, spec } of cages) {
+    const b = cage.bounds;
+    const n = spec.inside.length;
+    spec.inside.forEach((name, i) => {
+      const a = _kitAction(name);
+      if (!a) return;
+      const ix = b.left + ((i + 1) * (b.right - b.left)) / (n + 1);
+      const obj = _kitPlace(a, scene, ix, b.bottom - 14);
+      if (obj) made.push(obj);
+    });
+  }
+  // Machines beside the front row's ends
+  const front = rows.filter(Boolean).slice(-1)[0];
+  (kit.beside || []).forEach((name, i) => {
+    const a = _kitAction(name);
+    if (!a || !front) return;
+    const x = i % 2 === 0 ? Math.max(40, front.left - 55) : Math.min(width - 40, front.right + 55);
+    const obj = _kitPlace(a, scene, x, front.bottom);
+    if (obj) made.push(obj);
+  });
   // Everything else along the front (two rows if it's a lot)
   const floor = kit.floor || [];
   const perRow = Math.max(1, Math.min(floor.length, Math.floor((width - 120) / 80)));
-  const backRowY = cages.length ? Math.min(bottom - 70, Math.max(...cages.map(({ cage }) => cage.bounds.bottom)) + 70) : top + (bottom - top) * 0.45;
+  const backRowY = cages.length ? Math.min(bottom - 40, Math.max(...cages.map(({ cage }) => cage.bounds.bottom)) + 60) : top + (bottom - top) * 0.45;
   floor.forEach((name, i) => {
     const a = _kitAction(name);
     if (!a) return;
@@ -187,6 +220,18 @@ function fitOutRoom(kitKey, scene = currentScene, pay = true) {
     const obj = _kitPlace(a, scene, x, y);
     if (obj) made.push(obj);
   });
+  // A Feed-Bot comes loaded with the kit's food (what doesn't fit stays in its bags)
+  const bot = made.find((o) => typeof FeedBot !== "undefined" && o instanceof FeedBot);
+  if (bot && typeof bot.load === "function") {
+    for (const bag of made.filter((o) => typeof FoodBag !== "undefined" && o instanceof FoodBag && objects.includes(o))) {
+      const n = bot.load(bag.type, bag.amount);
+      bag.amount -= n;
+      if (bag.amount <= 0) {
+        objects.splice(objects.indexOf(bag), 1);
+        made.splice(made.indexOf(bag), 1);
+      }
+    }
+  }
   for (const name of kit.tools || []) {
     const a = _kitAction(name);
     const t = a && _kitPlace(a, scene, 0, 0);

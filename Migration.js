@@ -40,6 +40,7 @@ let _migrateClock = 0;
 function canMigrate(f) {
   if (!f || !f.isAlive || f.adopted || f.isDragging || f.currentCage || f.placedOn || f.raiding) return false;
   if (f.currentStateKey === "SLEEPING" || f.tooYoungToWalk()) return false;
+  if (typeof heldByMachineLure === "function" && heldByMachineLure(f)) return false; // (waiting by the machine: FoalMachine.js)
   return !!MIGRATE_LINKS[f.scene];
 }
 

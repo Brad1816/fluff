@@ -4,6 +4,10 @@
 // ---------------------------------------------------------------------------
 
 // "Change name": the naming pop-up (Names.js), with its dice button
+// More rows for the magnifying glass from other files: [label, "describeFn"]
+// (each describeFn(f) returns [text, tone] or null)
+const INSPECT_ROWS = [["Ear tag", "describeWeanTag"]];
+
 function openNameModal(fluffy) {
   if (!fluffy) return;
   namingPopup = { ids: [fluffy.id], kind: "rename", names: [fluffyNames[fluffy.id] || ""], focus: 0 };
@@ -144,6 +148,7 @@ function getFluffyInspectionInfo(f) {
     { label: "Gender", value: f.gender },
     { label: "Type", value: f.type },
     { label: "Age", value: describeInspectionAge(f), tone: typeof describeAgeTone === "function" ? describeAgeTone(f) : "" },
+    ...(typeof describeGrowthStage === "function" && describeGrowthStage(f) ? [{ label: "Stage", value: describeGrowthStage(f)[0], tone: describeGrowthStage(f)[1] }] : []), // (Grading.js)
     { label: "Sexuality", value: f.sexuality || "heterosexual" },
   ];
   // Which litter it came from, and how strong a foal (Pregnancy.js)
@@ -236,7 +241,7 @@ function getFluffyInspectionInfo(f) {
   // Which herd it's in (Herds.js)
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
-    for (const [label, fn] of [["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"], ["Heat", "describeHeat"], ["Size", "describeMicro"], ["Stuck", "describeGlued"], ["Born with", "describeDefect"], ["Bad meat", "describeBadMeat"], ["Stud", "describeStud"], ["Snitch", "describeSnitch"]]) {
+    for (const [label, fn] of [...INSPECT_ROWS, ["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"], ["Heat", "describeHeat"], ["Size", "describeMicro"], ["Stuck", "describeGlued"], ["Born with", "describeDefect"], ["Bad meat", "describeBadMeat"], ["Stud", "describeStud"], ["Snitch", "describeSnitch"]]) {
       const r = typeof window[fn] === "function" ? window[fn](f) : null; // (Trade.js, Tools.js)
       if (r) about.push({ label, value: r[0], tone: r[1] });
     }
@@ -300,6 +305,8 @@ function getFluffyInspectionInfo(f) {
   care.push({ label: "Litter trained", value: describeInspectionPottyTraining(f)[0], tone: describeInspectionPottyTraining(f)[1] });
   const [coatText, coatTone] = describeInspectionCoat(f);
   care.push({ label: "Coat", value: coatText, tone: coatTone });
+  const tier = typeof describeColourTier === "function" ? describeColourTier(f) : null; // (Grading.js)
+  if (tier) care.push({ label: "Colour tier", value: tier[0], tone: tier[1] });
   // A fancy mane (ManePatterns.js)
   const fancyMane = typeof describeManePattern === "function" ? describeManePattern(f) : null;
   if (fancyMane) care.push({ label: "Mane", value: fancyMane, tone: "good" });

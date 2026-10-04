@@ -37,7 +37,7 @@
 const FOAL_MACHINE_PRICE = 400;
 const FOAL_MACHINE_STOCK = 10;
 const FOAL_MACHINE_STOCK_COST = 60;
-const FOAL_MACHINE_RANGE = 1000; // px
+const FOAL_MACHINE_RANGE = 1600; // px (the whole of most places)
 const FOAL_MACHINE_HUNGRY = 0.45;
 const FOAL_MACHINE_STARVING = 0.15;
 const FOAL_MACHINE_GROWTH = 0.6;
@@ -49,6 +49,9 @@ const FOAL_MACHINE_FEAR_SEEN = 0.6;
 const FOAL_MACHINE_FEAR_TOLD = 0.35;
 const FOAL_MACHINE_SEE = 500; // px
 const FOAL_MACHINE_TRADE_TIME = 150; // game seconds before a trade is given up
+const FOAL_MACHINE_LURE_WEIGHT = 3; // feral spawn weight for its place while it's stocked
+const FOAL_MACHINE_LURE_CHANCE = 0.6; // ...and the share of those that are a hungry family
+const FOAL_MACHINE_LURE_STAY = 12 * HOUR_LENGTH; // a lured family doesn't wander off for this long
 const foalMachineTicker = new Ticker(5);
 
 class FoalMachine {
@@ -152,6 +155,56 @@ function drawFoalMachineShape(c, x, y, k = 1, plates = 0, working = false) {
 
 function allFoalMachines() {
   return typeof objects !== "undefined" ? objects.filter((o) => o instanceof FoalMachine) : [];
+}
+
+// ---- The smell of sketties (playtest 7) ----
+// Wild fluffies come and go in places you're not in. A stocked machine
+// draws them: its place gets more new arrivals (Lures.js lureSpawnWeight),
+// most of them a hungry mum with her foals (lureSpawnPlan), who stay near it
+// for FOAL_MACHINE_LURE_STAY (script.js despawning: heldByMachineLure).
+
+function stockedMachineIn(scene) {
+  return allFoalMachines().find((m) => m.scene === scene && m.plates > 0 && !m.isDragging) || null;
+}
+
+function machineLureWeight(scene) {
+  return stockedMachineIn(scene) ? FOAL_MACHINE_LURE_WEIGHT : 0;
+}
+
+function machineLurePlan(scene) {
+  if (!stockedMachineIn(scene) || Math.random() >= FOAL_MACHINE_LURE_CHANCE) return null;
+  // (two hungry families waiting is plenty)
+  const waiting = new Set(fluffies.filter((f) => f.scene === scene && heldByMachineLure(f) && f.growth >= 1).map((f) => f.id));
+  if (waiting.size >= 2) return null;
+  return { kind: "machine", scenario: "single_mom" };
+}
+
+// Lures.js applyLure: a hungry little family, a herd of their own
+function machineLureArrived(list) {
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  for (const f of list) {
+    f._luredAt = now;
+    if (f.growth >= 1) f.hunger = Math.min(f.hunger ?? 1, 0.25 + Math.random() * 0.12);
+  }
+  // They follow the smell: they turn up near it
+  const m = list.length ? stockedMachineIn(list[0].scene) : null;
+  if (m) {
+    const cx = list.reduce((a, f) => a + f.x, 0) / list.length;
+    const tx = clamp(m.x + (m.x > width / 2 ? -260 : 260), 60, width - 60);
+    for (const f of list) {
+      f.x = clamp(f.x + (tx - cx), 40, width - 40);
+      f.y = clamp(f.y, (typeof sceneTop === "function" ? sceneTop(f.scene) : 120) + 60, height - 40);
+    }
+  }
+  const grown = list.filter((f) => f.growth >= 1);
+  if (grown.length && list.length > 1 && typeof _formHerd === "function" && !list.some((f) => typeof herdOf === "function" && herdOf(f))) _formHerd(list);
+}
+
+// script.js despawning: a lured family stays by a stocked machine a while
+function heldByMachineLure(f) {
+  if (!f || f.adopted || f.luredBy !== "machine" || typeof f._luredAt !== "number") return false;
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  return now - f._luredAt < FOAL_MACHINE_LURE_STAY && now >= f._luredAt && !!stockedMachineIn(f.scene);
 }
 
 // ---- Stocking it (long-press / right-click) ----

@@ -194,6 +194,22 @@ function attemptDrop() {
   }
   for (const obj of objects) {
     if (obj.isDragging) {
+      // A tool that does its own thing to the fluffy clicked (Diapers.js...)
+      if (typeof obj.useOnFluffy === "function") {
+        let hit = null;
+        for (let i = fluffies.length - 1; i >= 0; i--) {
+          const f = fluffies[i];
+          if (f.scene !== obj.scene || !f.isAlive || f.isDragging) continue;
+          if (f.currentCage && typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan) continue;
+          if (f.hitTestAsSeen(mouse.x, mouse.y)) {
+            hit = f;
+            break;
+          }
+        }
+        if (hit) obj.useOnFluffy(hit);
+        else missWithTool(obj);
+        return true;
+      }
       // Special interaction checks for some objects
       if (
         typeof isPunishmentTool === "function"
@@ -1126,7 +1142,9 @@ function updateFerals(dt) {
         !(f.scene === "PARK" && f.isAlive) &&
         !f.isDragging &&
         f.scene !== currentScene &&
-        (f.currentCage === null || f.currentCage === undefined)
+        (f.currentCage === null || f.currentCage === undefined) &&
+        // (drawn to a stocked Foal-4-Sketties machine: they stay a while)
+        !(typeof heldByMachineLure === "function" && heldByMachineLure(f))
       );
     });
 

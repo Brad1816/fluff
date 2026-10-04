@@ -59,6 +59,9 @@ function _randomChannel() {
   return n * 31.875;
 }
 
+// More price multipliers from other files: function(f) -> multiplier
+const PRICE_MULTIPLIERS = [];
+
 class HorseGenetics {
   constructor(horse) {
     this.horse = horse;
@@ -449,6 +452,8 @@ class HorseGenetics {
     if (typeof microPriceMultiplier === "function") price *= microPriceMultiplier(this.horse);
     // Titles: Cherished x1.1, Broken x0.8... (Titles.js)
     if (typeof titlePriceMultiplier === "function") price *= titlePriceMultiplier(this.horse);
+    // Colour tier and weaning tag (Grading.js), a job it's trained for (Jobs.js), ...
+    if (typeof PRICE_MULTIPLIERS !== "undefined") for (const m of PRICE_MULTIPLIERS) price *= m(this.horse) || 1;
 
     return Math.floor(price);
   }

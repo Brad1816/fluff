@@ -55,6 +55,9 @@ function _desireRank(name) {
   return i === undefined ? 999 : i;
 }
 
+// More desires from other files: classes pushed here are given to every fluffy
+const EXTRA_DESIRES = [];
+
 class HorseBrain {
   constructor(horse) {
     this.horse = horse;

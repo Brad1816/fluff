@@ -1410,9 +1410,8 @@ class HorsePositioning {
     if (!this.horse.currentCage) return true;
     const limits = this.getCageLimits();
     const standX = clamp(block.x, limits.minX, limits.maxX);
-    return (
-      Math.hypot(block.x - standX, block.getBottomY() - 50 - limits.y) < 50
-    );
+    // (it stands higher than the blocks sit on the cage floor: along the floor will do)
+    return Math.abs(block.x - standX) < 70;
   }
 
   constrainTargetToCage() {

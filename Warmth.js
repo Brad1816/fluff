@@ -124,6 +124,8 @@ function warmthExposure(f) {
   }
   if (near >= 2) e *= 0.55;
   else if (near === 1) e *= 0.75;
+  // Wet through: the cold bites harder (WetFur.js)
+  if (typeof wetExposure === "function") e *= wetExposure(f);
   return e;
 }
 

@@ -1617,6 +1617,7 @@ class HorseRenderer {
     drawPart(this.tinted.torso, layout.torso);
     if (typeof drawScars === "function" && this.horse.scars) drawScars(ctx, this, "torso", layout); // Scars.js
     if (typeof drawBandage === "function" && this.horse.recovery) drawBandage(ctx, this, layout); // Bandages.js
+    if (typeof drawDiaperOn === "function" && this.horse.diaper) drawDiaperOn(ctx, this, layout); // Diapers.js
     if (this.tinted.udders && !this.horse.tooYoungToWalk()) {
       const tW = layout.torso.w,
         tH = layout.torso.h;

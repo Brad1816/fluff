@@ -3,8 +3,8 @@
 //
 //   - Boarding: the desk still boards your own fluffies (UIDayCare.js,
 //     dayCareFluffies; the boarding fee is a daily bill, Bills.js).
-//   - Adoption: SHELTER_CAGES kennels (ShelterKennels: two rows of four,
-//     stacked two high either side of the desk) hold strays and fluffies their owners gave up. You can see
+//   - Adoption: SHELTER_CAGES kennels (ShelterKennels: four side by side,
+//     stacked two high, either side of the desk - 16 in all) hold strays and fluffies their owners gave up. You can see
 //     each one through the bars, but all you can read about it is the plaque
 //     under its cage: its name, what it is, roughly how old, where it came
 //     from, a line or two from the staff, and its time's-up day. No
@@ -20,14 +20,24 @@
 //     fluffy is half price.
 //   - Adopted fluffies come out by the desk as yours, with the name the
 //     shelter (or their old owner) gave them; take them home yourself.
+//   - The playpen (ShelterPlaypen, playtest 7): a little pen in front of the
+//     desk where the shelter puts SHELTER_PEN_FOALS of its cutest foals out
+//     to tempt you. They're real fluffies (f.shelterFoal = { name, fee },
+//     saved), toddling and playing; the staff keep them fed and clean. Tap one
+//     to adopt it (SHELTER_PEN_FEE). Each morning ones that have grown past
+//     SHELTER_PEN_GROWN find a home with someone else, and new ones come.
 // Saved: shelter (SAVED_GAME_STATE). Fees are placeholders for the balance
 // pass.
 // ---------------------------------------------------------------------------
 
 const SHELTER_SCENE = "DAY_CARE";
-const SHELTER_CAGES = 8;
-const SHELTER_ARRIVALS = [1, 3]; // new fluffies each morning
-const SHELTER_START = 5; // cages filled when you first visit
+const SHELTER_CAGES = 16; // (was 8 - playtest 7)
+const SHELTER_ARRIVALS = [2, 4]; // new fluffies each morning
+const SHELTER_START = 10; // cages filled when you first visit
+const SHELTER_PEN_FOALS = 3;
+const SHELTER_PEN_FEE = 90;
+const SHELTER_PEN_GROWN = 0.6;
+const SHELTER_PEN_GROWTH = [0.18, 0.38]; // how grown the foals put out are (walking, not yet talking much)
 const SHELTER_STAY_DAYS = [3, 5]; // days until time's up
 const SHELTER_ADOPT_FEE = 60; // placeholder
 const SHELTER_LAST_DAY_DISCOUNT = 0.5;
@@ -316,7 +326,10 @@ function updateShelter(dt) {
   if (shelter.day !== day) {
     shelter.day = day;
     shelterNewDay();
+    refillShelterPen();
   }
+  if (!shelterPen() || shelterPenFoals().length === 0) refillShelterPen(); // (an old save, or all adopted: more come out)
+  careForShelterPen();
   // They grow up and get older while they wait
   for (const r of shelter.residents) {
     r.data.age = (r.data.age || 0) + 1;
@@ -533,23 +546,25 @@ function onBoarderPickedUp(horse, data) {
 
 // ---- The kennels (an object in the shelter room, like the desk) ----
 
-// Two rows of four: on each side of the desk, two kennels side by side,
-// stacked two high. Top row first, left to right.
+// Four kennels side by side on each side of the desk, stacked two high:
+// 16 in all. Top row first, left to right.
 function shelterCageRects() {
-  const deskHalf = 170;
-  const margin = 30;
-  const gap = 12;
-  const plaque = 30; // room under each kennel for its plaque
+  const deskHalf = 165;
+  const margin = 14;
+  const gap = 8;
+  const plaque = 28; // room under each kennel for its plaque
+  const perSide = SHELTER_CAGES / 4; // (per side, per row)
   const side = width / 2 - deskHalf - margin;
-  const w = Math.min(130, Math.floor((side - gap) / 2));
-  const h = Math.round(w * 0.78);
-  const y0 = Math.round(height * 0.15) + 40;
-  const leftX = margin + Math.max(0, (side - (2 * w + gap)) / 2);
-  const rightX = width - leftX - (2 * w + gap);
+  const w = Math.min(130, Math.floor((side - gap * (perSide - 1)) / perSide));
+  const h = Math.round(w * 0.8);
+  const y0 = Math.round(height * 0.15) + 30;
+  const span = perSide * w + (perSide - 1) * gap;
+  const leftX = margin + Math.max(0, (side - span) / 2);
+  const rightX = width - leftX - span;
   const rects = [];
   for (let row = 0; row < 2; row++) {
     const y = y0 + row * (h + plaque);
-    for (const sx of [leftX, rightX]) for (let col = 0; col < 2; col++) rects.push({ x: Math.round(sx + col * (w + gap)), y, w, h });
+    for (const sx of [leftX, rightX]) for (let col = 0; col < perSide; col++) rects.push({ x: Math.round(sx + col * (w + gap)), y, w, h });
   }
   return rects;
 }
@@ -595,7 +610,7 @@ class ShelterKennels {
   getBottomY() {
     return this.y;
   }
-  // Which cage (0-7) is at this point, or -1 (the plaque counts)
+  // Which cage (0-15) is at this point, or -1 (the plaque counts)
   cageAt(px, py) {
     const rects = shelterCageRects();
     for (let i = 0; i < rects.length; i++) {
@@ -652,7 +667,7 @@ class ShelterKennels {
       ctx.lineWidth = 1.5;
       ctx.strokeRect(c.x + 8, py, c.w - 16, 20);
       ctx.fillStyle = "#1e1a10";
-      ctx.font = "bold 12px Arial";
+      ctx.font = "bold 11px Arial";
       ctx.textAlign = "center";
       const label = r ? (shelterDaysLeft(r) <= 0 ? `${r.name} · last day` : r.name) : "—";
       ctx.fillText(typeof fitText === "function" ? fitText(ctx, label, c.w - 20) : label, c.x + c.w / 2, py + 14);
@@ -663,6 +678,229 @@ class ShelterKennels {
     this.draw(ctx);
   }
 }
+
+// ---- The playpen (playtest 7) ----
+
+function shelterPenImage() {
+  if (typeof images === "undefined") return null;
+  if (images.shelter_pen) return images.shelter_pen;
+  if (typeof document === "undefined") return { width: 340, height: 120 };
+  const cv = document.createElement("canvas");
+  cv.width = 340;
+  cv.height = 120;
+  const c = cv.getContext("2d");
+  if (!c) return { width: 340, height: 120 };
+  // A soft mat just under their feet (see-through: the pen's drawn in front of them)
+  c.fillStyle = "rgba(214, 194, 232, 0.55)";
+  c.fillRect(6, 104, 328, 12);
+  // Rails and thin posts
+  c.strokeStyle = "rgba(160, 122, 79, 0.95)";
+  c.lineWidth = 4;
+  c.beginPath();
+  c.moveTo(4, 42);
+  c.lineTo(336, 42);
+  c.moveTo(4, 98);
+  c.lineTo(336, 98);
+  c.stroke();
+  c.lineWidth = 2;
+  for (let x = 6; x <= 334; x += 30) {
+    c.beginPath();
+    c.moveTo(x, 36);
+    c.lineTo(x, 116);
+    c.stroke();
+  }
+  // A sign
+  c.fillStyle = "#fff6d8";
+  c.fillRect(110, 4, 120, 26);
+  c.strokeStyle = "#a07a4f";
+  c.lineWidth = 2;
+  c.strokeRect(110, 4, 120, 26);
+  c.fillStyle = "#7a4e8a";
+  c.font = "bold 14px Arial";
+  c.textAlign = "center";
+  c.fillText("Adopt me! ♥", 170, 22);
+  images.shelter_pen = cv;
+  return cv;
+}
+
+class ShelterPlaypen extends Cage {
+  getImage() {
+    return shelterPenImage();
+  }
+  widen() {
+    return 1;
+  }
+  causesUnhappiness() {
+    return false;
+  }
+  cycleTag() {}
+  accepts(item) {
+    return !!(item && item.shelterFoal);
+  }
+  // Nobody takes them out but the staff (Cage.locksItem)
+  locksContents() {
+    return true;
+  }
+  floorOffset() {
+    return 8;
+  }
+  getSellValue() {
+    return 0;
+  }
+  placeIt() {
+    const img = this.getImage();
+    this.x = width / 2;
+    this.y = height - 205 - (img ? img.height / 2 : 60);
+  }
+  update(dt) {
+    this.isDragging = false;
+    const ox = this.x;
+    const oy = this.y;
+    this.placeIt();
+    if (Math.abs(this.x - ox) > 0.01 || Math.abs(this.y - oy) > 0.01) this.moveContents(this.x - ox, this.y - oy);
+    this.updateBounds();
+  }
+}
+
+function shelterPen() {
+  return objects.find((o) => o instanceof ShelterPlaypen) || null;
+}
+
+function shelterPenFoals() {
+  return fluffies.filter((f) => f.shelterFoal && !f.adopted && f.isAlive);
+}
+
+function _ensureShelterPen() {
+  let pen = shelterPen();
+  if (!pen) {
+    pen = new ShelterPlaypen(SHELTER_SCENE);
+    pen.placeIt();
+    pen.updateBounds();
+    objects.push(pen);
+  }
+  return pen;
+}
+
+// A cute foal for the pen
+function makeShelterPenFoal(pen = _ensureShelterPen()) {
+  const r = Math.random();
+  const type = r < 0.15 ? "unicorn" : r < 0.3 ? "pegasus" : "earthy";
+  const q = () => 0.45 + Math.random() * 0.55; // (the cutest go in the pen)
+  const f = new Horse(_shRand(SHELTER_PEN_GROWTH), null, SHELTER_SCENE, type, null, q(), q());
+  f.makeType(type);
+  const b = pen.bounds;
+  f.x = b.left + 30 + Math.random() * Math.max(10, b.right - b.left - 60);
+  f.y = b.bottom - 10;
+  f.currentCage = pen;
+  f.adopted = false;
+  f.personalities = (f.personalities || []).filter((p) => p !== "true_feral" && p !== "smarty");
+  f.playerTrust = Math.max(f.playerTrust ?? 0, 0.5);
+  const taken = new Set([...shelter.residents.map((x) => x.name), ...shelterPenFoals().map((x) => x.shelterFoal.name)]);
+  const free = SHELTER_NAMES.filter((n) => !taken.has(n));
+  f.shelterFoal = { name: _shPick(free.length ? free : SHELTER_NAMES), fee: SHELTER_PEN_FEE };
+  fluffies.push(f);
+  if (typeof setSpawnAge === "function") setSpawnAge(f);
+  return f;
+}
+
+// Each morning: grown ones go to other homes, new ones come out
+function refillShelterPen() {
+  const pen = _ensureShelterPen();
+  let gone = 0;
+  for (const f of shelterPenFoals()) {
+    if (f.growth < SHELTER_PEN_GROWN) continue;
+    gone++;
+    const i = fluffies.indexOf(f);
+    if (i >= 0) fluffies.splice(i, 1);
+  }
+  if (gone && typeof noteDayEvent === "function") noteDayEvent("news", { text: `${gone === 1 ? "A foal" : `${gone} foals`} from the shelter's playpen found a home.` });
+  let n = shelterPenFoals().length;
+  while (n < SHELTER_PEN_FOALS) {
+    makeShelterPenFoal(pen);
+    n++;
+  }
+}
+
+// The staff look after them (updateShelter, once a second)
+function careForShelterPen() {
+  const pen = shelterPen();
+  for (const f of shelterPenFoals()) {
+    if (pen && f.currentCage !== pen && !f.isDragging) {
+      f.currentCage = pen;
+      f.scene = pen.scene;
+    }
+    f.hunger = Math.max(f.hunger ?? 1, 0.85);
+    if ((f.dirt || 0) > 0) f.dirt = 0;
+    f.poopStorage = 0;
+    f.peeStorage = 0;
+    if (f.happiness < 0.6) f.happiness = 0.6;
+    if (f.health < 100) f.health = Math.min(100, f.health + 2);
+  }
+}
+
+// Tap a pen foal: adopt it?
+function shelterPenFoalAt(x, y) {
+  if (currentScene !== SHELTER_SCENE) return null;
+  const hits = shelterPenFoals().filter((f) => f.scene === currentScene && f.hitTestAsSeen(x, y));
+  return hits.sort((a, b) => b.y - a.y)[0] || null;
+}
+
+function shelterPenClick() {
+  const f = shelterPenFoalAt(mouse.x, mouse.y);
+  if (!f) return false;
+  if (typeof getDialogue === "function" && !f.tooYoungToSpeak()) f.speak(getDialogue(["UPSIES"], f));
+  askAdoptPenFoal(f);
+  return true;
+}
+
+function askAdoptPenFoal(f) {
+  if (typeof openChoice !== "function") return adoptShelterPenFoal(f);
+  const looks = typeof describeFluffyLooks === "function" ? describeFluffyLooks(f) : "a foal";
+  const fee = f.shelterFoal.fee;
+  openChoice({
+    title: `Adopt ${f.shelterFoal.name}?`,
+    lines: [`${f.shelterFoal.name}: ${looks}, from the shelter's playpen.`, `Adoption fee: $${fee}.`],
+    buttons: [
+      { label: `Adopt ($${fee})`, kind: "ok", run: () => adoptShelterPenFoal(f) },
+      { label: "Not now", cancel: true, run: () => {} },
+    ],
+  });
+  return true;
+}
+
+function adoptShelterPenFoal(f) {
+  if (!f || !f.shelterFoal || f.adopted || !f.isAlive) return null;
+  const fee = f.shelterFoal.fee;
+  const free = typeof showDebugMenu !== "undefined" && showDebugMenu;
+  if (!free && money < fee) {
+    if (typeof addUIMessage === "function") addUIMessage(`You need $${fee.toLocaleString()} to adopt ${f.shelterFoal.name}.`);
+    return null;
+  }
+  if (!free) money -= fee;
+  if (typeof noteSpending === "function") noteSpending(fee);
+  const name = f.shelterFoal.name;
+  f.shelterFoal = null;
+  f.currentCage = null;
+  f.adopted = true;
+  f.arrivedFrom = "the shelter";
+  const desk = objects.find((o) => typeof DayCareDesk !== "undefined" && o instanceof DayCareDesk && o.scene === SHELTER_SCENE);
+  const pen = shelterPen();
+  f.x = width / 2 + (Math.random() * 120 - 60);
+  f.y = pen ? pen.bounds.top - 10 : desk ? desk.y + 60 : height * 0.55;
+  fluffyNames[f.id] = name;
+  if (!shelter.named || typeof shelter.named !== "object") shelter.named = {};
+  shelter.named[f.id] = name;
+  shelter.adopted = (shelter.adopted || 0) + 1;
+  if (typeof recordFluffy === "function") {
+    const rec = recordFluffy(f);
+    if (rec) rec.boughtFrom = "the Fluffy Shelter";
+  }
+  if (typeof poofs !== "undefined" && typeof Poof !== "undefined") poofs.push(new Poof(f.x, f.y, f.scene));
+  if (typeof addUIMessage === "function") addUIMessage(`You adopted ${name} ($${fee}). Take ${f.gender === "female" ? "her" : "him"} home!`);
+  if (typeof noteDayEvent === "function") noteDayEvent("news", { text: `You adopted ${name} from the shelter's playpen.` });
+  return f;
+}
+
 
 // ---- The plaque card (click a kennel) ----
 

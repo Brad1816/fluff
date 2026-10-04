@@ -46,6 +46,13 @@ const SAVED_HORSE_FIELDS = [
   { name: "playNice", fallback: 0 },
   { name: "bullyHabit", fallback: 0 },
   { name: "luredBy", fallback: null }, // Lures.js
+  { name: "_luredAt", fallback: null }, // FoalMachine.js (drawn by the machine)
+  { name: "shelterFoal", fallback: null }, // Shelter.js (in the shelter's playpen)
+  { name: "weanTag", fallback: null }, // Grading.js
+  { name: "wet", fallback: 0 }, // WetFur.js
+  { name: "diaper", fallback: null }, // Diapers.js
+  { name: "job", fallback: null }, // Jobs.js
+  { name: "clientJob", fallback: null }, // SurgeryJobs.js
   { name: "machineFear", fallback: 0 }, // FoalMachine.js
   { name: "refusesMachine", fallback: false },
   { name: "fakeAlicorn", fallback: null, clone: true }, // Trade.js

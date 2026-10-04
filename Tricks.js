@@ -450,6 +450,9 @@ function closeTrickUI() {
 // The right-click menu's third row: other things you can do with it -
 // { key, name, sub, harsh?, run(f) } from Wishes.js (promise its wish) and
 // Care.js (sit with, praise, scold, time-out)
+// More menu entries from other files (each a function(f) -> [actions])
+const FLUFFY_ACTION_SOURCES = [];
+
 function rightClickActions(f) {
   const out = [];
   if (typeof careActions === "function") out.push(...careActions(f));
@@ -469,6 +472,13 @@ function rightClickActions(f) {
   if (typeof keepActions === "function") out.push(...keepActions(f)); // NotForSale.js
   if (typeof snitchActions === "function") out.push(...snitchActions(f)); // Snitch.js
   if (typeof wholesaleActions === "function") out.push(...wholesaleActions(f)); // the mill trade (Inspector.js)
+  for (const src of FLUFFY_ACTION_SOURCES) {
+    try {
+      out.push(...(src(f) || []));
+    } catch (e) {
+      /* one source going wrong mustn't empty the menu */
+    }
+  }
   return out;
 }
 
