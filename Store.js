@@ -356,6 +356,7 @@ function drawStoreScenery(c) {
     if (typeof drawVetClinic === "function") drawVetClinic(c);
     // The show hall (Shows.js)
     if (typeof drawShowHall === "function") drawShowHall(c);
+    if (typeof drawRivalShop === "function") drawRivalShop(c); // the rival breeder (Rival.js)
   } else if (isStoreScene(currentScene)) {
     const aisle = getStoreAisleForScene(currentScene);
     if (aisle) drawStoreAisle(c, aisle);

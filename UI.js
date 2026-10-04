@@ -881,6 +881,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof showHallClick === "function" && showHallClick()) {
     return;
   }
+  // The rival breeder's shop (Rival.js)
+  if (typeof rivalShopClick === "function" && rivalShopClick()) {
+    return;
+  }
 
   // Things in the world: world positions (Park.js)
   if (typeof mouseToWorld === "function") mouseToWorld();

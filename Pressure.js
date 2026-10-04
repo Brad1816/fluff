@@ -143,12 +143,14 @@ function _rollMarket() {
 // script.js: how fast the next buyer comes
 function marketBuyerRate() {
   const m = _prOk().market;
-  return m === "slow" ? 0.5 : m === "busy" ? 1.5 : 1;
+  const r = typeof rivalBuyerRate === "function" ? rivalBuyerRate() : 1; // (the rival breeder, Rival.js)
+  return (m === "slow" ? 0.5 : m === "busy" ? 1.5 : 1) * r;
 }
 // Buyers.buyerOffer
 function marketOfferMultiplier() {
   const m = _prOk().market;
-  return m === "slow" ? SLOW_OFFER : m === "busy" ? BUSY_OFFER : 1;
+  const r = typeof rivalOfferMultiplier === "function" ? rivalOfferMultiplier() : 1; // (Rival.js)
+  return (m === "slow" ? SLOW_OFFER : m === "busy" ? BUSY_OFFER : 1) * r;
 }
 
 // ---- The vet on credit (Vet._vetPay) ----

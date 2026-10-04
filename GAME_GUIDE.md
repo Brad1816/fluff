@@ -3248,3 +3248,33 @@ from. Nothing player-facing reads it yet except the debug view.
   toughie may lie (`EXT_LIE_CHANCE`), a smarty refuses; the panel shows the
   tip and `extRoomSounds` (babbling from unaware rooms next door, crying
   from aware foals in the open). Bites at boots leave no blood.
+
+### The rival breeder (`Rival.js`)
+
+- `rivalState` (saved): kind, shop, owner, `score` (his name, 0-100),
+  champion, stock (stock-market listings at his markup), sale, closing,
+  closedUntil, past, reported, beaten/lost, news. Opens on
+  `RIVAL_START_DAY` with a random `RIVAL_KINDS` entry (boutique, mill,
+  show: lines, markup, usual name, show bonus, scheme weights).
+- Each morning: his name drifts back to `usual` (`RIVAL_DRIFT`), the window
+  restocks, and maybe a scheme (`RIVAL_SCHEME_CHANCE`): sale
+  (`rivalBuyerRate` x0.7 for a day; the mill's is a price war,
+  `rivalOfferMultiplier` x0.85), smear (keeperRep.family -3 unless it's 20+),
+  letter, dump (`rivalDump`: mill rejects in the ALLEY, `f.rivalDump`,
+  saved). A big name trims buyers (`rivalBuyerRate`). Both multiply into
+  Pressure.js `marketBuyerRate` / `marketOfferMultiplier`.
+- Shows: `rivalShowEntrant` joins `_showRivals`; `onRivalShowResult` from
+  `runShow` (beat it `RIVAL_SHOW_BEAT`, lose `RIVAL_SHOW_LOSE`).
+- Orders: `onOrderPostedForRival` marks some new orders (`order.rival`,
+  `RIVAL_SNIPE_CHANCE`); `_rvOrders` takes posted ones at `takeAt` and
+  wins races for accepted ones at `rival.due` (no "missed"); delivering in
+  time (`onOrderFilledForRival`) knocks him `RIVAL_ORDER_BEAT`, any other
+  fill `RIVAL_ORDER_TRADE`. Order cards show RIVAL and his deadline.
+- `reportRival` (once, needs an adopted `rivalDump` fluffy): `RIVAL_REPORT`.
+- Below `RIVAL_CLOSE_AT` for `RIVAL_CLOSE_DAYS` mornings: closing-down sale
+  (half price, `RIVAL_SALE_DAYS`), then `_rvCloseDown` (stock to the
+  shelter, +3 order rep), reopening with another kind after
+  `RIVAL_GONE_DAYS`.
+- UI: `drawRivalShop` on Shopping Street (Store.js), `rivalShopClick`
+  (UI.js), the "rival" screen (`drawRivalPanel`: window with Buy, names,
+  news, Report). tests/rival.test.js.

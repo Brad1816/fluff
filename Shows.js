@@ -325,6 +325,9 @@ function _showRivals(theme, level) {
       ..._showRivalLooks(theme, breeder, i, level),
     });
   }
+  // The rival breeder's champion (Rival.js)
+  const champ = typeof rivalShowEntrant === "function" ? rivalShowEntrant(theme, level) : null;
+  if (champ) out.push(champ);
   return out;
 }
 
@@ -385,6 +388,7 @@ function runShow() {
   entrants.forEach((e, i) => (e.order = i));
   entrants.sort((a, b) => b.score - a.score || (a.you ? -1 : 1));
   entrants.forEach((e, i) => (e.place = i + 1));
+  if (typeof onRivalShowResult === "function") onRivalShowResult(entrants, yours); // (Rival.js)
 
   const result = {
     showId: show.id,

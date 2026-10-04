@@ -397,6 +397,7 @@ function deliverCustomerOrder(orderId, fluffyId) {
   if (!showDebugMenu) money += order.reward - (order.depositPaid || 0) + reaction.money;
   // They remember you, and may write later (Commissions.js)
   if (typeof noteOrderFilled === "function") noteOrderFilled(order, f, reaction);
+  if (typeof onOrderFilledForRival === "function") onOrderFilledForRival(order); // (Rival.js)
   if (typeof noteDayEvent === "function") noteDayEvent("order", { money: order.reward + reaction.money });
 
   // The courier takes the fluffy away (like selling it)
@@ -464,7 +465,9 @@ function updateCustomerOrders(dt) {
     // Top the board up; at the very start post a few at once
     const toPost = o.posted.length === 0 && o.filled === 0 && o.active.length === 0 ? 3 : 1;
     for (let k = 0; k < toPost && o.posted.length < max; k++) {
-      o.posted.push(makeCustomerOrder());
+      const order = makeCustomerOrder();
+      o.posted.push(order);
+      if (typeof onOrderPostedForRival === "function") onOrderPostedForRival(order); // (the rival may be after it too: Rival.js)
     }
   }
 

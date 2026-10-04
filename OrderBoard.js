@@ -427,6 +427,12 @@ function _drawOrderCard(c, card, theme, m, isActive) {
     canvasText(c, `Leaves the board in ${fmt(o.leavesAt - now)}`, x, footY, theme.sub, "12px Arial");
   }
   let foot2 = matching ? `You have ${matching} that fit${matching === 1 ? "s" : ""}` : "None of yours fit yet";
+  // The rival breeder's after it too (Rival.js)
+  if (o.rival && typeof rivalState !== "undefined" && rivalState && o.rival.shop === rivalState.shop) {
+    canvasText(c, "RIVAL", card.x + card.w - 14, card.y + 45, "#c62828", "bold 11px Arial", "right");
+    const until = isActive ? (o.rival.due ?? o.dueAt - (o.timeAllowed || 0) * 0.35) : o.rival.takeAt;
+    foot2 = `${o.rival.shop} wants it too: ${formatOrderTime(Math.max(0, until - now))}`;
+  }
   if (o.commission && !isActive) foot2 = `Deposit $${o.deposit} · ${fmt(o.timeAllowed)} to deliver`;
   else if (o.commission && !matching) foot2 = "Breed one: pair up in the Gene Lab";
   canvasText(c, foot2, x, footY + 17, matching ? "#1e8a3a" : o.commission ? "#b8860b" : theme.sub, "bold 12px Arial");

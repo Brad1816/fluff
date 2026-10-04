@@ -196,6 +196,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "mummahFedAt", fallback: undefined }, // ArtificialMummah.js
   { name: "jobFeral", fallback: undefined }, // Exterminator.js: one of a pest job's herd
   { name: "clientPet", fallback: undefined }, // ...or the client's own fluffy
+  { name: "rivalDump", fallback: undefined }, // dumped by the rival breeder (Rival.js): proof
 ];
 
 function _savedCopy(v) {
