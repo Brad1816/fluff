@@ -38,8 +38,11 @@ class HorseActionHandler {
           (b) =>
             b.scene === this.horse.scene &&
             !(typeof isBallCarried === "function" ? isBallCarried(b) : b.carriedBy) &&
-            Math.sqrt((b.x - this.horse.x) ** 2 + (b.y - this.horse.y) ** 2) <
-              50,
+            // (in a cage it stands higher than the ball rolls, and can't get
+            // right up to the bars: near enough along the floor will do)
+            (this.horse.currentCage && b.currentCage === this.horse.currentCage
+              ? Math.abs(b.x - this.horse.x) < 80
+              : Math.sqrt((b.x - this.horse.x) ** 2 + (b.y - this.horse.y) ** 2) < 50),
         );
         if (ball) {
           if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "ball"); // Play.js
@@ -685,6 +688,13 @@ class HorseActionHandler {
     return false;
   }
 
+  // Turned away by this mare lately? (executeChirpyBabyMilk)
+  _milkRefused(mare) {
+    const t = this.horse._milkNo && this.horse._milkNo[mare.id];
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
+    return typeof t === "number" && t > now && t - now <= MILK_REFUSED_WAIT;
+  }
+
   executeChirpyBabyMilk() {
     let fed = false;
 
@@ -716,6 +726,7 @@ class HorseActionHandler {
           f.scene === this.horse.scene &&
           f.lactatingTimer > 0 &&
           f.currentCage === this.horse.currentCage &&
+          !this._milkRefused(f) &&
           // (not one who won't nurse it, or is away from it: Runts.js, BadMummah.js)
           !(typeof mumWontNurse === "function" && mumWontNurse(f, this.horse)),
       );
@@ -741,7 +752,8 @@ class HorseActionHandler {
           f.scene === this.horse.scene &&
           f.lactatingTimer > 0 &&
           f.attackCooldown <= 0 &&
-          f.currentCage === this.horse.currentCage
+          f.currentCage === this.horse.currentCage &&
+          !this._milkRefused(f)
         ) {
           const dist = Math.sqrt(
             (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
@@ -794,6 +806,12 @@ class HorseActionHandler {
         } else {
           if (this.horse.attemptFeedFromMare(bestTarget)) {
             fed = true;
+          } else if (!(typeof nursingSlotsFull === "function" && nursingSlotsFull(bestTarget, this.horse))) {
+            // Turned away (or she's dry): try a feeder or someone else for a
+            // while - an alicorn foal kept going back to the mum who wouldn't
+            // have it, and starved beside a full feeder
+            if (!this.horse._milkNo) this.horse._milkNo = {};
+            this.horse._milkNo[bestTarget.id] = (typeof timePlayed === "number" ? timePlayed : 0) + MILK_REFUSED_WAIT;
           }
         }
       } else {

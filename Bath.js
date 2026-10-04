@@ -298,6 +298,7 @@ function drawDirtEffects(c, f) {
 
 function _inMess(f) {
   if (typeof puddles === "undefined" || typeof isBodilyWaste !== "function") return false;
+  if (typeof cagedFromFloorMess === "function" && cagedFromFloorMess(f)) return false; // (its cage's own mess counts instead: CageLife.js)
   const fy = typeof f.getBottomY === "function" ? f.getBottomY() : f.y;
   for (const p of puddles) {
     if (p.scene !== f.scene || !p.points.length || !isBodilyWaste(p.color)) continue;

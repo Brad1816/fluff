@@ -391,6 +391,7 @@ function drawToolboxAndToolbar(ctx) {
       `In your shopping bag${hoveredBagItem.count > 1 ? `: ${hoveredBagItem.count}` : ""}`,
       "Click to take it out, then click to put it down.",
     ];
+    if (hoveredBagItem.count > 1) lines.push("Shift-click (or long-press) to take them all out.");
     ctx.font = "bold 12px Arial";
     const padding = 10;
     const tw = Math.max(...lines.map((l) => ctx.measureText(l).width)) + padding * 2;
@@ -401,7 +402,7 @@ function drawToolboxAndToolbar(ctx) {
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
     lines.forEach((line, idx) => {
-      ctx.fillStyle = idx === 0 ? "gold" : idx === 2 ? "#88ccff" : "white";
+      ctx.fillStyle = idx === 0 ? "gold" : idx >= 2 ? "#88ccff" : "white";
       ctx.fillText(line, tx + padding, ty + padding + idx * 16);
     });
   }
@@ -593,7 +594,10 @@ function toolboxAndToolbarClick() {
           return true;
         }
         if (item.isBag) {
-          if (typeof takeFromShoppingBag === "function") takeFromShoppingBag(item.name);
+          // Shift-click (a long press on a phone): all of that kind (ShoppingBag.js)
+          const all = (mouse.rightDown || (typeof isShiftPressed !== "undefined" && isShiftPressed)) && item.count > 1;
+          if (all && typeof takeAllFromShoppingBag === "function") takeAllFromShoppingBag(item.name);
+          else if (typeof takeFromShoppingBag === "function") takeFromShoppingBag(item.name);
           return true;
         }
         // Right-click (a long press on a phone): onto the number row, or off it

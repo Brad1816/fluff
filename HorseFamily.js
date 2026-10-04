@@ -292,8 +292,10 @@ addHorseMethods({
       }
 
       const pRel = this.perceivedRelationships[otherId];
-      if (pRel.state === "unmet" && other && typeof haveMet === "function" && haveMet(this, other)) pRel.state = other.scene === this.scene ? "current" : "unmet";
-      if (other && other.scene === this.scene) {
+      // (out in the yard through the pet flap still counts as home: PetFlap.js)
+      const together = other && (other.scene === this.scene || (other.isAlive && typeof homeLinked === "function" && homeLinked(this.scene, other.scene)));
+      if (pRel.state === "unmet" && other && typeof haveMet === "function" && haveMet(this, other)) pRel.state = together ? "current" : "unmet";
+      if (together) {
         if (!other.isAlive) {
           // A young foal doesn't understand yet: it tries to nurse or wake
           // them before it grieves (FoalLife.js)

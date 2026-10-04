@@ -512,6 +512,11 @@ addHorseMethods({
                   this.expressionOverride = "ANGRY_PUFFED";
                   this.expressionOverrideTimer = 3.0;
                 }
+                // A wild or stray fluffy has no daddeh to thank (and no bad
+                // food to complain to him about): its own lines
+                if (!this.adopted && foodType !== "scrap_kibble" && foodType !== "rat_poison") {
+                  key = ["EAT", "WILD", foodType === "sketties" ? "SKETTIES" : this.isSmarty() ? "SMARTY" : "DEFAULT"];
+                }
                 if (foodType === "sketties") {
                   this.changeHappiness(HAPPINESS_BONUS_SKETTIES, "Sketties!");
                 } else if (foodType === "scrap_kibble") {

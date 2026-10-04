@@ -43,6 +43,7 @@ const STORY_KINDS = {
   arrived: { big: true, text: (e, n) => `${n} came to ${e.x || "you"}.` },
   abandoned: { big: true, text: (e, n) => `${n} was abandoned by its owner.` },
   named: { big: true, text: (e, n) => `Named ${e.x || n}.` },
+  tagged: { text: (e, n) => `Tagged ${e.x || n}.` }, // (a stock tag, Names.js)
   sold: { big: true, text: (e, n) => `${n} ${e.x === "sold" ? "was sold" : e.x || "left"}.` },
   trick: { big: true, text: (e, n) => `${n} learnt to ${String(e.x || "do a trick").toLowerCase()}.` },
   lesson_done: { big: true, text: (e, n) => `${n} ${e.x || "learnt its lesson"}.` },

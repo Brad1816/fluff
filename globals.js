@@ -460,6 +460,8 @@ window.addEventListener("mouseup", (e) => {
         }
       }
     }
+    // The scoop's box is done: lift what's in it (Scoop.js)
+    if (typeof scoopMouseUp === "function") scoopMouseUp();
   }
   if (e.button === 2) mouse.rightDown = false;
 });
@@ -1544,7 +1546,9 @@ const CAGE_TAG_COLORS = {
   cull: "#607D8B",
 };
 const CAGE_FLOOR_OFFSET = 10; // How far above the cage's bottom edge caged fluffies stand
+const MILK_REFUSED_WAIT = 40; // game seconds a foal turned away by a mare looks elsewhere (a feeder) first
 const CAGE_WIDEN = 1.25; // a plain cage is drawn this much wider than its picture (Cage.widen)
+const CAGE_SNAP = 45; // px: a cage dropped this close beside another lines up with it
 const CAGE_WANDER_CHANCE = 0.4; // a caged fluffy that feels like wandering moves this often...
 const CAGE_WANDER_REST = [15, 40]; // ...then waits this long (s) before thinking of it again
 const CAGE_WANDER_STEP = 60; // ...and goes at most this far (px)
@@ -2401,6 +2405,10 @@ function ensureThrowToolPrepended() {
     toolbox.unshift(tool);
   } else if (idx === -1) {
     toolbox.unshift(new ThrowTool());
+  }
+  // ...and the scoop, second (Scoop.js)
+  if (typeof Scoop !== "undefined" && !toolbox.some((t) => t instanceof Scoop) && !(typeof objects !== "undefined" && objects.some((o) => o instanceof Scoop))) {
+    toolbox.splice(1, 0, new Scoop());
   }
 }
 

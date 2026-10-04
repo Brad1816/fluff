@@ -217,6 +217,80 @@ function takeFromShoppingBag(name) {
   return obj;
 }
 
+// ---- Taking them all out (playtest 6) ----
+// Shift-click a bag button (long-press on a phone): one comes out stuck to
+// the mouse as usual, and when you put it down the rest of that kind are
+// laid out in a row beside it (in the same cage, if it went in one).
+const BAG_ALL_GAP = 36; // px between them
+const BAG_ALL_ROW = 8; // a row
+let bagAllPending = null; // { obj, name }
+
+function takeAllFromShoppingBag(name) {
+  const obj = takeFromShoppingBag(name);
+  if (!obj) return null;
+  bagAllPending = shoppingBag.some((e) => e.name === name) ? { obj, name } : null;
+  return obj;
+}
+
+// Lay the rest out beside the one just put down. Returns how many.
+function layOutBagRest(first, name) {
+  const rest = shoppingBag.filter((e) => e.name === name).length;
+  if (!rest) return 0;
+  const cage = first.currentCage && typeof Cage !== "undefined" && first.currentCage instanceof Cage ? first.currentCage : null;
+  const b = cage ? cage.bounds : null;
+  const wasScene = currentScene;
+  const wasMouse = { x: mouse.x, y: mouse.y };
+  const wasDragging = isGlobalDragging;
+  let n = 0;
+  try {
+    currentScene = first.scene;
+    for (let i = 0; i < rest; i++) {
+      const k = i + 1;
+      const side = k % 2 ? 1 : -1;
+      const step = Math.ceil(k / 2);
+      const row = Math.floor(i / BAG_ALL_ROW);
+      let x = first.x + side * ((step - 1) % Math.ceil(BAG_ALL_ROW / 2) + 1) * BAG_ALL_GAP;
+      let y = first.y - row * 26;
+      if (b) {
+        x = clamp(x, b.left + 16, b.right - 16);
+        y = clamp(y, b.top + 16, b.bottom - 4);
+      } else {
+        x = clamp(x, 30, width - 30);
+        y = Math.max(y, (typeof sceneTop === "function" ? sceneTop(first.scene) : 0) + 20);
+      }
+      mouse.x = x;
+      mouse.y = y;
+      const obj = takeFromShoppingBag(name);
+      if (!obj) break;
+      obj.scene = first.scene;
+      if (typeof obj.onDrop === "function") obj.onDrop();
+      else obj.isDragging = false;
+      obj.isDragging = false;
+      n++;
+    }
+  } finally {
+    currentScene = wasScene;
+    mouse.x = wasMouse.x;
+    mouse.y = wasMouse.y;
+  }
+  isGlobalDragging = wasDragging && (objects.some((o) => o.isDragging) || fluffies.some((f) => f.isDragging));
+  return n;
+}
+
+// Every step: has the first one been put down yet?
+function updateBagAll() {
+  if (!bagAllPending) return;
+  const { obj, name } = bagAllPending;
+  if (!objects.includes(obj)) {
+    bagAllPending = null; // (packed back, or gone)
+    return;
+  }
+  if (obj.isDragging) return;
+  bagAllPending = null;
+  layOutBagRest(obj, name);
+}
+if (typeof registerSystem === "function") registerSystem("bag all", updateBagAll, 3);
+
 // What you're carrying that could go in the bag
 function carriedPackableItem() {
   return objects.find((o) => o.isDragging && canPackIntoShoppingBag(o)) || null;

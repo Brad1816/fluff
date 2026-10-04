@@ -412,6 +412,11 @@ function trickRightClick() {
   const f = hits[0];
   if (!f) return false;
   if (!canLearnTricks(f)) {
+    // Too little for tricks - but its other actions (Not for sale, a name...) still work
+    if (rightClickActions(f).length) {
+      trickUI = { phase: "menu", id: f.id, actionsOnly: true };
+      return true;
+    }
     if (typeof addUIMessage === "function") addUIMessage(`${fluffyDisplayName(f)} is too little to learn tricks.`);
     return true;
   }
@@ -427,7 +432,13 @@ function openFluffyActions(f) {
   const name = typeof fluffyDisplayName === "function" ? fluffyDisplayName(f) : "It";
   if (!f.adopted) return say(`${name} isn't yours.`), false;
   if (f.scene !== currentScene) return say(`${name} isn't here.`), false;
-  if (!canLearnTricks(f)) return say(`${name} is too little for that yet.`), false;
+  if (!canLearnTricks(f)) {
+    if (rightClickActions(f).length) {
+      trickUI = { phase: "menu", id: f.id, actionsOnly: true };
+      return true;
+    }
+    return say(`${name} is too little for that yet.`), false;
+  }
   trickUI = { phase: "menu", id: f.id };
   return true;
 }
@@ -477,14 +488,15 @@ function getTrickMenuLayout() {
     const gap = 6;
     const total = TRICKS.length * w + (TRICKS.length - 1) * gap;
     let x = Math.max(8, Math.min(width - total - 8, cx - total / 2));
-    const lessons = typeof lessonsFor === "function" ? lessonsFor(f) : [];
+    const only = !!trickUI.actionsOnly; // (a foal: no tricks or lessons yet)
+    const lessons = !only && typeof lessonsFor === "function" ? lessonsFor(f) : [];
     const actions = rightClickActions(f);
     // (the "Other" row wraps onto a second line when it's too long for the screen)
     const aw = 112;
     const perRow = Math.max(1, Math.floor((width - 16 + gap) / (aw + gap)));
     const actionRows = Math.ceil(actions.length / perRow);
     const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0) - (actions.length ? 68 + (actionRows - 1) * 44 : 0), top - 40));
-    for (const t of TRICKS) {
+    for (const t of only ? [] : TRICKS) {
       chips.push({ x, y, w, h: 38, key: t.key, trick: t });
       x += w + gap;
     }
@@ -503,7 +515,7 @@ function getTrickMenuLayout() {
     // Other things to do (rightClickActions)
     let actionY = null;
     if (actions.length) {
-      actionY = (lessonY !== null ? lessonY : y) + 38 + 30;
+      actionY = only ? y : (lessonY !== null ? lessonY : y) + 38 + 30;
       for (let r = 0; r < actionRows; r++) {
         const row = actions.slice(r * perRow, (r + 1) * perRow);
         const total2 = row.length * aw + (row.length - 1) * gap;
@@ -515,7 +527,7 @@ function getTrickMenuLayout() {
       }
     }
     // Kind or strict training (FearTraining.js)
-    if (typeof toggleTrainingStyle === "function") chips.push({ x: x - gap - 110, y: y - 32, w: 110, h: 24, key: "style" });
+    if (!only && typeof toggleTrainingStyle === "function") chips.push({ x: x - gap - 110, y: y - 32, w: 110, h: 24, key: "style" });
     return { f, chips, titleX, titleY: y - 10, lessonY, actionY };
   }
   if (trickUI.phase === "punish") {
@@ -637,9 +649,10 @@ function drawTrickUI(c) {
     c.fillText(text, x, y);
   };
   if (trickUI.phase === "menu") {
-    label(`Train ${fluffyDisplayName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
+    if (trickUI.actionsOnly) label(`${fluffyDisplayName(f)} · too little for tricks`, L.titleX, L.titleY - 8);
+    else label(`Train ${fluffyDisplayName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
     if (L.lessonY !== null) label(`Lessons · ${lessonTriesLeft(f)} left today`, L.titleX, L.lessonY - 14);
-    if (L.actionY !== null && L.actionY !== undefined) label("Other", L.titleX, L.actionY - 14);
+    if (L.actionY !== null && L.actionY !== undefined && !trickUI.actionsOnly) label("Other", L.titleX, L.actionY - 14);
     for (const ch of L.chips) {
       const s = trickSkill(f, ch.key);
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;

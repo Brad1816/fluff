@@ -745,6 +745,21 @@ const ITEM_TYPES = [
     },
   },
   {
+    // Everyone has one too (Scoop.js): carry several fluffies at once
+    sellType: "scoop",
+    is: (o) => typeof Scoop !== "undefined" && o instanceof Scoop,
+    inCage: "never",
+    tool: {
+      className: "Scoop",
+      create: (scene) => new Scoop(scene),
+      key: "scoop",
+      name: "Scoop",
+      fullName: "Scoop",
+      desc: "Drag a box round fluffies to pick them all up at once (up to 12) - a litter out of a cage, say. Click to set them all down; over a cage, they go in it.",
+      image: () => scoopImage(),
+    },
+  },
+  {
     sellType: "iv_bag",
     is: (o) => o instanceof IVBag,
     inCage: "never",
@@ -859,6 +874,7 @@ const SAVED_CLASSES = {
   Syringe: (d) => new Syringe(d.scene),
   CattleProd: (d) => new CattleProd(d.scene),
   ThrowTool: (d) => new ThrowTool(d.scene), // (ThrowTool.js)
+  Scoop: (d) => new Scoop(d.scene), // (Scoop.js)
   DayCareDesk: (d) => new DayCareDesk(d.scene),
   ShelterKennels: (d) => new ShelterKennels(d.scene), // Shelter.js
 };

@@ -537,9 +537,11 @@ module.exports = [
         if (chip) chip.action.run(a);
         out.herd = herdOf(a) ? herdOf(a).name : null;
         closeTrickUI();
-        // A foal can't: says why
+        // A foal: just its other actions (Not for sale...: playtest 6)
         const foal = __mk(500, { growth: 0.05 });
         out.foal = openFluffyActions(foal);
+        out.foalOnly = !!(trickUI && trickUI.actionsOnly);
+        closeTrickUI();
         // Pause menu switches
         const before = showFluffyNames;
         const t = pauseToggleRects()[0];
@@ -556,7 +558,7 @@ module.exports = [
       }, SETUP);
       check(r.menu === "menu" && r.closed, `Actions opens the menu: ${JSON.stringify(r)}`);
       check(r.chip && r.herd === null, `Forget herd is there and works: ${JSON.stringify(r)}`);
-      check(r.foal === false, "a newborn has no actions");
+      check(r.foal === true && r.foalOnly, "a newborn's menu has just its other actions");
       check(r.names, `the pause menu's Names switch works ${JSON.stringify(r.dbg)}`);
     },
   },

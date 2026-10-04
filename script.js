@@ -97,6 +97,8 @@ function missWithTool(obj) {
 
 function attemptDrop() {
   if (!isGlobalDragging || mouse.rightDown) return false;
+  // The scoop: drag a box round several, click to set them down (Scoop.js)
+  if (typeof scoopClick === "function" && scoopClick()) return true;
 
   for (const obj of objects) {
     if (obj.isDragging && obj instanceof IVBag) {

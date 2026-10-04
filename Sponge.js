@@ -47,6 +47,8 @@ class Sponge {
 
     // 0. Bath time: rubbing a fluffy (Bath.js)
     if (typeof spongeFluffy === "function" && spongeFluffy(this)) return true;
+    // A messy cage (CageLife.js)
+    if (typeof cleanCageMess === "function" && cleanCageMess(this.x, this.y, this.scene)) return true;
 
     // 1. Check Puddles
     if (typeof puddles !== "undefined") {

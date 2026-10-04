@@ -325,8 +325,8 @@ function drawSleepHeapShadows(c) {
 
 // ---- Parties: hats, bunting and confetti ----
 
-const PARTY_HAT_TIME = 2; // game hours
-const PARTY_BUNTING_TIME = 3; // game hours
+const PARTY_HAT_TIME = 0.6; // game hours (about half a minute)
+const PARTY_BUNTING_TIME = 1; // game hours
 const PARTY_CONFETTI_TIME = 6; // game seconds
 const PARTY_COLOURS = ["#ff6fa8", "#ffd84d", "#6fd3ff", "#8dff7a", "#c49bff", "#ff9d4d"];
 

@@ -142,6 +142,22 @@ function petFlapYardSpot() {
   return { x: w / 2 + (Math.random() - 0.5) * 80, y: top + 50 + Math.random() * 30 };
 }
 
+// The yard and a room with a pet flap are one home: a fluffy in one knows
+// who's out in (or in from) the other, so it doesn't think they're lost
+// (playtest 6: HorseFamily.updateRelationships)
+let _flapRooms = null;
+let _flapRoomsAt = -1;
+function homeLinked(a, b) {
+  if (a === b) return true;
+  if (a !== "BACKYARD" && b !== "BACKYARD") return false;
+  const now = typeof gameTimeMs === "function" ? gameTimeMs() : 0;
+  if (!_flapRooms || now - _flapRoomsAt > 1000 || now < _flapRoomsAt) {
+    _flapRooms = new Set(objects.filter((o) => o instanceof PetFlap).map((o) => o.scene));
+    _flapRoomsAt = now;
+  }
+  return _flapRooms.has(a === "BACKYARD" ? b : a);
+}
+
 function petFlaps() {
   return typeof objects === "undefined" || typeof PetFlap === "undefined" ? [] : objects.filter((o) => o instanceof PetFlap && o.works());
 }

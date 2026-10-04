@@ -64,9 +64,11 @@ module.exports = [
         const foal = mk("unicorn", "female", mum);
         foal.type = "unicorn";
         foal.fatherId = dad.id;
+        foal.bredHere = true; // (born to your mare: Pregnancy.onFoalBorn)
         updateGoals(2);
         const hidden = isGoalDone("hidden_genes");
         const grand = mk("earthy", "female", foal);
+        grand.bredHere = true;
         updateGoals(2);
         return { hidden, three: isGoalDone("three_gens"), alicorn: isGoalDone("alicorn") };
       });

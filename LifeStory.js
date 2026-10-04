@@ -164,6 +164,8 @@ function storyLine(e, f, fam = null) {
       return `${p.Sub} was abandoned by ${p.poss} owner.`;
     case "named":
       return `You named ${p.obj} ${e.x || lifeStoryName(me)} ${day}.`;
+    case "tagged":
+      return `You tagged ${p.obj} ${e.x || lifeStoryName(me)} ${day}.`;
     case "sold":
       if (e.x === "sold") return `You sold ${p.obj} ${day}.`;
       if (e.x === "given up") return `You gave ${p.obj} up to the shelter ${day}.`;

@@ -330,6 +330,14 @@ class Cage {
     const lastX = this.x;
     const lastY = this.y;
     const transitioned = handleDropping(this);
+    // Line up with a cage it's dropped beside (CAGE_SNAP): side by side, same
+    // floor - for rows of breeding stock
+    if (!transitioned) {
+      const snapX = this.x;
+      const snapY = this.y;
+      this.snapToNeighbour();
+      if (this.x !== snapX || this.y !== snapY) this.moveContents(this.x - snapX, this.y - snapY);
+    }
     if (!transitioned && wasClick) {
       if (this.tag === "cull") {
         this.askCull();
@@ -360,6 +368,38 @@ class Cage {
     }
   }
 
+  // The nearest cage whose side is within CAGE_SNAP of one of ours: move
+  // flush against it, bottoms level
+  snapToNeighbour() {
+    if (typeof objects === "undefined") return false;
+    this.updateBounds();
+    const w = this.bounds.right - this.bounds.left;
+    const h = this.bounds.bottom - this.bounds.top;
+    let best = null;
+    let bd = CAGE_SNAP;
+    for (const o of objects) {
+      if (o === this || !(o instanceof Cage) || o.scene !== this.scene || o.isDragging) continue;
+      o.updateBounds();
+      const ob = o.bounds;
+      if (Math.abs(ob.bottom - this.bounds.bottom) > h * 0.6) continue;
+      const toRight = Math.abs(this.bounds.left - ob.right); // we go on its right
+      const toLeft = Math.abs(this.bounds.right - ob.left); // ...or its left
+      if (toRight < bd) {
+        bd = toRight;
+        best = { x: ob.right + w / 2, bottom: ob.bottom };
+      }
+      if (toLeft < bd) {
+        bd = toLeft;
+        best = { x: ob.left - w / 2, bottom: ob.bottom };
+      }
+    }
+    if (!best) return false;
+    this.x = best.x;
+    this.y = best.bottom - h / 2;
+    this.updateBounds();
+    return true;
+  }
+
   getBottomY() {
     if (!this.getImage()) return this.y;
     return this.y + (this.getImage().height * this.scale) / 2;
@@ -378,12 +418,14 @@ class Cage {
       scene: this.scene,
       scale: this.scale,
       tag: this.tag,
+      mess: this.mess || undefined, // (CageLife.js)
     };
   }
 
   deserialize(data) {
     this.scale = data.scale || 1.0;
     this.tag = data.tag || "none";
+    this.mess = data.mess || 0;
   }
 
   drawOffScreen(ctx) {
@@ -398,6 +440,18 @@ class Cage {
 
     if (this.glassProgress > 0) {
       this.drawGlass(ctx, w, h);
+    }
+    // Its mess (CageLife.js): stains on the floor of the cage
+    if ((this.mess || 0) > 0.05) {
+      const n = Math.ceil(this.mess * 8);
+      for (let i = 0; i < n; i++) {
+        const sx = -w / 2 + w * (0.12 + ((i * 0.37) % 0.76));
+        const sy = h / 2 - h * 0.09 - (i % 3) * 3;
+        ctx.fillStyle = i % 3 === 2 ? "rgba(214, 180, 40, 0.55)" : "rgba(92, 64, 51, 0.75)";
+        ctx.beginPath();
+        ctx.ellipse(sx, sy, 10 + (i % 4) * 3, 4 + (i % 2) * 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     // Draw Tag (with what a tap does, for cull and eject)

@@ -881,13 +881,14 @@ canvas.addEventListener("mousedown", (e) => {
   // 3. Right Click: each item's right-click action is in ItemRegistry.js
   // (cage tags, TV channels, sprinkler on/off, gates, turning fences...)
   if (mouse.rightDown) {
-    if (handleItemRightClick(mouse.x, mouse.y)) {
-      mouse.rightDown = false; // only once per click
-      return;
-    }
-    // Right-clicking one of your fluffies: train a trick (Tricks.js)
+    // Right-clicking one of your fluffies: train a trick (Tricks.js) - first,
+    // so one standing in a cage (or in front of anything) gets its menu
     if (typeof trickRightClick === "function" && trickRightClick()) {
       mouse.rightDown = false;
+      return;
+    }
+    if (handleItemRightClick(mouse.x, mouse.y)) {
+      mouse.rightDown = false; // only once per click
       return;
     }
     // ...or one you lost, in the park: bring it home (ParkOutings.js)

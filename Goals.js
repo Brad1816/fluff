@@ -30,8 +30,13 @@ function _yourFluffies() {
   return fluffies.filter((f) => f.adopted && f.isAlive);
 }
 
+// Bred by you: born to one of your mares (Pregnancy.onFoalBorn bredHere) -
+// not just any fluffy with a mother that you brought home from the park
 function _bornAtHome(f) {
-  return f.motherId !== null && f.motherId !== undefined && f.adopted;
+  if (!f.adopted || f.motherId === null || f.motherId === undefined) return false;
+  if (typeof f.bredHere === "boolean") return f.bredHere;
+  const rec = typeof getFamilyRecord === "function" ? getFamilyRecord(f.id) : null;
+  return !!(rec && rec.bred);
 }
 
 function _parentsOf(f) {

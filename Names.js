@@ -274,10 +274,55 @@ function resetNamingPopups() {
   for (const k of Object.keys(_pendingLitters)) delete _pendingLitters[k];
 }
 
+// ---- Stock tags (playtest 6) ----
+// The tag button in the naming pop-up (🏷, and "Tag all" for several) gives
+// a stock tag instead of a name: "Stallion-01", "Mare-03", "Milkbag-02",
+// "Colt-04", "Filly-01", "Stud-02" - the next free number for that word. A
+// tag isn't a name given with love: no affection, no pride in it, and it
+// doesn't perk up to hear it. (Typing one in by hand counts the same.)
+const STOCK_TAG_RE = /^(Stallion|Stud|Mare|Milkbag|Breeder|Colt|Filly|Foal|Stock)-\d+$/;
+
+function isStockTag(name) {
+  return typeof name === "string" && STOCK_TAG_RE.test(name.trim());
+}
+
+// The word for it: what it's kept for
+function stockTagWord(f) {
+  if (!f) return "Stock";
+  const grown = (f.growth || 0) >= 1;
+  if (!grown) return f.gender === "male" ? "Colt" : "Filly";
+  const caged = f.currentCage && f.currentCage.tag === "breeding";
+  if (f.gender === "male") return caged || f.breedTrain ? "Stud" : "Stallion";
+  const nursing = fluffies.some((k) => k.isAlive && k.motherId === f.id && (k.growth || 0) < 0.35);
+  if (nursing || f.isPregnant) return "Milkbag";
+  return "Mare";
+}
+
+// The next free tag for that word (taken: names about to be given too)
+function nextStockTag(word, taken = []) {
+  let max = 0;
+  const all = [...Object.values(fluffyNames || {}), ...taken];
+  for (const n of all) {
+    const m = typeof n === "string" && n.match(new RegExp(`^${word}-(\\d+)$`));
+    if (m) max = Math.max(max, Number(m[1]));
+  }
+  return `${word}-${String(max + 1).padStart(2, "0")}`;
+}
+
+function stockTagFor(f, taken = []) {
+  return nextStockTag(stockTagWord(f), taken);
+}
+
 function saveNamingPopup() {
   if (!namingPopup) return;
   namingPopup.ids.forEach((id, i) => {
     const n = (namingPopup.names[i] || "").trim();
+    if (n && isStockTag(n)) {
+      // Just a tag: no love in it
+      fluffyNames[id] = n;
+      if (typeof recordStory === "function") recordStory("tagged", id, { x: n });
+      return;
+    }
     if (n) {
       const first = !fluffyNames[id];
       fluffyNames[id] = n;
@@ -312,8 +357,9 @@ function getNamingLayout() {
   const rows = [];
   for (let i = 0; i < n; i++) {
     const ry = y + 96 + i * rowH;
-    const box = { x: x + 250, y: ry + (rowH >= 64 ? 12 : Math.max(2, Math.round((rowH - 36) / 2))), w: 254, h: Math.min(36, rowH - 4) };
-    rows.push({ y: ry, box, dice: { x: box.x + box.w + 8, y: box.y, w: 38, h: box.h } });
+    const box = { x: x + 250, y: ry + (rowH >= 64 ? 12 : Math.max(2, Math.round((rowH - 36) / 2))), w: 210, h: Math.min(36, rowH - 4) };
+    const dice = { x: box.x + box.w + 8, y: box.y, w: 38, h: box.h };
+    rows.push({ y: ry, box, dice, tag: { x: dice.x + dice.w + 6, y: box.y, w: 38, h: box.h } });
   }
   const by = y + h - 56;
   return {
@@ -324,6 +370,7 @@ function getNamingLayout() {
     rows,
     save: { x: x + w / 2 + 10, y: by, w: 170, h: 40 },
     skip: { x: x + w / 2 - 180, y: by, w: 170, h: 40 },
+    tagAll: n > 1 ? { x: x + w - 112, y: y + 50, w: 100, h: 28 } : null,
   };
 }
 
@@ -411,7 +458,10 @@ function drawNamingPopup(c) {
     c.textBaseline = "alphabetic";
     // Dice: a random name
     if (typeof drawGlassButton === "function") drawGlassButton(row.dice.x, row.dice.y, row.dice.w, row.dice.h, "\u{1F3B2}", { fontSize: 17, borderRadius: 8 });
+    // Tag: a stock tag, not a name
+    if (typeof drawGlassButton === "function") drawGlassButton(row.tag.x, row.tag.y, row.tag.w, row.tag.h, "\u{1F3F7}", { fontSize: 17, borderRadius: 8 });
   });
+  if (L.tagAll && typeof drawGlassButton === "function") drawGlassButton(L.tagAll.x, L.tagAll.y, L.tagAll.w, L.tagAll.h, "\u{1F3F7} Tag all", { fontSize: 13, borderRadius: 8 });
 
   if (typeof drawGlassButton === "function") {
     drawGlassButton(L.skip.x, L.skip.y, L.skip.w, L.skip.h, p.kind === "rename" ? "Cancel" : 'Leave as "Fluffy"', { fontSize: 15, borderRadius: 10 });
@@ -431,6 +481,7 @@ function handleNamingClick() {
   const hit = (r) => isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
   if (hit(L.save)) saveNamingPopup();
   else if (hit(L.skip)) skipNamingPopup();
+  else if (L.tagAll && hit(L.tagAll)) tagAllInPopup();
   else {
     L.rows.forEach((row, i) => {
       if (hit(row.box)) {
@@ -443,8 +494,26 @@ function handleNamingClick() {
         namingPopup.focus = i;
         namingPopup.names[i] = randomFluffyName(namingPopup.names.filter((_, j) => j !== i));
       }
+      // Tag: the next stock tag
+      if (row.tag && hit(row.tag)) {
+        namingPopup.focus = i;
+        namingPopup.names[i] = stockTagFor(fluffyById(namingPopup.ids[i]), namingPopup.names.filter((_, j) => j !== i));
+      }
     });
   }
+  return true;
+}
+
+// Every box in the pop-up gets a stock tag
+function tagAllInPopup() {
+  const p = namingPopup;
+  if (!p) return false;
+  p.ids.forEach((id, i) => {
+    p.names[i] = "";
+  });
+  p.ids.forEach((id, i) => {
+    p.names[i] = stockTagFor(fluffyById(id), p.names.filter((_, j) => j !== i && p.names[j]));
+  });
   return true;
 }
 

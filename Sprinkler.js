@@ -1,4 +1,5 @@
 const SPRINKLER_RADIUS = 500;
+const SPRINKLER_WASH = 0.03; // dirt (and cage mess) washed off a second in the spray
 
 class Sprinkler {
   constructor(scene = "INDOORS") {
@@ -52,6 +53,23 @@ class Sprinkler {
             }
           }
         }
+      }
+
+      // 1b. Washes whoever's in the spray - a caged fluffy can't get away
+      // from it, so the sprinkler is a cage bath (and it rinses the cage)
+      for (const f of typeof fluffies !== "undefined" ? fluffies : []) {
+        if (!f.isAlive || f.scene !== this.scene || f.isDragging) continue;
+        if (Math.hypot(f.x - this.x, (f.y - this.y) * 2) > SPRINKLER_RADIUS) continue;
+        if ((f.dirt || 0) > 0) f.dirt = Math.max(0, f.dirt - SPRINKLER_WASH * dt);
+        if (f.currentCage && typeof startFright === "function" && typeof fearOf === "function" && fearOf(f, "bath") >= FEAR_MIN && !(f._sprinkledAt > timePlayed - 30)) {
+          f._sprinkledAt = timePlayed;
+          startFright(f, "bath");
+        }
+      }
+      for (const o of typeof objects !== "undefined" ? objects : []) {
+        if (!(typeof Cage !== "undefined" && o instanceof Cage) || o.scene !== this.scene || !(o.mess > 0)) continue;
+        if (Math.hypot(o.x - this.x, (o.bounds.bottom - this.y) * 2) > SPRINKLER_RADIUS + 60) continue;
+        o.mess = Math.max(0, o.mess - SPRINKLER_WASH * 1.5 * dt);
       }
 
       // 2. Spawn water puddles

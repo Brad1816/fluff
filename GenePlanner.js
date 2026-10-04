@@ -4,7 +4,8 @@
 // "Planner" (top of the Gene Lab) swaps the mother/father lists for a set of
 // targets - type (earthy, unicorn, pegasus, alicorn), coat colour, mane
 // colour, pattern (spots, stripes, gradient) and mane (fancy, rainbow); one
-// pick per group, tap again to clear. Then it lists:
+// pick per group (patterns: any or all three - playtest 6), tap again to
+// clear. Then it lists:
 //   - Have now: your fluffies that already look like that
 //   - Best pairs: every grown mare x stallion of yours, by the chance a foal
 //     of theirs has everything you picked - worked out with the game's own
@@ -33,7 +34,7 @@ const PLAN_GROUPS = [
   { key: "type", name: "Type", opts: [["earthy", "Earthy"], ["unicorn", "Unicorn"], ["pegasus", "Pegasus"], ["alicorn", "Alicorn"]] },
   { key: "coat", name: "Coat", opts: PLAN_COLOURS },
   { key: "mane", name: "Mane colour", opts: PLAN_COLOURS },
-  { key: "pattern", name: "Pattern", opts: [["spots", "Spots"], ["stripes", "Stripes"], ["gradient", "Gradient"]] },
+  { key: "pattern", name: "Pattern (pick any)", multi: true, opts: [["spots", "Spots"], ["stripes", "Stripes"], ["gradient", "Gradient"]] },
   { key: "fancy", name: "Fancy mane", opts: [["fancy", "Any fancy"], ["rainbow", "Rainbow"]] },
 ];
 
@@ -49,6 +50,27 @@ function _planColourName(rgb) {
   }
 }
 
+// Is that pick on? (a multi-pick group keeps a list)
+function planChipOn(group, key) {
+  const v = genePlan[group];
+  return Array.isArray(v) ? v.includes(key) : v === key;
+}
+
+function togglePlanChip(group, key) {
+  const g = PLAN_GROUPS.find((x) => x.key === group);
+  if (g && g.multi) {
+    const list = [].concat(genePlan[group] || []);
+    const i = list.indexOf(key);
+    if (i >= 0) list.splice(i, 1);
+    else list.push(key);
+    if (list.length) genePlan[group] = list;
+    else delete genePlan[group];
+    return;
+  }
+  if (genePlan[group] === key) delete genePlan[group];
+  else genePlan[group] = key;
+}
+
 // Does a set of genes have everything in the plan?
 function genesMatchPlan(genes, plan = genePlan) {
   const d = typeof describeGenes === "function" ? describeGenes(genes) : null;
@@ -56,7 +78,7 @@ function genesMatchPlan(genes, plan = genePlan) {
   if (plan.type && _labTypeOf(d) !== plan.type) return false;
   if (plan.coat && _planColourName(d.body) !== plan.coat) return false;
   if (plan.mane && _planColourName(d.mane) !== plan.mane) return false;
-  if (plan.pattern && d[plan.pattern] !== 4) return false;
+  for (const p of [].concat(plan.pattern || [])) if (d[p] !== 4) return false;
   if (plan.fancy === "fancy" && !d.manePattern) return false;
   if (plan.fancy === "rainbow" && !(d.manePattern && d.manePattern.kind === "rainbow")) return false;
   return true;
@@ -152,7 +174,7 @@ function drawGenePlanner(c, m) {
   canvasText(c, "What do you want? Pick from any group (tap again to clear).", 30, 100, "#cfcfcf", "14px Arial");
   for (const g of PLAN_GROUPS) canvasText(c, g.name, 30, g._y + 10, "#f7d774", "bold 13px Arial");
   for (const ch of L.chips) {
-    const on = genePlan[ch.group] === ch.key;
+    const on = planChipOn(ch.group, ch.key);
     const over = m.x >= ch.x && m.x <= ch.x + ch.w && m.y >= ch.y && m.y <= ch.y + ch.h;
     c.fillStyle = on ? "rgba(60, 150, 110, 0.95)" : over ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.08)";
     roundRectPath(c, ch.x, ch.y, ch.w, ch.h, 8);
@@ -220,8 +242,7 @@ function handleGenePlannerClick(m) {
   const inRect = (b) => b && m.x >= b.x && m.x <= b.x + b.w && m.y >= b.y && m.y <= b.y + b.h;
   for (const ch of L.chips) {
     if (!inRect(ch)) continue;
-    if (genePlan[ch.group] === ch.key) delete genePlan[ch.group];
-    else genePlan[ch.group] = ch.key;
+    togglePlanChip(ch.group, ch.key);
     return true;
   }
   if (inRect(L.clear)) {

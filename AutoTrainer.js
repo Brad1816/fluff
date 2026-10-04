@@ -180,12 +180,23 @@ function _atDay() {
 
 function _atCanTrain(f, inSession = false) {
   if (!f || !f.isAlive || !f.adopted || f.growth < 0.36) return false;
-  if (f.currentStateKey === "SLEEPING" || f.isDragging || f.currentCage || f.placedOn || f.isFallingFromThrow) return false;
+  if (f.currentStateKey === "SLEEPING" || f.isDragging || f.placedOn || f.isFallingFromThrow) return false;
   if (f.health < 40 || f.hunger < 0.2 || (f.trickNow && !inSession) || f.timeOut || f._perch || f._memVisit || f._bolt) return false;
   if (typeof isFrightened === "function" && isFrightened(f)) return false;
   if (typeof mareResting === "function" && mareResting(f)) return false;
   if (f.tooYoungToWalk && f.tooYoungToWalk()) return false;
   return true;
+}
+
+// A caged fluffy can be trained through the bars by a machine right beside
+// its cage (AUTO_TRAINER_CAGE_NEAR px from the cage's side)
+const AUTO_TRAINER_CAGE_NEAR = 160;
+function _atThroughBars(t, f) {
+  const c = f.currentCage;
+  if (!c || t.currentCage === c) return false;
+  const b = c.bounds;
+  const dx = t.x < b.left ? b.left - t.x : t.x > b.right ? t.x - b.right : 0;
+  return dx <= AUTO_TRAINER_CAGE_NEAR && Math.abs(t.y - b.bottom) < 200;
 }
 
 // One go at the machine
@@ -238,10 +249,21 @@ function updateAutoTrainers(dt) {
       _atEnd(t, f);
       continue;
     }
-    const spotX = t.x + (f.x < t.x ? -55 : 55);
-    const spotY = t.y + 10;
+    let spotX = t.x + (f.x < t.x ? -55 : 55);
+    let spotY = t.y + 10;
+    // (in a cage: to the bars nearest the machine)
+    const bars = f.currentCage && t.currentCage !== f.currentCage;
+    if (bars) {
+      if (!_atThroughBars(t, f)) {
+        _atEnd(t, f);
+        continue;
+      }
+      const lim = f.positioning.getCageLimits();
+      spotX = Math.max(lim.minX, Math.min(lim.maxX, t.x));
+      spotY = f.y;
+    }
     if (!s.arrived) {
-      if (Math.hypot(f.x - spotX, f.y - spotY) > AUTO_TRAINER_REACH) {
+      if (bars ? Math.abs(f.x - spotX) > 25 : Math.hypot(f.x - spotX, f.y - spotY) > AUTO_TRAINER_REACH) {
         if (now - s.at > AUTO_TRAINER_WALK) {
           _atEnd(t, f);
           continue;
@@ -274,7 +296,8 @@ function updateAutoTrainers(dt) {
     const pick = fluffies
       .filter((f) => f.scene === t.scene && !busy.has(f.id) && _atCanTrain(f))
       .filter((f) => typeof f._autoTrainAt !== "number" || now - f._autoTrainAt > AUTO_TRAINER_GAP * HOUR_LENGTH || now < f._autoTrainAt)
-      .filter((f) => typeof canFluffyReach !== "function" || typeof sceneHasFences !== "function" || !sceneHasFences(f.scene) || canFluffyReach(f, t.x, t.y))
+      .filter((f) => !f.currentCage || f.currentCage === t.currentCage || _atThroughBars(t, f))
+      .filter((f) => f.currentCage || typeof canFluffyReach !== "function" || typeof sceneHasFences !== "function" || !sceneHasFences(f.scene) || canFluffyReach(f, t.x, t.y))
       .filter((f) => autoTrainerWork(t, f).length)
       .sort((a, b) => Math.hypot(a.x - t.x, a.y - t.y) - Math.hypot(b.x - t.x, b.y - t.y))[0];
     if (!pick) continue;

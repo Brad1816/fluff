@@ -22,6 +22,15 @@
 //             hopeful; a trained stallion knows what it's for
 //   plain     sometimes asks why it's in a box
 //
+// Mess in a cage (playtest 6): a fluffy that goes in a plain cage (not a pen)
+// makes a mess IN the cage - cage.mess, 0..1, saved with the cage, drawn as
+// stains, carried with it when it's moved - instead of a puddle on the
+// floor. It's upset about it (CAGE_MESS_UPSET), and living in a messy cage
+// wears on everyone in it (CAGE_MESS_SAD an hour x mess) and dirties them
+// slowly (CAGE_MESS_DIRT). With a litterbox in the cage, every accident
+// teaches it a little that the box is the place (CAGE_LITTER_LEARN). The
+// sponge cleans a cage (Sponge.attemptClean -> cleanCageMess).
+//
 // Trained studs (f.breedTrain, saved, 0..1): every time you make a stallion
 // breed in a breeding cage (the stick, spray or tack: script.js) he learns a
 // little (BREED_TRAIN_STEP x how fast he learns, Intelligence.js). Once
@@ -39,7 +48,43 @@ const CAGE_VISIT_FAR = 600; // px: close enough to come over
 const CAGE_REPLY_AFTER = 1.5; // seconds before the one outside answers
 const BREED_TRAIN_STEP = 0.25; // per time made to breed in a breeding cage
 const BREED_AUTO_REST = 20; // seconds after going in before a trained stud starts
+const CAGE_MESS_POOP = 0.12; // mess from one poop (a third for a pee)
+const CAGE_MESS_UPSET = 0.03;
+const CAGE_MESS_SAD = 0.04; // happiness a game hour, at full mess
+const CAGE_MESS_DIRT = 0.0006; // dirt a second, at full mess
+const CAGE_LITTER_LEARN = 0.03; // potty training per accident with a box in the cage
 const cageLifeTicker = new Ticker(CAGE_LIFE_EVERY);
+
+function messyCage(c) {
+  return !!c && c instanceof Cage && c.causesUnhappiness() && !(typeof Enclosure !== "undefined" && c instanceof Enclosure) && !(typeof Incubator !== "undefined" && c instanceof Incubator);
+}
+
+// HorseToilet.excrete, an accident: in a cage it stays in the cage. True if it did.
+function cageMessFrom(f, isPoop, amount = 1) {
+  const c = f && f.currentCage;
+  if (!messyCage(c)) return false;
+  c.mess = Math.min(1, (c.mess || 0) + CAGE_MESS_POOP * (isPoop ? 1 : 0.35) * Math.max(0.3, Math.min(1, amount * 2)) * Math.max(0.3, f.growth));
+  f.changeHappiness(-CAGE_MESS_UPSET, "Made a mess in its cage");
+  if (!f.tooYoungToSpeak() && Math.random() < 0.5) f.speak(getDialogue(["CAGE_MESS", "SELF"], f));
+  // A box right there: it learns
+  const box = typeof objects !== "undefined" && objects.some((o) => typeof Litterbox !== "undefined" && o instanceof Litterbox && o.currentCage === c);
+  if (box && (f.pottyTraining || 0) < 1) f.pottyTraining = Math.min(1, (f.pottyTraining || 0) + CAGE_LITTER_LEARN * (typeof smartsLearn === "function" ? smartsLearn(f) : 1));
+  return true;
+}
+
+// Sponge.attemptClean: a sponge over a messy cage
+function cleanCageMess(x, y, scene) {
+  if (typeof objects === "undefined") return false;
+  const c = objects.find((o) => o instanceof Cage && o.scene === scene && (o.mess || 0) > 0 && x >= o.bounds.left && x <= o.bounds.right && y >= o.bounds.top && y <= o.bounds.bottom);
+  if (!c) return false;
+  c.mess = Math.max(0, c.mess - 0.1);
+  return true;
+}
+
+// Bath.js: standing in floor mess doesn't count behind bars (it's the cage's)
+function cagedFromFloorMess(f) {
+  return messyCage(f && f.currentCage);
+}
 
 // Behind bars (a cage or an incubator, not a pen)?
 function cagedAway(f) {
@@ -235,6 +280,13 @@ function updateCageLife(dt) {
     if (!cagedAway(f)) continue;
     _clTalk(f, now);
     _clStud(f, now);
+    // Living in its mess
+    const mess = cage && messyCage(cage) ? cage.mess || 0 : 0;
+    if (mess > 0.15) {
+      f.changeHappiness(-(CAGE_MESS_SAD * mess * CAGE_LIFE_EVERY) / HOUR_LENGTH, "A filthy cage");
+      if (typeof addDirt === "function") addDirt(f, CAGE_MESS_DIRT * mess * CAGE_LIFE_EVERY);
+      if (mess > 0.4 && !f.tooYoungToSpeak() && Math.random() < 0.004 && (!f.speech || !f.speech.text)) f.speak(getDialogue(["CAGE_MESS", "DIRTY"], f));
+    }
   }
 }
 registerSystem("cageLife", updateCageLife, 66);

@@ -1077,6 +1077,8 @@ class Horse {
       (this.hunger !== undefined && this.hunger < 0.15) ||
       this.health < CRAWLING_HEALTH_THRESHOLD ||
       this.getLimbsMissing() >= 2 ||
+      // a mangled leg won't take its weight: it drags itself (Injuries.js)
+      (typeof mangledLegCount === "function" && mangledLegCount(this) > 0) ||
       drugOverdoseCrawling ||
       (this.isBeingTased && this.isBeingTased()) ||
       // gasping for air in a culling cage (Cage.js)

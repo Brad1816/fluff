@@ -209,6 +209,8 @@ addHorseMethods({
         this.speak(getDialogue(["POOP", "BAD"], this));
       }
 
+      // In a cage: the mess stays in the cage (CageLife.js)
+      const inCage = typeof cageMessFrom === "function" && cageMessFrom(this, isPoop, amount);
       const puddleColor = isPoop ? "#5c4033" : "#f1c40f"; // Brown or Yellow
       const torsoWidth = this.layout ? this.layout.torso.w : 100;
       const offsetX = (torsoWidth / 2) * (this.facingRight ? -1 : 1) * this.scale;
@@ -219,7 +221,7 @@ addHorseMethods({
       // (a micro, a runt, one born early: Micro.js, Runts.js, Premature.js)
       const baseTargetScale = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.growth) * this.messSizeForAge();
 
-      addPointToPuddle(this.scene, pX, pY, puddleColor, 5 / 200, baseTargetScale, 0.02);
+      if (!inCage) addPointToPuddle(this.scene, pX, pY, puddleColor, 5 / 200, baseTargetScale, 0.02);
       // Went on the floor: gets a bit on itself (Bath.js)
       if (typeof addDirt === "function") addDirt(this, DIRT_FROM_ACCIDENT * (isPoop ? 1 : 0.35));
 

@@ -2899,3 +2899,63 @@ from. Nothing player-facing reads it yet except the debug view.
   fluffy of yours (health under 20, or the wobbles), $20 / $30. Takes it away;
   nothing is shown.
 - Tests: `tests/ideas.test.js`.
+
+### Playtest round 6
+- **Wild fluffies eating** use `EAT.WILD` lines (no thanking an owner);
+  HorseUpdate picks `["EAT","WILD",...]` for any fluffy that isn't yours.
+- **Party hats** last `PARTY_HAT_TIME` 0.6 game hours, bunting 1 (HouseLife.js).
+- **Cages snap together** (`Cage.snapToNeighbour`): drop one within
+  `CAGE_SNAP` (45 px) of another's side, bottoms within 60% of its height,
+  and it goes flush beside it, level - for rows of breeding stock.
+- **Take a whole stack out of the bag** (ShoppingBag.js): shift-click a bag
+  button (long-press on a phone). One comes out in your hand; put it down
+  and the rest are laid out beside it (`layOutBagRest`, `BAG_ALL_GAP`), in
+  the same cage if it went in one. Food bags pile into one, as bags do.
+- **Alicorn (and other "breed a...") goals** need a foal born to one of your
+  mares (`_bornAtHome`: `f.bredHere`, or the family record's `bred`), not one
+  brought home that happens to have a mother.
+- **Foals refused at the teat** (HorseActionHandler): a mare who turns a foal
+  away is skipped for `MILK_REFUSED_WAIT` (40 s, `f._milkNo`), so it goes to
+  the feeder instead of starving beside it.
+- **Foals' right-click menu**: too little for tricks, it still opens with
+  the other actions (Not for sale, names...) - `trickUI.actionsOnly`.
+- **Right-clicking a caged fluffy** opens its menu (the fluffy comes before
+  the cage's tag in UI.js), so they can be trained too.
+- **Cage mess (CageLife.js):** an accident in a plain cage stays in the cage
+  (`cage.mess`, saved, drawn as stains): no floor puddle, the fluffy is upset
+  (`CAGE_MESS_UPSET`, `CAGE_MESS.SELF`), and while the cage is messy everyone
+  in it is sadder and gets dirty (`CAGE_MESS_SAD`, `CAGE_MESS_DIRT`). A
+  litterbox in the cage teaches it (`CAGE_LITTER_LEARN` potty training per
+  accident). The sponge cleans it. Floor mess under a cage no longer dirties
+  the fluffies in it (`cagedFromFloorMess`) - why they got filthy so fast.
+- **The sprinkler** washes fluffies in its spray, caged or not
+  (`SPRINKLER_WASH`), and the cage mess too; a fluffy afraid of baths is
+  frightened.
+- **Toys in cages**: a caged fluffy reaches a ball in its cage (side to side
+  only), so they play.
+- **The auto-trainer** trains a caged fluffy through the bars when it's within
+  `AUTO_TRAINER_CAGE_NEAR` (160 px) of the cage's side.
+- **Mangled legs**: a fluffy with any mangled leg crawls (`updateCrawling`).
+- **Gene planner patterns** are a multi-pick: any or all of spots, stripes
+  and gradient (`togglePlanChip`, `planChipOn`).
+- **Stock tags (Names.js):** the tag button in the naming pop-up (🏷, and
+  "Tag all" for several) gives "Stallion-01", "Stud-02", "Mare-03",
+  "Milkbag-01", "Colt-04", "Filly-02" (`stockTagFor`: the next free number for
+  the word). A tag (`isStockTag`, typed or not) gives no affection, no pride
+  and no perking up; the story says "tagged".
+- **The yard through the pet flap is home** (`homeLinked`, PetFlap.js): a
+  fluffy in a room with a pet flap knows who's out in the backyard (and the
+  other way), so nobody's "lost" (HorseFamily.updateRelationships).
+- **The scoop (`Scoop.js`, new):** in everyone's toolbox, after the throw
+  tool. Drag a box round fluffies to lift up to `SCOOP_MAX` (12) at once (a
+  tap scoops the one under it); they're carried round the pointer, to any
+  room, and a click sets them all down there - over a cage, they all go in
+  it. Not outside in a bunch (ones of yours). Putting the scoop away sets
+  them down where they are. Mums see their foals scooped.
+- **Room kits (`RoomKits.js`, new):** the "Fit out" chip next to a house
+  room's name. Mill (two breeding cages and a sale cage, feeders, water,
+  litterboxes, value kibble), Family (beds, bowls, toys...), Nursery
+  (incubator, soft cage, formula, heater...), Clinic (table, rack, recovery
+  cage, bandages). Shop prices less `ROOM_KIT_DISCOUNT` (10%); cages go along
+  the back wall side by side with their things inside, the rest along the
+  front; tools to the toolbox. What's in the room already stays.

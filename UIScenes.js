@@ -579,6 +579,7 @@ function houseNavChips(scene = currentScene) {
 }
 
 let houseLabelLeft = Infinity; // left edge of the room's name at the top, this frame
+let _fitOutChip = null; // the "Fit out" chip, as last drawn (RoomKits.js)
 
 function drawHouseNav(c) {
   const chips = houseNavChips();
@@ -607,6 +608,24 @@ function drawHouseNav(c) {
   c.fillText(roomLabel + " ·", right, first.y + first.h / 2);
   // (where it starts: the weather line under the clock keeps clear, GameSpeed.js)
   houseLabelLeft = right - c.measureText(roomLabel + " ·").width;
+  // Fit the room out for a job (RoomKits.js)
+  _fitOutChip = null;
+  if (typeof askFitOutRoom === "function") {
+    const label = "\u{1F6E0} Fit out";
+    const w = c.measureText(label).width + 18;
+    const r = { x: houseLabelLeft - 8 - w, y: first.y, w, h: first.h, scene: currentScene };
+    if (r.x > 10) {
+      const hover = isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
+      c.fillStyle = hover ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.45)";
+      if (typeof fillRoundRect === "function") fillRoundRect(c, r.x, r.y, r.w, r.h, 12);
+      else c.fillRect(r.x, r.y, r.w, r.h);
+      c.fillStyle = "#cfe8ff";
+      c.textAlign = "center";
+      c.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + 1);
+      _fitOutChip = r;
+      houseLabelLeft = r.x;
+    }
+  }
   for (const chip of chips) {
     const hover = isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h);
     const p = chip.portal;
@@ -650,6 +669,11 @@ function houseKeyTowardsLocked(p) {
 
 // Mouse down (UI.js): the wall hints
 function houseNavClick() {
+  const f = _fitOutChip;
+  if (f && f.scene === currentScene && playerQuartersAndNotBackyard(currentScene) && isPointInRect(mouse.x, mouse.y, f.x, f.y, f.w, f.h)) {
+    if (typeof askFitOutRoom === "function") askFitOutRoom(currentScene);
+    return true;
+  }
   for (const chip of houseNavChips()) {
     if (!isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h)) continue;
     if (chip.portal.locked) buyRoomPortal(chip.portal);

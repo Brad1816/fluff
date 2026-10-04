@@ -1028,6 +1028,12 @@ const DIALOGUE = {
         "*Sniff* DADDEH GIB BETTAH SKETTIS NEX' NUMMIE TIME!",
       ],
     },
+    // A wild or stray fluffy eating: nobody to thank
+    WILD: {
+      DEFAULT: ["Nummies! Fwee nummies!", "*munch munch* Hewd eat good todai!", "Fiwst nummies in fowebah... *crunch*", "*chomp* Mine! Aww mine!", "Nummies fow tummy! *crunch*"],
+      SKETTIES: ["SKETTIES?! Weaw sketties!! *slurp*", "Bestest day evew! Sketties!", "Hewd hab sketties todai!"],
+      SMARTY: ["Smawty eat fiwst! Udda fwuffies wait!", "Dese nummies am smawty's nao!", "Hmph. Smawty desewbe aww nummies."],
+    },
     // Scrapz (Diet.js): made from ground-up fluffies
     SCRAPZ: {
       DEFAULT: [
@@ -1185,6 +1191,11 @@ const DIALOGUE = {
       SELL: ["Nu take <target> 'way!", "<Target>... nu go wif stwangew..."],
     },
     COMING: ["<Target>! <Speaker> comin'!", "Wait, <target>! <Speaker> come see yu!"],
+  },
+  // Mess in a cage (CageLife.js)
+  CAGE_MESS: {
+    SELF: ["Nu! Bad poopies in boxie... <speaker> sowwy...", "Icky... nu can get 'way fwom it...", "*sniff* Boxie aww stinky nao..."],
+    DIRTY: ["Boxie su stinky... pwease cwean...", "Poopies evewywhewe... <speaker> nu can sit...", "Icky boxie... huu..."],
   },
   // Missed the party, behind bars (SharedMemories.js)
   PARTY_MISSED: ["Pawty... <speaker> wan' pawty tuu...", "Nu fair... evewybody hab tweats...", "<Speaker> nu get tu go tu pawty..."],
