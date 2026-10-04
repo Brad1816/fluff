@@ -137,7 +137,8 @@ function updateTummy(dt) {
     // A dim one eats a block (or a pebble outside)
     if (!isRockEater(f) || f.isDragging || f.placedOn || f.currentStateKey === "SLEEPING" || hasBlockage(f)) continue;
     if (Math.random() >= ROCK_CHANCE * hours) continue;
-    const block = typeof Block !== "undefined" ? objects.find((o) => o instanceof Block && o.scene === f.scene && o.currentCage === f.currentCage && !o.heldBy && !o.isDragging && Math.hypot(o.x - f.x, o.y - f.y) < 250) : null;
+    // (a loose one: not part of a stack)
+    const block = typeof Block !== "undefined" ? objects.find((o) => o instanceof Block && o.scene === f.scene && o.currentCage === f.currentCage && !o.heldBy && !o.isDragging && !o.stackedOn && !objects.some((p) => p.stackedOn === o) && !fluffies.some((p) => p.stackTargetBlock === o) && Math.hypot(o.x - f.x, o.y - f.y) < 250) : null;
     const outside = typeof isOutdoorScene === "function" && isOutdoorScene(f.scene);
     if (!block && !outside) continue;
     f._rockChewAt = timePlayed;

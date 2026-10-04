@@ -105,7 +105,7 @@ function onBabyBornHooks(mare, baby) {
   const dad = baby.fatherId != null ? fluffyById(baby.fatherId) : null;
   const dadRec = !dad && baby.fatherId != null && typeof getFamilyRecord === "function" ? getFamilyRecord(baby.fatherId) : null;
   const mumLong = hasLongCoat(mare);
-  const dadLong = dad ? hasLongCoat(dad) : !!(dadRec && dadRec.longCoat);
+  const dadLong = dad ? hasLongCoat(dad) : !!((dadRec && dadRec.longCoat) || mare.sireLongCoat);
   baby.longCoat = Math.random() < (mumLong && dadLong ? LONG_COAT_BOTH : mumLong || dadLong ? LONG_COAT_ONE : LONG_COAT_NEW);
   if (typeof onWildBirth === "function") onWildBirth(mare, baby); // (Wild.js)
 }

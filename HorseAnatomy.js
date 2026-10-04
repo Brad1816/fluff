@@ -580,6 +580,7 @@ class HorseAnatomy {
     this.horse.fatherGenes = [...father.genes];
     this.horse.babyDaddyId = father.id;
     if (typeof noteSireDefects === "function") noteSireDefects(this.horse, father); // (Defects.js)
+    if (typeof hasLongCoat === "function" && father) this.horse.sireLongCoat = hasLongCoat(father); // (Coats.js: if he's gone by the birth)
     this.horse.updateGrowthStats();
 
     // Decide number of foals and viability (litter size runs in families,

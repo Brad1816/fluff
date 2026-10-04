@@ -70,7 +70,10 @@ if (typeof SAVED_GAME_STATE !== "undefined") {
   SAVED_GAME_STATE.push({
     name: "comfortState",
     get: () => comfortState,
-    set: (v) => (comfortState = v && typeof v === "object" ? v : freshComfortState()),
+    set: (v) => {
+      _towerKnown = null; // (a loaded game: start watching afresh)
+      return (comfortState = v && typeof v === "object" ? v : freshComfortState());
+    },
     fresh: () => freshComfortState(),
   });
 }
@@ -303,10 +306,10 @@ function hearTowerStory(o, amount) {
 
 function _towerCheck() {
   const now = new Map();
-  for (const f of fluffies) if (f.adopted) now.set(f.id, { scene: f.scene, alive: f.isAlive, cause: f.causeOfDeath || "" });
+  for (const f of fluffies) now.set(f.id, { scene: f.scene, alive: f.isAlive, cause: f.causeOfDeath || "", adopted: !!f.adopted });
   if (_towerKnown) {
     for (const [id, was] of _towerKnown) {
-      if (!was.alive) continue;
+      if (!was.alive || !was.adopted) continue; // (only yours; one that ran off or was put out isn't "taken")
       const cur = now.get(id);
       const away = typeof dayCareFluffies !== "undefined" && Array.isArray(dayCareFluffies) && dayCareFluffies.some((d) => String(d.id) === String(id)); // (only at day care)
       const takenAlive = !cur && !away && typeof getSceneConfig === "function" && getSceneConfig(was.scene).insidePlayerQuarters;

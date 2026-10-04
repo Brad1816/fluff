@@ -528,6 +528,12 @@ function reviveFluffy(f, health = DEFIB_HEALTH) {
   }
   f.chaseTarget = null;
   f.cannibalTarget = null;
+  f.frozenDown = null;
+  f._lethalAt = null;
+  f._lethalFull = false;
+  // Its death undone: off the plaque, nobody mourning it (Lives.js, MemorialTree.js)
+  if (typeof livesBook !== "undefined" && livesBook && Array.isArray(livesBook.lives)) livesBook.lives = livesBook.lives.filter((l) => l.id !== f.id);
+  for (const o of fluffies) if (o.mourning && o.mourning.id === f.id) o.mourning = null;
   if (f.hunger <= 0.1) f.hunger = 0.5;
   if (f.happiness <= WAN_DIE_THRESHOLD) f.happiness = WAN_DIE_THRESHOLD + 0.15;
   f.currentStateKey = "IDLE";
@@ -600,14 +606,17 @@ function updateHandling(dt) {
     for (const w of fluffies) {
       if (w === f || !w.isAlive || w.scene !== o.scene || w.currentStateKey === "SLEEPING" || !w.canSee()) continue;
       if (!w._hookSeen) w._hookSeen = {};
-      if (w._hookSeen[f.id] === f._hookedAt) continue;
-      w._hookSeen[f.id] = f._hookedAt;
+      if (w._hookSeen[f.id]) continue; // (once per hanging: cleared when it comes down)
+      w._hookSeen[f.id] = true;
       if (typeof changeFear === "function") changeFear(w, "hook", HOOK_SEEN_FEAR);
       if (Math.random() < 0.5) _hSay(w, ["HOOK", "SEEN"]);
     }
   }
   for (const f of fluffies) {
-    if (f._hookedAt && !hookedOn(f)) f._hookedAt = null;
+    if (f._hookedAt && !hookedOn(f)) {
+      f._hookedAt = null;
+      for (const w of fluffies) if (w._hookSeen) delete w._hookSeen[f.id];
+    }
     if (!f.isAlive) continue;
     // Frightened near a hook it fears
     if (typeof fearOf === "function" && fearOf(f, "hook") >= 0.3 && !hookedOn(f) && f.currentStateKey !== "SLEEPING") {
@@ -653,9 +662,12 @@ function describeBurn(f) {
 }
 if (typeof EXTRA_VET_PROBLEMS !== "undefined") {
   EXTRA_VET_PROBLEMS.push({
-    has: (f) => (isBurned(f) ? ["burns", 40] : null),
+    has: (f) => (isBurned(f) && !f.burned.dressed ? ["burns", 40] : null),
     cure: (f) => {
-      if (f.burned) f.burned.until = timePlayed + (f.burned.until - timePlayed) / 3;
+      if (f.burned) {
+        f.burned.until = timePlayed + (f.burned.until - timePlayed) / 3;
+        f.burned.dressed = true; // (once: the vet won't charge again)
+      }
     },
   });
 }

@@ -452,4 +452,53 @@ module.exports = [
       check(r.saved, "saved");
     },
   },
+  {
+    name: "round8 review fixes: brought back = off the plaque and nobody mourns; the vet dresses a burn once; a stacked block isn't eaten; a runaway isn't a tower story",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const out = {};
+        const a = __mk(300);
+        const friend = __mk(360);
+        a.die(null, "Test");
+        friend.mourning = { id: a.id, name: "x", until: timePlayed + 999, visited: false };
+        livesBook.lives.push({ id: a.id, name: "x" });
+        a.deathTimer = 2;
+        reviveFluffy(a);
+        out.plaque = livesBook.lives.some((l) => l.id === a.id);
+        out.mourning = !!friend.mourning;
+        // Burn: charged once
+        money = 5000;
+        a.burned = { until: timePlayed + 500 };
+        const p1 = vetProblems(a).some((p) => /burn/.test(p[0] || p.name || String(p)));
+        vetTreat(a);
+        out.burnOnce = p1 && !vetProblems(a).some((p) => /burn/.test(p[0] || p.name || String(p)));
+        // Stacked blocks are safe
+        const dim = __mk(500);
+        dim.deformities = ["dim"];
+        const b1 = new Block("INDOORS");
+        b1.x = 510; b1.y = 520;
+        const b2 = new Block("INDOORS");
+        b2.x = 510; b2.y = 500;
+        b2.stackedOn = b1;
+        objects.push(b1, b2);
+        for (let i = 0; i < 200; i++) updateTummy(HOUR_LENGTH);
+        out.stack = objects.includes(b1) && objects.includes(b2);
+        // A runaway: no tower stories
+        const c = __mk(700);
+        const d = __mk(740);
+        c.met = { [d.id]: 1 };
+        _towerCheck();
+        d.adopted = false;
+        d.formerPet = { how: "ran away", day: 1 };
+        _towerCheck();
+        out.tower = c.towerFear || 0;
+        return out;
+      }, SETUP);
+      check(!r.plaque && !r.mourning, "revived: off the plaque, nobody mourning");
+      check(r.burnOnce, "the vet dresses a burn once");
+      check(r.stack, "a stacked block isn't eaten");
+      checkEqual(r.tower, 0, "a runaway isn't a tower story");
+    },
+  },
 ];

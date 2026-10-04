@@ -1524,7 +1524,7 @@ class Horse {
     // Something else that takes it (the hook, the hot plate: Handling.js)
     if (typeof objects !== "undefined") {
       for (const o of objects) {
-        if (typeof o.catchesFluffy === "function" && o.scene === this.scene && o.catchesFluffy(this)) {
+        if (!this.currentCage && typeof o.catchesFluffy === "function" && o.scene === this.scene && o.catchesFluffy(this)) {
           if (o.holdsFluffy) {
             this.placedOn = o;
             this.attemptLockIntoTable(o);

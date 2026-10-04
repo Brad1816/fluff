@@ -3126,3 +3126,13 @@ from. Nothing player-facing reads it yet except the debug view.
 - **Interactions fixed:** caged fluffies are spared a room's crowding
   collapse (a mill's cages keep going); a fluffy at day care doesn't start
   tower stories.
+- **Review fixes (round 7-8 interactions):** the defibrillator takes a
+  revived fluffy off the plaque (`livesBook`) and ends any mourning for it,
+  and clears `frozenDown` / the lethal flags; `_hookedAt` and `_standSince`
+  are saved, and a watcher learns the hook fear once per hanging (a reload
+  isn't a new hanging); the vet dresses a burn once (`burned.dressed`); a
+  rock eater only eats loose blocks (never part of a stack or one being
+  stacked on); only yours count for tower stories, and a runaway / put-out /
+  recruited one isn't "taken" (`_towerKnown` resets on load); the sire's long
+  coat is kept on the mare at conception (`sireLongCoat`); the hook and hot
+  plate don't catch a fluffy dropped into a cage.

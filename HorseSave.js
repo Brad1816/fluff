@@ -190,6 +190,9 @@ const SAVED_HORSE_FIELDS = [
   { name: "frozenDown", fallback: null, clone: true }, // Wild.js
   { name: "wildGen", fallback: undefined },
   { name: "buried", fallback: false },
+  { name: "sireLongCoat", fallback: undefined }, // Coats.js
+  { name: "_hookedAt", fallback: undefined }, // Handling.js (so a reload isn't a new hanging)
+  { name: "_standSince", fallback: undefined }, // MilkStand.js
 ];
 
 function _savedCopy(v) {
