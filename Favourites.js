@@ -1,10 +1,16 @@
 // ---------------------------------------------------------------------------
-// "Bestest babbeh": a grumpy or stuck-up mum picks a favourite.
+// "Bestest babbeh": only the worst mums pick a favourite.
 //
 // A mare with a litter of two or more foals still on milk picks one
-// "bestest babbeh" (bestestOf) if she's grumpy (temper trait at least
-// BESTEST_TEMPER) or looks down on others' colours (coloristDegree at
-// least BESTEST_COLORIST). Her bestest is the foal that looks most like
+// "bestest babbeh" (bestestOf) only if she's nasty (temper trait at least
+// BESTEST_TEMPER) AND either looks down on others' colours (coloristDegree
+// at least BESTEST_COLORIST) or is unstable (a lasting trauma, Broken, or
+// already a bad mum: _unstableMum). A good mum (goodMum: even-tempered,
+// no colour snobbery) loves all hers the same. An ordinary mum in between
+// doesn't care much for a poopie-coated foal (Intelligence.isPoopieCoated):
+// with the milk nearly gone she feeds her other hungry foals first
+// (mumSnubsPoopie), and grumbles about it now and then.
+// Her bestest is the foal that looks most like
 // her or her special friend (the sire if she hasn't one): closest coat
 // colour, same kind (pegasus, unicorn...), mane colour (resemblance).
 // An only child is never a favourite - there's no one to favour it over.
@@ -24,8 +30,10 @@
 // Saved: the mum's bestestId.
 // ---------------------------------------------------------------------------
 
-const BESTEST_TEMPER = 0.3;
-const BESTEST_COLORIST = 0.5;
+const BESTEST_TEMPER = 0.5;
+const BESTEST_COLORIST = 0.4;
+const GOOD_MUM_TEMPER = 0.1; // below this (and no colour snobbery): a good mum
+const POOPIE_MEH_CHANCE = 0.01; // a second: an ordinary mum grumbles about her poopie foal
 const BESTEST_HOLD_BACK = 1; // milk feeds kept for her bestest (when it's hungry)
 const BESTEST_GIVES_IN = 0.3; // ...but a foal this hungry she feeds anyway
 const BESTEST_RESENT_PER_HOUR = 0.012; // the others' liking for it, an hour together
@@ -33,10 +41,29 @@ const BESTEST_RESENT_DENIED = 0.05; // ...and each time they're turned away
 const BESTEST_TALK_CHANCE = 0.02; // a second: coos and grumbles
 const bestestTicker = new Ticker(5);
 
-// Is she the sort to pick a favourite?
+function _unstableMum(m) {
+  if (Array.isArray(m.traumas) && m.traumas.length) return true;
+  if (typeof titleOf === "function" && titleOf(m) === "Broken") return true;
+  return !!(m.badMum && m.badMum.on);
+}
+
+// Is she the sort to pick a favourite? (only the worst)
 function favouringMum(m) {
   if (!m || !m.isAlive || m.gender !== "female" || m.growth < 1) return false;
-  return traitValue(m, "temper") >= BESTEST_TEMPER || (m.coloristDegree || 0) >= BESTEST_COLORIST;
+  return traitValue(m, "temper") >= BESTEST_TEMPER && ((m.coloristDegree || 0) >= BESTEST_COLORIST || _unstableMum(m));
+}
+
+// A good mum loves them all the same
+function goodMum(m) {
+  return !!m && traitValue(m, "temper") < GOOD_MUM_TEMPER && (m.coloristDegree || 0) < 0.3 && !_unstableMum(m);
+}
+
+// An ordinary mum, nearly out of milk: her other hungry foals before a poopie one
+function mumSnubsPoopie(mare, foal) {
+  if (!mare || !foal || foal.motherId !== mare.id || favouringMum(mare) || goodMum(mare)) return false;
+  if (typeof isPoopieCoated !== "function" || !isPoopieCoated(foal) || isPoopieCoated(mare)) return false;
+  if (mare.milkCharges > BESTEST_HOLD_BACK || foal.hunger <= BESTEST_GIVES_IN) return false;
+  return litterOf(mare).some((s) => s !== foal && s.hunger < 0.6 && !isPoopieCoated(s));
 }
 
 // Her foals still on milk (anywhere)
@@ -118,6 +145,7 @@ function mumOf(f) {
 // milk for her bestest?
 function bestestHoldsBack(mare, foal) {
   if (!mare || !foal || foal.motherId !== mare.id) return false;
+  if (mumSnubsPoopie(mare, foal)) return true;
   const best = bestestOf(mare);
   if (!best || best === foal) return false;
   return mare.milkCharges <= BESTEST_HOLD_BACK && best.hunger < 0.6 && foal.hunger > BESTEST_GIVES_IN;
@@ -126,7 +154,12 @@ function bestestHoldsBack(mare, foal) {
 // ...and when she does
 function noteTurnedAway(mare, foal) {
   const best = bestestOf(mare);
-  if (!best) return;
+  if (!best) {
+    // (an ordinary mum putting her poopie foal last)
+    foal.changeHappiness(-0.02);
+    if (mare.happiness > WAN_DIE_THRESHOLD && Math.random() < 0.5) mare.speak(getDialogue(["BESTEST", "POOPIE_LAST"], mare, foal));
+    return;
+  }
   if (typeof changeOpinion === "function") changeOpinion(foal, best, -BESTEST_RESENT_DENIED, "mum's favourite");
   foal.changeHappiness(-0.03);
   if (typeof noteMumMisdeed === "function") noteMumMisdeed(mare, foal, "hoarded"); // (Care.js, BadMummah.js)
@@ -160,7 +193,13 @@ function updateBestest(dt) {
   const step = bestestTicker.step(dt);
   if (!step || typeof fluffies === "undefined") return;
   for (const m of fluffies) {
-    if (!m.isAlive || m.gender !== "female" || m.growth < 1 || !favouringMum(m)) continue;
+    if (!m.isAlive || m.gender !== "female" || m.growth < 1) continue;
+    // An ordinary mum and her poopie foal: a grumble now and then
+    if (!favouringMum(m) && !goodMum(m) && typeof isPoopieCoated === "function" && !isPoopieCoated(m) && m.currentStateKey !== "SLEEPING") {
+      const poopie = litterOf(m).find((f) => f.scene === m.scene && isPoopieCoated(f));
+      if (poopie && Math.random() < POOPIE_MEH_CHANCE * step && (!m.speech || !m.speech.text) && !m.tooYoungToSpeak()) m.speak(getDialogue(["BESTEST", "POOPIE_MEH"], m, poopie));
+    }
+    if (!favouringMum(m)) continue;
     const best = bestestOf(m);
     if (!best) continue;
     for (const sib of litterOf(m)) {

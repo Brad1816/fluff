@@ -2736,7 +2736,7 @@ from. Nothing player-facing reads it yet except the debug view.
 - **Micro.js:** microfluffs (`f.micro`: `microScale`, `microHungerMultiplier`,
   `microImpactFactor`, `microBlowFactor`, x2.5 price, collectors' liking,
   `microInherit` - a micro mum's foals are micro, `maybeMicroGroup` in the
-  park; a grown micro is about an ordinary half-grown foal's size;
+  park; a grown micro is about an ordinary newborn's size (MICRO_SCALE 0.3, never below MICRO_MIN_SCALE);
   `microBreedingMismatch` stops micros breeding with ordinary fluffies, in
   `canFluffiesMate` and the breeding cage's `forcedBreedingProblem`). Sensitive babies in
   stages (`sbsStage`/`sbsShows` in HorseRenderer; `sbsVisible` hides the
@@ -2790,3 +2790,48 @@ from. Nothing player-facing reads it yet except the debug view.
   until it smells - `executeCorpseReaction` then gives a puzzled
   `NOT_DEAD.STRANGER` line instead of a fright.
 - Tests: `tests/lore.test.js`; aging, records and pregnancy tests updated.
+
+### Playtest round 5
+- **Prices and time:** the spray bottle costs the same as the stick ($50).
+  Sleep wakes you at 6 (`Sleep.js SLEEP_WAKE_HOUR`), the report time.
+- **Room climate:** a "scarred" story counts as `trauma` in the hover unless
+  it's a real scar on the body (`Injuries.js` passes `phys: true`).
+- **Litterboxes:** emptied by the Fluff-Bot (`Roomba._litterToEmpty`,
+  `FLUFFBOT_LITTER_AT` 0.25), no longer the Feed-Bot.
+- **Morning report:** park events wrap onto two lines (`_drNightLines`); the
+  card is as tall as its content and trims the news, then the week, then
+  the row spacing to fit a short screen.
+- **Herd talk:** a foal joins mum's herd only when it's on the same side
+  (yours / wild) - it used to leave and "join" every 3 s. JOIN is said once
+  in 5 minutes, and lines that name the leader are only used when it's in
+  sight (`JOIN_ALONE`, `FOLLOW.ALONE`, `FOLLOW_NEAR.ALONE`).
+- **Cages (`CageLife.js`, new):** a plain cage is drawn `CAGE_WIDEN` (1.25)
+  wider. Caged fluffies shuffle (`CAGE_WANDER_*`: 40% of the time, at most
+  60 px, then 15-40 s rest; random targets in a cage are short steps:
+  `HorsePositioning.pickNewTarget`). `cagedAway` / `cageTogether`: no
+  touching, play or party across bars. Talk through the bars
+  (`CAGE_TALK` lines, every 8 s at most, 35%; friends further than 280 px may
+  come to the bars; the answer comes 1.5 s later via `f._cageReply`).
+  `f.cageKnow` (saved) {cull, sell, breeding}: learnt by seeing a cull
+  (`noteCullSeen`, from `learnFearOfCages`), a sale from a sell cage
+  (`noteSoldFromCage`, Buyers.js) or being bred in one (`noteBredInCage`).
+  `reactToCage` on entering a tagged cage (`CAGE_REACT` lines; a known cull
+  cage gives fear of cages and a fright). Trained studs: `f.breedTrain`
+  (saved) +0.25 x smartsLearn per stick-forced breeding; at 1 he breeds by
+  himself after 20 s in a breeding cage (`_clStud`). Parties: caged ones
+  aren't guests; awake caged ones in the room lose `PARTY_MISSED_SAD`
+  (0.08) and say `PARTY_MISSED`.
+- **Special friends (`SpecialFriends.js`, new):** `proposeSpecialFriends`
+  asks you (Choices.js) when both are yours and in your room while you're
+  playing; "Keep them apart" sets `f.sfRefused` (saved, 3 days) and the
+  proposal search skips them. `onSpecialFriendHarmed` (from
+  `notePlayerViolence`, not spray or training, and `performAttack`) and
+  `onSpecialFriendBred` (from `mateWith`): lines, opinion hits, a brave one
+  hits back.
+- **Bestest babbeh (`Favourites.js`):** only when temper >= 0.5 and
+  (colourist >= 0.4 or unstable: a trauma, Broken, a bad mum). `goodMum`
+  (temper < 0.1, no snobbery) never; an ordinary mum puts a poopie foal
+  last when nearly dry (`mumSnubsPoopie`) and grumbles (`POOPIE_MEH`).
+- **Microfluffs:** `MICRO_SCALE` 0.3 (about an ordinary newborn), never drawn
+  below `MICRO_MIN_SCALE` 0.045.
+- Tests: `tests/playtest5.test.js`.

@@ -47,6 +47,7 @@ const SM_LITTLE_AGE = 2 * (typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200); 
 const SM_ANNIV_PER_DAY = 2; // anniversaries told (and felt) in one day at most
 const PARTY_COST = 10;
 const PARTY_JOY = 0.08;
+const PARTY_MISSED_SAD = 0.08; // caged where it can see the party, but not at it
 
 function freshSharedMemories() {
   return { list: [], nextId: 1 };
@@ -344,7 +345,15 @@ function partyOccasion(f) {
 }
 
 function partyGuests(f) {
-  return typeof fluffies === "undefined" ? [] : fluffies.filter((o) => o.isAlive && o.adopted && o.scene === f.scene && o.currentStateKey !== "SLEEPING");
+  // (not one behind bars, away from the party: CageLife.js)
+  const together = (o) => (typeof cageTogether === "function" ? cageTogether(o, f) : o.currentCage === f.currentCage);
+  return typeof fluffies === "undefined" ? [] : fluffies.filter((o) => o.isAlive && o.adopted && o.scene === f.scene && o.currentStateKey !== "SLEEPING" && together(o));
+}
+
+// Awake in the room but caged away from it: they watch everyone get treats
+function partyMissedBy(f) {
+  if (typeof fluffies === "undefined" || typeof cageTogether !== "function") return [];
+  return fluffies.filter((o) => o.isAlive && o.adopted && o.scene === f.scene && o.currentStateKey !== "SLEEPING" && !cageTogether(o, f));
 }
 
 function partyCost(f) {
@@ -383,6 +392,10 @@ function throwParty(f) {
       g.setTargetPosition(f.x + (Math.random() - 0.5) * 220, f.y + (Math.random() - 0.5) * 60);
     }
     if (!g.tooYoungToSpeak() && typeof getDialogue === "function" && Math.random() < 0.6) g.speak(getDialogue(["SHARED", "PARTY"], g, f), true);
+  }
+  for (const o of partyMissedBy(f)) {
+    o.changeHappiness(-PARTY_MISSED_SAD, "Missed the party");
+    if (!o.tooYoungToSpeak() && typeof getDialogue === "function" && Math.random() < 0.7) o.speak(getDialogue("PARTY_MISSED", o), true);
   }
   if (typeof addRoomClimate === "function") addRoomClimate(f.scene, { w: 4 });
   // Hats, bunting and confetti (HouseLife.js)

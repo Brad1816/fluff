@@ -119,6 +119,8 @@ const DIALOGUE = {
       "Nyu hewd! Nyu famiwy!",
       "<Speaker> fowwow <target>!",
     ],
+    // (its new leader isn't here to name)
+    JOIN_ALONE: ["Nyu hewd! Nyu famiwy!", "<Speaker> hab hewd nao!"],
     NEW_LEADER: [
       "<Speaker> am hewd weadew nao!",
       "Fowwow <speaker>, hewd!",
@@ -129,17 +131,15 @@ const DIALOGUE = {
       "Nu wike <target>! <Speaker> go 'way!",
       "<Speaker> find nyu hewd...",
     ],
-    FOLLOW: [
-      "Wait fow <speaker>!",
-      "Hewd go dat way!",
-      "<Target>! Wait!",
-    ],
+    FOLLOW: {
+      LEADER: ["Wait fow <speaker>!", "Hewd go dat way!", "<Target>! Wait!"],
+      ALONE: ["Wait fow <speaker>!", "Hewd go dat way!"],
+    },
     // (in one room: nowhere to "go dat way" to)
-    FOLLOW_NEAR: [
-      "Wait fow <speaker>!",
-      "<Target>! Wait!",
-      "Stay cwose, fwens!",
-    ],
+    FOLLOW_NEAR: {
+      LEADER: ["Wait fow <speaker>!", "<Target>! Wait!", "Stay cwose, fwens!"],
+      ALONE: ["Wait fow <speaker>!", "Stay cwose, fwens!"],
+    },
     STRANGER: [
       "Nu am <speaker>'s hewd! Go 'way!",
       "Who dat? Nu pawt ob hewd!",
@@ -1070,6 +1070,9 @@ const DIALOGUE = {
     SAVE_MILK: ["Nu! Miwkies am fow bestest babbeh!", "Wait! Bestest babbeh fiwst!", "Udda babbehs nu need su much miwkies!", "Shoo! Dese miwkies am fow <speaker>'s bestest!"],
     COO: ["<Target> am su pwetty... mummah's bestest!", "Mummah wub bestest babbeh mostest!", "Nu babbeh as speshuw as <target>!"],
     RESENT: ["Wai mummah wub <target> mowe...", "<Target> getted aww da miwkies agen...", "Mummah nu wook at <speaker>...", "Nu faiw! <Target> awways fiwst!"],
+    // An ordinary mum and her poopie-coated foal (not a bestest thing: a grumble)
+    POOPIE_MEH: ["Poopie babbeh... stiww mummah's babbeh, mebbe...", "Wai <target> hab poopie cowow...", "Mummah feed <target>... watew."],
+    POOPIE_LAST: ["Wait, poopie babbeh. Udda babbehs fiwst.", "Nu yet, <target>. Pwetty babbehs fiwst."],
   },
   // A foal calling for its mum (HorseFamily updateFoalCalls)
   FOAL_CALL: {
@@ -1092,6 +1095,54 @@ const DIALOGUE = {
       "Coooo...*suckle*",
     ],
   },
+
+  // Special friends (SpecialFriends.js)
+  SPECIAL_FRIEND: {
+    REFUSED: ["Wai nu can be speshuw fwens wif <target>?", "Hoomin say nu... *sniff*", "<Speaker> stiww wub <target>..."],
+    HURT_BY_YOU: ["NU! Nu huwt <target>!! <Target> am <speaker>'s speshuw fwen!", "<Target>!! Pwease stop! Huwt <speaker> instead!"],
+    HURT_BY_FLUFFY: ["Weave <target> 'wone!!", "Nu huwt <speaker>'s speshuw fwen!!", "<Target>! <Speaker> pwotect yu!"],
+    BRED_FORCED: ["Nu! Weave <target> 'wone!", "<Target>... <speaker> sowwy... nu can hewp...", "Bad! Nu do dat tu <target>!"],
+    BRED_WILLING: ["<Target>?! <Speaker> fought yu wub <speaker>...", "Wai <target> do dat? <Speaker> am speshuw fwen!", "*sniff* <Target> nu wub <speaker> nu mowe?"],
+  },
+  // Put in a cage with a job (CageLife.js)
+  CAGE_REACT: {
+    CULL: {
+      KNOWN: ["NU! NU DA SCAWY GWASS BOXIE!! <Speaker> be gud, pwomise!!", "Pwease nu make <speaker> go foweba sweepies!!", "Nu wan' smoky boxie! HEWP!!"],
+      NEW: ["Wai dis boxie hab funny wawws?", "Hewwo? Wai <speaker> in boxie?"],
+    },
+    SELL: {
+      KNOWN: ["Nu! Nu wan' go 'way wif stwangew!", "<Speaker> wiww be gud! Nu gib <speaker> 'way!", "Pwease... <speaker> wub dis home..."],
+      NEW: ["Is dis nyu-home boxie?", "Mebbe nyu famiwy come fow <speaker>?"],
+    },
+    BREEDING: {
+      DREAD: ["Nu dis boxie again...", "<Speaker> nu wike dis boxie... wan' go out..."],
+      HOPEFUL: ["Mebbe <speaker> get babbehs?", "Babbeh boxie! <Speaker> wan' be mummah!"],
+      STALLION: ["Dis am da babbeh boxie.", "<Speaker> knyo dis boxie."],
+    },
+    PLAIN: ["Wai <speaker> in boxie? <Speaker> been gud!", "Wet <speaker> out! Pwease?", "Boxie am su smaww..."],
+  },
+  // Through the bars (CageLife.js)
+  CAGE_TALK: {
+    INSIDE: {
+      MUM: ["Mummah! <Speaker> in boxie! Hewp!", "Mummah, come cwose? <Speaker> miss mummah..."],
+      BABY: ["Babbeh! Mummah hewe! Mummah nu can come out...", "Mummah wub yu, babbeh! Be gud!"],
+      FAMILY: ["<Target>! <Speaker> stuck in boxie!", "<Target>, stay cwose? Pwease?"],
+      SPECIAL: ["Speshuw fwen! <Speaker> miss yu!", "Wait fow <speaker>, speshuw fwen..."],
+      FRIEND: ["<Target>! Hewwo! <Speaker> in boxie...", "Wan' pway wif <target>... nu can come out...", "Tewl <speaker> 'bout outside, <target>?"],
+    },
+    OUTSIDE: {
+      MUM: ["Mummah hewe, babbeh! Nu cwy!", "Babbeh be bwave! Mummah nu go 'way!"],
+      BABY: ["Mummah! Come out an' gib huggies!", "Wai mummah in boxie?"],
+      FAMILY: ["<Target>! <Speaker> stay cwose!", "Nu be scawed, <target>!"],
+      SPECIAL: ["<Speaker> wait fow yu, speshuw fwen!", "<Speaker> miss <target> suu much..."],
+      FRIEND: ["Hewwo <target>! Come out soon?", "<Speaker> save toysies fow <target>!", "Wai <target> in boxie? <Target> am gud fwuffy!"],
+      CULL: ["NU! Nu put <target> in scawy gwass boxie!!", "<Target>! Come out! Come out!!"],
+      SELL: ["Nu take <target> 'way!", "<Target>... nu go wif stwangew..."],
+    },
+    COMING: ["<Target>! <Speaker> comin'!", "Wait, <target>! <Speaker> come see yu!"],
+  },
+  // Missed the party, behind bars (SharedMemories.js)
+  PARTY_MISSED: ["Pawty... <speaker> wan' pawty tuu...", "Nu fair... evewybody hab tweats...", "<Speaker> nu get tu go tu pawty..."],
 
   // A bad smarty runs off and leaves its herd (Desertion.js)
   DESERT: {

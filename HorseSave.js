@@ -27,7 +27,10 @@ const SAVED_HORSE_FIELDS = [
   { name: "badMum", fallback: null, clone: true }, // BadMummah.js
   { name: "takenFromMum", fallback: null },
   { name: "forgotMum", fallback: false }, // FoalLife.js
-  { name: "seasonDays", fallback: null, clone: true }, // SeasonSense.js: days lived in each season
+  { name: "seasonDays", fallback: null, clone: true },
+  { name: "cageKnow", fallback: null, clone: true }, // what it knows of cull, sell and breeding cages (CageLife.js)
+  { name: "breedTrain", fallback: 0 },
+  { name: "sfRefused", fallback: null, clone: true }, // special friends you kept it from: id -> until (SpecialFriends.js) // a stud trained to breed in a breeding cage by himself (CageLife.js) // SeasonSense.js: days lived in each season
   { name: "mumApart", fallback: 0 },
   { name: "bullied", fallback: 0 },
   { name: "bullyScore", fallback: 0 },

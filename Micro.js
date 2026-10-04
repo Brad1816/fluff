@@ -3,9 +3,10 @@
 // the close-up on the operating table.
 //
 // MICROFLUFFS (f.micro, saved): a tiny breed - MICRO_SCALE the size, so a
-// grown micro is about as big as an ordinary foal halfway grown, and its
-// own foals are far smaller still (a newborn micro is a quarter of its
-// mum's size). They eat a fraction (MICRO_HUNGER), several fit in a cage,
+// grown micro is about a quarter to a third of an ordinary grown fluffy,
+// no bigger than an ordinary newborn (as in the lore pictures: one fits on
+// a coin), and its own foals are far smaller still (never drawn below
+// MICRO_MIN_SCALE, so you can still pick one up). They eat a fraction (MICRO_HUNGER), several fit in a cage,
 // and they're very fragile: a fall hurts them MICRO_FRAGILE times as much
 // (from lower down too), and so does a blow from a bigger fluffy. They feel
 // the heat more. Rare in the park (MICRO_PARK_CHANCE of a new group is all
@@ -26,7 +27,8 @@
 // to each part as it goes (SURGERY_PAIN lines by part).
 // ---------------------------------------------------------------------------
 
-const MICRO_SCALE = 0.6; // (a grown micro: about an ordinary foal halfway grown)
+const MICRO_SCALE = 0.3; // (a grown micro: about an ordinary newborn)
+const MICRO_MIN_SCALE = 0.045; // a newborn micro is drawn no smaller than this
 const MICRO_HUNGER = 0.35;
 const MICRO_FRAGILE = 3;
 const MICRO_BLOW = 2.5;

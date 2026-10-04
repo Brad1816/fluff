@@ -84,7 +84,7 @@ function injureFromThrow(f, speed, minSpeed) {
   const what = LIMB_PART_WORDS[part] || part;
   const text = part === "horn" ? `${name}'s horn snapped on landing` : `${name} mangled ${what} landing`;
   if (f.adopted && typeof addUIMessage === "function") addUIMessage(`${text}. It won't ever be right again.`);
-  if (typeof recordStory === "function") recordStory("scarred", f, { x: part === "horn" ? "a broken horn from being thrown" : `${what.replace(/^its /, "")} mangled when thrown` });
+  if (typeof recordStory === "function") recordStory("scarred", f, { x: part === "horn" ? "a broken horn from being thrown" : `${what.replace(/^its /, "")} mangled when thrown`, phys: true });
   if (typeof noteTitleHarm === "function") noteTitleHarm(f, 2, "mangled"); // (Titles.js)
   if (typeof recordFluffy === "function") recordFluffy(f);
   return part;

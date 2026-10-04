@@ -529,13 +529,21 @@ class HorseActionHandler {
       } else {
         acceptKey = ["PROPOSE", "ACCEPT", "MARE"];
       }
-      target.speak(getDialogue(acceptKey, target, this.horse));
-      this.horse.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT, "A new friend");
-      target.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT, "A new friend");
-      if (!relationships[this.horse.id]) relationships[this.horse.id] = {};
-      if (!relationships[target.id]) relationships[target.id] = {};
-      relationships[this.horse.id][target.id] = "special_friend";
-      relationships[target.id][this.horse.id] = "special_friend";
+      const me = this.horse;
+      const accept = () => {
+        target.speak(getDialogue(acceptKey, target, me));
+        me.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT, "A new friend");
+        target.changeHappiness(HAPPINESS_BONUS_PROPOSAL_ACCEPT, "A new friend");
+      };
+      // (your say, when you're in the room: SpecialFriends.js)
+      if (typeof proposeSpecialFriends === "function") proposeSpecialFriends(me, target, accept);
+      else {
+        accept();
+        if (!relationships[me.id]) relationships[me.id] = {};
+        if (!relationships[target.id]) relationships[target.id] = {};
+        relationships[me.id][target.id] = "special_friend";
+        relationships[target.id][me.id] = "special_friend";
+      }
     }
     this.horse.initBehavior("IDLE");
     target.initBehavior("IDLE");

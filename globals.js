@@ -1542,6 +1542,10 @@ const CAGE_TAG_COLORS = {
   cull: "#607D8B",
 };
 const CAGE_FLOOR_OFFSET = 10; // How far above the cage's bottom edge caged fluffies stand
+const CAGE_WIDEN = 1.25; // a plain cage is drawn this much wider than its picture (Cage.widen)
+const CAGE_WANDER_CHANCE = 0.4; // a caged fluffy that feels like wandering moves this often...
+const CAGE_WANDER_REST = [15, 40]; // ...then waits this long (s) before thinking of it again
+const CAGE_WANDER_STEP = 60; // ...and goes at most this far (px)
 const CAGE_CLICK_THRESHOLD = 5; // Max mouse travel (px) for a press to count as a click
 const CAGE_EJECT_OFFSET_Y = 30; // How far below the cage ejected contents land
 const CAGE_GLASS_EXTEND_TIME = 2.5; // Seconds for glass pane to slide down
@@ -1917,8 +1921,8 @@ const SPAWN_ACTIONS = [
   },
   {
     name: "Spray bottle",
-    desc: "Spray fluffies to discipline them.",
-    cost: 150,
+    desc: "Spray fluffies to discipline them - a gentler choice than the stick, for the same price.",
+    cost: 50,
     isItem: "spray_bottle",
   },
   {

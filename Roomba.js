@@ -8,6 +8,8 @@
 //   - when the floor's clean, goes back to its dock (where you last put it
 //     down) and waits
 //   - it works whether or not you're looking at that room
+//   - empties litterboxes in its room once they're a quarter full
+//     (FLUFFBOT_LITTER_AT; not a Litterpal with a fluffy strapped in)
 // Right-click it to switch it on or off. You can pick it up and move it to
 // another room; wherever you drop it becomes its new dock.
 //
@@ -22,6 +24,7 @@ const ROOMBA_PRICE = 250;
 const ROOMBA_SPEED = 70; // px a second
 const ROOMBA_CLEAN = 0.35; // puddle size cleaned a second
 const ROOMBA_BUMP_EVERY = 6; // seconds before the same fluffy reacts again
+const FLUFFBOT_LITTER_AT = 0.25; // of a litterbox's uses: time to empty it
 
 class Roomba {
   constructor(scene = "INDOORS") {
@@ -115,6 +118,25 @@ class Roomba {
     return best;
   }
 
+  // A litterbox (or Litterpal) in its room that wants emptying
+  _litterToEmpty() {
+    if (typeof objects === "undefined") return null;
+    let best = null;
+    let bd = Infinity;
+    for (const o of objects) {
+      if (!((typeof Litterbox !== "undefined" && o instanceof Litterbox) || (typeof LitterpalBox !== "undefined" && o instanceof LitterpalBox))) continue;
+      if (o.scene !== this.scene || o.isDragging || o.securedFluffy) continue;
+      const max = o.maxUses || 30;
+      if ((o.uses || 0) < Math.max(1, Math.ceil(max * FLUFFBOT_LITTER_AT))) continue;
+      const d = Math.hypot(o.x - this.x, o.y - this.y);
+      if (d < bd) {
+        bd = d;
+        best = o;
+      }
+    }
+    return best;
+  }
+
   _driveTo(tx, ty, dt) {
     const B = this._bounds();
     tx = Math.max(B.left, Math.min(B.right, tx));
@@ -197,6 +219,12 @@ class Roomba {
           sp.food = Math.max(0, sp.food - 1);
         }
       }
+      if (this.scene === currentScene) this._bumpFluffies();
+    } else if (this._litterToEmpty()) {
+      // A litterbox getting full: scoop it out
+      const box = this._litterToEmpty();
+      this.state = "cleaning";
+      if (this._driveTo(box.x, box.y, dt) || Math.hypot(box.x - this.x, box.y - this.y) < 40) box.uses = 0;
       if (this.scene === currentScene) this._bumpFluffies();
     } else if (this.state !== "docked") {
       this.state = "homing";
@@ -318,7 +346,7 @@ function reactToRoomba(f, bot) {
 
 SPAWN_ACTIONS.push({
   name: "Fluff-Bot",
-  desc: "A little robot vacuum. It cleans up any mess in its room by itself, then goes back to where you put it. Right-click to switch it off.",
+  desc: "A little robot vacuum. It cleans up any mess in its room by itself and empties the litterboxes, then goes back to where you put it. Right-click to switch it off.",
   cost: ROOMBA_PRICE,
   isItem: "roomba",
 });

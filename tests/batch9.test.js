@@ -130,18 +130,24 @@ module.exports = [
     },
   },
   {
-    name: "batch9: the Feed-Bot empties a litterbox; an owned plushie shows whose it is",
+    name: "batch9: the Fluff-Bot (not the Feed-Bot) empties a litterbox; an owned plushie shows whose it is",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
-        const bot = new FeedBot("INDOORS");
-        bot.setPosition(300, 560);
-        objects.push(bot);
+        const feed = new FeedBot("INDOORS");
+        feed.setPosition(300, 560);
+        objects.push(feed);
         const box = new Litterbox("INDOORS");
         box.x = 700;
         box.y = 560;
         box.uses = 12;
         objects.push(box);
+        for (let i = 0; i < 600 && box.uses > 0; i++) feed.update(1 / 20);
+        const feedLeft = box.uses;
+        objects.splice(objects.indexOf(feed), 1);
+        const bot = new Roomba("INDOORS");
+        bot.setPosition(300, 560);
+        objects.push(bot);
         for (let i = 0; i < 600 && box.uses > 0; i++) bot.update(1 / 20);
         const f = __mk(400, { name: "Daisy" });
         const p = new Plushie("INDOORS");
@@ -150,9 +156,10 @@ module.exports = [
         objects.push(p);
         const before = plushieOwnerTag(p);
         p.ownerId = f.id;
-        return { uses: box.uses, before, after: plushieOwnerTag(p) };
+        return { uses: box.uses, feedLeft, before, after: plushieOwnerTag(p) };
       }, SETUP);
-      checkEqual(r.uses, 0, "the Feed-Bot cleaned the litterbox");
+      checkEqual(r.feedLeft, 12, "the Feed-Bot leaves it");
+      checkEqual(r.uses, 0, "the Fluff-Bot cleaned the litterbox");
       checkEqual(r.before, null, "nobody's yet");
       checkEqual(r.after, "Daisy's", "Daisy's plushie");
     },

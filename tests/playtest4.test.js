@@ -84,13 +84,16 @@ module.exports = [
     },
   },
   {
-    name: "playtest4: a grumpy mum's bestest babbeh - the one most like her; it gets the last milk, the others resent it; never an only child",
+    name: "playtest4: only the worst mums have a bestest babbeh - the one most like her; it gets the last milk, the others resent it; never an only child; an ordinary mum feeds a poopie foal last",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
         const mum = __mk(400);
         mum.traitShift = { temper: 2 };
         mum.coloristDegree = 0; // (grumpy, not a colourist: she feeds them all when there's plenty)
+        const out = {};
+        out.grumpyOnly = bestestOf(mum); // (grumpy alone isn't enough...)
+        mum.traumas = [{ type: "violent", text: "x", severity: 1 }]; // (...grumpy and unstable is)
         __coat(mum, [200, 60, 160]);
         mum.colors.mane = "rgb(60, 60, 200)";
         const like = __mk(430, { growth: 0.2, mum: mum.id });
@@ -98,7 +101,6 @@ module.exports = [
         like.colors.mane = "rgb(60, 60, 200)";
         const unlike = __mk(460, { growth: 0.2, mum: mum.id });
         __coat(unlike, [60, 200, 60]);
-        const out = {};
         out.best = bestestOf(mum) === like;
         out.labels = [describeBestest(mum)[0], describeBestest(like)[0], describeBestest(unlike)[0]];
         // The last of the milk
@@ -130,6 +132,20 @@ module.exports = [
         lone.traitShift = { temper: 2 };
         __mk(1020, { growth: 0.2, mum: lone.id });
         out.only = bestestOf(lone);
+        // An ordinary mum, nearly dry: her poopie foal waits
+        const plain = __mk(1200);
+        plain.traitShift = { temper: 0.3 - traitValue(plain, "temper") + ((plain.traitShift && plain.traitShift.temper) || 0) };
+        plain.coloristDegree = 0;
+        const poo = __mk(1220, { growth: 0.2, mum: plain.id });
+        const sib = __mk(1240, { growth: 0.2, mum: plain.id });
+        const realPoopie = isPoopieCoated;
+        isPoopieCoated = (f) => f === poo;
+        plain.lactatingTimer = 300;
+        plain.milkCharges = 1;
+        poo.hunger = 0.5;
+        sib.hunger = 0.5;
+        out.ordinary = [bestestOf(plain), goodMum(plain), mumSnubsPoopie(plain, poo), mumSnubsPoopie(gentle, poo)];
+        isPoopieCoated = realPoopie;
         return out;
       }, SETUP);
       check(r.best, "the foal most like her");
@@ -141,6 +157,8 @@ module.exports = [
       check(r.slowResent, "living alongside it, the resentment grows");
       checkEqual(r.gentle, null, "a gentle mum has no favourite");
       checkEqual(r.only, null, "an only child isn't a favourite");
+      checkEqual(r.grumpyOnly, null, "grumpy alone: no favourite");
+      checkEqual(JSON.stringify(r.ordinary), JSON.stringify([null, false, true, false]), "an ordinary mum: no bestest, but her poopie foal waits");
     },
   },
   {

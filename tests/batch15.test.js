@@ -87,7 +87,7 @@ module.exports = [
     },
   },
   {
-    name: "batch15: microfluffs - a grown one is foal-sized, its foals far smaller; eat less, fragile, pricey; only breed with micros",
+    name: "batch15: microfluffs - a grown one is newborn-sized, its foals far smaller; eat less, fragile, pricey; only breed with micros",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -95,8 +95,8 @@ module.exports = [
         const b = __mk(400);
         const p0 = b.calculatePrice();
         makeMicro(b);
-        const foal = __mk(250, { growth: 0.45 });
-        const out = { ratio: +(b.scale / foal.scale).toFixed(2), eats: microHungerMultiplier(b) < 0.5, pricey: b.calculatePrice() > p0 * 2 };
+        const foal = __mk(250, { growth: 0 });
+        const out = { ratio: +(b.scale / foal.scale).toFixed(2), adultRatio: +(b.scale / a.scale).toFixed(2), eats: microHungerMultiplier(b) < 0.5, pricey: b.calculatePrice() > p0 * 2 };
         b.health = 100;
         b.handleThrowImpact(THROW_IMPACT_MIN_SPEED * 0.8);
         out.fragile = b.health < 100;
@@ -115,8 +115,9 @@ module.exports = [
         out.saved = JSON.stringify(b.serialize()).includes('"micro":true');
         return out;
       }, SETUP);
-      check(r.ratio > 0.85 && r.ratio < 1.15, `a grown micro is about a half-grown foal's size: ${JSON.stringify(r)}`);
-      check(r.babyRatio < 0.35, "its newborn is far smaller than it");
+      check(r.ratio > 0.9 && r.ratio < 1.5, `a grown micro is about an ordinary newborn's size: ${JSON.stringify(r)}`);
+      check(r.adultRatio > 0.2 && r.adultRatio < 0.4, `about a quarter to a third of a grown fluffy: ${r.adultRatio}`);
+      check(r.babyRatio < 0.4, "its newborn is far smaller than it");
       check(r.eats && r.pricey, "eats little, pricey");
       check(r.fragile, "a fall that wouldn't hurt a normal fluffy hurts a micro");
       check(r.breedsTrue && r.collector, "breeds true; collectors love them");

@@ -1198,6 +1198,19 @@ class WanderDesire extends Desire {
     this.lastCalledTime =
       gameTimeMs();
     this.targetTime = 5 + Math.random() * 15;
+    // In a cage there's nowhere to go: it shuffles now and then rather than
+    // pacing wall to wall (CAGE_WANDER_*)
+    if (horse.currentCage) {
+      this.targetTime = CAGE_WANDER_REST[0] + Math.random() * (CAGE_WANDER_REST[1] - CAGE_WANDER_REST[0]);
+      if (Math.random() >= CAGE_WANDER_CHANCE || horse.isMovingOrRunning()) return true;
+      const lim = horse.positioning.getCageLimits();
+      const tx = clamp(horse.x + (Math.random() - 0.5) * 2 * CAGE_WANDER_STEP, lim.minX, lim.maxX);
+      if (Math.abs(tx - horse.x) < 12) return true;
+      horse.initBehavior("MOVING");
+      horse.setTargetPosition(tx, horse.y);
+      horse.constrainTargetToCage();
+      return true;
+    }
     let magX = Math.random() * 1000 + 150;
     let magY = Math.random() * 1000 + 150;
     if (!horse.canSee()) {

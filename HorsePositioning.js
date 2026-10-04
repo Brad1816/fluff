@@ -974,6 +974,7 @@ class HorsePositioning {
         !f.fearedFluffies.some((ff) => ff.id === this.horse.id) &&
         rels[f.id] === "friend" &&
         !this.horse.friendshipCooldowns[f.id] &&
+        !(typeof sfRefused === "function" && sfRefused(this.horse, f)) && // (you kept them apart: SpecialFriends.js)
         isSexuallyAttractedTo(this.horse, f) &&
         // (last: the family check is the dearest one - Kinship.js)
         !(typeof kinBlocksRomance === "function" && kinBlocksRomance(this.horse, f))
@@ -1303,6 +1304,14 @@ class HorsePositioning {
   }
 
   pickNewTarget() {
+    if (this.horse.currentCage) {
+      // A small shuffle along the cage floor, not a dash to the far wall
+      const lim = this.getCageLimits();
+      const step = typeof CAGE_WANDER_STEP === "number" ? CAGE_WANDER_STEP : 60;
+      this.horse.setTargetPosition(clamp(this.horse.x + (Math.random() - 0.5) * 2 * step, lim.minX, lim.maxX), this.horse.y);
+      this.constrainTargetToCage();
+      return;
+    }
     this._pickNewTarget();
     if (this.horse.currentCage) {
       this.constrainTargetToCage();

@@ -264,7 +264,12 @@ function _join(h, f) {
   h.memberIds.push(f.id);
   _herdChanged();
   const lead = getHerdLeader(h);
-  _say(f, ["HERD", "JOIN"], lead && lead.scene === f.scene ? lead : null); // (only names a leader it can see)
+  // (only names a leader it can see - and a newcomer only says so once in a while)
+  const seen = lead && lead !== f && lead.scene === f.scene ? lead : null;
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  if (f._joinSaidAt !== undefined && now - f._joinSaidAt >= 0 && now - f._joinSaidAt < 300) return;
+  f._joinSaidAt = now;
+  _say(f, ["HERD", seen ? "JOIN" : "JOIN_ALONE"], seen);
 }
 
 // Which side a herd is on: yours (most members adopted) or the park's.
@@ -346,7 +351,9 @@ function updateHerds(dt) {
   for (const f of unherded) {
     const mum = f.growth < 1 ? alive.get(f.motherId) : null;
     if (mum && herdOf(mum)) {
-      _join(herdOf(mum), f);
+      // (not when mum's been taken in and it hasn't, or the other way round:
+      // it used to leave and rejoin every few seconds, "joining" each time)
+      if (herdIsYours(herdOf(mum)) === !!f.adopted) _join(herdOf(mum), f);
       continue;
     }
     let best = null;
@@ -523,7 +530,8 @@ class FollowHerdDesire extends Desire {
     // ("Hewd go dat way!" only out in the park, not across one room)
     const outdoors = typeof isCameraScene === "function" && isCameraScene(horse.scene);
     const lead = getHerdLeader(herdOf(horse));
-    if (Math.random() < 0.15) _say(horse, ["HERD", outdoors ? "FOLLOW" : "FOLLOW_NEAR"], lead && lead.scene === horse.scene ? lead : null);
+    const seen = lead && lead !== horse && lead.scene === horse.scene ? lead : null;
+    if (Math.random() < 0.15) _say(horse, ["HERD", outdoors ? "FOLLOW" : "FOLLOW_NEAR", seen ? "LEADER" : "ALONE"], seen);
     return true;
   }
 }

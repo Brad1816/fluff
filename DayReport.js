@@ -193,16 +193,46 @@ function isDayReportOpen() {
 // ---- Drawing (screen pass only) ----
 
 const DR_W = 620;
-const DR_H = 500;
 const DR_NIGHT_ROWS = 3; // room for last night's park events
+
+// Last night's park events, each wrapped onto up to two lines (they used to
+// be cut short with "...")
+function _drNightLines(r) {
+  const night = (r && r.nightEvents ? r.nightEvents : []).slice(-DR_NIGHT_ROWS);
+  const out = [];
+  const c = typeof ctx !== "undefined" ? ctx : null;
+  for (const e of night) {
+    const text = (e.good ? "▲ " : "▼ ") + e.text;
+    let lines = [text];
+    if (c && typeof wrapText === "function") {
+      c.save();
+      c.font = "14px Arial";
+      lines = wrapText(c, text, DR_W - 76);
+      if (lines.length > 2) lines = [lines[0], fitText(c, lines.slice(1).join(" "), DR_W - 90)];
+      c.restore();
+    }
+    lines.forEach((l, i) => out.push({ text: i ? "   " + l : l, good: e.good }));
+  }
+  return out;
+}
 
 function getDayReportLayout() {
   const x = Math.round(width / 2 - DR_W / 2);
-  const n = dayReportShown && dayReportShown.nightEvents ? Math.min(DR_NIGHT_ROWS, dayReportShown.nightEvents.length) : 0;
-  const h = DR_H + (n ? 30 + n * 20 : 0) + (dayReportShown && dayReportShown.summary ? 78 : 0);
+  const n = dayReportShown ? _drNightLines(dayReportShown).length : 0;
+  // (rows, then the night, the week and the news, each as tall as it comes out)
+  let news = dayReportShown && dayReportShown.news ? Math.max(1, Math.min(5, dayReportShown.news.length)) : 1;
+  let summaryLines = dayReportShown && dayReportShown.summary ? 3 : 0;
+  let rowH = 26;
+  const tall = () => 104 + 9 * rowH + (n ? 28 + n * 20 : 0) + (summaryLines ? 28 + summaryLines * 18 : 0) + 28 + news * 20 + 70;
+  // A short screen (a phone): fewer news lines, then a shorter week, so
+  // nothing hides under the button
+  while (tall() > height - 16 && news > 1) news--;
+  while (tall() > height - 16 && summaryLines > 1) summaryLines--;
+  if (tall() > height - 16) rowH = 21;
+  const h = tall();
   const y = Math.round(Math.max(8, height / 2 - h / 2));
   // (on a short window the button stays on screen, over the bottom of the card)
-  return { x, y, w: DR_W, h, btn: { x: x + DR_W / 2 - 90, y: Math.min(y + h - 58, height - 50), w: 180, h: 40 } };
+  return { x, y, w: DR_W, h, news, summaryLines, rowH, btn: { x: x + DR_W / 2 - 90, y: Math.min(y + h - 58, height - 50), w: 180, h: 40 } };
 }
 
 function _listText(list, max = 4) {
@@ -266,11 +296,11 @@ function drawDayReport(c) {
     c.font = "15px Arial";
     c.fillStyle = color || "white";
     c.fillText(fitText(c, value, L.w - 210), L.x + 180, y);
-    y += 26;
+    y += L.rowH || 26;
   }
 
   // Last night in the park (NightEvents.js)
-  const night = (r.nightEvents || []).slice(-DR_NIGHT_ROWS);
+  const night = _drNightLines(r);
   if (night.length) {
     y += 6;
     c.font = "bold 15px Arial";
@@ -280,7 +310,7 @@ function drawDayReport(c) {
     c.font = "14px Arial";
     for (const e of night) {
       c.fillStyle = e.good ? "#9fe0a8" : "#ff8a80";
-      c.fillText((e.good ? "▲ " : "▼ ") + fitText(c, e.text, L.w - 76), L.x + 34, y);
+      c.fillText(e.text, L.x + 34, y);
       y += 20;
     }
   }
@@ -295,11 +325,13 @@ function drawDayReport(c) {
     c.font = "italic 14px Georgia, serif";
     c.fillStyle = "#f1ecf7";
     const lines = typeof wrapText === "function" ? wrapText(c, r.summary, L.w - 64) : [r.summary];
-    for (const l of lines.slice(0, 3)) {
+    const shown = lines.slice(0, L.summaryLines || 3);
+    if (lines.length > shown.length && shown.length) shown[shown.length - 1] = fitText(c, lines.slice(shown.length - 1).join(" "), L.w - 64);
+    for (const l of shown) {
       c.fillText(l, L.x + 34, y);
       y += 18;
     }
-    y += Math.max(0, 3 - lines.length) * 18;
+    y += Math.max(0, (L.summaryLines || 3) - shown.length) * 18;
   }
   // Park news
   y += 6;
@@ -309,7 +341,7 @@ function drawDayReport(c) {
   y += 22;
   c.font = "14px Arial";
   c.fillStyle = "rgba(255,255,255,0.85)";
-  const news = r.news.length ? r.news.slice(-5) : ["A quiet day."];
+  const news = r.news.length ? r.news.slice(-(L.news || 5)) : ["A quiet day."];
   for (const n of news) {
     c.fillText("• " + fitText(c, n, L.w - 70), L.x + 34, y);
     y += 20;

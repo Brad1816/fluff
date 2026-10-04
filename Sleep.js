@@ -7,12 +7,12 @@
 // as fit in SLEEP_BUDGET_MS a frame), so fluffies eat, sleep, grow up,
 // give birth, fall out and fall ill as they would. You see the room dim
 // and the clock spin; "Wake up" (or Esc) stops it early. The morning
-// report comes up at 6 as usual, so you can see what went on.
+// report comes up as you wake at 6, so you can see what went on.
 // Nothing else asks you anything while you sleep (it's a screen that
 // holds the normal clock still, Screens.js; this file runs the game on).
 // ---------------------------------------------------------------------------
 
-const SLEEP_WAKE_HOUR = 7;
+const SLEEP_WAKE_HOUR = 6; // (the morning report time: DayReport.js REPORT_HOUR)
 // Game seconds a step. Bigger steps would be quicker, but a fluffy decides
 // what to do at most once a step: at 0.25 the test houses had about half
 // the fights, illness and deaths of a normal night; at 0.1 (how often

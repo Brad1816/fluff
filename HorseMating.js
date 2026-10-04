@@ -113,6 +113,9 @@ addHorseMethods({
     friend.matingState.matingTimer = time;
     friend.matingState.femaleForced = femaleForced;
     friend.matingState.interruptible = this.matingState.interruptible;
+    // A special friend of either, watching, takes it badly (SpecialFriends.js)
+    if (typeof onSpecialFriendBred === "function")
+      onSpecialFriendBred(this.gender === "male" ? this : friend, this.gender === "male" ? friend : this, maleForced || femaleForced);
 
     if (femaleForced && friend.fearedFluffies && !friend.fearedFluffies.some((f) => f.id === this.id)) {
       friend.fearedFluffies.push({

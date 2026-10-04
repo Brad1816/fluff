@@ -387,6 +387,7 @@ function learnFearOfCages(cage, victims) {
     const family = [...ids].some((id) => rels[id] && rels[id] !== "friend");
     changeFear(o, "cages", CAGES_FROM_CULL + (family ? 0.2 : 0));
   }
+  if (typeof noteCullSeen === "function") noteCullSeen(cage); // (CageLife.js)
 }
 
 // A rough bath (hurt while being bathed: Memory.js), or nearly drowning

@@ -69,6 +69,7 @@ addHorseMethods({
     // dreams, how timid it grows) hears of it once per attacker and victim
     // per FIGHT_NOTE_GAP, and hitting back is part of the same fight
     if (intent !== "RETALIATION" && typeof recordStory === "function" && _newFight(this, target)) recordStory("attacked", target);
+    if (intent !== "RETALIATION" && typeof onSpecialFriendHarmed === "function") onSpecialFriendHarmed(target, this); // (SpecialFriends.js)
     // A Smarty someone starts on is provoked; hitting back doesn't count (SmartyMood.js)
     if (target.isSmarty() && intent !== "RETALIATION" && typeof noteSmartyProvoked === "function") noteSmartyProvoked(target, this);
 

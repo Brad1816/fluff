@@ -1027,7 +1027,10 @@ class Horse {
     // A runt stays small (Runts.js)
     if (this.runt && typeof runtScale === "function") this.scale *= runtScale(this);
     // A microfluff is tiny (Micro.js)
-    if (this.micro && typeof microScale === "function") this.scale *= microScale(this);
+    if (this.micro && typeof microScale === "function") {
+      this.scale *= microScale(this);
+      if (typeof MICRO_MIN_SCALE === "number") this.scale = Math.max(MICRO_MIN_SCALE, this.scale);
+    }
     this.updateCrawling();
   }
 

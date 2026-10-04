@@ -300,7 +300,7 @@ module.exports = [
       checkEqual(r.free, null, "at home, hands free: fine");
       checkEqual(r.asked, "Sleep until morning?", "asked first");
       checkEqual(r.notYet, false, "Not yet: awake");
-      check(Math.abs(r.hour - 7) < 0.01, `up at 7 (${r.hour})`);
+      check(Math.abs(r.hour - 6) < 0.01, `up at 6, the report time (${r.hour})`);
       checkEqual(r.day, 1, "the next day");
       check(r.report, "the morning report");
       check(r.grew, "the foal grew overnight");

@@ -26,6 +26,12 @@ class Cage {
     return images.cage;
   }
 
+  // A plain cage is drawn a bit wider than its picture (CAGE_WIDEN: room
+  // to turn round); enclosures and incubators keep their shape
+  widen() {
+    return this.constructor === Cage ? CAGE_WIDEN : 1;
+  }
+
   // Whether being kept inside passively lowers happiness
   causesUnhappiness() {
     return true;
@@ -225,7 +231,7 @@ class Cage {
   }
 
   getInteriorRect() {
-    const w = this.getImage().width * this.scale;
+    const w = this.getImage().width * this.scale * this.widen();
     const h = this.getImage().height * this.scale;
     const insetX = w * 0.04;
     const insetTop = h * 0.08;
@@ -270,7 +276,7 @@ class Cage {
 
       // Simple boundary clamping for the cage itself
       const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
-      const w = this.getImage().width * this.scale;
+      const w = this.getImage().width * this.scale * this.widen();
       const h = this.getImage().height * this.scale;
       this.x = clamp(this.x, w / 2, sceneW(this.scene) - w / 2);
       this.y = clamp(this.y, topWallHeight + h / 2, sceneH(this.scene) - h / 2);
@@ -289,7 +295,7 @@ class Cage {
   updateBounds() {
     // Hit Test Bounds (Always sync in update)
     const img = this.getImage();
-    const w = img.width * this.scale;
+    const w = img.width * this.scale * this.widen();
     const h = img.height * this.scale;
     this.bounds.left = this.x - w / 2;
     this.bounds.right = this.x + w / 2;
@@ -383,7 +389,7 @@ class Cage {
   drawOffScreen(ctx) {
     if (!this.getImage()) return;
     const img = this.getImage();
-    const w = img.width * this.scale;
+    const w = img.width * this.scale * this.widen();
     const h = img.height * this.scale;
 
     ctx.save();

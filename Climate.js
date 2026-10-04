@@ -8,7 +8,7 @@
 //   warm   brushing, cuddles, play, treats, toys, praise, comfort, lessons, births,
 //          tricks, wishes coming true
 //   tense  fights, being picked on, scoldings and strict training
-//   fear   harm from you, frights, nightmares, scars and injuries
+//   fear   harm from you, frights, nightmares, trauma, scars and injuries
 //   grief  deaths, stillbirths, family sold or taken away
 // Also, while it lasts: a crowded room is tense, a tense room next door
 // makes this one a little uneasy, and an old, contented fluffy in the room
@@ -79,7 +79,7 @@ const CLIMATE_REASON = {
   played: "play", comforted: "comfort", bathed: "baths", born: "new foals", trick: "tricks learnt", show: "show wins",
   wish_granted: "wishes come true", named: "names given", attacked: "fights", lesson: "lessons",
   wish_denied: "wishes denied", scolded: "scoldings", drilled: "harsh training", harmed: "your harshness", fright: "frights", nightmare: "nightmares",
-  scarred: "scars", injured: "injuries", died: "a death", stillborn: "a lost foal", sold: "family taken away",
+  scarred: "scars", trauma: "trauma", injured: "injuries", died: "a death", stillborn: "a lost foal", sold: "family taken away",
 };
 
 const CLIMATE_LABELS = {
@@ -163,7 +163,10 @@ function noteClimateStory(kind, ids, opts = {}) {
   r.t = Math.min(CLIMATE_CAP, r.t + w[1] * seen);
   r.f = Math.max(0, Math.min(CLIMATE_CAP, r.f + w[2] * seen));
   r.g = Math.min(CLIMATE_CAP, r.g + w[3] * seen);
-  if (seen === 1 || kind === "sold") r.why[kind] = (r.why[kind] || 0) + 1; // (how many lately, fading)
+  // (a "scarred" story is a lasting trauma - Separation.js - unless it's a
+  // real scar on the body: Injuries.js says so with opts.phys)
+  const why = kind === "scarred" && !opts.phys ? "trauma" : kind;
+  if (seen === 1 || kind === "sold") r.why[why] = (r.why[why] || 0) + 1; // (how many lately, fading)
   _climateCache = null;
 }
 

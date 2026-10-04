@@ -287,6 +287,7 @@ function attemptDrop() {
                   break;
                 }
                 if (f.mateWith(mare, true, true)) {
+                  if (typeof noteBredInCage === "function") noteBredInCage(f, mare, true); // (CageLife.js: he learns)
                   f.speak(
                     getDialogue(
                       [

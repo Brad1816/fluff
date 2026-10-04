@@ -159,6 +159,8 @@ function notePlayerViolence(victim, isDead, weaponType, isTraining, isAmputation
     // It may carry the mark for good (Scars.js)
     if (!isTraining && !isAmputation && typeof scarFromYou === "function") scarFromYou(victim, weaponType);
   }
+  // Its special friend saw (SpecialFriends.js) - not for a squirt or a lesson
+  if (!isTraining && weaponType !== "spray" && typeof onSpecialFriendHarmed === "function") onSpecialFriendHarmed(victim, null);
   // Everyone who saw or heard it gets scared of you too (hardly at all for a
   // squirt of water or a lesson: they saw a telling-off, not cruelty, so
   // they don't remember it as harm either)
