@@ -87,6 +87,7 @@ const imageSources = {
   accessory_sunglasses: "assets/sunglasses.png",
   accessory_wingjacket: "assets/wingjacket.png",
   accessory_mouthgag: "assets/mouthgag.png",
+  accessory_muzzle: "assets/muzzle.png",
   accessory_bow: "assets/bow.png",
   accessory_kippah: "assets/yarmulke.png",
   accessory_duncehat: "assets/duncehat.png",

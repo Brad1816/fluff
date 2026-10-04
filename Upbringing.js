@@ -46,6 +46,8 @@ function upbringingInfluences(f) {
     else if (f.fatherId !== null && f.fatherId !== undefined && o.id === f.fatherId) who = "dad";
     out.push({ f: o, weight: UPBRINGING_WEIGHTS[who], who });
   }
+  // Something else raising it (the formula mummah: ArtificialMummah.js)
+  if (typeof UPBRINGING_SOURCES !== "undefined") for (const src of UPBRINGING_SOURCES) out.push(...(src(f) || []));
   return out;
 }
 
@@ -133,10 +135,10 @@ registerSystem("upbringing", updateUpbringing, 132);
 function describeUpbringing(f) {
   if (!f || !f.isAlive || !(f.growth < 1)) return null;
   const list = upbringingInfluences(f);
-  const main = list.find((i) => i.who === "mum") || list.find((i) => i.who === "dad");
+  const main = list.find((i) => i.who === "mum") || list.find((i) => i.who === "dad") || list.find((i) => i.who === "machine");
   const nameOf = (o) => (typeof fluffyDisplayName === "function" ? fluffyDisplayName(o) : "its parent");
   if (!list.length) return ["No grown-ups around to learn from", ""];
-  const from = main ? `${main.who === "mum" ? "Mum" : "Dad"} (${nameOf(main.f)})` : "the grown-ups nearby";
+  const from = main ? (main.who === "machine" ? "the formula mummah" : `${main.who === "mum" ? "Mum" : "Dad"} (${nameOf(main.f)})`) : "the grown-ups nearby";
   if (!_upColours()) return [`Learning from ${from}`, ""];
   const a = _upAverage(list, (o) => Math.max(0, Math.min(1, o.coloristDegree || 0)));
   if (a.target < 0.2) return [`Learning from ${from}: kind to every colour`, "good"];

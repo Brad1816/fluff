@@ -119,6 +119,7 @@ function getInspectionConditions(f) {
   if (f.isDiarrhea) bad.push("diarrhea");
   if (f.isIncontinent) bad.push("incontinent");
   if (f.accessories?.eyes?.id === "blindfold") bad.push("blindfolded");
+  if (f.accessories?.mouth?.id === "muzzle") bad.push("muzzled (can't bite)");
   if (f.accessories?.ABOVE_LUMPS?.id === "castration_band")
     bad.push("castration band on");
   if (f.isToxoVaccinated) good.push("toxo vaccinated");

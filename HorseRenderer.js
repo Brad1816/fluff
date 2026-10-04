@@ -339,6 +339,7 @@ class HorseRenderer {
           this.horse.currentStateKey === "SITTING" &&
           // (not while the game's paused: it shouldn't turn and wave at you then)
           (typeof gameState === "undefined" || gameState === "PLAYING") &&
+          !(typeof screenPausesGame === "function" && screenPausesGame()) && // (nor behind a pop-up that pauses it)
           this.horse.canSee() &&
           Math.sqrt(
             (mouse.x - this.horse.x) ** 2 + (mouse.y - this.horse.y) ** 2,

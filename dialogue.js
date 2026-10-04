@@ -1305,6 +1305,10 @@ const DIALOGUE = {
   RECRUIT: {
     STAY: ["Nu! <Speaker> stay hewe!", "Smawty nu boss of <speaker>!", "<Speaker> hab home awweady!"],
   },
+  // Drinking from the formula mummah (ArtificialMummah.js)
+  MUMMAH_MACHINE: {
+    DRINK: ["Mummah! Miwkies!", "Wawm mummah... *suckle suckle*", "Mummah nu tawk... but mummah gib miwkies!", "Bestest mummah, su soft!"],
+  },
   // Dumped by the influencer (MoreBuyers.js)
   INFLUENCER: {
     DUMPED: ["Whewe hoomin go? Hoomin come back?", "Nu mowe fwashy wights... nu mowe hoomin...", "Why weave <speaker>? <Speaker> was good..."],

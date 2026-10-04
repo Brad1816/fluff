@@ -3146,3 +3146,28 @@ from. Nothing player-facing reads it yet except the debug view.
   taken) scare a room-mate once a day at most (a killing always counts);
   sleep scouting no longer trips over a fluffy whose picture is being
   redrawn (shaved, revived: `renderer.tinted` null).
+
+### Round 9: the formula mummah, the bite muzzle, player bug reports
+
+- **Formula mummah (ArtificialMummah.js, new):** `ArtificialMummah extends
+  Bowl` as a "mega_feeder" (`isMummahMachine`; the mega feeder registry entry
+  excludes it), `MUMMAH_TANK` formula, `MUMMAH_PRICE`, Food & Feeding, in the
+  mill kit's floor list. Foals drink from it like any feeder (the Feed-Bot
+  fills it); `onFeederDrink` (HorseActionHandler) sets `f.mummahFedAt`
+  (saved) and its own line (`MUMMAH_MACHINE`). It raises them: while
+  `mummahRaising` (fed from it within `MUMMAH_RAISED`) and it's near,
+  `UPBRINGING_SOURCES` adds an influence of weight 1 (who "machine") with no
+  colour hate, `alicornComfort` 0.85 and no fears. Warm: `EXTRA_WARMTH`
+  `MUMMAH_WARM` for foals by it. Inspect row "Raised by".
+- **Bite muzzle (ACCESSORY_DB.muzzle, globals.js):** mouth slot, $120.
+  `performAttack` treats it like the gag for bites (jabs and stomps still
+  happen if it has its legs; a strapped-down or legless one can't attack at
+  all); `performCannibalAttack` blocked. It still eats and talks. Horrid for
+  affection; shown in Conditions.
+- **Player bug reports (Fluffy Industries thread) checked:** already fine
+  here: caged fluffies by the road, enclosure foals vs a colourist mum,
+  happiness through the glass, feral door chatter (main room only), a
+  sensitive mare's birth lines, pillowed fluffies and the TV, a mum chasing
+  a foal held high. Fixed: a cage you're carrying lifts its fluffies clear
+  of cars; fluffies don't turn and wave at the cursor behind a pausing
+  pop-up.

@@ -1010,7 +1010,7 @@ class Horse {
     if (
       this.accessories &&
       this.accessories.mouth &&
-      this.accessories.mouth.id === "mouthgag"
+      (this.accessories.mouth.id === "mouthgag" || this.accessories.mouth.id === "muzzle")
     )
       return;
     this.anatomy.performCannibalAttack(target);

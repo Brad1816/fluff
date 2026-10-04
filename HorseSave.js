@@ -193,6 +193,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "sireLongCoat", fallback: undefined }, // Coats.js
   { name: "_hookedAt", fallback: undefined }, // Handling.js (so a reload isn't a new hanging)
   { name: "_standSince", fallback: undefined }, // MilkStand.js
+  { name: "mummahFedAt", fallback: undefined }, // ArtificialMummah.js
 ];
 
 function _savedCopy(v) {

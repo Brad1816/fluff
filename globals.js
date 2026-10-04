@@ -1794,6 +1794,24 @@ const ACCESSORY_DB = {
     descOverride:
       "Accessory that prevents fluffy babbling, biting and eating. Drop onto a fluffy to equip. Shift-click the fluffy to unequip. Accessories prevent fluffies from being sold.",
   },
+  // A bite muzzle (players' request): it can't bite - not a foal, not
+  // another fluffy, not a body - but it can still eat, drink and talk.
+  // A mare that can't kick (on a stand, a board, legless) can't hurt
+  // anyone at all in one.
+  muzzle: {
+    id: "muzzle",
+    name: "Bite muzzle",
+    cost: 120,
+    slot: "mouth",
+    imageKey: "accessory_muzzle",
+    canColor: true,
+    layer: "OVER_CHEEKS",
+    offsetX: 14,
+    offsetY: 46,
+    scale: 0.9,
+    descOverride:
+      "A muzzle: it can't bite (foals, other fluffies, bodies) but can still eat, drink and talk. On a mare that can't kick - strapped down or legless - it can't hurt anyone. Drop onto a fluffy to equip. Shift-click the fluffy to unequip. Accessories prevent fluffies from being sold.",
+  },
   crown: {
     id: "crown",
     name: "Crown",

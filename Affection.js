@@ -60,7 +60,7 @@ const AFFECTION_NEGLECT = { hungry: 0.02, cold: 0.02, caged: 0.005, missed: 0.03
 const AFFECTION_CAGE_HOURS = 6;
 const AFFECTION_MISS_DAYS = 2;
 const AFFECTION_MISS_FLOOR = 0.6;
-const AFFECTION_HORRID = new Set(["blindfold", "mouthgag", "castration_band"]);
+const AFFECTION_HORRID = new Set(["blindfold", "mouthgag", "muzzle", "castration_band"]);
 
 Object.assign(MEMORY_TEXT, {
   fed: "Fed by you",

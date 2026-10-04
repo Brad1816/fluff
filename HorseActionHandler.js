@@ -800,9 +800,13 @@ class HorseActionHandler {
           if (bestTarget.eat()) {
             this.horse.hunger = 1.0;
             this.horse.addPreferredMilkSource(bestTarget.id, "FEEDER");
-            this.horse.speak(
-              getDialogue(["DRINK_MILKIES", "FORMULA"], this.horse, null),
-            );
+            // (the formula mummah has its own words: ArtificialMummah.js)
+            const own = typeof onFeederDrink === "function" ? onFeederDrink(this.horse, bestTarget) : false;
+            if (!own) {
+              this.horse.speak(
+                getDialogue(["DRINK_MILKIES", "FORMULA"], this.horse, null),
+              );
+            }
             fed = true;
           }
         } else {

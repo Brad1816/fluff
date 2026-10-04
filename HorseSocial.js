@@ -79,7 +79,7 @@ addHorseMethods({
 
     // Choose attack: STAB or STOMP
     const arr = [];
-    const isGagged = this.accessories && this.accessories.mouth && this.accessories.mouth.id === "mouthgag";
+    const isGagged = this.accessories && this.accessories.mouth && (this.accessories.mouth.id === "mouthgag" || this.accessories.mouth.id === "muzzle"); // (a muzzle stops bites too)
     if (!isGagged) {
       arr.push("FLUFFY_BITE");
     }

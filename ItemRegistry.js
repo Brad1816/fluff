@@ -152,7 +152,7 @@ const ITEM_TYPES = [
   },
   {
     sellType: "mega_feeder",
-    is: (o) => o instanceof Bowl && o.type === "mega_feeder",
+    is: (o) => o instanceof Bowl && o.type === "mega_feeder" && !o.isMummahMachine, // (not the formula mummah: ArtificialMummah.js)
     icon: "mega_baby_feeder",
     hitTest: imageHit(bowlImage),
     sellable: true,

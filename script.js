@@ -1532,6 +1532,7 @@ function updateSimulation(dt) {
           // not the fluffies inside - one on the road is run over with
           // everything in it, one beside the road keeps them safe
           const cg = f.currentCage;
+          if (cg && cg.isDragging) continue; // (a cage you're carrying is lifted clear, and everything in it)
           if (cg && cg.bounds && typeof cg.getBottomY === "function") {
             fLeft = cg.bounds.left;
             fRight = cg.bounds.right;
