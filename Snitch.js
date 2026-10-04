@@ -86,6 +86,7 @@ function hideFoal(mum, foal, spot) {
 // Out it comes. how: "you" (you moved its hiding place), "snitch", "grown", "mum"
 function revealFoal(foal, how, by = null) {
   if (!isHiddenFoal(foal)) return false;
+  if (foal.jobHide && typeof extUnhide === "function") return extUnhide(foal); // (a pest job's hider)
   const mum = fluffyById(foal.hiddenBy);
   const spot = _hideSpotOf(foal);
   foal.hiddenBy = null;
@@ -111,6 +112,7 @@ function revealFoal(foal, how, by = null) {
 function _updateHidden() {
   for (const f of fluffies) {
     if (!isHiddenFoal(f)) continue;
+    if (f.jobHide) continue; // (hiding from you on a pest job: ExterminatorFerals.js)
     const mum = fluffyById(f.hiddenBy);
     const spot = _hideSpotOf(f);
     if (!f.isAlive) {

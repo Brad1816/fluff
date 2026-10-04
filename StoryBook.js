@@ -383,12 +383,23 @@ function compactStory(force = false) {
 
 // Events older than a game year that are only about fluffies nobody keeps
 // (wild ones long gone: FamilyTree.js tidyFamilyRecords). Returns how many went.
+// Wild ones that never were yours and are gone now go sooner (STORY_WILD_DAYS):
+// the alley and park churn through dozens a day, and their stories were most
+// of a save.
+const STORY_WILD_DAYS = 2;
 function pruneOldStory(keepIds) {
   _storyBookOk();
-  const yearT = (typeof DAYS_PER_YEAR === "number" ? DAYS_PER_YEAR : 12) * (typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200);
+  const dayT = typeof DAY_LENGTH === "number" ? DAY_LENGTH : 1200;
+  const yearT = (typeof DAYS_PER_YEAR === "number" ? DAYS_PER_YEAR : 12) * dayT;
   const cutoff = _stNow() - yearT;
+  const wildCutoff = _stNow() - STORY_WILD_DAYS * dayT;
+  const here = new Set((typeof fluffies !== "undefined" ? fluffies : []).map((f) => String(f.id)));
   const before = storyBook.events.length;
-  storyBook.events = storyBook.events.filter((e) => e.t >= cutoff || !Array.isArray(e.w) || e.w.some((id) => keepIds.has(String(id))));
+  storyBook.events = storyBook.events.filter((e) => {
+    if (!Array.isArray(e.w) || e.w.some((id) => keepIds.has(String(id)))) return true;
+    if (e.t < cutoff) return false;
+    return e.t >= wildCutoff || e.w.some((id) => here.has(String(id)));
+  });
   const gone = before - storyBook.events.length;
   if (gone) _storyIndex = null;
   return gone;

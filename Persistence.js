@@ -726,6 +726,9 @@ async function loadGame(slotName) {
   // Fluffy Park food (saves from before the park had any)
   if (typeof setupParkLife === "function") setupParkLife(false);
 
+  // On a pest job when saved (ExterminatorPlayer.js)
+  if (typeof extAfterLoad === "function") extAfterLoad();
+
   // Autosave counts from here (Autosave.js), and Continue offers this one
   if (typeof resetAutosaveClock === "function") resetAutosaveClock();
   if (typeof noteLastSave === "function") noteLastSave(slotName);

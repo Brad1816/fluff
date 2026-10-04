@@ -257,6 +257,7 @@ function _drawBagButton(ctx, item, bx, by, btnSize) {
 }
 
 function drawToolboxAndToolbar(ctx) {
+  if (typeof isJobScene === "function" && isJobScene(currentScene)) return; // (your kit instead, on a pest job)
   const layout = _toolboxAndToolbarLayout();
   const {
     startX,
@@ -532,6 +533,7 @@ function drawToolboxAndToolbar(ctx) {
 }
 
 function toolboxAndToolbarClick() {
+  if (typeof isJobScene === "function" && isJobScene(currentScene)) return false;
   const layout = _toolboxAndToolbarLayout();
   const {
     startX,

@@ -194,6 +194,8 @@ const SAVED_HORSE_FIELDS = [
   { name: "_hookedAt", fallback: undefined }, // Handling.js (so a reload isn't a new hanging)
   { name: "_standSince", fallback: undefined }, // MilkStand.js
   { name: "mummahFedAt", fallback: undefined }, // ArtificialMummah.js
+  { name: "jobFeral", fallback: undefined }, // Exterminator.js: one of a pest job's herd
+  { name: "clientPet", fallback: undefined }, // ...or the client's own fluffy
 ];
 
 function _savedCopy(v) {

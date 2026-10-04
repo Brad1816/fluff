@@ -113,6 +113,8 @@ function getSceneConfig(sceneName) {
     return SCENES.ALLEY_DAY_CARE;
   if (sceneName === "day_care" || sceneName === "DAY_CARE")
     return SCENES.DAY_CARE;
+  // A pest job's rooms (Exterminator.js)
+  if (sceneName.startsWith("JOB_") && typeof jobSceneConfig === "function") return jobSceneConfig(sceneName);
   if (sceneName.startsWith("INDOORS")) {
     // (made once per room: this is asked many times a step)
     const known = _indoorConfigs.get(sceneName);
@@ -521,6 +523,7 @@ let sceneChatLogs = {}; // scene -> array of { name, text, timestamp }
 let chatLogScrollOffset = 0;
 let chatLogAutoScroll = true;
 
+const CHAT_LOG_KEEP = 60; // lines kept per room (saved: was 100)
 function logChatMessage(scene, speakerName, text, color = null) {
   if (!sceneChatLogs[scene]) {
     sceneChatLogs[scene] = [];
@@ -531,7 +534,7 @@ function logChatMessage(scene, speakerName, text, color = null) {
     color: color,
     timestamp: Date.now(),
   });
-  if (sceneChatLogs[scene].length > 100) {
+  if (sceneChatLogs[scene].length > CHAT_LOG_KEEP) {
     sceneChatLogs[scene].shift();
   }
 }

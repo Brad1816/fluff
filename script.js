@@ -1140,6 +1140,8 @@ function updateFerals(dt) {
           (f.scene === "BACKYARD" && backyardFenceBroken)) &&
         // Living park fluffies have their own comings and goings (ParkLife.js)
         !(f.scene === "PARK" && f.isAlive) &&
+        // (a pest job's herd stays put: Exterminator.js)
+        !config.noDespawn &&
         !f.isDragging &&
         f.scene !== currentScene &&
         (f.currentCage === null || f.currentCage === undefined) &&
@@ -1697,6 +1699,7 @@ function render() {
   drawForegroundBackground(osCtx);
   // Shopping street shop front and store shelves (Store.js)
   if (typeof drawStoreScenery === "function") drawStoreScenery(osCtx);
+  if (typeof drawJobScenery === "function") drawJobScenery(osCtx); // a pest job's room (Exterminator.js)
   // The shelter's front in Shelter Alley (Shelter.js)
   if (typeof drawShelterFront === "function") drawShelterFront(osCtx);
   drawDoorBackground(osCtx);
@@ -1726,6 +1729,8 @@ function render() {
     ...visibleGibs,
     ...visibleCars,
   ];
+  // You, on a pest job (ExterminatorPlayer.js)
+  if (typeof extOnSite === "function" && extOnSite()) renderables.push({ draw: (c) => drawExtPlayer(c), getBottomY: () => extPlayer.y - (extPlayer.holding && extPlayer.holding.length ? 60 : -1) }); // (behind what's in your arms)
 
   const _bottomY = new Map();
   const _bottomYOf = (o) => {
@@ -1820,6 +1825,7 @@ function render() {
   if (typeof drawBackyardFence !== "undefined") {
     drawBackyardFence(osCtx);
   }
+  if (typeof drawExtPlayerHud === "function") drawExtPlayerHud(osCtx); // what Grab would do (ExterminatorPlayer.js)
 
   drawVFX(osCtx);
   if (typeof drawConfetti === "function") drawConfetti(osCtx); // (HouseLife.js)
@@ -1997,6 +2003,11 @@ function render() {
 }
 
 window.addEventListener("keydown", (e) => {
+  // On a pest job: walking and grabbing (ExterminatorPlayer.js)
+  if (typeof extKeyDown === "function" && gameState === "PLAYING" && !(typeof isAnyScreenOpen === "function" && isAnyScreenOpen()) && extKeyDown(e)) {
+    e.preventDefault();
+    return;
+  }
   if (e.code === "Escape") {
     if (typeof transitionPhase !== "undefined" && transitionPhase !== "OFF") {
       return;

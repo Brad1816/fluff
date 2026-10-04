@@ -25,6 +25,12 @@ function getScenePortals(scene) {
     ];
   }
 
+  // A pest job's rooms (Exterminator.js)
+  if (typeof getJobPortals === "function") {
+    const jobPortals = getJobPortals(scene);
+    if (jobPortals) return jobPortals;
+  }
+
   // The shopping street and store aisles are set up in Store.js
   if (typeof getStorePortals === "function") {
     const storePortals = getStorePortals(scene);

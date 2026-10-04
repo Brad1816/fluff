@@ -1305,6 +1305,20 @@ const DIALOGUE = {
   RECRUIT: {
     STAY: ["Nu! <Speaker> stay hewe!", "Smawty nu boss of <speaker>!", "<Speaker> hab home awweady!"],
   },
+  // A pest job (Exterminator*.js)
+  EXTERMINATOR: {
+    WARN: ["HOOMIN MUNSTAH! WUN! WUN!", "Bad hoomin coming! Hide babbehs!", "*SCREEE* Hoomin wif big stick!", "Wun, hewd! Hoomin hewe!"],
+    FLEE: ["Nu catch fwuffy!", "Wun wun wun!", "Nu! Go 'way!", "Huu! Hoomin chasing!"],
+    FOUND: ["*SCREEE* Hoomin find!", "Nu! Hidey pwace nu safe!", "Wun! WUN!"],
+    GRABBED: ["Nu! Wet go! WET GO!", "Pwease nu huwt fwuffy!", "Mummah! MUMMAH! Hewp!", "*wriggle wriggle* Nu wike!"],
+    CRATED: ["Nu box! Wet out!", "Fwuffy nu wan' go in box!", "Huu... box am scawy..."],
+    BEG: ["Pwease wet fwuffy go...", "Wan go home... wan hewd...", "Huu huu... nu wike dis...", "Whewe hoomin take fwuffy?"],
+    MUM_SEES: ["NU! Nu take babbeh! Gib back!", "<Target>! Mummah's babbeh!", "Bad hoomin! Wet babbeh go!"],
+    FIGHT: ["Take dat, munstah! Hoofsies ob doom!", "Fwuffy am pwotect hewd!", "Gib huwties tu bad hoomin!", "*angwy hoofsies* Go 'way! GO 'WAY!", "Nu take fwiends!"],
+    CLING: ["Nu wet go! Fwuffy STAY!", "*chomp chomp* Bad weggie!", "Fwuffy howd on! Hoomin nu go nuwhewe!", "*hangs on tight* Nu move!"],
+    RALLY: ["Hewd! Get dummeh hoomin! Smawty say su!", "Aww fwuffies fight! Smawty wiww... watch!", "Smawty am bestest weadew! Gib hoomin huwties!", "Dummeh hewd, pwotect smawty!"],
+    RAGE: ["Mummah gib huwties fow babbeh!!", "MUNSTAH! Mummah nu wet yu go!", "Babbeh! Mummah make hoomin pay!"],
+  },
   // Drinking from the formula mummah (ArtificialMummah.js)
   MUMMAH_MACHINE: {
     DRINK: ["Mummah! Miwkies!", "Wawm mummah... *suckle suckle*", "Mummah nu tawk... but mummah gib miwkies!", "Bestest mummah, su soft!"],

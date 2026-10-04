@@ -588,6 +588,7 @@ function drawUI(ctx) {
   if (typeof drawClimateTooltip === "function") drawClimateTooltip(ctx); // (on top of the messages, Climate.js)
   drawDebugWatcher();
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
+  if (typeof drawExtJobPanel === "function") drawExtJobPanel(ctx); // on a pest job (ExterminatorPlayer.js)
   if (typeof drawItemHoverHint === "function") drawItemHoverHint(ctx); // what right-click does (ItemRegistry.js)
   // Every pop-up screen, bottom layer first (Screens.js)
   drawScreens(ctx);
@@ -847,6 +848,11 @@ canvas.addEventListener("mousedown", (e) => {
 
   // 2. Check Action Buttons
   if (actionButtonsClick()) {
+    return;
+  }
+
+  // On a pest job: clicks walk you about (ExterminatorPlayer.js)
+  if (typeof extSiteClick === "function" && extSiteClick()) {
     return;
   }
 

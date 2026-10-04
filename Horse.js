@@ -1159,7 +1159,7 @@ class Horse {
 
   initBehavior(stateKey) {
     if (stateKey === "FLUFFY_BITE") {
-      this.spawnMouthPoof("#8a0303");
+      this.spawnMouthPoof(this._biteNoBlood ? "white" : "#8a0303"); // (biting a boot: nothing bleeds)
     }
     if (stateKey === "FLUFFY_KNOCKED_DOWN") {
       this._interruptMating();

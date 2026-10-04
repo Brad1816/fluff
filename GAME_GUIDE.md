@@ -3171,3 +3171,54 @@ from. Nothing player-facing reads it yet except the debug view.
   a foal held high. Fixed: a cage you're carrying lifts its fluffies clear
   of cars; fluffies don't turn and wave at the cursor behind a pausing
   pop-up.
+
+### Save size, then the exterminator path
+
+- **Save size:** saves live in IndexedDB (SaveManager, structured clone), so
+  the 5MB localStorage limit never applied. A day-6 breeder save measured
+  578KB (fluffies 230KB, storyBook 136KB, objects 56KB of which grass 48KB,
+  shelter 46KB, records 41KB). The unbounded part was the story book's
+  churn from wild fluffies: `pruneOldStory(keepIds)` (StoryBook.js) drops
+  events only about wild fluffies that are gone and were never kept, after
+  `STORY_WILD_DAYS`; events about kept fluffies or anyone still present stay
+  (anything over a year still goes). `CHAT_LOG_KEEP` 100 → 60. Number
+  rounding was tried and dropped (6% for broken load paths).
+  tests/savesize.test.js.
+- **Exterminator.js (new): the job side.** `extState` (saved: licence,
+  `score`, humane/brutal counts, offers, `active`). `buyExtLicence`
+  (`EXT_LICENCE_PRICE`), `refreshExtOffers` daily, `makeExtOffer` from
+  `EXT_CLIENTS` (farmer, family, store, city: room kinds, pay by the head,
+  humane chance, herd size, client pet chance, what each likes), leaning
+  by your humane share and stars; `EXT_RARE` (mega-herd, foal colony);
+  `EXT_REQUESTS` (no_poison, foals_alive, tidy: rules; boss: a goal) with
+  `extRequestResult` - kept/met pays `EXT_REQUEST_BONUS`, a broken rule
+  halves pay. Sites: `makeJobSite` (seeded, 3-4 rooms from
+  `EXT_ROOM_KINDS` on a grid, linked both ways, props), cached in
+  `_jobSites`, never saved - the seed rebuilds it. Scenes are `JOB_<id>_<n>`
+  (`jobSceneConfig` via the globals `JOB_` hook: noDespawn, no ferals;
+  `getJobPortals`). `spawnJobHerd`: mares and foals, `f.jobFeral`
+  (saved), one herd, a smarty boss (`EXT_SMARTY_CHANCE`, always a stallion,
+  `job.bossId`), the client's pet (`f.clientPet`, saved; the herd knows
+  it). `finishExtJob(fate)`: pay (clear bonus, late cut, upset halving,
+  request bonus), the name score, the catch home (`_extUnpack`, adopted in
+  the backyard) / shelter / reptile shop, `_clearJobSite` deletes it all.
+  FluffList's Pest control tab (OrderBoard.js) draws the cards.
+- **ExterminatorPlayer.js (new): you on the site.** `extPlayer` (in
+  `job.player`), `updateExtPlayer` (system 189: keys, the DOM joystick, tap
+  to walk; room edges move you through), `drawExtPlayer` in the
+  renderables. Grab (`extGrabAction`/`extDoGrab`): grab, Search a hiding
+  spot, into a `TransportCrate` (a small Cage), lift and carry a crate,
+  load the van, pull a clinger off (or shake it off, hands full). Tool
+  (`extToolAction`/`extUseTool`): cull (`extCull`, "Exterminated"), bag a
+  body (`EXT_BAG_MAX`, slows you), bait (a Bowl of rat poison) or a glue
+  trap, `extSwitchKit`. Phone: joystick + Grab / Tool / Kit buttons.
+- **ExterminatorFerals.js (new): the herd.** `ExtFeralDesire` (in
+  `EXTRA_DESIRES`): busy when held/crated/clinging/hiding; a bad smarty
+  rallies the rest (`extRally`, `f._extRally`) from a distance; fighters
+  (`_extFighter`: brave, bad-tempered, rallied, or a mum in `_extRage` after
+  seeing her foal caught or killed - `onExtCaught(f, killed)`) run at you
+  and kick/stomp/bite your boots (`extHitPlayer`, no damage; bites skip the
+  blood poof via `_biteNoBlood`; gagged/muzzled can't bite); 25% cling to
+  your leg (`extCling`, `EXT_CLING_TIME`, max 3, `extClingSlow`); the rest
+  warn, flee or hide behind props (`extHide`; Search = `extFlushOut`).
+  tests/exterminator.test.js (7 tests).
