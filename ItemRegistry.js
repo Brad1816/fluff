@@ -48,6 +48,9 @@
 //              Optional. What right-clicking it does (e.g. change the TV
 //              channel). Return false to let the click go to whatever is
 //              behind it instead.
+//   rightClickHint
+//              Optional. A few words for the hover hint ("switch on / off"),
+//              or a function(obj). Otherwise RIGHT_CLICK_HINTS below.
 //   onRightClickHeld(obj)
 //              Optional. What right-clicking does while you're carrying it.
 //   icon       Optional. The image key for its shop button (default: the
@@ -998,6 +1001,75 @@ function handleItemRightClick(x, y) {
     if (entry.onRightClick(obj) !== false) return true;
   }
   return false;
+}
+
+// ---- What right-click does: a quiet hint when you rest the mouse on one ----
+// (keyed by shop name; an entry can also carry its own rightClickHint)
+const RIGHT_CLICK_HINTS = {
+  heater: "switch on / off",
+  roomba: "switch on / off",
+  night_light: "switch on / off",
+  fan: "switch on / off",
+  hot_plate: "switch on / off",
+  sprinkler: "switch on / off",
+  glue_trap: "oil it (lets go of what's stuck)",
+  pet_flap: "lock / unlock",
+  feedbot: "change its setting",
+  fluff_tv: "next channel",
+  fence: "turn it",
+  fence_gate: "open / shut",
+  cage: "change its mode (breeding, sell, eject, cull)",
+  operating_table: "pick the operation",
+  iv_stand: "take the bag off (on the AUTO tag: auto-refill)",
+  thumbtack: "back in the toolbox",
+  iv_bag: "back in the toolbox",
+  foal_in_a_can: "let the foal out",
+  memorial_tree: "open the memorial",
+  auto_trainer: "settings",
+  foal_machine: "open it",
+  auto_amputator: "open it",
+  milk_stand: "fill its trough",
+};
+const HOVER_HINT_DELAY = 600; // ms resting on it
+let _hoverHint = { id: null, since: 0 };
+
+function itemRightClickHint(obj) {
+  const entry = getItemType(obj);
+  if (!entry || !entry.onRightClick) return null;
+  if (entry.rightClickHint) return typeof entry.rightClickHint === "function" ? entry.rightClickHint(obj) : entry.rightClickHint;
+  return RIGHT_CLICK_HINTS[entry.shopItem || entry.sellType] || null;
+}
+
+// UI.js drawUI, under the pop-up screens
+function drawItemHoverHint(ctx) {
+  if (typeof isAnyScreenOpen === "function" && isAnyScreenOpen()) return;
+  if ((typeof trickUI !== "undefined" && trickUI) || (typeof isGlobalDragging !== "undefined" && isGlobalDragging)) return;
+  if (typeof fluffies !== "undefined" && fluffies.some((f) => f.scene === currentScene && f.hitTestAsSeen && f.hitTestAsSeen(mouse.x, mouse.y))) return;
+  let best = null;
+  for (const obj of objects) {
+    if (obj.scene !== currentScene || obj.isDragging || !itemHitTest(obj, mouse.x, mouse.y)) continue;
+    if (!best || obj.getBottomY() > best.getBottomY()) best = obj;
+  }
+  const hint = best ? itemRightClickHint(best) : null;
+  const now = performance.now();
+  if (!hint) return (_hoverHint = { id: null, since: now }), undefined;
+  if (_hoverHint.id !== best.id) _hoverHint = { id: best.id, since: now };
+  if (now - _hoverHint.since < HOVER_HINT_DELAY) return;
+  const sm = typeof screenMouse === "function" ? screenMouse() : mouse;
+  const text = `Right-click: ${hint}`;
+  ctx.save();
+  ctx.font = "12px Arial";
+  const w = ctx.measureText(text).width + 16;
+  const x = Math.max(6, Math.min(width - w - 6, sm.x + 14));
+  const y = Math.max(6, Math.min(height - 28, sm.y + 18));
+  ctx.fillStyle = "rgba(12, 8, 20, 0.85)";
+  if (typeof fillRoundRect === "function") fillRoundRect(ctx, x, y, w, 22, 8);
+  else ctx.fillRect(x, y, w, 22);
+  ctx.fillStyle = "#efe6ff";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + 8, y + 11);
+  ctx.restore();
 }
 
 // Shop button picture: { imageKey } or { draw(ctx, btnSize) }

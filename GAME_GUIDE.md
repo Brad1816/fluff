@@ -3094,3 +3094,35 @@ from. Nothing player-facing reads it yet except the debug view.
 - **New hooks:** `onAteSpecial`, `DREAM_SOURCES`, `EXTRA_VET_PROBLEMS`,
   `EXTRA_WARMTH`/`EXTRA_HEAT`, `onBabyBornHooks`, a tool's `useOnDead` /
   `useOnEmpty`, an item's `catchesFluffy` / `lockPosition` / `holdsFluffy`.
+
+### Menus review (after round 8)
+
+- **Right-click menu (Tricks.js):** one section at a time. A strip of section
+  tabs (`trickMenuSections`: Train, Lessons, then `ACTION_GROUPS` - Care,
+  Discipline, Breeding, Body, Home & sale - and "More" for unknown keys; an
+  action can name its own `group`), then that section's chips. The last
+  section used opens next time (`lastTrickSection`). A caption under the
+  chips says what the pointed-at one does (`TRICK_DESC`, `ACTION_DESC`, or an
+  action's own `desc`).
+- **Magnifying glass (UIInspection.js):** eight tabs - Overview, Mood, Body,
+  Family, Nature (id "looks"), Mind, Work, Story. Overview: "At a glance"
+  bars for the everyday needs (`INSPECT_VITALS`, `inspectionVitalLevel`),
+  "Who it is" (`INSPECT_WHO`), and "Needs you" - every urgent red row from
+  any tab, needs first, clicking one opens its tab - then "Right now"
+  (`INSPECT_RIGHT_NOW`, incl. the new "Doing" row). Columns page instead of
+  silently cutting rows off (`inspectionScroll`, the "▼ n more" / "▲ Top"
+  buttons, the mouse wheel: `handleInspectionScroll`). Hovering a row shows
+  what it means (`INSPECT_ROW_HELP`) plus any `row.tip`. Rows no tab lists
+  land in Work's second column. Header warnings put the everyday needs
+  first; nature rows (Personality, Coat, Colour tier, Alicorns...) don't
+  shout.
+- **Items:** resting the mouse on an item with a right-click action shows
+  "Right-click: ..." (`RIGHT_CLICK_HINTS` by shop name, or an entry's
+  `rightClickHint`; `drawItemHoverHint`).
+- **Pause menu:** the switches squeeze closer (and the font shrinks) to stay
+  on screen however many there are.
+- **Fluff Mart:** Home & Play split into Home & Housing and Toys & Gadgets;
+  Hardware & Discipline lost the surgery things to Surgery & Restraint.
+- **Interactions fixed:** caged fluffies are spared a room's crowding
+  collapse (a mill's cages keep going); a fluffy at day care doesn't start
+  tower stories.

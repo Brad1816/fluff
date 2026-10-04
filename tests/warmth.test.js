@@ -195,7 +195,7 @@ module.exports = [
         out.sell = getItemSellValue(h[h.length - 1], entry);
         return out;
       }, SETUP);
-      checkEqual(r.aisle, "Home & Play", "aisle");
+      checkEqual(r.aisle, "Home & Housing", "aisle");
       checkEqual(r.kind, "deliver", "delivered home");
       check(r.delivered, "it's in the living room");
       check(r.off, "right-click turns it off");

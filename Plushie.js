@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// The comfort plushie (Fluff Mart, Home & Play, $25): a soft toy fluffy.
+// The comfort plushie (Fluff Mart, Toys & Gadgets, $25): a soft toy fluffy.
 //
 // A fluffy that spends time right beside one - sleeping with it, sitting by
 // it (PLUSHIE_NEAR) - grows attached to it (plushie.bond, saved), and after

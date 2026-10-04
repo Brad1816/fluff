@@ -532,6 +532,7 @@ module.exports = [
         mouse.y = L.btnY + L.btnH / 2;
         handleInspectionModalClick();
         const out = { menu: trickUI && trickUI.phase, closed: inspectedFluffy === null };
+        if (trickUI) trickUI.section = "house"; // (the menu's Home & sale section)
         const chip = getTrickMenuLayout().chips.find((c) => c.action && c.action.key === "forgetherd");
         out.chip = !!chip;
         if (chip) chip.action.run(a);

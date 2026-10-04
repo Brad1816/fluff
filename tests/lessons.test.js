@@ -173,7 +173,7 @@ module.exports = [
         const f = __mk(500, 0.9);
         f.coloristDegree = 0.7;
         f.pottyTraining = 0.4;
-        trickUI = { phase: "menu", id: f.id };
+        trickUI = { phase: "menu", id: f.id, section: "lessons" };
         const L = getTrickMenuLayout();
         const lessons = L.chips.filter((c) => c.lesson);
         const tricks = L.chips.filter((c) => !c.lesson);

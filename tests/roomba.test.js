@@ -49,7 +49,7 @@ module.exports = [
         puddles.length = 0;
         return out;
       });
-      checkEqual(r.aisle, "Home & Play", "on the Home & Play shelf");
+      checkEqual(r.aisle, "Toys & Gadgets", "on the Toys & Gadgets shelf");
       checkEqual(r.kind, "deliver", "delivered");
       checkEqual(r.cost, 250, "price");
       check(r.delivered, "it's in the living room");

@@ -311,7 +311,12 @@ function drawPauseMenu() {
   drawGlassButton(btnX, btnYStart + 320, btnW, btnH, "Title Screen");
 
   // What to show: the same switches as the keys (N, H, B) and a phone's ⋯
-  for (const t of pauseToggleRects()) drawGlassButton(t.x, t.y, t.w, t.h, t.label());
+  for (const t of pauseToggleRects()) {
+    const text = t.label();
+    // (long labels and thin buttons: a smaller font, so it stays inside)
+    const fontSize = Math.min(t.h < 50 ? 16 : 24, Math.floor((t.w - 20) / (0.52 * text.length)));
+    drawGlassButton(t.x, t.y, t.w, t.h, text, { fontSize });
+  }
 }
 
 // The pause menu's right-hand column: things otherwise only on a key (or a
@@ -330,7 +335,10 @@ function pauseToggleRects() {
   // beside the main column, or (on a narrow screen) to its left
   const x = mainX + 200 + 30 + btnW <= width - 8 ? mainX + 230 : Math.max(8, mainX - btnW - 30);
   const touch = typeof touchMode !== "undefined" && touchMode;
-  return PAUSE_TOGGLES.map((t, i) => ({ x, y: top + i * 80, w: btnW, h: btnH, run: t.run, label: () => t.label() + (touch || !t.key ? "" : ` (${t.key})`) }));
+  // (more switches than fit: closer together and thinner, never off the bottom)
+  const step = Math.max(30, Math.min(80, (height - 10 - top) / Math.max(1, PAUSE_TOGGLES.length)));
+  const h = Math.min(btnH, step - 8);
+  return PAUSE_TOGGLES.map((t, i) => ({ x, y: top + i * step, w: btnW, h, run: t.run, label: () => t.label() + (touch || !t.key ? "" : ` (${t.key})`) }));
 }
 
 const fluffySexualitySliderSet = new MutuallyExclusiveSliderSet({

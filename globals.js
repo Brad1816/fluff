@@ -491,6 +491,7 @@ window.addEventListener(
     }
     if (typeof handleHelpScroll === "function") handleHelpScroll(e.deltaY);
     if (typeof handleRelMapWheel === "function") handleRelMapWheel(e.deltaY); // (RelationshipMap.js)
+    if (typeof handleInspectionScroll === "function") handleInspectionScroll(e.deltaY); // (UIInspection.js: a long column)
   },
   // Needed for preventDefault to work (browsers make wheel listeners
   // "passive" otherwise, and log an error on every scroll)

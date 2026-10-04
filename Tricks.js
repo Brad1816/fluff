@@ -482,6 +482,87 @@ function rightClickActions(f) {
   return out;
 }
 
+// ---- The menu's sections ----
+// The menu shows one section at a time (a strip of section tabs across the
+// top, then that section's chips): Train (tricks), Lessons, then the
+// actions sorted into ACTION_GROUPS by key (an action can also say its own
+// group: a.group). Unknown keys go in "More". The last section you used
+// opens next time (if this fluffy has it).
+const ACTION_GROUPS = [
+  { id: "care", name: "Care", keys: ["sitwith", "praise", "party", "photo", "outing", "talk", "dry", "change_diaper", "diaper_off", "promise", "facefear"] },
+  { id: "discipline", name: "Discipline", keys: ["scold", "timeout", "forcefear", "mate_discipline", "stick"] },
+  { id: "breeding", name: "Breeding", keys: ["mate_rule", "mate_allow", "mum_on", "mum_off", "milk", "wean_tag", "vet_lie", "fix", "bestest", "all", "away"] },
+  { id: "body", name: "Body", keys: ["stay_little", "amputator", "fake_alicorn"] },
+  { id: "house", name: "Home & sale", keys: ["keep", "job", "snitch", "wholesale", "putout", "release", "forgetherd"] },
+];
+let lastTrickSection = "train";
+
+// One line under the chips about the one you're pointing at
+const TRICK_DESC = {
+  come: "Click where it should come to. The hardest - and the most useful.",
+  sit: "A quick one to start with.",
+  down: "Lies down where it is.",
+  bow: "Buyers and judges like a fluffy that bows.",
+  dance: "A little dance - families love it.",
+  wave: "Waves a hoof.",
+  fetch: "Needs a ball in the room. Good for boredom too.",
+};
+const ACTION_DESC = {
+  sitwith: "Sit with it a while: comfort for a frightened, grieving or lonely one.",
+  praise: "Tell it it's good. A few times a day; best straight after a good deed.",
+  party: "A party for the room: treats, games and a shared memory.",
+  photo: "A photo for its story book.",
+  outing: "Take it to the park for the day.",
+  talk: "Pick your words - kind, firm or cruel. It remembers.",
+  dry: "Towel it dry before it gets cold.",
+  change_diaper: "A clean diaper.",
+  diaper_off: "Take the diaper off for good.",
+  promise: "Promise it its wish: it tries harder. Break the promise and it remembers.",
+  facefear: "Gently show it what it fears, with you there. Slow, but it sticks.",
+  forcefear: "Make it face its fear. Faster, but it can make things worse.",
+  scold: "Tell it off. Works best straight after it misbehaves.",
+  timeout: "A while alone in the corner.",
+  mate_discipline: "Punish it for mating when told not to.",
+  mate_rule: "Tell it not to mate. It may not listen.",
+  mate_allow: "Let it mate again.",
+  mum_on: "A bad mum on her last chance: she's watched.",
+  mum_off: "Take her off the list.",
+  milk: "Milk her (for formula or to sell). She hates it.",
+  wean_tag: "Tag it in the ear: pet, breeder or feed. Buyers notice.",
+  vet_lie: "Tell her the foals she lost are at the vet. It buys a couple of days.",
+  stay_little: "Formula that keeps it small - and sickly.",
+  amputator: "The amputator takes every limb.",
+  fake_alicorn: "Glue on a horn and wings to sell it as an alicorn. Baths and the vet undo it.",
+  keep: "Keep it: buyers pass it by and it can't be sold by accident.",
+  job: "A job for a clever grown-up: foal-sitter or cleaner.",
+  snitch: "It tells you who misbehaves - the others won't like it.",
+  wholesale: "Sell the whole cage to the pet-shop van, cheap, once a day.",
+  putout: "Put it out on the street. It's a stray now.",
+  release: "Let it go in the park. It's wild now.",
+  forgetherd: "Make it forget the herd it came from.",
+};
+
+function actionGroupOf(a) {
+  if (a && a.group && ACTION_GROUPS.some((g) => g.id === a.group)) return a.group;
+  const g = ACTION_GROUPS.find((x) => x.keys.includes(a && a.key));
+  return g ? g.id : "more";
+}
+
+// [{ id, name, count, harsh }] for this fluffy, in order
+function trickMenuSections(f, only = false, actions = rightClickActions(f), lessons = null) {
+  const out = [];
+  if (!only) {
+    out.push({ id: "train", name: "Train", count: TRICKS.length });
+    const ls = lessons || (typeof lessonsFor === "function" ? lessonsFor(f) : []);
+    if (ls.length) out.push({ id: "lessons", name: "Lessons", count: ls.length });
+  }
+  for (const g of [...ACTION_GROUPS, { id: "more", name: "More" }]) {
+    const list = actions.filter((a) => actionGroupOf(a) === g.id);
+    if (list.length) out.push({ id: g.id, name: g.name, count: list.length, harsh: list.every((a) => a.harsh) });
+  }
+  return out;
+}
+
 // Chip rectangles in screen positions
 function getTrickMenuLayout() {
   const f = trickUIFluffy();
@@ -494,51 +575,53 @@ function getTrickMenuLayout() {
   const top = trickUI.anchor.y - cam.y - 90 - 60 * (f.growth || 1);
   const chips = [];
   if (trickUI.phase === "menu") {
-    const w = 92;
     const gap = 6;
-    const total = TRICKS.length * w + (TRICKS.length - 1) * gap;
-    let x = Math.max(8, Math.min(width - total - 8, cx - total / 2));
     const only = !!trickUI.actionsOnly; // (a foal: no tricks or lessons yet)
     const lessons = !only && typeof lessonsFor === "function" ? lessonsFor(f) : [];
     const actions = rightClickActions(f);
-    // (the "Other" row wraps onto a second line when it's too long for the screen)
-    const aw = 112;
-    const perRow = Math.max(1, Math.floor((width - 16 + gap) / (aw + gap)));
-    const actionRows = Math.ceil(actions.length / perRow);
-    const y = Math.max(40, Math.min(height - 80 - (lessons.length ? 68 : 0) - (actions.length ? 68 + (actionRows - 1) * 44 : 0), top - 40));
-    for (const t of only ? [] : TRICKS) {
-      chips.push({ x, y, w, h: 38, key: t.key, trick: t });
-      x += w + gap;
+    const sections = trickMenuSections(f, only, actions, lessons);
+    if (!trickUI.section || !sections.some((x) => x.id === trickUI.section)) {
+      trickUI.section = sections.some((x) => x.id === lastTrickSection) ? lastTrickSection : sections.length ? sections[0].id : "train";
     }
-    const titleX = Math.max(8 + total / 2, Math.min(width - 8 - total / 2, cx));
-    // Lessons (Lessons.js): a second row, just the ones it needs
-    let lessonY = null;
-    if (lessons.length) {
-      lessonY = y + 38 + 30;
-      const lw = lessons.length * w + (lessons.length - 1) * gap;
-      let lx = Math.max(8, Math.min(width - lw - 8, titleX - lw / 2));
-      for (const l of lessons) {
-        chips.push({ x: lx, y: lessonY, w, h: 38, key: "lesson:" + l.key, lesson: l });
-        lx += w + gap;
+    const sec = trickUI.section;
+    // The section's chips
+    let items = [];
+    let w = 92;
+    if (sec === "train") items = TRICKS.map((t) => ({ key: t.key, trick: t }));
+    else if (sec === "lessons") items = lessons.map((l) => ({ key: "lesson:" + l.key, lesson: l }));
+    else {
+      w = 112;
+      items = actions.filter((a) => actionGroupOf(a) === sec).map((a) => ({ key: "action:" + a.key, action: a }));
+    }
+    const perRow = Math.max(1, Math.floor((width - 16 + gap) / (w + gap)));
+    const rows = Math.max(1, Math.ceil(items.length / perRow));
+    // The section tabs
+    const tabW = Math.max(64, Math.min(104, Math.floor((width - 16 - (sections.length - 1) * 4) / Math.max(1, sections.length))));
+    const tabsTotal = sections.length * tabW + (sections.length - 1) * 4;
+    const rowTotal = Math.min(items.length, perRow) * w + (Math.min(items.length, perRow) - 1) * gap;
+    const blockW = Math.max(tabsTotal, rowTotal);
+    const titleX = Math.max(8 + blockW / 2, Math.min(width - 8 - blockW / 2, cx));
+    const tabY = Math.max(52, Math.min(height - 120 - rows * 44, top - 70));
+    let tx = titleX - tabsTotal / 2;
+    for (const sc of sections) {
+      chips.push({ x: tx, y: tabY, w: tabW, h: 26, key: "section:" + sc.id, section: sc });
+      tx += tabW + 4;
+    }
+    const y = tabY + 26 + 10;
+    for (let r = 0; r < rows; r++) {
+      const row = items.slice(r * perRow, (r + 1) * perRow);
+      const total = row.length * w + (row.length - 1) * gap;
+      let x = Math.max(8, Math.min(width - total - 8, titleX - total / 2));
+      for (const it of row) {
+        chips.push({ x, y: y + r * 44, w, h: 38, ...it });
+        x += w + gap;
       }
     }
-    // Other things to do (rightClickActions)
-    let actionY = null;
-    if (actions.length) {
-      actionY = only ? y : (lessonY !== null ? lessonY : y) + 38 + 30;
-      for (let r = 0; r < actionRows; r++) {
-        const row = actions.slice(r * perRow, (r + 1) * perRow);
-        const total2 = row.length * aw + (row.length - 1) * gap;
-        let ax = Math.max(8, Math.min(width - total2 - 8, titleX - total2 / 2));
-        for (const a of row) {
-          chips.push({ x: ax, y: actionY + r * 44, w: aw, h: 38, key: "action:" + a.key, action: a });
-          ax += aw + gap;
-        }
-      }
-    }
-    // Kind or strict training (FearTraining.js)
-    if (!only && typeof toggleTrainingStyle === "function") chips.push({ x: x - gap - 110, y: y - 32, w: 110, h: 24, key: "style" });
-    return { f, chips, titleX, titleY: y - 10, lessonY, actionY };
+    // Kind or strict training (FearTraining.js), with the tricks
+    if (!only && sec === "train" && typeof toggleTrainingStyle === "function") chips.push({ x: titleX - 55, y: y + rows * 44, w: 110, h: 24, key: "style" });
+    const lessonY = sec === "lessons" ? y : null;
+    const actionY = sec !== "train" && sec !== "lessons" ? y : null;
+    return { f, chips, titleX, titleY: tabY - 8, lessonY, actionY, section: sec, sections, captionY: y + rows * 44 + (sec === "train" ? 34 : 6) };
   }
   if (trickUI.phase === "punish") {
     const w = 140;
@@ -576,6 +659,11 @@ function handleTrickClick() {
     }
     if (hit.key === "style") {
       toggleTrainingStyle();
+      return true;
+    }
+    if (hit.section) {
+      trickUI.section = hit.section.id;
+      lastTrickSection = hit.section.id;
       return true;
     }
     if (hit.action) {
@@ -639,6 +727,19 @@ function _trAsk(f, key, target = null) {
   }
 }
 
+function trickMenuCaption(ch) {
+  if (!ch) return null;
+  if (ch.trick) return `${ch.trick.name}: ${TRICK_DESC[ch.trick.key] || "practise a little each day"}`;
+  if (ch.lesson) return `${ch.lesson.name}: ${ch.lesson.desc || ch.lesson.sub || "a lesson it needs"}`;
+  if (ch.action) {
+    const d = ch.action.desc || ACTION_DESC[ch.action.key];
+    const sub = ch.action.sub ? ` (${ch.action.sub})` : "";
+    return `${ch.action.name}${sub}${d ? ": " + d : ""}`;
+  }
+  if (ch.section) return { train: "Tricks: ask, then reward it.", lessons: "Lessons it still needs.", care: "Kind things to do with it.", discipline: "Telling it off - it remembers.", breeding: "Mating, mums and foals.", body: "Changing its body. Harsh.", house: "Keeping, selling and letting go.", more: "Everything else." }[ch.section.id] || null;
+  return null;
+}
+
 function drawTrickUI(c) {
   if (!trickUI) return;
   const L = getTrickMenuLayout();
@@ -659,13 +760,29 @@ function drawTrickUI(c) {
     c.fillText(text, x, y);
   };
   if (trickUI.phase === "menu") {
-    if (trickUI.actionsOnly) label(`${fluffyDisplayName(f)} · too little for tricks`, L.titleX, L.titleY - 8);
-    else label(`Train ${fluffyDisplayName(f)} · ${trickTriesLeft(f)} tries left today`, L.titleX, L.titleY - 8);
-    if (L.lessonY !== null) label(`Lessons · ${lessonTriesLeft(f)} left today`, L.titleX, L.lessonY - 14);
-    if (L.actionY !== null && L.actionY !== undefined && !trickUI.actionsOnly) label("Other", L.titleX, L.actionY - 14);
+    const head = trickUI.actionsOnly
+      ? `${fluffyDisplayName(f)} · too little for tricks`
+      : L.section === "train"
+        ? `Train ${fluffyDisplayName(f)} · ${trickTriesLeft(f)} tries left today`
+        : L.section === "lessons"
+          ? `${fluffyDisplayName(f)} · lessons: ${lessonTriesLeft(f)} left today`
+          : fluffyDisplayName(f);
+    label(head, L.titleX, L.titleY - 8);
+    let hovered = null;
     for (const ch of L.chips) {
       const s = trickSkill(f, ch.key);
       const hover = sm.x >= ch.x && sm.x <= ch.x + ch.w && sm.y >= ch.y && sm.y <= ch.y + ch.h;
+      if (hover) hovered = ch;
+      if (ch.section) {
+        const on = ch.section.id === L.section;
+        const harsh = ch.section.harsh;
+        fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 9, on ? (harsh ? "rgba(150, 60, 65, 0.97)" : "rgba(110, 80, 170, 0.97)") : hover ? "rgba(70, 60, 95, 0.95)" : "rgba(28, 22, 40, 0.9)");
+        c.fillStyle = on ? "white" : "#d8d0e8";
+        c.font = on ? "bold 12px Arial" : "12px Arial";
+        const nm = ch.section.id === "train" ? ch.section.name : `${ch.section.name} ${ch.section.count}`;
+        c.fillText(typeof fitText === "function" ? fitText(c, nm, ch.w - 8) : nm, ch.x + ch.w / 2, ch.y + ch.h / 2 + 1);
+        continue;
+      }
       if (ch.key === "style") {
         const strict = isStrict();
         fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, strict ? (hover ? "rgb(170, 70, 70)" : "rgba(120, 40, 45, 0.92)") : hover ? "rgb(60, 140, 110)" : "rgba(30, 80, 70, 0.92)");
@@ -679,10 +796,10 @@ function drawTrickUI(c) {
         fillRoundRect(c, ch.x, ch.y, ch.w, ch.h, 10, hover ? (harsh ? "rgb(170, 70, 70)" : "rgb(60, 140, 110)") : harsh ? "rgba(110, 40, 45, 0.92)" : "rgba(30, 80, 70, 0.92)");
         c.fillStyle = "white";
         c.font = "bold 13px Arial";
-        c.fillText(ch.action.name, ch.x + ch.w / 2, ch.y + 13);
+        c.fillText(typeof fitText === "function" ? fitText(c, ch.action.name, ch.w - 8) : ch.action.name, ch.x + ch.w / 2, ch.y + 13);
         c.font = "11px Arial";
         c.fillStyle = "#e6dcef";
-        c.fillText(ch.action.sub || "", ch.x + ch.w / 2, ch.y + 28);
+        c.fillText(typeof fitText === "function" ? fitText(c, String(ch.action.sub || ""), ch.w - 8) : ch.action.sub || "", ch.x + ch.w / 2, ch.y + 28);
         continue;
       }
       if (ch.lesson) {
@@ -701,6 +818,17 @@ function drawTrickUI(c) {
       c.fillRect(ch.x + 8, ch.y + ch.h - 4, ch.w - 16, 2);
       c.fillStyle = s >= TRICK_KNOWN ? "#8fe39f" : "#c9a6ff";
       c.fillRect(ch.x + 8, ch.y + ch.h - 4, (ch.w - 16) * s, 2);
+    }
+    // What the one you're pointing at does
+    const cap = trickMenuCaption(hovered);
+    if (cap) {
+      c.font = "12px Arial";
+      const t = typeof fitText === "function" ? fitText(c, cap, Math.min(width - 24, 620)) : cap;
+      const cw = c.measureText(t).width + 18;
+      const capX = Math.max(8 + cw / 2, Math.min(width - 8 - cw / 2, L.titleX));
+      fillRoundRect(c, capX - cw / 2, L.captionY, cw, 22, 9, "rgba(12, 8, 20, 0.9)");
+      c.fillStyle = "#efe6ff";
+      c.fillText(t, capX, L.captionY + 11);
     }
   } else if (trickUI.phase === "waiting") {
     label(trickUI.trick === "fetch" ? `Fetch, ${fluffyDisplayName(f)}!` : `Come here, ${fluffyDisplayName(f)}!`, L.titleX, L.titleY - 8);

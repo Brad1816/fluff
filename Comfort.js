@@ -2,7 +2,7 @@
 // Comfort and the mind (plan round 8): the mummah blankie, lights left on,
 // "babbehs am at da vet", "da towew", the last straw and crowding collapse.
 //
-// MUMMAH BLANKIE (Fluff Mart, Home & Play, BLANKIE_PRICE; in the shopping
+// MUMMAH BLANKIE (Fluff Mart, Home & Housing, BLANKIE_PRICE; in the shopping
 // bag): leave it by a mum while she rests and it picks up her smell
 // (BLANKIE_SMELL seconds near her; blankie.smellOf, saved). Her foal, kept
 // apart from her (another room, a cage, or she's gone), is calmer with it
@@ -308,7 +308,8 @@ function _towerCheck() {
     for (const [id, was] of _towerKnown) {
       if (!was.alive) continue;
       const cur = now.get(id);
-      const takenAlive = !cur && typeof getSceneConfig === "function" && getSceneConfig(was.scene).insidePlayerQuarters;
+      const away = typeof dayCareFluffies !== "undefined" && Array.isArray(dayCareFluffies) && dayCareFluffies.some((d) => String(d.id) === String(id)); // (only at day care)
+      const takenAlive = !cur && !away && typeof getSceneConfig === "function" && getSceneConfig(was.scene).insidePlayerQuarters;
       const killed = cur && !cur.alive && /cull|suffocat|grind|machine|mill|put to sleep|ground/i.test(cur.cause);
       if (takenAlive || killed) _towerTaken({ id }, was.scene);
     }
@@ -372,7 +373,7 @@ function _collapseTick(step) {
 }
 
 function isListless(f) {
-  return !!(f && f.isAlive && f.growth >= 1 && roomCollapsed(f.scene) && f.id % 2 === 0);
+  return !!(f && f.isAlive && f.growth >= 1 && !f.currentCage && roomCollapsed(f.scene) && f.id % 2 === 0);
 }
 
 // Horse.updateSpeed
@@ -454,8 +455,8 @@ function updateComfort(dt) {
         }
       }
     }
-    // Crowding collapse
-    if (roomCollapsed(f.scene)) {
+    // Crowding collapse (a caged one has its own space: spared - a mill's rows of cages keep going)
+    if (roomCollapsed(f.scene) && !f.currentCage) {
       if (f.gender === "female" && f.lactatingTimer > 0) {
         f.lactatingTimer = Math.max(0, f.lactatingTimer - step * 3);
         if (Math.random() < 0.1) f.milkCharges = Math.max(0, (f.milkCharges || 0) - 1);

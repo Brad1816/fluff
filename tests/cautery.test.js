@@ -46,7 +46,7 @@ module.exports = [
         };
       }, SETUP);
       checkEqual(r.price, 120, "price");
-      checkEqual(r.aisle, "hardware", "Hardware & Discipline aisle");
+      checkEqual(r.aisle, "surgery", "Surgery & Restraint aisle");
       check(r.tool && r.image, `a toolbox tool with its picture: ${JSON.stringify(r)}`);
       checkEqual(r.name, "Cautery iron", "name");
       check(r.loaded, "saved and loaded");

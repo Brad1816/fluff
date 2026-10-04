@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// The cautery iron (Fluff Mart, Hardware & Discipline, $120): the harsh way
+// The cautery iron (Fluff Mart, Surgery & Restraint, $120): the harsh way
 // to stop a fluffy bleeding, instead of the suture kit.
 //
 // Click a bleeding fluffy with it (or "Burn it shut" in the surgery screen,

@@ -427,40 +427,92 @@ function getFluffyInspectionLines(f) {
 // INSPECTION_TABS, each with two columns; the header (portrait, name, type
 // and age, sale price, warning chips for anything wrong) shows on every tab.
 // The last tab you looked at stays open for the next fluffy.
+//
+// Overview is a summary: "At a glance" draws the everyday needs as bars, and
+// the other column lists what needs you (every red row, from any tab -
+// click one to go to its tab) and what's going on right now. The full
+// details are on the other tabs. A column too long for the panel pages: the
+// "more" button at its foot (or the mouse wheel over it). Hovering a row
+// says what it means (INSPECT_ROW_HELP) - and any extra it has (row.tip).
+// A row no tab lists yet lands in Work's second column, never lost.
+
+const INSPECT_VITALS = ["Happiness", "Hunger", "Health", "Sleep", "Cleanliness", "Boredom", "Warmth"];
+// Shown under "Right now" on the Overview when they're there
+const INSPECT_RIGHT_NOW = ["Cause of death", "Last desire", "Doing", "Frightened", "On its mind", "Pregnant", "Birth", "Resting", "Settling in", "Mourning", "Heat", "Wet", "Diaper", "Burn", "Near death", "Tummy", "Dizzy", "Stuck", "Milk stand", "Surgery job", "Growing up"];
+
+// What it's up to (the Overview's "Right now")
+const DOING_WORDS = {
+  Eat: "Looking for food", Sleep: "Off to bed", Wander: "Wandering about", Sit: "Sitting", LieDown: "Lying down",
+  UseLitterbox: "Off to the litterbox", WatchTV: "Watching TV", RunToTV: "Running to the TV", PlayWithBall: "Playing with a ball",
+  PlayWithBlocks: "Playing with blocks", ChaseHeldBall: "Chasing the ball", CareForBabies: "Looking after its foals",
+  FeedHungryFoal: "Feeding a hungry foal", SeekPlayer: "Coming to you", FleePlayer: "Keeping away from you", Fright: "Frightened",
+  FollowHerd: "Following its herd", SeekBuddy: "Looking for a friend", SeekSpecialFriend: "Looking for its special friend",
+  Mate: "Looking for a mate", Trick: "Doing a trick", Job: "Working", HerdJob: "Doing its herd job", Shelter: "Taking shelter",
+  Heat: "Trying to cool down", Dizzy: "Dizzy", BabbleToFriends: "Chatting", RandomBabble: "Chatting to itself", CorpseReaction: "Upset by a body",
+};
+function describeDoing(f) {
+  if (!f || !f.isAlive) return null;
+  if (f.currentStateKey === "SLEEPING") return ["Asleep", ""];
+  if (f.isDragging) return ["Being carried", ""];
+  const d = f.brain && f.brain.currentDesire;
+  if (!d || !d.name) return null;
+  const words = DOING_WORDS[d.name] || d.name.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
+  return [words, ""];
+}
+INSPECT_ROWS.push(["Doing", "describeDoing"]);
+
+// The Overview's "Who it is" (under the bars)
+const INSPECT_WHO = ["Personality", "Smarts", "Title", "Wishes for", "Loves most", "Tricks", "Favourite toy"];
 
 const INSPECTION_TABS = [
   {
     id: "overview",
     name: "Overview",
     cols: [
-      { title: "Wellbeing", rows: ["Happiness", "Frightened", "Hunger", "Health", "Sleep", "Boredom", "Cleanliness", "Warmth", "Heat", "Pregnant", "Resting", "Breeding", "Worn out", "Spayed"] },
-      { title: "Care", rows: ["Cause of death", "Last desire", "Diet", "Weight", "Litter trained", "Conditions", "Missing parts", "Injuries", "Settling in", "Sells for"] },
+      { title: "At a glance", rows: INSPECT_VITALS },
+      { title: "Right now", rows: INSPECT_RIGHT_NOW },
     ],
   },
   // What's making it happy or unhappy (Mood.js)
   { id: "mood", name: "Mood", cols: [] },
   {
-    id: "family",
-    name: "Family & friends",
+    id: "body",
+    name: "Body",
     cols: [
-      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Its mum", "Rejected", "Mothering", "Mummah song", "Line", "Born", "Named by", "Came for", "Herd", "Herd job", "Raiding", "Feud"] },
+      { title: "Health", rows: ["Conditions", "Missing parts", "Injuries", "Near death", "Burn", "Tummy", "Surgery", "Spayed", "Worn out", "Wings", "Mouth", "Size", "Kept little", "Born with", "Bad meat", "Dizzy", "Stuck", "Elder", "Incubator", "Wild"] },
+      { title: "Daily care", rows: ["Diet", "Weight", "Favourite food", "Resting", "Litter trained", "Bath time", "Wet", "Diaper", "Heat", "Coat length", "Favourite toy", "Comfort toy"] },
+    ],
+  },
+  {
+    id: "family",
+    name: "Family",
+    cols: [
+      { title: "Family", rows: ["Mother", "Father", "Foster mum", "Its mum", "Rejected", "Mothering", "Mummah song", "Line", "Born", "Named by", "Came for", "Mourning", "Herd", "Herd job", "Raiding", "Feud"] },
       { title: "Friends", rows: ["Special friend", "Friends", "Buddies", "Grudges", "Bullying", "Misses"] },
     ],
   },
   {
     id: "looks",
-    name: "Looks & nature",
+    name: "Nature",
     cols: [
-      { title: "Looks", rows: ["Gender", "Type", "Size", "Age", "Coat", "Mane", "Runt", "Fake alicorn", "Deformities", "Mouth", "Scars", "Ribbons"] },
-      { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite food", "Favourite toy", "Bath time", "Sexuality", "Colour views", "Fears", "Wings", "Growing up"] },
+      { title: "Looks", rows: ["Gender", "Type", "Age", "Stage", "Coat", "Mane", "Colour tier", "Runt", "Fake alicorn", "Deformities", "Scars", "Ribbons"] },
+      { title: "Nature", rows: ["Personality", "Traits", "Smarts", "Life made it", "Family role", "Favourite", "Sexuality", "Colour views", "Fears", "Growing up"] },
     ],
   },
   {
     id: "mind",
     name: "Mind",
     cols: [
-      { title: "You and it", rows: ["Affection", "Title", "Changing", "Wishes for", "Loves most", "Tricks", "Training", "Drilled", "Lessons", "Conditioned", "Remembers", "Heard", "Old owner"] },
-      { title: "Worries", rows: ["Trauma", "Alicorns", "The machine"] },
+      { title: "You and it", rows: ["Affection", "Title", "Changing", "Wishes for", "Loves most", "Tricks", "Training", "Drilled", "Lessons", "Conditioned", "Remembers", "Heard", "Old owner", "Settling in"] },
+      { title: "Worries", rows: ["Frightened", "On its mind", "Trauma", "Alicorns", "The machine", "Snitch"] },
+    ],
+  },
+  {
+    id: "work",
+    name: "Work",
+    cols: [
+      { title: "Breeding", rows: ["Breeding", "Pregnant", "Birth", "Mating", "Stud"] },
+      { title: "Money & jobs", rows: ["Sells for", "Ear tag", "Job", "Milk stand", "Surgery job", "Cause of death", "Last desire"] },
     ],
   },
   // Its life, told like a book (LifeStory.js)
@@ -468,38 +520,93 @@ const INSPECTION_TABS = [
 ];
 let inspectionTab = "overview";
 
-// { tabs: [{ id, name, cols: [{ title, rows }], bad }], warnings, rows }
+// What each row means (the hover tip)
+const INSPECT_ROW_HELP = {
+  Happiness: "Wears down with hunger, cages and loneliness; knocks on top can tip it over.",
+  Hunger: "Fill a bowl it can reach. Starving ones lose health.",
+  Health: "Out of 100. The vet treats most things.",
+  Sleep: "Tired fluffies are grumpy; a bed (and lights out) helps.",
+  Cleanliness: "A bath (sponge) or a lick from mum. Filthy ones catch things.",
+  Boredom: "Toys, tricks, the TV, the park and other fluffies.",
+  Warmth: "Heaters, beds, huddling and a long coat keep it warm.",
+  Affection: "Hearts: what you've done for it lately. More hearts, more upsies.",
+  Smarts: "0-100: how fast it learns tricks and lessons.",
+  Traits: "Born with these; life shifts them a little.",
+  Personality: "How it acts with others.",
+  Fears: "Calm it, sit with it, or face the fear with it (the right-click menu).",
+  Title: "Earned from how it's been treated - and it changes how it acts.",
+  "Sells for": "What a buyer would start at; condition and taste change the offer.",
+  "Colour tier": "How its colour sells: 1 is the best, 4 a poopie coat.",
+  "Litter trained": "Praise it after it uses the box; it gets better.",
+  Breeding: "Whether it can breed now, and how worn out it is.",
+  Grudges: "Fluffies it holds a grudge against.",
+  Friends: "Who it likes best.",
+  Scars: "Hover for how each one happened.",
+  Weight: "Kibble and treats fatten, play and the park slim it.",
+  Diet: "What it's been eating lately.",
+  "Coat length": "Long coats are warm, mat over the days and hide weight.",
+  Wild: "Born wild: smaller and rougher each generation.",
+  Tummy: "Hot peppers or a rock. The vet clears a blockage.",
+  "On its mind": "Something it's carrying around - a story, a lie, the lights.",
+  Trauma: "Hard things it's lived through. Kindness slowly helps.",
+};
+
+// { tabs: [{ id, name, cols: [{ title, rows }], bad }], warnings, rows, needs }
 function getInspectionTabs(f) {
   const info = getFluffyInspectionInfo(f);
   const all = [...info.about, ...info.care];
   const byLabel = {};
   for (const r of all) byLabel[r.label] = r;
   const used = new Set(["Name"]);
+  const tabOf = {};
   const tabs = INSPECTION_TABS.map((t) => ({
     id: t.id,
     name: t.name,
     cols: t.cols.map((c) => ({
       title: c.title,
-      rows: c.rows.filter((l) => byLabel[l]).map((l) => (used.add(l), byLabel[l])),
+      rows: c.rows.filter((l) => byLabel[l]).map((l) => (used.add(l), t.id !== "overview" && !tabOf[l] && (tabOf[l] = t.id), byLabel[l])),
     })),
   }));
-  // Anything new that isn't sorted into a tab yet: Overview
+  // Anything new that isn't sorted into a tab yet: Work's second column
   const extra = all.filter((r) => !used.has(r.label));
-  if (extra.length) tabs[0].cols[1].rows.push(...extra);
+  const work = tabs.find((t) => t.id === "work");
+  if (extra.length && work) {
+    work.cols[1].rows.push(...extra);
+    for (const r of extra) tabOf[r.label] = "work";
+  }
   for (const t of tabs) t.bad = t.cols.some((c) => c.rows.some((r) => r.tone === "bad"));
   // Warnings for the header: the worst things, from any tab
   const warn = [];
+  const needs = [];
   const short = { Affection: null, Conditions: null, "Missing parts": "Missing", "Cause of death": null, Grudges: null };
   // Things about its nature, not its needs: they stay red in their tab but don't shout in the header
-  const notUrgent = new Set(["Runt", "Mummah song", "Bullying", "Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries", "Deformities"]);
+  const notUrgent = new Set(["Personality", "Coat", "Colour tier", "Alicorns", "Runt", "Mummah song", "Bullying", "Grudges", "Cause of death", "Litter trained", "Colour views", "Growing up", "Fears", "Title", "Changing", "Conditioned", "Drilled", "Heard", "Scars", "Family role", "Wings", "Smarts", "Injuries", "Deformities"]);
   for (const r of all) {
     if (r.tone !== "bad" || notUrgent.has(r.label)) continue;
     const label = r.label in short ? short[r.label] : r.label;
     const value = String(r.value).replace(/[♥❥♡]/g, "").trim(); // no hearts in a chip
     warn.push(label ? `${label}: ${value}` : value);
+    needs.push({ ...r, jump: tabOf[r.label] || null });
   }
-  return { tabs, warnings: warn, rows: byLabel };
+  // The everyday needs first (a starving fluffy shouldn't hide behind a scar)
+  const rank = (t) => {
+    const i = INSPECT_VITALS.indexOf(String(t).split(":")[0]);
+    return i < 0 ? 99 : i;
+  };
+  warn.sort((a, b) => rank(a) - rank(b));
+  needs.sort((a, b) => rank(a.label) - rank(b.label));
+  // The Overview's second column: what needs you, then what's going on
+  const ov = tabs[0];
+  ov.needs = needs;
+  return { tabs, warnings: warn, rows: byLabel, needs };
 }
+
+// Paging the columns: first row shown, by "tab:col"; reset for a new fluffy
+let inspectionScroll = {};
+let _inspScrollFor = null;
+let _inspPagers = []; // [{ x, y, w, h, key, dir }] where the more/back buttons are
+let _inspColRects = []; // [{ x, y, w, h, key, rows }] for the wheel
+let _inspJumps = []; // [{ x, y, w, h, tab }] Overview rows that go to their tab
 
 function getInspectionModalLayout() {
   const listW = Math.min(860, width - 40);
@@ -509,7 +616,7 @@ function getInspectionModalLayout() {
   const btnW = Math.min(170, (listW - 40 - 3 * 12) / 4); // (four of them, narrower on a small screen)
   const btnH = 40;
   const tabY = listY + 138;
-  const tabW = (listW - 40 - (INSPECTION_TABS.length - 1) * 8) / INSPECTION_TABS.length;
+  const tabW = (listW - 40 - (INSPECTION_TABS.length - 1) * 6) / INSPECTION_TABS.length;
   return {
     listX,
     listY,
@@ -523,45 +630,173 @@ function getInspectionModalLayout() {
     treeBtnX: listX + 20 + ((listW - 40 - btnW) * 2) / 3,
     closeBtnX: listX + listW - btnW - 20,
     btnY: listY + listH - 60,
-    tabs: INSPECTION_TABS.map((t, i) => ({ id: t.id, x: listX + 20 + i * (tabW + 8), y: tabY, w: tabW, h: 34 })),
+    tabs: INSPECTION_TABS.map((t, i) => ({ id: t.id, x: listX + 20 + i * (tabW + 6), y: tabY, w: tabW, h: 34 })),
     contentY: tabY + 70,
   };
 }
 
-function drawInspectionColumn(ctx, title, rows, x, y, colW, maxY = Infinity) {
+// How tall a row is drawn (wrapped)
+function _inspRowHeight(ctx, row, colW, labelW) {
+  ctx.font = "bold 14px Arial";
+  const n = typeof wrapText === "function" ? wrapText(ctx, String(row.value), colW - labelW).length : 1;
+  return n * 20 + 5;
+}
+
+function drawInspectionColumn(ctx, title, rows, x, y, colW, maxY = Infinity, key = null, opts = {}) {
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   ctx.font = "bold 17px Arial";
   ctx.fillStyle = "#ffd6f0";
   ctx.fillText(title, x, y);
+  const titleY = y;
   y += 28;
   if (!rows.length) {
     ctx.font = "italic 14px Arial";
     ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.fillText("Nothing to show", x, y);
-    return;
+    ctx.fillText(opts.empty || "Nothing to show", x, y);
+    return y;
   }
-  const labelW = 132;
+  const labelW = opts.labelW || 132;
   const lineSpacing = 20;
-  for (const row of rows) {
-    if (y > maxY) break;
+  // Paging
+  let start = key ? Math.max(0, Math.min(rows.length - 1, inspectionScroll[key] || 0)) : 0;
+  if (key) _inspColRects.push({ x, y: titleY - 18, w: colW, h: maxY - titleY + 18, key, rows: rows.length });
+  const footH = 26;
+  let drawn = 0;
+  let i = start;
+  for (; i < rows.length; i++) {
+    const row = rows[i];
+    const h = _inspRowHeight(ctx, row, colW - (row.jump && opts.jumps ? 56 : 0), labelW);
+    const last = i === rows.length - 1;
+    if (y - 15 + h > maxY - (last ? 0 : footH) && drawn > 0) break;
     const top = y - 15;
+    const hover = typeof mouse !== "undefined" && mouse.x >= x - 4 && mouse.x <= x + colW && mouse.y >= top && mouse.y < top + h - 2;
+    if (hover) {
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      if (typeof fillRoundRect === "function") fillRoundRect(ctx, x - 4, top - 2, colW + 4, h, 6);
+    }
     ctx.font = "14px Arial";
     ctx.fillStyle = "#b8b8c8";
-    ctx.fillText(row.label, x, y);
+    ctx.fillText(typeof fitText === "function" ? fitText(ctx, row.label, labelW - 6) : row.label, x, y);
     ctx.font = "bold 14px Arial";
     ctx.fillStyle = INSPECTION_TONE_COLORS[row.tone] || "white";
-    const wrapped = typeof wrapText === "function" ? wrapText(ctx, String(row.value), colW - labelW) : [String(row.value)];
+    const valW = colW - labelW - (row.jump && opts.jumps ? 56 : 0);
+    const wrapped = typeof wrapText === "function" ? wrapText(ctx, String(row.value), valW) : [String(row.value)];
     for (const sub of wrapped) {
       ctx.fillText(sub, x + labelW, y);
       y += lineSpacing;
     }
-    // Rows with more to say on hover (Scars.js: how each one happened)
-    if (row.tip && typeof mouse !== "undefined" && mouse.x >= x && mouse.x <= x + colW && mouse.y >= top && mouse.y < y - 15) {
-      _inspectionTip = row.tip;
+    // An Overview row that goes to its tab
+    if (row.jump && opts.jumps) {
+      _inspJumps.push({ x: x - 4, y: top - 2, w: colW + 4, h, tab: row.jump });
+      ctx.font = "11px Arial";
+      ctx.fillStyle = "rgba(255, 214, 240, 0.55)";
+      ctx.textAlign = "right";
+      const tn = (INSPECTION_TABS.find((t) => t.id === row.jump) || {}).name || "";
+      ctx.fillText(`${tn} ›`, x + colW, top + 12);
+      ctx.textAlign = "left";
+    }
+    // What it means, and any more it has to say (Scars.js: how each one happened)
+    if (hover) {
+      const help = INSPECT_ROW_HELP[row.label];
+      const tip = [...(row.tip || [])];
+      if (wrapped.length > 3) tip.unshift(...wrapped.slice(0, 6));
+      if (help) tip.push(help);
+      if (tip.length) _inspectionTip = tip;
     }
     y += 5;
+    drawn++;
   }
+  // More below / back to the top
+  if (key && (i < rows.length || start > 0)) {
+    const more = rows.length - i;
+    const by = maxY - footH + 4;
+    const bw = 120;
+    if (more > 0) {
+      _inspPagers.push({ x, y: by, w: bw, h: 22, key, dir: i - start });
+      _inspPagerButton(ctx, x, by, bw, `▼ ${more} more`);
+    }
+    if (start > 0) {
+      const bx = more > 0 ? x + bw + 8 : x;
+      _inspPagers.push({ x: bx, y: by, w: 90, h: 22, key, dir: -start });
+      _inspPagerButton(ctx, bx, by, 90, "▲ Top");
+    }
+  }
+  return y;
+}
+
+function _inspPagerButton(ctx, x, y, w, text) {
+  const hover = typeof mouse !== "undefined" && isPointInRect(mouse.x, mouse.y, x, y, w, 22);
+  ctx.fillStyle = hover ? "rgba(255, 170, 220, 0.4)" : "rgba(255,255,255,0.1)";
+  if (typeof fillRoundRect === "function") fillRoundRect(ctx, x, y, w, 22, 11);
+  ctx.font = "bold 12px Arial";
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x + w / 2, y + 12);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+}
+
+// The Overview's bars: 0..1 for each everyday need (null: not shown)
+function inspectionVitalLevel(f, label) {
+  const c = (v) => Math.max(0, Math.min(1, v));
+  switch (label) {
+    case "Happiness":
+      return c(f.happiness ?? 0.5);
+    case "Hunger":
+      return c(f.hunger ?? 1);
+    case "Health":
+      return c((f.health ?? 100) / 100);
+    case "Sleep":
+      return c(1 - (f.sleepDeprivation || 0));
+    case "Cleanliness":
+      return c(1 - (f.dirt || 0));
+    case "Boredom":
+      return c(1 - (f.boredom || 0));
+    case "Warmth":
+      return c(f.warmth ?? 1);
+  }
+  return null;
+}
+
+function drawInspectionVitals(ctx, f, rows, x, y, colW) {
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = "bold 17px Arial";
+  ctx.fillStyle = "#ffd6f0";
+  ctx.fillText("At a glance", x, y);
+  y += 26;
+  const labelW = 96;
+  const barW = Math.max(60, Math.min(150, colW - labelW - 150));
+  for (const row of rows) {
+    const lvl = inspectionVitalLevel(f, row.label);
+    const top = y - 14;
+    const hover = typeof mouse !== "undefined" && mouse.x >= x - 4 && mouse.x <= x + colW && mouse.y >= top && mouse.y < top + 28;
+    if (hover) {
+      ctx.fillStyle = "rgba(255,255,255,0.06)";
+      if (typeof fillRoundRect === "function") fillRoundRect(ctx, x - 4, top - 3, colW + 4, 28, 6);
+      const help = INSPECT_ROW_HELP[row.label];
+      _inspectionTip = [`${row.label}: ${row.value}`, ...(help ? [help] : [])];
+    }
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "#b8b8c8";
+    ctx.fillText(row.label, x, y);
+    const col = INSPECTION_TONE_COLORS[row.tone] || "#c9a6ff";
+    if (lvl !== null) {
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      if (typeof fillRoundRect === "function") fillRoundRect(ctx, x + labelW, y - 11, barW, 12, 6);
+      ctx.fillStyle = col;
+      if (typeof fillRoundRect === "function" && lvl > 0.02) fillRoundRect(ctx, x + labelW, y - 11, Math.max(6, barW * lvl), 12, 6);
+    }
+    ctx.font = "bold 13px Arial";
+    ctx.fillStyle = col;
+    const vx = x + labelW + (lvl !== null ? barW + 10 : 0);
+    const v = String(row.value);
+    ctx.fillText(typeof fitText === "function" ? fitText(ctx, v, x + colW - vx) : v, vx, y);
+    y += 28;
+  }
+  return y;
 }
 
 let _inspectionTip = null;
@@ -702,9 +937,9 @@ function drawInspectionModal(ctx) {
     if (typeof fillRoundRect === "function") fillRoundRect(ctx, t.x, t.y, t.w, t.h, 8);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = on ? "bold 15px Arial" : "15px Arial";
+    ctx.font = on ? "bold 14px Arial" : "14px Arial";
     ctx.fillStyle = on ? "white" : "#d8d0e8";
-    ctx.fillText(tab.name, t.x + t.w / 2, t.y + t.h / 2 + 1);
+    ctx.fillText(typeof fitText === "function" ? fitText(ctx, tab.name, t.w - 14) : tab.name, t.x + t.w / 2, t.y + t.h / 2 + 1);
     if (tab.bad) {
       ctx.fillStyle = "#ff6b6b";
       ctx.beginPath();
@@ -732,9 +967,33 @@ function drawInspectionModal(ctx) {
     drawLifeStoryTab(ctx, f, inspectionStoryArea(L));
   }
   if (tab.id === "mood" && typeof drawMoodTab === "function") drawMoodTab(ctx, f, inspectionStoryArea(L));
-  tab.cols.forEach((col, i) => {
-    drawInspectionColumn(ctx, col.title, col.rows, L.listX + 25 + i * (colW + 20), L.contentY, colW - 10, maxY);
-  });
+  if (_inspScrollFor !== f.id) {
+    _inspScrollFor = f.id;
+    inspectionScroll = {};
+  }
+  _inspPagers = [];
+  _inspColRects = [];
+  _inspJumps = [];
+  if (tab.id === "overview") {
+    const x0 = L.listX + 25;
+    const x1 = L.listX + 25 + colW + 20;
+    // Left: the everyday needs as bars (alive), or what happened
+    if (f.isAlive) {
+      const vy = drawInspectionVitals(ctx, f, tab.cols[0].rows, x0, L.contentY, colW - 10);
+      // ...and who it is, in a few words (the rest on the other tabs)
+      const who = INSPECT_WHO.map((l) => data.rows[l]).filter(Boolean);
+      if (who.length && vy + 60 < maxY) drawInspectionColumn(ctx, "Who it is", who, x0, vy + 14, colW - 10, maxY, "overview:who");
+    }
+    else drawInspectionColumn(ctx, "What happened", tab.cols[1].rows, x0, L.contentY, colW - 10, maxY, "overview:0");
+    // Right: what needs you (click: its tab), then what's going on
+    const rn = f.isAlive ? tab.cols[1].rows.filter((r) => !/^(no|none|-|nothing)$/i.test(String(r.value).trim())) : [];
+    const list = [...(tab.needs || []).map((r) => ({ ...r })), ...rn.filter((r) => !(tab.needs || []).some((n) => n.label === r.label))];
+    drawInspectionColumn(ctx, (tab.needs || []).length ? `Needs you (${tab.needs.length})` : "Right now", list, x1, L.contentY, colW - 10, maxY, "overview:1", { jumps: true, empty: f.isAlive ? "Nothing needs you right now" : "" });
+  } else {
+    tab.cols.forEach((col, i) => {
+      drawInspectionColumn(ctx, col.title, col.rows, L.listX + 25 + i * (colW + 20), L.contentY, colW - 10, maxY, `${tab.id}:${i}`);
+    });
+  }
 
   if (typeof drawGlassButton !== "undefined") {
     drawGlassButton(L.nameBtnX, L.btnY, L.btnW, L.btnH, "Change name");
@@ -758,6 +1017,19 @@ function handleInspectionModalClick() {
   for (const t of L.tabs) {
     if (isPointInRect(mouse.x, mouse.y, t.x, t.y, t.w, t.h)) {
       inspectionTab = t.id;
+      return true;
+    }
+  }
+  // Paging a long column; an Overview row going to its tab
+  for (const p of _inspPagers) {
+    if (isPointInRect(mouse.x, mouse.y, p.x, p.y, p.w, p.h)) {
+      inspectionScroll[p.key] = Math.max(0, (inspectionScroll[p.key] || 0) + p.dir);
+      return true;
+    }
+  }
+  for (const j of _inspJumps) {
+    if (isPointInRect(mouse.x, mouse.y, j.x, j.y, j.w, j.h)) {
+      inspectionTab = j.tab;
       return true;
     }
   }
@@ -798,6 +1070,16 @@ function handleInspectionModalClick() {
 
   // Clicking outside closes the modal
   inspectedFluffy = null;
+  return true;
+}
+
+// The mouse wheel over a long column (globals.js)
+function handleInspectionScroll(deltaY) {
+  if (typeof inspectedFluffy === "undefined" || !inspectedFluffy || !deltaY) return false;
+  const c = _inspColRects.find((r) => isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h));
+  if (!c) return false;
+  const step = deltaY > 0 ? 1 : -1;
+  inspectionScroll[c.key] = Math.max(0, Math.min(c.rows - 1, (inspectionScroll[c.key] || 0) + step));
   return true;
 }
 

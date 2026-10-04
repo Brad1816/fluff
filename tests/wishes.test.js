@@ -125,7 +125,7 @@ module.exports = [
         fluffyNames[f.id] = "Pip";
         __wish(f, "park");
         const before = trickChance(f, "sit");
-        trickUI = { phase: "menu", id: f.id };
+        trickUI = { phase: "menu", id: f.id, section: "care" };
         changeScene("INDOORS");
         const L = getTrickMenuLayout();
         const chip = L && L.chips.find((c) => c.action && c.action.key === "promise");

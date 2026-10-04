@@ -588,6 +588,7 @@ function drawUI(ctx) {
   if (typeof drawClimateTooltip === "function") drawClimateTooltip(ctx); // (on top of the messages, Climate.js)
   drawDebugWatcher();
   if (typeof drawOrdersHud === "function") drawOrdersHud(ctx);
+  if (typeof drawItemHoverHint === "function") drawItemHoverHint(ctx); // what right-click does (ItemRegistry.js)
   // Every pop-up screen, bottom layer first (Screens.js)
   drawScreens(ctx);
   if (typeof drawOutingBanner === "function") drawOutingBanner(ctx); // (ParkOutings.js)
