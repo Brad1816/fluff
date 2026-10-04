@@ -284,7 +284,7 @@ module.exports = [
       checkEqual(r.oldBowl, "scrap_kibble", "old Soylent bowl");
       checkEqual(
         JSON.stringify(r.shop),
-        JSON.stringify([["Fluffy Feast Premium", 80], ["Kibble", 25], ["Value Kibble", 10], ["Scrapz", 3], ["Rat Poison", 50], ["Sketty", 120], ["Formula", 100]]),
+        JSON.stringify([["Fluffy Feast Premium", 80], ["Kibble", 25], ["Value Kibble", 10], ["Scrapz", 3], ["Rat Poison", 50], ["Sketty", 120], ["Formula", 100], ["Hot Peppers", 15]]),
         "food on the shelf",
       );
       check(r.scrapzDesc, "Scrapz says what it's made of");

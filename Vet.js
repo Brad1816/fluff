@@ -23,6 +23,8 @@ const VET_TOXO_JAB_PRICE = 60;
 const VET_MIDWIFE_PRICE = 60; // Pregnancy.js
 const VET_ROWS = 8;
 const VET_W = 1000;
+// Problems from other files: { has(f) -> [name, cost] or null, cure(f) }
+const EXTRA_VET_PROBLEMS = [];
 
 let vetOpen = false;
 let vetPage = 0;
@@ -142,6 +144,11 @@ function vetProblems(f) {
   if (f.bleedingTimer > 0) out.push(["bleeding", 30]);
   if (typeof hasInfection === "function" && hasInfection(f)) out.push(["infected wound", 50]); // (Recovery.js)
   if ((f.health ?? 100) < 90) out.push([`hurt (${Math.round(f.health)}/100)`, 20]);
+  // More from other files (a blockage, burns...: EXTRA_VET_PROBLEMS)
+  for (const p of EXTRA_VET_PROBLEMS) {
+    const r = p.has(f);
+    if (r) out.push(r);
+  }
   return out;
 }
 
@@ -195,6 +202,7 @@ function vetTreat(f) {
   const price = vetTreatmentPrice(f);
   if (!price || !_vetPay(price)) return false;
   if (typeof cureFlu === "function") cureFlu(f);
+  for (const p of EXTRA_VET_PROBLEMS) if (p.has(f) && p.cure) p.cure(f);
   f.isPoisoned = false;
   f.isToxoplasmosis = false;
   f.isDiarrhea = false;

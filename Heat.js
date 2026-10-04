@@ -109,8 +109,12 @@ function heatExposure(f) {
   if (typeof f._drankAt === "number" && timePlayed - f._drankAt < HOUR_LENGTH && timePlayed >= f._drankAt) e *= 0.6;
   if (typeof f._bathAt === "number" && timePlayed - f._bathAt < 2 * HOUR_LENGTH && timePlayed >= f._bathAt) e *= 0.6;
   if (f.currentStateKey === "SLEEPING") e *= 0.85;
+  // A long coat, shaved... (EXTRA_HEAT)
+  if (typeof EXTRA_HEAT !== "undefined") for (const m of EXTRA_HEAT) e *= m(f) || 1;
   return e;
 }
+// Heat exposure multipliers from other files: function(f) -> x
+const EXTRA_HEAT = [];
 
 function heatTarget(f) {
   return Math.max(0, Math.min(1, heatAt(f) * heatExposure(f)));

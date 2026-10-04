@@ -406,6 +406,7 @@ function bullyShove(f, victim) {
   victim.milkCooldown = Math.max(victim.milkCooldown || 0, 8); // (shoved off the milk)
   for (const m of fluffies) if (m._nursing && m._nursing[victim.id] !== undefined) delete m._nursing[victim.id]; // (its teat's free: HorseFamily.js)
   victim.bullied = (victim.bullied || 0) + 1;
+  if (typeof lastStrawPressure === "function") lastStrawPressure(victim, f); // (Comfort.js)
   victim.changeHappiness(-0.05, f.growth >= 1 ? "Picked on by a bully" : "Picked on by other foals");
   if (victim.growth < 1 && typeof _pnAdd === "function") _pnAdd(victim, "pickedOnFoal", 1);
   if (typeof changeOpinion === "function") changeOpinion(victim, f, -0.1, "picked on me");

@@ -339,7 +339,7 @@ function hasNightLight(scene) {
 
 function isDarkFor(f) {
   const night = typeof nightAmount === "function" ? nightAmount() : 0;
-  return night > 0.7 && !hasNightLight(f.scene);
+  return night > 0.7 && !hasNightLight(f.scene) && !(typeof lightsAlwaysOn === "function" && lightsAlwaysOn(f.scene));
 }
 
 SPAWN_ACTIONS.push({

@@ -174,6 +174,7 @@ function onFoalBorn(mare, baby, viable) {
   if (typeof inheritDefects === "function") inheritDefects(baby, mare); // (Defects.js)
   // Born to one of your mares: "Bred by you" for commissions (Commissions.js)
   baby.bredHere = !!mare.adopted;
+  if (typeof onBabyBornHooks === "function") onBabyBornHooks(mare, baby, viable); // (Wild.js, Coats.js)
   if (!viable) return;
   const c = mare.litterCareAt ?? pregnancyCareScore(mare);
   baby.birthVigor = Math.max(0.7, Math.min(1.2, 0.7 + 0.5 * c + (Math.random() - 0.5) * 0.1));

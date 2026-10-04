@@ -172,6 +172,24 @@ const SAVED_HORSE_FIELDS = [
   { name: "isIncontinent", fallback: false },
   { name: "affectionNeglect", fallback: null, clone: true }, // Affection.js
   { name: "warmth", fallback: 1 }, // Warmth.js
+  // Plan round 8
+  { name: "burned", fallback: null, clone: true }, // Handling.js
+  { name: "nearDeath", fallback: null, clone: true },
+  { name: "pepperUntil", fallback: undefined }, // Tummy.js
+  { name: "blockage", fallback: null, clone: true },
+  { name: "badPoopies", fallback: 0 }, // Comfort.js
+  { name: "litNights", fallback: 0 },
+  { name: "lostDays", fallback: false },
+  { name: "vetLie", fallback: null, clone: true },
+  { name: "towerFear", fallback: 0 },
+  { name: "strawPressure", fallback: 0 },
+  { name: "crowdRaised", fallback: false },
+  { name: "shaved", fallback: null, clone: true }, // Coats.js
+  { name: "longCoat", fallback: undefined },
+  { name: "matted", fallback: 0 },
+  { name: "frozenDown", fallback: null, clone: true }, // Wild.js
+  { name: "wildGen", fallback: undefined },
+  { name: "buried", fallback: false },
 ];
 
 function _savedCopy(v) {

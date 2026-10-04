@@ -214,6 +214,7 @@ class HorseRenderer {
       this.tinted.pupil = tintImage(images.pupil, this.horse.colors.pupil);
     this.tinted.eye = images.eye;
     if (images.eye) this.tinted.eye_pink = tintImage(images.eye, "#ffcccc");
+    if (images.eye) this.tinted.eye_toxo = tintImage(images.eye, "#c8a46a"); // (toxoplasmosis showing: Coats.js)
     if (images.cheek) {
       const cheekImgToUse =
         (typeof sbsShows === "function" ? sbsShows(this.horse, "head") : this.horse.isSensitive()) && images.cheek_sbs
@@ -1447,9 +1448,12 @@ class HorseRenderer {
           if (this.tinted.eye && nearEye) {
             const isCrying = view.isAlive && view.tears !== null;
 
+            const toxo = typeof toxoEyesShow === "function" && toxoEyesShow(this.horse);
             const img = isCrying
               ? this.tinted.eye_pink || this.tinted.eye
-              : this.tinted.eye;
+              : toxo
+                ? this.tinted.eye_toxo || this.tinted.eye
+                : this.tinted.eye;
 
             ctx.drawImage(
               img,
@@ -1617,6 +1621,7 @@ class HorseRenderer {
     drawPart(this.tinted.torso, layout.torso);
     if (typeof drawScars === "function" && this.horse.scars) drawScars(ctx, this, "torso", layout); // Scars.js
     if (typeof drawBandage === "function" && this.horse.recovery) drawBandage(ctx, this, layout); // Bandages.js
+    if (typeof drawCoatExtras === "function") drawCoatExtras(ctx, this, layout); // Coats.js (shaved, long tufts)
     if (typeof drawDiaperOn === "function" && this.horse.diaper) drawDiaperOn(ctx, this, layout); // Diapers.js
     if (this.tinted.udders && !this.horse.tooYoungToWalk()) {
       const tW = layout.torso.w,

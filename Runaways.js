@@ -211,7 +211,7 @@ function _raMeet(f) {
   fp.metDay = day;
   const ago = Math.max(0, day - fp.day);
   const n = fp.name || fluffyDisplayName(f);
-  if (typeof addUIMessage === "function") addUIMessage(`You spot ${n} in the park - it ${{ "let go": "was let go", "put out": "was put out" }[fp.how] || "ran away"} ${ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago} days ago`}.`);
+  if (typeof addUIMessage === "function") addUIMessage(`You spot ${n} in the park - it ${{ "let go": "was let go", "put out": "was put out", dumped: "was dumped here" }[fp.how] || "ran away"} ${ago === 0 ? "today" : ago === 1 ? "yesterday" : `${ago} days ago`}.`);
   const trust = f.playerTrust || 0;
   const fear = f.playerFear || 0;
   if (trust >= 0.6 && fear < 0.3 && typeof f.setTargetPosition === "function" && typeof mouse !== "undefined") {

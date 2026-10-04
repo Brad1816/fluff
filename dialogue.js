@@ -524,6 +524,7 @@ const DIALOGUE = {
     MUM: ["Mummah! Mummah! Scawy!", "Mummah, hewp!", "Wan mummah!"],
     FRIEND: ["Fwen! Wait fow <speaker>!", "Hide wif fwen!", "Fwen, hab scawies!"],
     BATH: ["*SCREEE* Nu wawa! Nu wawa!", "Wawa am bad fo' fwuffy! Pwease!", "Nu put <speaker> in wawa 'gain!", "*shaking* Nu wet... nu wet..."],
+    HOOK: ["Nu hook! NU HOOK!", "*SCREEE* Nu hang <speaker>!", "Scawy hook! Go 'way!"],
     NIGHTMARE: ["*SCREEE* Bad dweam! Bad dweam!", "Nu! Nu huwt <speaker>! ...wuz dweam?", "*sob* Scawy dweamies...", "Wan huggies... bad dweam..."],
   },
   // Scaredy poopies (Scaredy.js): a fright too big to hold in
@@ -1233,6 +1234,80 @@ const DIALOGUE = {
     SITTER_FAIL: ["Nu cwy... pwease nu cwy...", "Wha' babbeh wan'? <Speaker> nu knyo...", "Huu... babbeh stiww cwyin'..."],
     CLEANER: ["<Speaker> cwean poopies! Good job!", "Aww tidy nao!", "Pushy pushy wittew... aww gone!"],
     CLEANER_FAIL: ["Oopsie... made mowe mess...", "Icky... <speaker> twy again...", "Su hawd tu cwean..."],
+  },
+  // Plan round 8
+  // Shaken (Handling.js)
+  SHAKEN: ["Wowwd am spinny! Nu! Nu!", "*huu* Tummy feew icky...", "Stop! Pwease stop! <Speaker> dizzy!", "Evewyfing am wobbwy..."],
+  // The wall hook and the hook pole (Handling.js)
+  HOOK: {
+    HANGING: ["Wet <speaker> down! Pwease!", "Nu can weach gwound! Huuu!", "Fwuff hangin'... su tiwed...", "Hook huwties... pwease..."],
+    SEEN: ["Nu! Nu hang fwen on hook!", "Scawy hook! Nu put <speaker> on hook!", "Fwen hangin'! Hewp fwen!"],
+    POLE: ["Nu! Pokey stick got <speaker>!", "Nu pull! Wan' stay hidin'!", "Huuu! Stick fin' <speaker>!"],
+  },
+  // The hot plate (Handling.js)
+  HOT_PLATE: ["*SCREEEE* HOT! HOT!", "Hoofies buwnin'! Huuu!", "Owie owie owie! Hot gwound!", "Wan' cowd! Wan' wawa!"],
+  // Brought back (Handling.js)
+  DEFIB: ["*gasp* ...whewe am <speaker>?", "Su... sweepy... wha' happen?", "Saw... wainbows... den yu...", "*cough* <Speaker> nu feew good..."],
+  // Hot peppers (Tummy.js)
+  PEPPER: {
+    BURN: ["MOUF ON FIWE! HUUU!", "Nummies huwt! Spicy huwties!", "Wawa! Wawa! Need wawa!", "Why nummies bite <speaker>?!"],
+    WATER: ["*swuuurp* ...bettew nao...", "Wawa make fiwe go 'way...", "Nu eat dose nummies evew 'gain..."],
+  },
+  // The rock eater (Tummy.js)
+  ROCK: {
+    EAT: ["Cwunchy nummies!", "*nom nom* It aww tuwn into poopies!", "Wock am nummies? Wock am nummies!"],
+    STUCK: ["Tummy su fuww... nu can make poopies...", "Huu... tummy huwties...", "Wock stuck in tummy..."],
+    PASSED: ["Big poopie! Tummy bettew!", "Wock come out! Yay!", "<Speaker> feew aww bettew nao."],
+    TANTRUM: ["NU! Dat <speaker>'s cwunchy nummies!", "Gib back! Gib back!", "Meanie! <Speaker> wan' wock!"],
+  },
+  // The blankie (Comfort.js)
+  BLANKIE: {
+    COMFORT: ["Bwankie... smeww wike home...", "*snuggwe* Safe wif bwankie.", "<Speaker>'s bwankie. Bestest bwankie."],
+    BAD_POOPIES: ["Whewe bwankie?! Gib back bwankie!", "Huuu... nu bwankie... nu safe...", "Wan' bwankie! WAN' BWANKIE!"],
+    SHAME: ["<Speaker> made bad poopies... nu mean tu...", "Bad fwuffy... bad poopies...", "Pwease nu be angwy..."],
+  },
+  // The lights always on (Comfort.js)
+  LIGHTS: {
+    LOST: ["Am it sweepy-time? Am it day?", "Nu knyo when sweepies...", "Su tiwed... but bwight..."],
+  },
+  // "She's at the vet" (Comfort.js)
+  VET_LIE: {
+    BELIEVES: ["Babbeh at vet? Babbeh come home soon?", "Mistah vet make babbeh bettew!", "Mummah wait fow babbeh."],
+    WAITING: ["When babbeh come home?", "Mummah stiww waitin'...", "Babbeh at vet wong time..."],
+    FOUND_OUT: ["Babbeh nu come home... babbeh nebah at vet...", "Yu say vet! Yu wie tu mummah!", "*sob* Babbeh gone fowebah..."],
+  },
+  // Tales of the tower (Comfort.js)
+  TOWER: {
+    TELL: ["Fwuffies go tu towew an' nebah come back...", "<Target>... nu make hoomin angwy. Ow da towew.", "Shhh... da towew am wistenin'..."],
+  },
+  // Pushed too far (Comfort.js)
+  LAST_STRAW: {
+    SNAP: ["NU MOWE! <Speaker> nu take it nu mowe!", "Weave <speaker> AWONE, <target>!", "Meanie! Meanie! NU MOWE!"],
+  },
+  // Shaved (Coats.js)
+  SHAVED: {
+    REAR: ["Whewe <speaker>'s fwuff?! Back aww cowd!", "Nu! Hind fwuff gone!", "Huuu... nakey bum..."],
+    ALL: ["Nu fwuff! NU FWUFF! <Speaker> am nakey!", "Su cowd... aww fwuff gone...", "Nu wook at <speaker>! Pwease!"],
+    GIGGLE: ["Hehehe! Nakey fwuffy!", "<Target> wook siwwy!", "Whewe <target>'s fwuff go?"],
+    SHY: ["Nu wook at <speaker>...", "Fwuff come back soon?", "<Speaker> hide... nakey..."],
+  },
+  // Frozen to the ground (Wild.js)
+  FROZEN: {
+    STUCK: ["Nu can move! Fwuff stuck!", "Gwound bite <speaker>! Huuu!", "Su cowd... stuck... hewp..."],
+    PULLED: ["OWIE! Fwuff wipped!", "*SCREEE* Huwties!", "Fwee... but owie..."],
+    THAW: ["Wawm! Fwuff fwee!", "Gwound wet go! Tank yu!", "<Speaker> can move 'gain!"],
+  },
+  // Burying a body (Wild.js)
+  BURY: {
+    LEAVES: ["Sweep, fwen... weafies keep yu wawm...", "Bye-bye, <target>...", "Weafies fow <target>... nu cowd nao."],
+  },
+  // A smarty calling over the fence (Wild.js)
+  RECRUIT: {
+    STAY: ["Nu! <Speaker> stay hewe!", "Smawty nu boss of <speaker>!", "<Speaker> hab home awweady!"],
+  },
+  // Dumped by the influencer (MoreBuyers.js)
+  INFLUENCER: {
+    DUMPED: ["Whewe hoomin go? Hoomin come back?", "Nu mowe fwashy wights... nu mowe hoomin...", "Why weave <speaker>? <Speaker> was good..."],
   },
   // Missed the party, behind bars (SharedMemories.js)
   PARTY_MISSED: ["Pawty... <speaker> wan' pawty tuu...", "Nu fair... evewybody hab tweats...", "<Speaker> nu get tu go tu pawty..."],

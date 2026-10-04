@@ -540,6 +540,8 @@ addHorseMethods({
                 }
                 if (typeof onFluffyAte === "function") onFluffyAte(this, foodType);
                 this.speak(getDialogue(key, this));
+                // Hot peppers and the like (Tummy.js) - after its usual line
+                if (typeof onAteSpecial === "function") onAteSpecial(this, foodType, bowl);
                 break;
               }
             }
@@ -1176,7 +1178,7 @@ addHorseMethods({
       if (this.currentStateKey === "SLEEPING") {
         // Day and night change how fast they rest / get tired (WorldTime.js)
         const sleepRates = typeof sleepRateMultipliers === "function" ? sleepRateMultipliers() : [1, 1];
-        const restFactor = typeof sleepRestFactor === "function" ? sleepRestFactor(this) : 1; // (Care.js: brushed before bed, cried itself to sleep)
+        const restFactor = (typeof sleepRestFactor === "function" ? sleepRestFactor(this) : 1) * (typeof lightsRestFactor === "function" ? lightsRestFactor(this) : 1); // (Care.js: brushed before bed, cried itself to sleep; Comfort.js: the lights left on)
         this.sleepDeprivation = Math.max(0, this.sleepDeprivation - (dt / 30) * sleepRates[1] * restFactor); // Takes 2 mins to fully rest
 
         const inBed =

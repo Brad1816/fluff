@@ -77,6 +77,7 @@ function noteSoldForRep(f, reason) {
     if (typeof notePetFoodSale === "function") notePetFoodSale(f); // (Trade.js: families hear, nobody writes)
     return;
   }
+  if (typeof onMoreBuyerSale === "function" && onMoreBuyerSale(f, buyer)) return; // (MoreBuyers.js: the lab, the influencer)
   if (buyer === "shady") {
     r.dark = Math.min(REP_MAX, r.dark + REP_DARK_SALE + (p.title === "Broken" ? 1 : 0) + (p.drilled ? 1 : 0));
     return;
@@ -91,7 +92,7 @@ function writeOwnerNote(p, buyer) {
   const n = p.name || "The fluffy you sold us";
   const he = p.male ? "he" : "she";
   const him = p.male ? "him" : "her";
-  const who = { family: "the kids", kid: "I", farmer: "the farmhands", collector: "our guests", show: "the judges", order: "the family", shop: "the customers", bargain: "we" }[buyer] || "we";
+  const who = { family: "the kids", kid: "I", farmer: "the farmhands", collector: "our guests", show: "the judges", order: "the family", shop: "the customers", bargain: "we", carehome: "the residents", parent: "my son" }[buyer] || "we";
   const bad = [];
   const good = [];
   if (p.title === "Broken") bad.push({ text: `${n} doesn't play at all. ${he.charAt(0).toUpperCase() + he.slice(1)} just stares at the wall.`, w: 3 });

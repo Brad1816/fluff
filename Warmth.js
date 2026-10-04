@@ -29,6 +29,8 @@
 // ---------------------------------------------------------------------------
 
 const WARMTH_SETTLE = 300; // seconds for warmth to move most of the way
+// Cold exposure multipliers from other files: function(f) -> x
+const EXTRA_WARMTH = [];
 const CHILLY_BELOW = 0.6;
 const FREEZING_BELOW = 0.3;
 const HEATER_RADIUS = 240; // outdoors
@@ -126,6 +128,8 @@ function warmthExposure(f) {
   else if (near === 1) e *= 0.75;
   // Wet through: the cold bites harder (WetFur.js)
   if (typeof wetExposure === "function") e *= wetExposure(f);
+  // Shaved, a long coat, a winter den... (EXTRA_WARMTH)
+  for (const m of EXTRA_WARMTH) e *= m(f) || 1;
   return e;
 }
 

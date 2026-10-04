@@ -66,6 +66,7 @@ function migrateReason(f, here = _strays(f.scene)) {
   if (f.hunger < MIGRATE_HUNGRY && foodIn(f.scene) < 1) return "hungry";
   if (here.length > (MIGRATE_CAP[f.scene] || 99)) return "crowded";
   if (f.lastAttackTimer > 0) return "driven";
+  if (typeof binFenceIn === "function" && binFenceIn(f.scene) && Math.random() < 0.5) return "hungry"; // (nothing in the bins: Wild.js)
   if (typeof getLiking === "function") {
     let hate = 0;
     for (const o of here) if (o !== f && getLiking(f, o) <= -0.4) hate++;

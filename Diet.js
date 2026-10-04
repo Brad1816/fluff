@@ -279,7 +279,8 @@ function describeDiet(f) {
 }
 
 function describeWeight(f) {
-  const l = weightLevel(f);
+  // (a long coat hides weight loss: it reads a step heavier - Coats.js)
+  const l = typeof coatWeightLevel === "function" ? coatWeightLevel(f, weightLevel(f)) : weightLevel(f);
   if (l === "fat") return ["Fat - too many sketties", "bad"];
   if (l === "chubby") return ["Getting chubby", "ok"];
   return ["Trim", "good"];

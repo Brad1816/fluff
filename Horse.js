@@ -970,8 +970,11 @@ class Horse {
     if (typeof defectSpeed === "function") this.speed *= defectSpeed(this);
     // Taking it easy after surgery, or with a fever (Bandages.js)
     if (typeof recoverySpeed === "function") this.speed *= recoverySpeed(this);
-    // Waddling in a diaper (Diapers.js)
+    // Waddling in a diaper (Diapers.js); a burn healing (Handling.js)
     if (typeof diaperSpeed === "function") this.speed *= diaperSpeed(this);
+    if (typeof burnSpeed === "function") this.speed *= burnSpeed(this);
+    if (typeof listlessSpeed === "function") this.speed *= listlessSpeed(this); // (a room breaking down: Comfort.js)
+    if (typeof frozenSpeed === "function") this.speed *= frozenSpeed(this); // (frozen to the ground: Wild.js)
     if (this.limbs === undefined) {
       return;
     }
@@ -1034,6 +1037,8 @@ class Horse {
     this.scale *= lerp(this.prematureGrowth == null ? 1 : this.prematureGrowth, 1.0, this.growth);
     // A runt stays small (Runts.js)
     if (this.runt && typeof runtScale === "function") this.scale *= runtScale(this);
+    // Born wild, generations on: smaller (Wild.js)
+    if (this.wildGen && typeof wildGenScale === "function") this.scale *= wildGenScale(this);
     // A microfluff is tiny (Micro.js)
     if (this.micro && typeof microScale === "function") {
       this.scale *= microScale(this);
@@ -1353,6 +1358,12 @@ class Horse {
   }
 
   attemptLockIntoTable(table) {
+    // Its own place for it (the hook: Handling.js)
+    if (typeof table.lockPosition === "function") {
+      table.securedFluffy = this;
+      table.lockPosition(this);
+      return;
+    }
     this.x = table.x;
     const tableOffset = 30;
     table.securedFluffy = this;
@@ -1505,6 +1516,19 @@ class Horse {
         ) {
           this.placedOn = table;
           this.attemptLockIntoTable(table);
+          return;
+        }
+      }
+    }
+
+    // Something else that takes it (the hook, the hot plate: Handling.js)
+    if (typeof objects !== "undefined") {
+      for (const o of objects) {
+        if (typeof o.catchesFluffy === "function" && o.scene === this.scene && o.catchesFluffy(this)) {
+          if (o.holdsFluffy) {
+            this.placedOn = o;
+            this.attemptLockIntoTable(o);
+          }
           return;
         }
       }
@@ -2080,6 +2104,11 @@ class Horse {
   }
 
   draw(ctx, clip = null) {
+    // Covered with leaves by its herd: just the mound (Wild.js)
+    if (this.buried && !this.isAlive && typeof drawLeafMound === "function") {
+      drawLeafMound(ctx, this);
+      return;
+    }
     if (this._layoutDirty || !this.layout) {
       this._layoutDirty = false;
       this.updateLayout();

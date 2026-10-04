@@ -51,7 +51,9 @@ function lureCount(scene) {
 // script.js updateFerals: extra spawn weight for a place with lures
 function lureSpawnWeight(scene) {
   // (a stocked Foal-4-Sketties machine draws hungry families too: FoalMachine.js)
-  return LURE_WEIGHT * lureCount(scene) + (typeof machineLureWeight === "function" ? machineLureWeight(scene) : 0);
+  // (a bin fence keeps most strays away: Wild.js)
+  const fence = typeof binFenceIn === "function" && binFenceIn(scene) ? -0.7 : 0;
+  return LURE_WEIGHT * lureCount(scene) + (typeof machineLureWeight === "function" ? machineLureWeight(scene) : 0) + fence;
 }
 
 // ...and strays come sooner

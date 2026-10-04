@@ -297,6 +297,12 @@ addHorseMethods({
       }
 
       const pRel = this.perceivedRelationships[otherId];
+      // Told they're at the vet: she's waiting for them, not grieving (Comfort.js)
+      if (typeof believesAtVet === "function" && believesAtVet(this, otherId)) {
+        pRel.state = "current";
+        pRel.timer = 0;
+        continue;
+      }
       // (out in the yard through the pet flap still counts as home: PetFlap.js)
       const together = other && (other.scene === this.scene || (other.isAlive && typeof homeLinked === "function" && homeLinked(this.scene, other.scene)));
       if (pRel.state === "unmet" && other && typeof haveMet === "function" && haveMet(this, other)) pRel.state = together ? "current" : "unmet";

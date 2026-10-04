@@ -580,6 +580,7 @@ function houseNavChips(scene = currentScene) {
 
 let houseLabelLeft = Infinity; // left edge of the room's name at the top, this frame
 let _fitOutChip = null; // the "Fit out" chip, as last drawn (RoomKits.js)
+let _lightsChip = null; // the lights chip (Comfort.js)
 
 function drawHouseNav(c) {
   const chips = houseNavChips();
@@ -597,6 +598,7 @@ function drawHouseNav(c) {
   // Too many fluffies in here (Population.js)
   if (typeof crowding === "function" && crowding(currentScene) > 0) {
     roomLabel += ` · crowded ${Math.round(roomLoad(currentScene))}/${roomSpace(currentScene)}`;
+    if (typeof roomCollapsed === "function" && roomCollapsed(currentScene)) roomLabel += " · breaking down";
     c.fillStyle = "#ff8a80";
   }
   // How the room feels (Climate.js), then its name
@@ -623,6 +625,25 @@ function drawHouseNav(c) {
       c.textAlign = "center";
       c.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + 1);
       _fitOutChip = r;
+      houseLabelLeft = r.x;
+    }
+  }
+  // The lights: left on all night, or not (Comfort.js)
+  _lightsChip = null;
+  if (typeof toggleLights === "function") {
+    const on = lightsAlwaysOn(currentScene);
+    const label = on ? "\u{1F4A1} Lights on" : "\u{1F4A1}";
+    const w = c.measureText(label).width + 18;
+    const r = { x: houseLabelLeft - 8 - w, y: first.y, w, h: first.h, scene: currentScene };
+    if (r.x > 10) {
+      const hover = isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
+      c.fillStyle = on ? "rgba(247, 215, 116, 0.85)" : hover ? "rgba(0,0,0,0.65)" : "rgba(0,0,0,0.45)";
+      if (typeof fillRoundRect === "function") fillRoundRect(c, r.x, r.y, r.w, r.h, 12);
+      else c.fillRect(r.x, r.y, r.w, r.h);
+      c.fillStyle = on ? "#3a2a1a" : "#fff3c4";
+      c.textAlign = "center";
+      c.fillText(label, r.x + r.w / 2, r.y + r.h / 2 + 1);
+      _lightsChip = r;
       houseLabelLeft = r.x;
     }
   }
@@ -669,6 +690,11 @@ function houseKeyTowardsLocked(p) {
 
 // Mouse down (UI.js): the wall hints
 function houseNavClick() {
+  const lc = _lightsChip;
+  if (lc && lc.scene === currentScene && typeof toggleLights === "function" && isPointInRect(mouse.x, mouse.y, lc.x, lc.y, lc.w, lc.h)) {
+    toggleLights(currentScene);
+    return true;
+  }
   const f = _fitOutChip;
   if (f && f.scene === currentScene && playerQuartersAndNotBackyard(currentScene) && isPointInRect(mouse.x, mouse.y, f.x, f.y, f.w, f.h)) {
     if (typeof askFitOutRoom === "function") askFitOutRoom(currentScene);

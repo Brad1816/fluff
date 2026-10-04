@@ -199,7 +199,7 @@ function attemptDrop() {
         let hit = null;
         for (let i = fluffies.length - 1; i >= 0; i--) {
           const f = fluffies[i];
-          if (f.scene !== obj.scene || !f.isAlive || f.isDragging) continue;
+          if (f.scene !== obj.scene || (!f.isAlive && !obj.useOnDead) || f.isDragging) continue;
           if (f.currentCage && typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan) continue;
           if (f.hitTestAsSeen(mouse.x, mouse.y)) {
             hit = f;
@@ -207,7 +207,7 @@ function attemptDrop() {
           }
         }
         if (hit) obj.useOnFluffy(hit);
-        else missWithTool(obj);
+        else if (!(typeof obj.useOnEmpty === "function" && obj.useOnEmpty())) missWithTool(obj);
         return true;
       }
       // Special interaction checks for some objects

@@ -1626,7 +1626,7 @@ class HorsePositioning {
     const rels = relationships[this.horse.id] || {};
     for (const f of fluffies) {
       // (the cheap tests first: only bodies in this room count)
-      if (f.isAlive || f.scene !== this.horse.scene) continue;
+      if (f.isAlive || f.scene !== this.horse.scene || f.buried) continue; // (covered with leaves: Wild.js)
       if (
         this.horse.cannibalismAcceptance > 0.0 &&
         !f.fluffyIsRelatedOrSpecialFriend(this.horse)

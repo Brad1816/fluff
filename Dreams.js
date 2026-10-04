@@ -29,6 +29,8 @@ const NIGHTMARE_WAKE = 0.3;
 const NIGHTMARES_PER_DAY = 2;
 const NIGHTMARE_REST = 2 * HOUR_LENGTH;
 const BAD_DREAMS_PER_DAY = 0.05; // happiness
+// Dreams from other files: function(f) -> [{ good, weight, icon, text }]
+const DREAM_SOURCES = [];
 
 // Counted from 08:00 on purpose: one night's dreams stay in one count even though the night crosses midnight
 function _dDay() {
@@ -94,6 +96,14 @@ function dreamMaterial(f) {
   if (tally.attacked) add(false, Math.min(4, tally.attacked), null, "Nu hit! Pwease nu hit!");
   if (losses) add(false, 3 * losses, null, "Whewe mummah...?");
   if (taken) add(false, 3 * taken, null, "Whewe famiwy...?");
+  // More from other files ("da towew": Comfort.js)
+  for (const src of DREAM_SOURCES) {
+    try {
+      for (const d of src(f) || []) if (d && d.weight > 0) out.push(d);
+    } catch (e) {
+      /* (a bad source mustn't stop dreaming) */
+    }
+  }
   return out;
 }
 

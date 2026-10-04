@@ -173,7 +173,9 @@ module.exports = [
         out.inMenu = rightClickActions(__mk(560, { growth: 0.5 })).some((a) => a.key === "wean_tag");
         // The reptile shop wants feed stock
         const rep = getBuyerKind("reptile");
-        out.reptile = rep.id === "reptile" && rep.weight() > 0 && buyerLikes(rep, foal) > 0.9 && buyerLikes(rep, __mk(600, { growth: 1 })) < 0.5;
+        const nice = __mk(600, { growth: 1 });
+        nice.genetics.calculateColorismPerception = () => 0.9; // (not a poopie coat)
+        out.reptile = rep.id === "reptile" && rep.weight() > 0 && buyerLikes(rep, foal) > 0.9 && buyerLikes(rep, nice) < 0.5;
         // Orders know tiers
         const label = ORDER_REQUIREMENTS.coat.label({ tier: 1 });
         out.order = /tier 1/i.test(label) && ORDER_REQUIREMENTS.coat.matches({ tier: 1 }, f) === (colourTier(f) === 1);

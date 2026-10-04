@@ -3031,3 +3031,66 @@ from. Nothing player-facing reads it yet except the debug view.
   (saved; the "Deliver to" chip in the aisles and the Items tab); the
   Computer's **Items** tab (OnlineShop.js) sells every bag/delivered shop item,
   same delivery as food.
+
+### Plan round 8
+
+- **Handling (Handling.js, new):** shaking a held fluffy (`SHAKE_SWINGS`
+  swings of `SHAKE_MIN`px within `SHAKE_WINDOW`): `shakeFluffy` - dizzy
+  (`f.dizzyUntil`), may pee or vomit, harm "shaken". **Wall hook**
+  (`catchesFluffy`/`lockPosition`/`holdsFluffy` hooks in Horse.onDrop):
+  `HOOK_SAD`/`HOOK_HURT` a game hour; witnesses gain the "hook" fear
+  (`HOOK_SEEN_FEAR`, Fears.js). **Hook pole** (tool): `poleDragOut`, also a
+  hidden foal's spot (`hookPoleClick`). **Hot plate** (right-click on/off):
+  `burnOnHotPlate` - `BURN_HURT`, `f.burned` (saved, `BURN_HEAL`), burn
+  scar, fear of fire, `burnSpeed`; the vet dresses it. **Defibrillator**
+  (`useOnDead`): grown, `deathTimer <= DEFIB_WINDOW`, not ground up,
+  `DEFIB_CHANCE`; `reviveFluffy`, `f.nearDeath` (saved). **Lethal** syringe
+  drug (`DRUG_METABOLISM.lethal`): a full dose, asleep, dies "Put to sleep"
+  after `LETHAL_TIME`.
+- **Tummy (Tummy.js, new):** `FOODS.hot_peppers` - `onAteSpecial` (HorseUpdate
+  eating hook): `f.pepperUntil`, fears that bowl (`fearedBowls`), runs for
+  water. Rock eater (`isRockEater`: smarts < `ROCK_SMARTS` or "dim"):
+  `eatRock`, `ROCK_BLOCK` chance of `f.blockage` (saved; no poop,
+  `ROCK_BLOCK_HURT`, vet `EXTRA_VET_PROBLEMS`, passes after `ROCK_PASS`);
+  `rockTantrum` when picked up mid-chew.
+- **Comfort (Comfort.js, new):** Blankie (`smellOf` a resting mum,
+  `blankieComforts` a foal apart from her; `blankieSoiledBy` from
+  HorseToilet; `blankieTakenAway` -> `f.badPoopies`). Lights
+  (`comfortState.lights`, 💡 chip in UIScenes): `lightsAlwaysOn` (Fears
+  isDarkFor), `lightsRestFactor` `LIGHTS_REST`; `f.litNights`/`f.lostDays`.
+  The vet lie (`tellVetLie`, right-click "Tell her: at da vet"; HorseFamily
+  keeps `believesAtVet` foals "current" for `VET_LIE_DAYS`, then
+  `_vetLieFoundOut`). Da towew (`_towerCheck`: adopted fluffies gone from
+  home or culled -> room-mates who met them `hearTowerStory`, `f.towerFear`,
+  temper eased, nightmares via `DREAM_SOURCES`). The last straw
+  (`lastStrawPressure` from FoalLife.bullyShove; gentle only; snaps at
+  `LAST_STRAW`, `LAST_STRAW_HIT`). Crowding collapse (`COLLAPSE_HOURS`
+  crowded: `roomCollapsed`, mums stop nursing, `isListless` grown-ups).
+- **Coats (Coats.js, new):** Clippers (rear, then all; `f.shaved`,
+  `SHAVE_GROW`; `accidentDirtFactor`, `EXTRA_WARMTH` cold). Long coats
+  (`f.longCoat`: `LONG_COAT_WILD` for strays, inherited `LONG_COAT_BOTH`/
+  `_ONE`/`_NEW` in `onBabyBornHooks`): warmer, `LONG_COAT_HOT`, hides weight
+  (`coatWeightLevel`), mats (`MAT_PER_DAY`, brushing `MAT_BRUSH`), price.
+  Toxo eyes can be hidden (`toxoEyesHidden`, pause menu).
+- **Wild (Wild.js, new):** frozen to the ground (`_couldFreeze`: asleep
+  outdoors alone, cold >= `FREEZE_COLD`, no bed or heater; `frozenSpeed`;
+  picked up = torn free). Wild generations (`f.wildGen`, `wildGenScale`,
+  `wildGenPrice`), collar marks. Winter dens (`HerdDen`, `DEN_COLD`).
+  Burying bodies (`f.buried`: kin or herd-mates, `BURY_AFTER`; rots half as
+  fast; ignored by `findScaryCorpse`). Smarty recruiting over the backyard
+  fence (`RECRUIT_CHANCE`; a tier-2 fence stops it). The noisy alley herd
+  (`NOISY_HERD`+ strays of one herd in the alley at 1-4 h: morning
+  complaint, `callPestControl` `PEST_CONTROL_PRICE`; family rep -1 on the
+  second night running). Bin fence (`binFenceIn`: no noisy herd, alley
+  spawn weight -0.7, strays drift off via Migration).
+- **More buyers (MoreBuyers.js, new):** `lab` (only with a lab case:
+  `labValue` - sensitive baby, defect, deformity, runt; flat `LAB_PAY`;
+  family rep -`LAB_REP`, no note), `carehome` (calm grown-up), `parent`
+  (gentle; a biter or smarty ~0), `influencer` (level 2+, `INFLU_BUDGET`;
+  family +`INFLU_REP`; after `INFLU_DUMP_DAYS` the saved fluffy turns up in
+  the park as a stray named from `INFLU_NAMES`, `formerPet.how` "dumped").
+  `moreBuyersState` saved. Reputation.noteSoldForRep calls
+  `onMoreBuyerSale`.
+- **New hooks:** `onAteSpecial`, `DREAM_SOURCES`, `EXTRA_VET_PROBLEMS`,
+  `EXTRA_WARMTH`/`EXTRA_HEAT`, `onBabyBornHooks`, a tool's `useOnDead` /
+  `useOnEmpty`, an item's `catchesFluffy` / `lockPosition` / `holdsFluffy`.

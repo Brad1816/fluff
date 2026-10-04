@@ -225,8 +225,9 @@ addHorseMethods({
       const baseTargetScale = ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.growth) * this.messSizeForAge();
 
       if (!inCage) addPointToPuddle(this.scene, pX, pY, puddleColor, 5 / 200, baseTargetScale, 0.02);
+      if (!inCage && typeof blankieSoiledBy === "function") blankieSoiledBy(this, pX, pY); // (on mummah's blankie: Comfort.js)
       // Went on the floor: gets a bit on itself (Bath.js)
-      if (typeof addDirt === "function") addDirt(this, DIRT_FROM_ACCIDENT * (isPoop ? 1 : 0.35));
+      if (typeof addDirt === "function") addDirt(this, DIRT_FROM_ACCIDENT * (isPoop ? 1 : 0.35) * (typeof accidentDirtFactor === "function" ? accidentDirtFactor(this) : 1)); // (a shaved rear: Coats.js)
 
       if (nearLitterbox && lbIsFull) {
         nearLitterbox.use();

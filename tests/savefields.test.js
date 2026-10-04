@@ -26,6 +26,8 @@ module.exports = [
           boredom: 0.45, toyLikes: { ball: 0.9 }, dirt: 0.6, bathLike: -0.3,
           castrationBandTimer: 42, castrationBandPainTimer: 3, isDiarrhea: true, isIncontinent: true,
           affectionNeglect: { day: 2, seen: { hungry: true } },
+          burned: { until: 999 }, nearDeath: { cause: "x", at: 5 }, pepperUntil: 77, blockage: { at: 3 }, badPoopies: 2, litNights: 3, lostDays: true, vetLie: { ids: ["4"], until: 9, at: 1 }, towerFear: 0.4, strawPressure: 2, crowdRaised: true,
+          shaved: { kind: "rear", at: 4 }, longCoat: true, matted: 0.3, frozenDown: { at: 8 }, wildGen: 2, buried: true,
         };
         Object.assign(f, values);
         const missing = SAVED_HORSE_FIELDS.map((x) => x.name).filter((n) => !(n in values));
