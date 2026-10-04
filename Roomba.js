@@ -323,10 +323,16 @@ function reactToRoomba(f, bot) {
     if (talk) f.speak(getDialogue(["ROOMBA", "FUN"], f));
     return "fun";
   }
+  // Most just get out of its way; only a timid one minds (playtest 7: they
+  // freaked out about it too much)
+  if (brave > -0.25) {
+    if (talk && Math.random() < 0.25) f.speak(getDialogue(["ROOMBA", "FUN"], f));
+    return "fine";
+  }
   f.expressionOverride = "CRYING_SHOCKED";
   f.expressionOverrideTimer = 1.5;
   f.changeHappiness(-0.01);
-  if (talk) f.speak(getDialogue(["ROOMBA", "SCARED"], f));
+  if (talk && Math.random() < 0.5) f.speak(getDialogue(["ROOMBA", "SCARED"], f));
   // Scoot out of the way
   if (!f.isDragging && !f.placedOn && !f.currentCage && !f.tooYoungToWalk() && (typeof canRun !== "function" || canRun(f)) && f.canSee && f.canSee()) {
     // A spot a little away that it can actually get to (inside the room, not past a fence)

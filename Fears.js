@@ -72,7 +72,9 @@ const BATH_FROM_ROUGH = 0.35; // hurt during a bath
 const BATH_FROM_DROWNING = 0.45; // pulled out of the water
 const FRIGHT_TIME = { thunder: 20, dark: 15, bot: 12, fire: 15, cages: 15, bath: 12 }; // seconds, x (0.5 + fear)
 const FRIGHT_REST = { thunder: 0, dark: 200, bot: 300, fire: 40, cages: 90, bath: 30 }; // seconds after a fright before the same thing can start another
-const BOT_NEAR = 100; // px: the Fluff-Bot driving this close can set one off
+const BOT_NEAR = 70; // px: the Fluff-Bot driving this close can set one off
+const BOT_FRIGHT_MIN = 0.35; // a bump only frightens one this scared of it
+const BOT_GET_USED = 0.03; // fear of it lost each bump that does no harm
 const DARK_FRIGHT_CHANCE = 0.004; // a second, x fear, awake in a dark room
 const NIGHT_LIGHT_PRICE = 30;
 
@@ -94,7 +96,9 @@ function fearsOf(f) {
         fears[fe.key] = 0; // (nobody's born scared of these)
         continue;
       }
-      fears[fe.key] = Math.random() < chance ? Math.round((0.3 + Math.random() * 0.6 - 0.15 * brave) * 100) / 100 : 0;
+      // (fewer are born scared of the Fluff-Bot, and not as badly - playtest 7)
+      const k = fe.key === "bot" ? 0.4 : 1;
+      fears[fe.key] = Math.random() < chance * k ? Math.round((0.3 + Math.random() * 0.6 * k - 0.15 * brave) * 100) / 100 : 0;
       fears[fe.key] = Math.max(0, Math.min(1, fears[fe.key]));
     }
     f.fears = fears;
@@ -360,6 +364,10 @@ function onThunder() {
 
 // Roomba.js: the Fluff-Bot bumped into it. True if it was frightened.
 function onRoombaBump(f) {
+  // A bump that does no harm: it gets used to the thing
+  const fear = fearOf(f, "bot");
+  if (fear > 0 && typeof changeFear === "function") changeFear(f, "bot", -BOT_GET_USED);
+  if (fear < BOT_FRIGHT_MIN) return false;
   return startFright(f, "bot");
 }
 
@@ -562,7 +570,7 @@ function updateFears(dt) {
     const botFear = fearOf(f, "bot");
     if (botFear >= FEAR_MIN && f.currentStateKey !== "SLEEPING") {
       for (const b of bots) {
-        if (b.scene === f.scene && Math.hypot(b.x - f.x, b.y - f.y) < BOT_NEAR && Math.random() < 0.05 * botFear * step) {
+        if (b.scene === f.scene && Math.hypot(b.x - f.x, b.y - f.y) < BOT_NEAR && Math.random() < 0.02 * botFear * step) {
           startFright(f, "bot");
           break;
         }

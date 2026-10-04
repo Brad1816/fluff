@@ -3021,3 +3021,13 @@ from. Nothing player-facing reads it yet except the debug view.
   menu), `INSPECT_ROWS` (UIInspection.js), `PRICE_MULTIPLIERS`
   (HorseGenetics.js), `EXTRA_DESIRES` (HorseBrain.js), a tool's
   `useOnFluffy(f)` (script.js attemptDrop).
+- **Final playtest 7 notes:** shift-clicking a bag button no longer sells the
+  item on the click that puts it down (`_noShiftSell`, UISelling.js); a caged
+  fluffy only reacts to its own cage's bowl being filled (and a free one not
+  to a caged bowl: Affection.onBowlFilledByYou, Care.noteConditionFeed); the
+  Fluff-Bot: fewer are born afraid of it (x0.4), a bump only frightens one at
+  `BOT_FRIGHT_MIN`+ and takes `BOT_GET_USED` off, only timid ones mind it
+  (Roomba.reactToRoomba), `BOT_NEAR` 70; deliveries go to `deliveryRoom`
+  (saved; the "Deliver to" chip in the aisles and the Items tab); the
+  Computer's **Items** tab (OnlineShop.js) sells every bag/delivered shop item,
+  same delivery as food.

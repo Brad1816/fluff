@@ -596,8 +596,11 @@ function toolboxAndToolbarClick() {
         if (item.isBag) {
           // Shift-click (a long press on a phone): all of that kind (ShoppingBag.js)
           const all = (mouse.rightDown || (typeof isShiftPressed !== "undefined" && isShiftPressed)) && item.count > 1;
-          if (all && typeof takeAllFromShoppingBag === "function") takeAllFromShoppingBag(item.name);
-          else if (typeof takeFromShoppingBag === "function") takeFromShoppingBag(item.name);
+          const shift = typeof isShiftPressed !== "undefined" && isShiftPressed;
+          let got = null;
+          if (all && typeof takeAllFromShoppingBag === "function") got = takeAllFromShoppingBag(item.name);
+          else if (typeof takeFromShoppingBag === "function") got = takeFromShoppingBag(item.name);
+          if (got && shift) got._noShiftSell = true; // (the click that puts it down mustn't sell it)
           return true;
         }
         // Right-click (a long press on a phone): onto the number row, or off it

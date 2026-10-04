@@ -390,4 +390,66 @@ module.exports = [
       check(r.late, "late: collected, no pay");
     },
   },
+  {
+    name: "round7 notes: shift-clicking out of the bag doesn't sell; caged fluffies ignore other cages' bowls; the Fluff-Bot is less scary; deliveries go where you choose; the computer sells things",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const out = {};
+        // Shift-click out of the bag, then click to put it down with shift still held
+        shoppingBag = [{ name: "Bowl", data: null }, { name: "Bowl", data: null }];
+        mouse.x = 600;
+        mouse.y = 560;
+        const m0 = money;
+        isShiftPressed = true;
+        const b = takeAllFromShoppingBag("Bowl");
+        out.sellBlocked = sellModeClick() === false && objects.includes(b) && money === m0;
+        isShiftPressed = false;
+        b.onDrop();
+        updateBagAll();
+        out.flagCleared = !b._noShiftSell;
+        // Another cage's trough
+        const c1 = new Cage("INDOORS");
+        c1.x = 300; c1.y = 450; c1.updateBounds(); objects.push(c1);
+        const c2 = new Cage("INDOORS");
+        c2.x = 800; c2.y = 450; c2.updateBounds(); objects.push(c2);
+        const f = __mk(300);
+        f.currentCage = c1;
+        const bowl = new Bowl("bowl", "INDOORS");
+        bowl.x = 800; bowl.y = c2.bounds.bottom - 10; bowl.currentCage = c2; objects.push(bowl);
+        f.affectionToday = null;
+        onBowlFilledByYou(bowl, "kibble");
+        out.ignored = !(f.affectionToday && f.affectionToday.n && f.affectionToday.n.fed);
+        // The Fluff-Bot: a mild fear doesn't make a fright, and it fades
+        const g = __mk(500);
+        fearsOf(g);
+        g.fears.bot = 0.2;
+        out.notFrightened = onRoombaBump(g) === false && g.fears.bot < 0.2;
+        out.bornLess = BOT_NEAR <= 70;
+        // Deliveries to the backyard
+        while (deliveryScene() !== "BACKYARD") cycleDeliveryRoom(1);
+        const cage = deliverShopAction(SPAWN_ACTIONS.find((a) => a.isItem === "cage"));
+        out.backyard = cage && cage.scene === "BACKYARD";
+        // The computer's Items tab
+        out.listed = onlineItems().some((a) => a.isItem === "cage") && onlineItems().some((a) => a.isItem === "ball") && !onlineItems().some((a) => a.isItem === "food_bag");
+        shoppingBag = [];
+        money = 10000;
+        setItemBasket("Cage", 1);
+        setItemBasket("Ball", 2);
+        const d = placeItemOrder();
+        out.ordered = !!d && d.room === "BACKYARD";
+        const cagesBefore = objects.filter((o) => o instanceof Cage && o.scene === "BACKYARD").length;
+        deliverFood(d);
+        foodDeliveries = foodDeliveries.filter((x) => x !== d);
+        out.arrived = objects.filter((o) => o instanceof Cage && o.scene === "BACKYARD").length === cagesBefore + 1 && shoppingBag.filter((e) => e.name === "Ball").length === 2;
+        deliveryRoom = "INDOORS";
+        return out;
+      }, SETUP);
+      check(r.sellBlocked && r.flagCleared, "putting it down doesn't sell it");
+      check(r.ignored, "a bowl in another cage means nothing to it");
+      check(r.notFrightened && r.bornLess, "the Fluff-Bot's less scary, and they get used to it");
+      check(r.backyard, "delivered to the room you chose");
+      check(r.listed && r.ordered && r.arrived, "ordered on the computer: the cage to the room, the balls to the bag");
+    },
+  },
 ];

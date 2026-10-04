@@ -25,6 +25,52 @@
 const SHOPPING_BAG_TYPES = ["bag", "bowl", "feeder", "ball", "block", "litterbox", "accessory", "night_light", "repair_kit"];
 const DELIVERY_SCENE = "INDOORS";
 
+// Where deliveries go (playtest 7): your choice of room - the "Deliver to"
+// chip in Fluff Mart and on the computer's Items tab cycles through your
+// rooms and the backyard. Saved: deliveryRoom (SAVED_GAME_STATE).
+let deliveryRoom = DELIVERY_SCENE;
+if (typeof SAVED_GAME_STATE !== "undefined") {
+  SAVED_GAME_STATE.push({
+    name: "deliveryRoom",
+    get: () => deliveryRoom,
+    set: (v) => (deliveryRoom = typeof v === "string" ? v : DELIVERY_SCENE),
+    fresh: () => DELIVERY_SCENE,
+  });
+}
+
+function deliveryRooms() {
+  const out = [DELIVERY_SCENE];
+  const L = typeof unlockedRoomsL === "number" ? unlockedRoomsL : 0;
+  const R = typeof unlockedRoomsR === "number" ? unlockedRoomsR : 0;
+  for (let i = 1; i <= L; i++) out.push(`INDOORSL${i}`);
+  for (let i = 1; i <= R; i++) out.push(`INDOORSR${i}`);
+  out.push("BACKYARD");
+  return out;
+}
+
+function deliveryScene() {
+  return deliveryRooms().includes(deliveryRoom) ? deliveryRoom : DELIVERY_SCENE;
+}
+
+function deliveryRoomName(scene = deliveryScene()) {
+  if (scene === "BACKYARD") return "the backyard";
+  if (scene === DELIVERY_SCENE) return "your living room";
+  return (typeof houseRoomName === "function" && houseRoomName(scene)) || "your house";
+}
+
+function cycleDeliveryRoom(dir = 1) {
+  const rooms = deliveryRooms();
+  const i = Math.max(0, rooms.indexOf(deliveryScene()));
+  deliveryRoom = rooms[(i + dir + rooms.length) % rooms.length];
+  return deliveryRoom;
+}
+
+// The "Deliver to" chip: { x, y, w, h, label }
+function deliveryChipLabel() {
+  const n = deliveryRoomName();
+  return `Deliver to: ${n.charAt(0).toUpperCase() + n.slice(1)} \u25B8`;
+}
+
 let shoppingBag = [];
 
 // "tool" | "bag" | "deliver" | "carry" (anything else, e.g. a fluffy)
@@ -59,11 +105,11 @@ function buyFromStore(action, sx, sy) {
   return deliverShopAction(action) ? "deliver" : null;
 }
 
-// A free-ish spot on the living room floor
-function _deliverySpot() {
-  const top = (typeof sceneTop === "function" ? sceneTop(DELIVERY_SCENE) : height * 0.15) + 110;
+// A free-ish spot on the floor of the room it's going to
+function _deliverySpot(scene = deliveryScene()) {
+  const top = (typeof sceneTop === "function" ? sceneTop(scene) : height * 0.15) + 110;
   const bottom = height - 190; // above the toolbar
-  const here = objects.filter((o) => o.scene === DELIVERY_SCENE);
+  const here = objects.filter((o) => o.scene === scene);
   let best = { x: width / 2, y: (top + bottom) / 2 };
   let bestGap = -1;
   for (let i = 0; i < 40; i++) {
@@ -79,13 +125,15 @@ function _deliverySpot() {
   return best;
 }
 
-// Pay for it and put it in the living room. Returns the item or null.
-function deliverShopAction(action) {
+// Pay for it and put it in the room deliveries go to. Returns the item or
+// null. opts.paid: already paid for (an order from the computer).
+function deliverShopAction(action, opts = {}) {
   const type = getItemTypeForAction(action);
   if (!type) return null;
-  const free = typeof showDebugMenu !== "undefined" && showDebugMenu;
+  const free = opts.paid || (typeof showDebugMenu !== "undefined" && showDebugMenu);
   if (!free && money < action.cost) return null;
-  const spot = _deliverySpot();
+  const DELIVERY_SCENE = opts.scene || deliveryScene(); // (shadows the default on purpose)
+  const spot = _deliverySpot(DELIVERY_SCENE);
   // Made "in" the living room, so everything about it belongs there
   const wasScene = currentScene;
   const wasDragging = isGlobalDragging;
@@ -228,6 +276,7 @@ let bagAllPending = null; // { obj, name }
 function takeAllFromShoppingBag(name) {
   const obj = takeFromShoppingBag(name);
   if (!obj) return null;
+  obj._noShiftSell = true; // (shift's still down: putting it down mustn't sell it - UISelling.js)
   bagAllPending = shoppingBag.some((e) => e.name === name) ? { obj, name } : null;
   return obj;
 }
@@ -279,6 +328,8 @@ function layOutBagRest(first, name) {
 
 // Every step: has the first one been put down yet?
 function updateBagAll() {
+  // Put down: shift-click can sell it again
+  for (const o of objects) if (o._noShiftSell && !o.isDragging) delete o._noShiftSell;
   if (!bagAllPending) return;
   const { obj, name } = bagAllPending;
   if (!objects.includes(obj)) {

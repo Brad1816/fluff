@@ -300,8 +300,18 @@ function getStoreSlotAt(scene, px, py) {
 let storeCarryTipShown = false;
 
 // Click on a shelf item: buy it. Called from the mousedown handler (UI.js).
+function storeDeliveryChip() {
+  return { x: width - 300, y: height - 118, w: 280, h: 32 };
+}
+
 function storeShelfClick() {
   if (!isStoreScene(currentScene) || isGlobalDragging) return false;
+  // Where deliveries go (ShoppingBag.js)
+  const chip = storeDeliveryChip();
+  if (typeof cycleDeliveryRoom === "function" && getStoreAisleForScene(currentScene) && isPointInRect(mouse.x, mouse.y, chip.x, chip.y, chip.w, chip.h)) {
+    cycleDeliveryRoom(mouse.rightDown ? -1 : 1);
+    return true;
+  }
   const slot = getStoreSlotAt(currentScene, mouse.x, mouse.y);
   if (!slot) return false;
 
@@ -326,7 +336,7 @@ function storeShelfClick() {
   } else if (how === "bag") {
     addUIMessage(`${action.name} put in your shopping bag (in the toolbox).`);
   } else if (how === "deliver") {
-    addUIMessage(`${action.name} will be delivered: it's waiting in your living room.`);
+    addUIMessage(`${action.name} will be delivered: it's waiting in ${typeof deliveryRoomName === "function" ? deliveryRoomName() : "your living room"}.`);
   } else if (!storeCarryTipShown) {
     addUIMessage("Bought! Pick it up and walk it home with WASD or the arrow keys.");
     storeCarryTipShown = true;
@@ -577,6 +587,11 @@ function drawStoreAisle(c, aisle) {
 function drawStoreOverlay(c) {
   if (!isStoreScene(currentScene) || isGlobalDragging) return;
   if (typeof isAnyScreenOpen === "function" && isAnyScreenOpen()) return;
+  // Where deliveries go: click to change (ShoppingBag.js)
+  if (typeof deliveryChipLabel === "function" && typeof getStoreAisleForScene === "function" && getStoreAisleForScene(currentScene)) {
+    const chip = storeDeliveryChip();
+    drawGlassButton(chip.x, chip.y, chip.w, chip.h, deliveryChipLabel(), { fontSize: 13, borderRadius: 8, normalFill: "rgba(40, 60, 90, 0.75)" });
+  }
   const slot = getStoreSlotAt(currentScene, mouse.x, mouse.y);
   if (!slot) return;
 
@@ -597,7 +612,7 @@ function drawStoreOverlay(c) {
   else if (!showDebugMenu && money < a.cost) status = "You can't afford this yet.";
   else if (isToolAction(a)) status = "Click to buy. Goes straight to your toolbox.";
   else if (shopDeliveryKind(a) === "bag") status = "Click to buy. Goes in your shopping bag (toolbox).";
-  else if (shopDeliveryKind(a) === "deliver") status = "Click to buy. Delivered to your living room.";
+  else if (shopDeliveryKind(a) === "deliver") status = `Click to buy. Delivered to ${typeof deliveryRoomName === "function" ? deliveryRoomName() : "your living room"}.`;
   else status = "Click to buy, then carry it home.";
   drawShopTooltip(c, a, ["", status]);
 }

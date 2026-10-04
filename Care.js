@@ -426,6 +426,7 @@ function noteConditionFeed(bowl) {
   bowl._condAt = now;
   for (const f of fluffies) {
     if (!f.isAlive || !f.adopted || f.scene !== bowl.scene || f.currentStateKey === "SLEEPING") continue;
+    if ((f.currentCage || bowl.currentCage) && f.currentCage !== bowl.currentCage) continue; // (not another cage's bowl)
     const c = _caCond(f);
     c.food = (c.food || 0) + 1;
     if (c.food >= CONDITION_AT && f.hunger < 0.7 && (typeof canBeMovedExternally === "function" ? canBeMovedExternally(f) : !f.isDragging && !inTimeOut(f))) {

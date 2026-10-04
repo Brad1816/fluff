@@ -100,6 +100,8 @@ function drawSellRequest(ctx) {
 
 function sellModeClick() {
   if (mouse.rightDown || !isShiftPressed || dayCareModalOpen) return false;
+  // Just shift-clicked out of the shopping bag: this click puts it down (ShoppingBag.js)
+  if (objects.some((o) => o.isDragging && o._noShiftSell)) return false;
   // Find best Item (Highest Y = Front-most) - see ItemRegistry.js
   let bestItem = null;
   let maxY = -Infinity;

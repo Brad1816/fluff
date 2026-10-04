@@ -285,7 +285,7 @@ function isOrdersScreenOpen() {
 
 function openOrdersScreen(mode = "board") {
   ordersScreenMode = mode;
-  if (mode !== "web" && ordersTab === "food") ordersTab = "orders"; // (the board doesn't sell food)
+  if (mode !== "web" && (ordersTab === "food" || ordersTab === "items")) ordersTab = "orders"; // (the board doesn't sell food)
   ordersDeliverId = null;
   ordersDeliverPage = 0;
   _ordersPortraits = {};
@@ -334,7 +334,9 @@ function _ordersTabs() {
     { id: "stock", x: 368, y: 18, w: 140, h: 34, label: "Breeding stock" },
     { id: "shows", x: 516, y: 18, w: 90, h: 34, label: "Shows" },
     // Ordering food for delivery: only on the computer (OnlineShop.js)
-    ...(ordersScreenMode === "web" && typeof drawFoodShopPage === "function" ? [{ id: "food", x: 614, y: 18, w: 90, h: 34, label: "Food" }] : []),
+    ...(ordersScreenMode === "web" && typeof drawFoodShopPage === "function" ? [{ id: "food", x: 614, y: 18, w: 76, h: 34, label: "Food" }] : []),
+    // ...and things (cages, toys, beds...) - OnlineShop.js
+    ...(ordersScreenMode === "web" && typeof drawItemShopPage === "function" ? [{ id: "items", x: 696, y: 18, w: 74, h: 34, label: "Items" }] : []),
   ].map((t) => ({ ...t, color: t.id === ordersTab ? on : off, hover: on }));
 }
 
@@ -552,9 +554,9 @@ function drawOrdersScreen(c) {
   // Reputation bar
   const rep = getOrderLevelInfo();
   const web = ordersScreenMode === "web";
-  const bx = web ? 716 : 630; // (after the Food tab)
+  const bx = web ? 782 : 630; // (after the Food and Items tabs)
   canvasText(c, `${rep.name} (level ${rep.level})`, bx, 30, "white", "bold 15px Arial");
-  const barW = web ? 190 : 250;
+  const barW = web ? 160 : 250;
   c.fillStyle = "rgba(255,255,255,0.25)";
   c.fillRect(bx, 38, barW, 12);
   const frac = rep.to === null ? 1 : (rep.points - rep.from) / (rep.to - rep.from);
@@ -579,6 +581,11 @@ function drawOrdersScreen(c) {
   // Food for delivery (OnlineShop.js)
   if (ordersTab === "food" && ordersScreenMode === "web" && typeof drawFoodShopPage === "function") {
     drawFoodShopPage(c, theme, m);
+    c.restore();
+    return;
+  }
+  if (ordersTab === "items" && ordersScreenMode === "web" && typeof drawItemShopPage === "function") {
+    drawItemShopPage(c, theme, m);
     c.restore();
     return;
   }
@@ -670,6 +677,11 @@ function handleOrdersScreenClick() {
   }
   if (ordersTab === "food" && ordersScreenMode === "web") {
     if (typeof handleFoodShopClick === "function" && handleFoodShopClick(m)) return true;
+    if (m.x < 0 || m.y < 0 || m.x > OS_W || m.y > OS_H) closeOrdersScreen();
+    return true;
+  }
+  if (ordersTab === "items" && ordersScreenMode === "web") {
+    if (typeof handleItemShopClick === "function" && handleItemShopClick(m)) return true;
     if (m.x < 0 || m.y < 0 || m.x > OS_W || m.y > OS_H) closeOrdersScreen();
     return true;
   }
