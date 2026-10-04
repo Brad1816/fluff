@@ -25,12 +25,24 @@
 //     EXT_CLING_MAX): you walk slower with each one (extClingSlow) until it
 //     drops off (EXT_CLING_TIME) or you Grab it off
 //   - glued down, held, crated or clinging: no desire runs
+//
+// Until it knows you're there a herd just lives its life - grazing, playing,
+// mating, all of it. It notices you (f._extAware) when it sees you in the
+// room (EXT_NOTICE; asleep, only close up), hears a warning, or sees one of
+// its own caught; the ones near it catch on too. Aware, it's wary: no
+// mating (any under way stops), courting, play, chatter, napping or
+// begging (DESIRE_VETOES, EXT_WARY_SKIP); foals keep close to mum. It
+// forgets once it's gone EXT_AWARE_TIME without seeing you.
 // ---------------------------------------------------------------------------
 
 const EXT_SCARE = 230;
 const EXT_CALM = 420;
 const EXT_HIDE_NEAR = 260;
 const EXT_HIDE_CHANCE = 0.55; // a foal's; a timid grown-up's is a third of it
+const EXT_NOTICE = 520;
+const EXT_NOTICE_SPREAD = 320; // the ones near it catch on
+const EXT_AWARE_TIME = 40;
+const EXT_WARY_SKIP = new Set(["Mate", "Heat", "SeekSmartySpecialHuggies", "SeekSpecialFriend", "ProposeSpecialFriendship", "ProposeFriendship", "PlayWithBall", "PlayWithBlocks", "BabbleToFriends", "RandomBabble", "SeekPlayer", "Sleep", "RunToTV", "WatchTV"]);
 const EXT_FIGHT_RANGE = 340; // fighters come for you from further than the rest run
 const EXT_HIT_REACH = 52;
 const EXT_HIT_EVERY = 1.6;
@@ -117,6 +129,7 @@ function onExtCaught(f, killed = false) {
     if (o === f || !_extIsFeral(o) || o.scene !== f.scene || !o.canSee || !o.canSee()) continue;
     if (Math.hypot(o.x - f.x, o.y - f.y) > 500) continue;
     o._extAlarm = timePlayed;
+    extNotice(o, false);
     if (f.motherId === o.id && o.growth >= 1) {
       o._extRage = timePlayed;
       if (!o.tooYoungToSpeak() && typeof getDialogue === "function") o.speak(getDialogue(["EXTERMINATOR", killed ? "RAGE" : "MUM_SEES"], o, f), true);
@@ -127,6 +140,30 @@ function onExtCaught(f, killed = false) {
 function _extRecent(at, span) {
   return typeof at === "number" && timePlayed >= at && timePlayed - at < span;
 }
+
+// Knows you're about
+function extAware(f) {
+  return !!f && _extRecent(f._extAware, EXT_AWARE_TIME);
+}
+
+// It's noticed you: whatever it was up to stops, and those near it catch on
+function extNotice(f, spread = true) {
+  if (!_extIsFeral(f)) return false;
+  const fresh = !extAware(f);
+  f._extAware = timePlayed;
+  if (!fresh) return false;
+  if (f.matingState && f.matingState.isMating && typeof f.interruptMating === "function") f.interruptMating();
+  if (f.currentStateKey === "SLEEPING" && typeof f.initBehavior === "function") f.initBehavior("IDLE");
+  if (spread)
+    for (const o of fluffies) {
+      if (o === f || !_extIsFeral(o) || o.scene !== f.scene || extAware(o)) continue;
+      if (o.currentStateKey === "SLEEPING") continue;
+      if (Math.hypot(o.x - f.x, o.y - f.y) < EXT_NOTICE_SPREAD) extNotice(o, false);
+    }
+  return true;
+}
+
+if (typeof DESIRE_VETOES !== "undefined") DESIRE_VETOES.push((h, name) => EXT_WARY_SKIP.has(name) && h.jobFeral != null && extAware(h) && isJobScene(h.scene));
 
 // Has the fight in it (on its own, before any rallying)
 function _extFighter(f) {
@@ -241,7 +278,18 @@ class ExtFeralDesire extends Desire {
       this.from = p;
       return 97;
     }
-    if (d > EXT_SCARE * (alarmed ? 1.6 : 1)) return 0;
+    if (d > EXT_SCARE * (alarmed ? 1.6 : 1)) {
+      // Wary: a foal keeps close to its mum
+      if (extAware(h) && h.growth < 1 && h.motherId != null) {
+        const mum = fluffyById(h.motherId);
+        if (mum && mum.isAlive && mum.scene === h.scene && !mum.extHeld && !mum.currentCage && Math.hypot(mum.x - h.x, mum.y - h.y) > 110) {
+          this.mode = "to_mum";
+          this.mum = mum;
+          return 70;
+        }
+      }
+      return 0;
+    }
     // Hide?
     const canHide = !(typeof h._extHideAgainAt === "number" && timePlayed < h._extHideAgainAt);
     if (canHide) {
@@ -264,6 +312,12 @@ class ExtFeralDesire extends Desire {
   }
   execute(h) {
     if (this.mode === "busy") return true;
+    if (this.mode === "to_mum") {
+      const m = this.mum;
+      if (h.currentStateKey !== "RUNNING") h.initBehavior("RUNNING");
+      h.setTargetPosition(m.x + (Math.random() - 0.5) * 50, m.y + 14);
+      return true;
+    }
     if (this.mode === "rally") {
       h.targetX = null;
       h.targetY = null;
@@ -298,7 +352,11 @@ class ExtFeralDesire extends Desire {
       // The first to see you warns the rest
       if (!(typeof h._extWarnedAt === "number" && timePlayed - h._extWarnedAt < 10 && timePlayed >= h._extWarnedAt)) {
         h._extWarnedAt = timePlayed;
-        for (const o of fluffies) if (o !== h && _extIsFeral(o) && o.scene === h.scene) o._extAlarm = timePlayed;
+        for (const o of fluffies)
+          if (o !== h && _extIsFeral(o) && o.scene === h.scene) {
+            o._extAlarm = timePlayed;
+            extNotice(o, false);
+          }
         return h.actionHandler.executeRunawayFear({ x: p.x, y: p.y - 30 }, ["EXTERMINATOR", "WARN"]);
       }
       return h.actionHandler.executeRunawayFear({ x: p.x, y: p.y - 30 }, ["EXTERMINATOR", "FLEE"]);
@@ -316,6 +374,14 @@ function updateExtFerals(dt) {
   const p = typeof _extP === "function" ? _extP() : null;
   for (const f of fluffies) {
     if (!f.isAlive || f.jobFeral == null || !isJobScene(f.scene)) continue;
+    // Does it see you?
+    if (p && p.scene === f.scene && !f.extHeld && !f.extCling && !f.jobHide) {
+      const d = Math.hypot(p.x - f.x, p.y - 30 - f.y);
+      const asleep = f.currentStateKey === "SLEEPING";
+      if (d < (asleep ? EXT_SCARE * 0.5 : EXT_NOTICE) && (asleep || !f.canSee || f.canSee())) extNotice(f);
+    }
+    // (one that hadn't seen you can't carry on with one that has)
+    if (f.matingState && f.matingState.isMating && extAware(f) && typeof f.interruptMating === "function") f.interruptMating();
     // Hiding: it keeps still - and creeps out once you've been gone a while
     if (f.jobHide) {
       const room = jobRoomOf(f.scene);

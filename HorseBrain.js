@@ -57,6 +57,9 @@ function _desireRank(name) {
 
 // More desires from other files: classes pushed here are given to every fluffy
 const EXTRA_DESIRES = [];
+// Other files can rule a desire out for a fluffy for now: (horse, name) =>
+// true to skip it (ExterminatorFerals.js: a herd that's seen you doesn't mate)
+const DESIRE_VETOES = [];
 
 class HorseBrain {
   constructor(horse) {
@@ -80,7 +83,9 @@ class HorseBrain {
     // fewer is faster)
     const aphro = this.horse.isUnderAphrodisiac();
     let evaluatedDesires = [];
+    const vetoes = DESIRE_VETOES.length ? DESIRE_VETOES : null;
     for (const desire of this.desires) {
+      if (vetoes && vetoes.some((v) => v(this.horse, desire.name))) continue;
       let score = desire.evaluate(this.horse);
       if (!(score > 0)) continue;
       // Aphrodisiac override: pause most other desires

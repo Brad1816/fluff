@@ -575,4 +575,79 @@ module.exports = [
       checkEqual(r.bad, 0, "requests fit the client and the job");
     },
   },
+  {
+    name: "exterminator: a herd lives its life (mating and all) until it notices you - seen across the room, or one warns the rest; then mating stops, no courting or play, foals keep to mum; it forgets once you've been gone a while",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        buyExtLicence();
+        const o = makeExtOffer(Math.random, "farmer");
+        o.herd = 8;
+        o.request = null;
+        extState.offers.push(o);
+        acceptExtOffer(o.id);
+        const job = extState.active;
+        const site = jobSite();
+        const room = site.rooms[1].scene;
+        const out = {};
+        const herd = jobHerdLeft(job);
+        for (const f of herd) {
+          f.scene = room;
+          f.brain.think = () => {};
+          f.canSee = () => true;
+          f._extAware = undefined;
+          f.x = 1100;
+          f.y = 600;
+        }
+        const grown = herd.filter((f) => f.growth >= 1);
+        const [m, w] = [grown[0], grown[1]];
+        m.matingState.isMating = true;
+        m.matingState.matingWith = w;
+        w.matingState.isMating = true;
+        w.matingState.matingWith = m;
+        const veto = (f, n) => DESIRE_VETOES.some((v) => v(f, n));
+        // You're in another room: they carry on
+        extPlayer.scene = site.rooms[0].scene;
+        updateExtFerals(1.1);
+        out.carryOn = m.matingState.isMating && !extAware(m) && !veto(m, "Mate") && !veto(m, "PlayWithBall");
+        // You walk in, across the room
+        _extMoveTo(room, 1100 - 480, 620);
+        extPlayer.x = 1100 - 480;
+        updateExtFerals(1.1);
+        out.aware = herd.every((f) => extAware(f));
+        out.stopped = !m.matingState.isMating && !w.matingState.isMating;
+        out.vetoed = veto(m, "Mate") && veto(w, "ProposeSpecialFriendship") && veto(m, "PlayWithBall") && veto(m, "SeekPlayer") && !veto(m, "Eat");
+        // Not the client's pet, not your own fluffies
+        out.notOthers = !veto(fluffies.find((f) => !f.jobFeral && f.scene === "INDOORS") || { jobFeral: null, scene: "INDOORS" }, "Mate");
+        // A foal strays from mum: back it goes
+        const foal = herd.find((f) => f.growth < 1 && f.motherId);
+        const mum = fluffyById(foal.motherId);
+        mum.x = 1150;
+        foal.x = 900;
+        foal.y = 640;
+        const d = new ExtFeralDesire();
+        out.toMum = d.evaluate(foal) > 0 && d.mode === "to_mum";
+        // A warning reaches ones that didn't see you
+        const far = herd.find((f) => f !== m && f !== foal && f !== mum);
+        far._extAware = undefined;
+        far.x = m.x + 420;
+        far.y = m.y;
+        onExtCaught(m);
+        out.heard = extAware(far);
+        // Gone a while: they forget
+        extPlayer.scene = site.rooms[0].scene;
+        timePlayed += EXT_AWARE_TIME + 2;
+        updateExtFerals(1.1);
+        out.forgot = !herd.some((f) => extAware(f));
+        return out;
+      }, SETUP);
+      check(r.carryOn, "unseen: the herd carries on as normal");
+      check(r.aware && r.stopped, "seen: they all know, and the mating stops");
+      check(r.vetoed, "no courting, play or begging - eating's fine");
+      check(r.notOthers, "only the job's herd");
+      check(r.toMum, "a foal keeps to its mum");
+      check(r.heard, "a cry reaches the others");
+      check(r.forgot, "they forget once you've been gone a while");
+    },
+  },
 ];

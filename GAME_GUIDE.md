@@ -3222,3 +3222,11 @@ from. Nothing player-facing reads it yet except the debug view.
   your leg (`extCling`, `EXT_CLING_TIME`, max 3, `extClingSlow`); the rest
   warn, flee or hide behind props (`extHide`; Search = `extFlushOut`).
   tests/exterminator.test.js (7 tests).
+- **Noticing you (after the first playtest note):** a job's herd lives
+  normally (mating included) until it notices you: `extNotice` sets
+  `f._extAware` when it sees you within `EXT_NOTICE` (asleep: only close),
+  hears a warning or sees one caught, and passes to those within
+  `EXT_NOTICE_SPREAD`; any mating stops. While `extAware` (`EXT_AWARE_TIME`
+  since last seen) a new brain hook, `DESIRE_VETOES` (HorseBrain.think),
+  skips `EXT_WARY_SKIP` (mating, courting, play, chatter, sleep, begging);
+  foals run back to mum ("to_mum").
