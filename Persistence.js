@@ -222,7 +222,8 @@ const SAVED_GAME_STATE = [
   },
   { name: "backyardFenceTier", get: () => backyardFenceTier, set: (v) => (backyardFenceTier = v), fresh: () => 0 },
   { name: "backyardFenceBroken", get: () => backyardFenceBroken, set: (v) => (backyardFenceBroken = v), fresh: () => false },
-  { name: "backyardFenceBreakTimer", get: () => backyardFenceBreakTimer, set: (v) => (backyardFenceBreakTimer = v), fresh: () => 120.0 },
+  { name: "backyardFenceBreakTimer", get: () => backyardFenceBreakTimer, set: (v) => (backyardFenceBreakTimer = v), fresh: () => FENCE_BREAK_EVERY },
+  { name: "citySweep", get: () => citySweep, set: (v) => (citySweep = v && typeof v === "object" ? v : freshCitySweep()), fresh: () => freshCitySweep() }, // CitySweep.js
   { name: "backyardInvasionTimer", get: () => backyardInvasionTimer, set: (v) => (backyardInvasionTimer = v), fresh: () => 60.0 },
   { name: "nextHerdId", get: () => nextHerdId, set: (v) => (nextHerdId = v), fresh: () => 1 },
   { name: "alleyBoxSpawnTimer", get: () => alleyBoxSpawnTimer, set: (v) => (alleyBoxSpawnTimer = v), fresh: () => 60.0 },
@@ -271,6 +272,7 @@ function resetTemporaryGameState() {
   showChatLog = false;
   if (typeof gameSpeed !== "undefined") gameSpeed = 1;
   if (typeof resetNightPredators === "function") resetNightPredators();
+  if (typeof resetStrayDogs === "function") resetStrayDogs(); // (Dogs.js)
   // Every pop-up screen closed (Screens.js)
   if (typeof resetScreens === "function") resetScreens();
   // Things timed on the game clock, which just jumped (FluffySounds.js, Affection.js)

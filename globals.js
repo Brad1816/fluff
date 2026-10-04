@@ -936,7 +936,9 @@ let sceneGrassSpawnTimers = {
 };
 let backyardFenceTier = 0;
 let backyardFenceBroken = false;
-let backyardFenceBreakTimer = 120.0;
+const FENCE_BREAK_EVERY = 1200; // game seconds between rolls (a game day)
+const FENCE_BREAK_CHANCE = [0.25, 0.07]; // basic fence, better fence: the chance it breaks at each roll
+let backyardFenceBreakTimer = FENCE_BREAK_EVERY;
 let backyardInvasionTimer = 60.0;
 let nextHerdId = 1;
 const doorMessages = []; // { text, x, y, timer, opacity, targetPortal }

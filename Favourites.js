@@ -153,6 +153,7 @@ function bestestHoldsBack(mare, foal) {
 
 // ...and when she does
 function noteTurnedAway(mare, foal) {
+  mare._hoardedAt = typeof timePlayed === "number" ? timePlayed : 0; // (a snitch may tell: Snitch.js)
   const best = bestestOf(mare);
   if (!best) {
     // (an ordinary mum putting her poopie foal last)

@@ -97,6 +97,12 @@ function noteBredInCage(male, mare, forced) {
   if (mare) _clKnow(mare).breeding = true;
 }
 
+// Magnifying glass
+function describeStud(f) {
+  if (!f || f.gender !== "male" || !(f.breedTrain > 0)) return null;
+  return isTrainedStud(f) ? ["Trained: breeds in a breeding cage by himself", "ok"] : [`Being trained to breed in a cage (${Math.round(f.breedTrain * 100)}%)`, ""];
+}
+
 function isTrainedStud(f) {
   return !!f && f.gender === "male" && (f.breedTrain || 0) >= 1;
 }

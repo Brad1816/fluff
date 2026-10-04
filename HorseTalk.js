@@ -292,6 +292,8 @@ addHorseMethods({
   },
 
   speak(text, wanDieBypass = false, chirpyBypass = false, cullBypass = false) {
+    // A dummy foal only grunts (Defects.js)
+    if (chirpyBypass && this.tooYoungToSpeak() && typeof hasDefect === "function" && hasDefect(this, "dummy") && typeof getDialogue === "function") text = getDialogue(["DEFECT", "GRUNT"], this);
     // Sealed in a culling cage: only its cull lines get out (Cage.js)
     if (!cullBypass && this.currentCage instanceof Cage && this.currentCage.mutesOccupants()) return;
     if (this.accessories && this.accessories.mouth && this.accessories.mouth.id === "mouthgag") return;

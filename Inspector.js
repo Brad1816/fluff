@@ -83,6 +83,7 @@ function inspectHouse() {
     if ((f.dirt || 0) >= 0.8) add(minor, f, `${n} is filthy`, 1);
     if (f.fakeAlicorn) add(minor, f, `${n} is a fake alicorn (a glued-on horn and wings)`, 1); // (Trade.js)
     if (f.tongueless) add(serious, f, `${n} has had its tongue cut out`, 3); // (Tools.js)
+    if (typeof wobblesShowing === "function" && wobblesShowing(f)) add(serious, f, `${n} has the wobbles - it's been fed fluffy`, 3); // (BadMeat.js)
     if ((f.playerFear || 0) >= 0.6) add(minor, f, `${n} cowers from people`, 1);
   }
   for (const s of scenes) {

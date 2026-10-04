@@ -236,7 +236,7 @@ function getFluffyInspectionInfo(f) {
   // Which herd it's in (Herds.js)
   if (f.isAlive && typeof describeHerd === "function") {
     about.push({ label: "Herd", value: describeHerd(f) });
-    for (const [label, fn] of [["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"], ["Heat", "describeHeat"], ["Size", "describeMicro"]]) {
+    for (const [label, fn] of [["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"], ["Heat", "describeHeat"], ["Size", "describeMicro"], ["Stuck", "describeGlued"], ["Born with", "describeDefect"], ["Bad meat", "describeBadMeat"], ["Stud", "describeStud"], ["Snitch", "describeSnitch"]]) {
       const r = typeof window[fn] === "function" ? window[fn](f) : null; // (Trade.js, Tools.js)
       if (r) about.push({ label, value: r[0], tone: r[1] });
     }

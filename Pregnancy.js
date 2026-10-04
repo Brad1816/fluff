@@ -171,6 +171,7 @@ function applyBirthHealthCost(mare, viable) {
 // HorseAnatomy.spawnBaby, for each foal
 function onFoalBorn(mare, baby, viable) {
   baby.litterBorn = mare.litterSize || null;
+  if (typeof inheritDefects === "function") inheritDefects(baby, mare); // (Defects.js)
   // Born to one of your mares: "Bred by you" for commissions (Commissions.js)
   baby.bredHere = !!mare.adopted;
   if (!viable) return;

@@ -2835,3 +2835,67 @@ from. Nothing player-facing reads it yet except the debug view.
 - **Microfluffs:** `MICRO_SCALE` 0.3 (about an ordinary newborn), never drawn
   below `MICRO_MIN_SCALE` 0.045.
 - Tests: `tests/playtest5.test.js`.
+
+### Ideas from the stories (approved)
+- **Fence:** one roll a game day (`FENCE_BREAK_EVERY` 1200 s), `FENCE_BREAK_CHANCE`
+  0.25 basic / 0.07 better (was every 2 or 10 minutes at 50%).
+- **Pet flap (`PetFlap.js`, new):** a Home & Play item ($200) in a room of the
+  house (not the backyard). Every 5 s: yours go out on a fine day
+  (`PET_FLAP_OUT_CHANCE`, more if bored; not a mum with crawling foals) and
+  come back at night, in rain/snow, when cold or hungry, or after 1.5 hours
+  (`PET_FLAP_IN_CHANCE`). They walk to it (`f._flapTrip`) and come out by the
+  back door (`petFlapYardSpot`). Unlocked, wild ones in the yard come in
+  (`PET_FLAP_WILD_CHANCE` 0.15 a check). Right-click locks it (saved).
+- **Glue traps (`GlueTrap.js`, new):** Hardware, $15. Catch anything within
+  `GLUE_TRAP_REACH`; `f.gluedTo` (saved). Stuck: held in place, happiness
+  `GLUE_SAD` an hour, scaredy mess, `GLUE` lines. Picked up
+  (`Memory.onFluffyPickedUp` → `tearOffGlueTrap`): `GLUE_TEAR` health, a bleed,
+  maybe a bald-patch scar, counts as harm from you. Right-click the trap:
+  oil for `GLUE_OIL_COST`. The trap is spent either way.
+- **Stray dogs (`Dogs.js`, new):** a check each game hour, 8-19 h,
+  `DOG_CHANCE` 0.06, in an alley scene or the park with fluffies. `StrayDog`
+  hunts the weakest (foals first), `DOG_SPEED` 200; `_alarm` scatters
+  everyone within `DOG_SCARE`, a mum carries one foal (`k._dogCarry`, her
+  bestest or the nearest) and the rest are left peeping. A bite: a foal under
+  half grown dies, others lose `DOG_BITE` health (bleed, maybe a scar); up to
+  `DOG_MAX_BITES`, gives up after `DOG_GIVE_UP` s. Click to chase off (trust).
+  Drawn in script.js render, clicked from UI.js; news in the morning report.
+- **Street sweep (`CitySweep.js`, new):** every `SWEEP_EVERY_DAYS` (7) at 5 AM,
+  ALLEY and ALLEY_ROAD lose every non-adopted fluffy (alive or dead), their
+  puddles, spills and scraps; warned the day before at 9 AM. `citySweep`
+  saved (Persistence.js).
+- **Cannibalism (`Cannibalism.js`, new):** `cannibalCapacity` (0 for an even-
+  tempered, unbroken, non-smarty fluffy; temper, a bad smarty, Broken,
+  traumas and learnt acceptance add). `scoutForCannibalism` asks
+  `willEatOthers`: bodies/scraps need 0.2, the living 0.45 and hunger under
+  0.12, each time with a chance of the capacity; victims weighted to the
+  weakest.
+- **Bad meat (`BadMeat.js`, new):** `noteAteFluffyMeat` from the machine's
+  meatballs, eating a body or a scrap; `f.badMeat` counts (saved). After
+  `BAD_MEAT_SAFE` (5), each meal `BAD_MEAT_CATCH` (0.2) of `f.wobbles`
+  (saved). Hidden `WOBBLE_HIDDEN` (2 days), then speed x`WOBBLE_SPEED`,
+  stumbles, misses the litterbox, `WOBBLES` lines, the vet and inspector see
+  it; death after `WOBBLE_SHOWING` (2 more days).
+- **Hereditary defects (`Defects.js`, new):** `f.defectGenes` {dummy, shaky}
+  copies (saved; rolled `DEFECT_CARRIER` 0.06 each for a fluffy from nowhere),
+  `f.sireDefects` kept at conception, `inheritDefects` at birth (one copy from
+  each parent at random). dummy: grunts (HorseTalk.speak), can't nurse
+  (`cantNurse`), gets the "dim" deformity. shaky: x0.8 speed, stumbles, misses
+  the litterbox half the time. DNA test in the vet's breeding-advice view
+  (`dnaTest`, $40, `f.dnaTested` saved); `pairAdvice` gets `defect` (odds when
+  both are tested).
+- **Snitches and hidden foals (`Snitch.js`, new):** right-click "Make a snitch"
+  (`f.snitch`, saved). Every game hour it tells one finding in its room
+  (hidden foal, a mum who held milk back - `_hoardedAt`, a bully, a fighter,
+  a young bad smarty) for `TRICK_TREAT_COST`; watchers like it less, the
+  one told on much less. A mum who knows a cull or sell cage hides a marked
+  foal (deformed, runt, defect, poopie) under a bed, in a box or a litterbox
+  (`HIDE_CHANCE` an hour): `f.hiddenBy`/`f.hideSpot` (saved), not drawn or
+  clickable, held still, fed by mum; revealed when the spot moves (mum
+  blames you), a snitch tells (she blames it), mum dies, or it reaches
+  `HIDE_UNTIL` growth.
+- **The biology teacher (Buyers.js):** a buyer kind never picked at random;
+  `makeDissectionRequest` (30% when a buyer's due) for a body or a dying
+  fluffy of yours (health under 20, or the wobbles), $20 / $30. Takes it away;
+  nothing is shown.
+- Tests: `tests/ideas.test.js`.

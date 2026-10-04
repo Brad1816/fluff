@@ -336,6 +336,7 @@ function feedFoalToMachine(m, foal, parent) {
 
 // HorseUpdate (eating from a bowl): it was made from foals
 function onFoalSkettiesEaten(f, bowl) {
+  if (typeof noteAteFluffyMeat === "function") noteAteFluffyMeat(f); // (BadMeat.js: the wobbles)
   f.cannibalismAcceptance = Math.min(1, (f.cannibalismAcceptance || 0) + FOAL_MACHINE_CANNIBAL);
   if (f.refusesMachine) return null;
   const smart = typeof smartsOf === "function" ? smartsOf(f) : 0;

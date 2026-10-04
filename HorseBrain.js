@@ -529,6 +529,8 @@ class UseLitterboxDesire extends Desire {
     const needsToGo = Math.max(horse.poopStorage, horse.peeStorage);
     if (needsToGo < 0.5) return 0;
     if (horse.isScared) return 0;
+    if (typeof wobblesShowing === "function" && wobblesShowing(horse)) return 0; // (the wobbles: it can't find it - BadMeat.js)
+    if (typeof missesLitterbox === "function" && missesLitterbox(horse)) return 0; // (shaky legs - Defects.js)
     if (Math.random() > horse.pottyTraining) return 0;
     return ((needsToGo - 0.5) / 0.5) * 100;
   }

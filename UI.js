@@ -825,6 +825,10 @@ canvas.addEventListener("mousedown", (e) => {
   if (typeof handleNightPredatorClick === "function" && handleNightPredatorClick()) {
     return;
   }
+  // Click a stray dog to chase it off (Dogs.js)
+  if (typeof handleStrayDogClick === "function" && handleStrayDogClick()) {
+    return;
+  }
 
   // 0. Check Sell Mode (Shift Click)
   if (sellModeClick()) {

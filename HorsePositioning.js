@@ -104,8 +104,13 @@ class HorsePositioning {
       if (bowls.length > 0) return false;
     }
 
+    // Only one with it in them, and driven to it (Cannibalism.js)
+    const dead = typeof willEatOthers !== "function" || willEatOthers(this.horse, "dead");
+    const live = typeof willEatOthers !== "function" || willEatOthers(this.horse, "live");
+    if (!dead && !live) return false;
+
     // 1. Look for Gibs
-    if (typeof gibs !== "undefined") {
+    if (dead && typeof gibs !== "undefined") {
       let nearestGib = null;
       let minGibDist = Infinity;
       for (const gib of gibs) {
@@ -138,6 +143,7 @@ class HorsePositioning {
     let nearestCorpse = null;
     let minCorpseDist = Infinity;
     for (const f of fluffies) {
+      if (!dead) break;
       if (
         !f.isAlive &&
         f !== this.horse &&
@@ -165,10 +171,11 @@ class HorsePositioning {
       return true;
     }
 
-    // 3. Look for Victims
+    // 3. Look for Victims (the weakest it can reach)
     let nearestVictim = null;
     let minVictimDist = Infinity;
     for (const f of fluffies) {
+      if (!live) break;
       if (
         f !== this.horse &&
         f.isAlive &&
@@ -177,9 +184,10 @@ class HorsePositioning {
         fenceCanReachThing(this.horse, f) &&
         !this.horse.fluffyIsRelatedOrSpecialFriend(f)
       ) {
-        const d = Math.sqrt(
-          (this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2,
-        );
+        const d =
+          Math.sqrt((this.horse.x - f.x) ** 2 + (this.horse.y - f.y) ** 2) -
+          300 * (1 - Math.min(1, f.growth)) -
+          2 * (100 - (f.health ?? 100));
         if (d < minVictimDist) {
           minVictimDist = d;
           nearestVictim = f;

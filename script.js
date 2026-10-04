@@ -53,7 +53,10 @@ function updateMoneyAndRequests(dt) {
     if (sellRequestTimer <= 0) {
       const indoorFluffies = fluffies.filter((f) => getSceneConfig(f.scene).insidePlayerQuarters && f.canBeSold() && !f.isDragging);
       _sellCountAt = -Infinity;
-      if (indoorFluffies.length > 0) {
+      // Now and then a biology teacher, for a body or a dying one (Buyers.js)
+      const teacher = typeof makeDissectionRequest === "function" ? makeDissectionRequest() : null;
+      if (teacher) currentSellRequest = teacher;
+      else if (indoorFluffies.length > 0) {
         // Prioritize "sell" cage fluffies
         const sellCageFluffies = indoorFluffies.filter(
           (f) => f.currentCage && f.currentCage.tag === "sell",
@@ -1329,13 +1332,14 @@ function updateSimulation(dt) {
   updatePuddles(dt);
   updateDayCare(dt);
 
-  // Backyard Fence Break Logic
+  // Backyard Fence Break Logic (a roll once a game day: the basic fence
+  // breaks every few days, the better one about every two weeks - it used
+  // to be every few minutes)
   if (!backyardFenceBroken && backyardFenceTier < 2) {
     backyardFenceBreakTimer -= dt;
     if (backyardFenceBreakTimer <= 0) {
-      const rollInterval = backyardFenceTier === 0 ? 120.0 : 600.0;
-      backyardFenceBreakTimer = rollInterval;
-      if (Math.random() < 0.5) {
+      backyardFenceBreakTimer = FENCE_BREAK_EVERY;
+      if (Math.random() < (backyardFenceTier === 0 ? FENCE_BREAK_CHANCE[0] : FENCE_BREAK_CHANCE[1])) {
         backyardFenceBroken = true;
         if (typeof addUIMessage !== "undefined") {
           addUIMessage("The backyard fence has broken!");
@@ -1680,7 +1684,8 @@ function render() {
   // (in the park, skip things far off screen)
   const onScreen = (o) => !parkCam || o.isDragging || isOnParkScreen(o.x, o.y);
   const visibleObjects = objects.filter((o) => o.scene === currentScene && onScreen(o));
-  const visibleFluffies = fluffies.filter((f) => f.scene === currentScene && onScreen(f));
+  // (a foal its mum has hidden isn't seen: Snitch.js)
+  const visibleFluffies = fluffies.filter((f) => f.scene === currentScene && onScreen(f) && (f.hiddenBy === null || f.hiddenBy === undefined));
   // Where each fluffy is drawn this frame, so clicks can be lined up with
   // what the player saw (Horse.hitTestAsSeen)
   renderFrameCount++;
@@ -1799,6 +1804,8 @@ function render() {
   if (typeof drawConfetti === "function") drawConfetti(osCtx); // (HouseLife.js)
   // Foxes in the park at night (NightEvents.js)
   if (parkCam && typeof drawNightPredators === "function") drawNightPredators(osCtx);
+  // Stray dogs, any outdoor scene (Dogs.js)
+  if (typeof drawStrayDogs === "function") drawStrayDogs(osCtx);
   if (parkCam) {
     osCtx.restore();
     if (typeof mouseToScreen === "function") mouseToScreen();

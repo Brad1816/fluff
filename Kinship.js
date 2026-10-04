@@ -203,8 +203,14 @@ function pairAdvice(a, b) {
     verdict = "Fair: some foals at risk from mum";
     tone = "ok";
   }
-  const score = alive - 2 * r - (willMate ? 0 : 0.3) - 0.5 * risk.total;
-  return { r, relation, alive, willMate, why, verdict, tone, score, risk };
+  // A hereditary defect both carry (only known after DNA tests: Defects.js)
+  const defect = typeof defectRisk === "function" ? defectRisk(mom, dad) : null;
+  if (defect && tone === "good") {
+    verdict = `Fair: ${Math.round(defect.p * 100)}% chance of ${defect.name}`;
+    tone = "ok";
+  }
+  const score = alive - 2 * r - (willMate ? 0 : 0.3) - 0.5 * risk.total - (defect ? defect.p : 0);
+  return { r, relation, alive, willMate, why, verdict, tone, score, risk, defect };
 }
 
 // Share of a pair's foals the mum would reject: { colour, alicorn, total }

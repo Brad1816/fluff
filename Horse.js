@@ -962,6 +962,10 @@ class Horse {
     }
     // Chubby and fat fluffies are slower (Diet.js)
     if (typeof weightSpeedMultiplier === "function") this.speed *= weightSpeedMultiplier(this);
+    // The wobbles from eating fluffy (BadMeat.js)
+    if (typeof wobbleSpeed === "function") this.speed *= wobbleSpeed(this);
+    // Shaky legs, from birth (Defects.js)
+    if (typeof defectSpeed === "function") this.speed *= defectSpeed(this);
     // Taking it easy after surgery, or with a fever (Bandages.js)
     if (typeof recoverySpeed === "function") this.speed *= recoverySpeed(this);
     if (this.limbs === undefined) {

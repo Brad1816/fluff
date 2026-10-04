@@ -296,6 +296,7 @@ class HorseAnatomy {
 
   eatGib(gib) {
     if (!gib) return;
+    if (typeof noteAteFluffyMeat === "function") noteAteFluffyMeat(this.horse); // (BadMeat.js)
     this.horse.initBehavior("FLUFFY_BITE");
     this.horse._cannibalAt = typeof timePlayed === "number" ? timePlayed : 0; // (Care.js: scold it)
     this.horse.speak(getDialogue(["CANNIBAL", "EAT"], this.horse));
@@ -322,6 +323,7 @@ class HorseAnatomy {
 
   eatCorpse(corpse) {
     if (!corpse || corpse.isAlive) return;
+    if (typeof noteAteFluffyMeat === "function") noteAteFluffyMeat(this.horse); // (BadMeat.js)
     this.horse.initBehavior("FLUFFY_BITE");
     this.horse.speak(getDialogue(["CANNIBAL", "EAT"], this.horse));
 
@@ -577,6 +579,7 @@ class HorseAnatomy {
     this.horse.lactatingTimer = LACTATION_TIME; // until the foals can walk (Aging.js)
     this.horse.fatherGenes = [...father.genes];
     this.horse.babyDaddyId = father.id;
+    if (typeof noteSireDefects === "function") noteSireDefects(this.horse, father); // (Defects.js)
     this.horse.updateGrowthStats();
 
     // Decide number of foals and viability (litter size runs in families,

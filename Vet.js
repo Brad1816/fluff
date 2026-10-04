@@ -171,6 +171,7 @@ function vetCheckUp(f) {
   for (const [name] of vetProblems(f)) if (name !== "Fluffy flu") found.push(name);
   if (typeof vetSpotsFake === "function") vetSpotsFake(f, found); // (Trade.js)
   if (typeof vetSpotsSbs === "function") vetSpotsSbs(f, found); // (Micro.js)
+  if (typeof wobblesShowing === "function" && wobblesShowing(f)) found.push("the wobbles - a wasting disease from eating fluffy; nothing can be done"); // (BadMeat.js)
   // A pregnant mare gets a scan: how many, and is it risky? (Pregnancy.js)
   if (f.isPregnant && f.pregnancyTimer > 0) {
     const n = f.babiesToBirth || 0;
@@ -500,9 +501,12 @@ function _drawVetAdviceRow(c, r) {
       const why = [a.risk.colour >= 0.05 ? "coat" : null, a.risk.alicorn >= 0.05 ? "alicorn" : null].filter(Boolean).join(", ");
       parts.push(`~${Math.round(a.risk.total * 100)}% rejected by mum (${why})`);
     }
+    if (a.defect) parts.push(`${Math.round(a.defect.p * 100)}% ${a.defect.name}`);
     c.fillText(fitText(c, parts.join(" \u00B7 "), w - 110), r.x + 450, r.y + 40);
   }
   if (grown) _vetButton(c, r.jab, pick === f ? "Picked" : "Pick", true);
+  // The DNA test (Defects.js)
+  if (typeof dnaTest === "function") _vetButton(c, r.treat, f.dnaTested ? "DNA ✓" : `DNA $${vetPrice(DNA_TEST_PRICE, "check")}`, !f.dnaTested);
 }
 
 // Mouse down (screen positions); swallows clicks while open
@@ -544,6 +548,10 @@ function handleVetClick() {
     if (vetAdviceOn) {
       if (hit(r.jab) && r.f.growth >= 1) {
         vetAdvicePick = vetAdvicePick === r.f.id ? null : r.f.id;
+        return true;
+      }
+      if (hit(r.treat) && typeof dnaTest === "function") {
+        dnaTest(r.f);
         return true;
       }
       continue;

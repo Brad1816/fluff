@@ -197,6 +197,7 @@ function onFluffyBrushed(f) {
 
 // Picking a fluffy up (UI.js mousedown)
 function onFluffyPickedUp(f) {
+  if (typeof tearOffGlueTrap === "function") tearOffGlueTrap(f); // (GlueTrap.js: stuck to one - it tears)
   if (!f.isAlive) return;
   if (typeof onComfortedByYou === "function") onComfortedByYou(f, "held"); // a cuddle when frightened (Fears.js)
   ensurePlayerMemory(f);

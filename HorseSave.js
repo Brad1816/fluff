@@ -30,7 +30,16 @@ const SAVED_HORSE_FIELDS = [
   { name: "seasonDays", fallback: null, clone: true },
   { name: "cageKnow", fallback: null, clone: true }, // what it knows of cull, sell and breeding cages (CageLife.js)
   { name: "breedTrain", fallback: 0 },
-  { name: "sfRefused", fallback: null, clone: true }, // special friends you kept it from: id -> until (SpecialFriends.js) // a stud trained to breed in a breeding cage by himself (CageLife.js) // SeasonSense.js: days lived in each season
+  { name: "sfRefused", fallback: null, clone: true },
+  { name: "gluedTo", fallback: null },
+  { name: "badMeat", fallback: 0 }, // meals of fluffy eaten (BadMeat.js)
+  { name: "wobbles", fallback: null, clone: true },
+  { name: "defectGenes", fallback: null, clone: true }, // hidden hereditary defects { dummy, shaky } (Defects.js)
+  { name: "sireDefects", fallback: null, clone: true }, // ...the sire's, kept for her litter
+  { name: "dnaTested", fallback: false },
+  { name: "snitch", fallback: false }, // tells on the others for treats (Snitch.js)
+  { name: "hiddenBy", fallback: null }, // hidden by its mum (her id), under this object (Snitch.js)
+  { name: "hideSpot", fallback: null }, // the wobbles, caught at { at } (BadMeat.js) // stuck on this glue trap (GlueTrap.js) // special friends you kept it from: id -> until (SpecialFriends.js) // a stud trained to breed in a breeding cage by himself (CageLife.js) // SeasonSense.js: days lived in each season
   { name: "mumApart", fallback: 0 },
   { name: "bullied", fallback: 0 },
   { name: "bullyScore", fallback: 0 },

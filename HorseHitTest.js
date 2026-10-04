@@ -10,6 +10,7 @@ addHorseMethods({
   // the game runs several steps per frame) has already moved on from the
   // spot the player clicked; this lines the click up with what they saw.
   hitTestAsSeen(px, py) {
+    if (this.hiddenBy !== null && this.hiddenBy !== undefined) return false; // (hidden by its mum: Snitch.js)
     if (
       !this.isDragging &&
       this._seenFrame !== undefined &&

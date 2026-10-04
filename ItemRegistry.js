@@ -223,6 +223,26 @@ const ITEM_TYPES = [
     },
   },
   {
+    sellType: "glue_trap", // GlueTrap.js
+    is: (o) => typeof GlueTrap !== "undefined" && o instanceof GlueTrap,
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    canPickUp: (o) => !o.stuck(),
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new GlueTrap(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawGlueTrapShape(ctx, 0, 10, 0.8, false),
+    onRightClick: (o) => oilGlueTrap(o),
+  },
+  {
+    sellType: "pet_flap", // PetFlap.js
+    is: (o) => typeof PetFlap !== "undefined" && o instanceof PetFlap,
+    inCage: "never",
+    hitTest: (o, x, y) => o.hitTest(x, y),
+    sellable: true,
+    create: (a, sx, sy) => atSpot(new PetFlap(currentScene), sx, sy),
+    drawIcon: (ctx, btnSize) => drawPetFlapShape(ctx, 0, 30, 0.6, false),
+    onRightClick: (o) => o.toggleLock(),
+  },
+  {
     sellType: "feedbot", // FeedBot.js
     is: (o) => typeof FeedBot !== "undefined" && o instanceof FeedBot,
     inCage: "never",
@@ -820,6 +840,8 @@ const SAVED_CLASSES = {
   GoldenStatue: (d) => new GoldenStatue(d.scene),
   Heater: (d) => new Heater(d.scene), // Warmth.js
   Roomba: (d) => new Roomba(d.scene), // Roomba.js
+  PetFlap: (d) => new PetFlap(d.scene), // PetFlap.js
+  GlueTrap: (d) => new GlueTrap(d.scene), // GlueTrap.js
   NightLight: (d) => new NightLight(d.scene), // Fears.js
   FeedBot: (d) => new FeedBot(d.scene), // FeedBot.js
   FoodSpill: (d) => new FoodSpill(d.scene, d.foodType, d.food),

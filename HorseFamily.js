@@ -105,6 +105,11 @@ addHorseMethods({
     )
       return false;
 
+    // A dummy foal can't nurse (Defects.js)
+    if (typeof cantNurse === "function" && cantNurse(this)) {
+      this.milkCooldown = 3.0;
+      return false;
+    }
     const isMom = mare.id === this.motherId;
     // It doesn't know her any more (FoalLife.js), or she's away from her
     // foals (BadMummah.js)

@@ -456,6 +456,7 @@ function rightClickActions(f) {
   if (typeof photoActions === "function") out.push(...photoActions(f)); // Lives.js
   if (typeof herdActions === "function") out.push(...herdActions(f)); // Herds.js (forget its old herd)
   if (typeof keepActions === "function") out.push(...keepActions(f)); // NotForSale.js
+  if (typeof snitchActions === "function") out.push(...snitchActions(f)); // Snitch.js
   if (typeof wholesaleActions === "function") out.push(...wholesaleActions(f)); // the mill trade (Inspector.js)
   return out;
 }

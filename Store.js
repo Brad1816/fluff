@@ -41,6 +41,7 @@ const STORE_AISLES = [
       "memorial_tree",
       "roomba",
       "feedbot",
+      "pet_flap",
       "auto_trainer",
       "repair_kit",
       "night_light",
@@ -75,6 +76,7 @@ const STORE_AISLES = [
     items: [
       "lawn_mower",
       "sorry_stick",
+      "glue_trap",
       "thumbtack",
       "knife",
       "cautery_iron",

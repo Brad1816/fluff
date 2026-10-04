@@ -162,7 +162,44 @@ const BUYER_KINDS = [
       return 0.45 * ribbons + 0.45 * _showCoat(f) + 0.1 * (f.growth >= 1 ? 1 : 0);
     },
   },
+  {
+    // A biology teacher (from "Science Class with Smarty"): only ever for a
+    // body or a fluffy that's dying, never picked at random - see
+    // makeDissectionRequest. Takes it away; nothing is shown.
+    id: "teacher",
+    label: "A biology teacher",
+    wants: "a dead or dying fluffy, for a class",
+    budget: 1,
+    patience: 1,
+    generous: 0.1,
+    weight: () => 0,
+    like: () => 0.5,
+    flatPrice: (f) => (f.isAlive ? DISSECT_PAY[1] : DISSECT_PAY[0]),
+  },
 ];
+
+// ---- The biology teacher ----
+const DISSECT_CHANCE = 0.3; // when a buyer's due and there's a body or a dying fluffy
+const DISSECT_PAY = [20, 30]; // a body, a dying one
+const DISSECT_DYING_HEALTH = 20;
+
+function _dissectable(f) {
+  if (!f || f.isDragging || f.isDestroyed || !f.adopted) return false;
+  if (typeof getSceneConfig !== "function" || !getSceneConfig(f.scene).insidePlayerQuarters) return false;
+  if (!f.isAlive) return true;
+  if (f.notForSale) return false;
+  return (f.health ?? 100) < DISSECT_DYING_HEALTH || (typeof wobblesShowing === "function" && wobblesShowing(f));
+}
+
+// script.js, a buyer due: now and then it's the teacher
+function makeDissectionRequest(rnd = Math.random) {
+  const list = fluffies.filter(_dissectable);
+  if (!list.length || rnd() >= DISSECT_CHANCE) return null;
+  const target = list[Math.floor(rnd() * list.length)];
+  const kind = getBuyerKind("teacher");
+  const { offer, maxPay } = buyerOffer(kind, target, _buyerLevel(), rnd);
+  return { fluffyId: target.id, fluffy: target, price: offer, maxPay, like: 0.5, buyer: "teacher", patience: kind.patience, final: false, asks: 0, timer: BUYER_WAIT, said: null };
+}
 
 function _buyerLevel() {
   return typeof getOrderLevel === "function" ? getOrderLevel() : 1;
@@ -290,7 +327,12 @@ function acceptSellRequest() {
   if (!req) return false;
   const i = fluffies.findIndex((f) => f.id === req.fluffyId);
   // (it has to still be sellable: no accessories on, not being carried)
-  if (i > -1 && (!fluffies[i].canBeSold() || fluffies[i].isDragging)) {
+  // (the teacher takes a body or a dying one: no other checks but carrying)
+  if (i > -1 && req.buyer === "teacher" && fluffies[i].isDragging) {
+    if (typeof addUIMessage === "function") addUIMessage("Put it down first.");
+    return false;
+  }
+  if (i > -1 && req.buyer !== "teacher" && (!fluffies[i].canBeSold() || fluffies[i].isDragging)) {
     if (typeof addUIMessage === "function") addUIMessage(fluffies[i].isDragging ? "Put it down first." : "Take its accessories off first.");
     return false;
   }
@@ -298,7 +340,7 @@ function acceptSellRequest() {
     if (!showDebugMenu) money += req.price;
     if (typeof noteDayEvent === "function") noteDayEvent("sold", { money: req.price });
     if (typeof _saleBuyer !== "undefined") _saleBuyer = req.buyer; // (Reputation.js)
-    if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[i], "sold", req.price);
+    if (typeof noteFluffyLeft === "function") noteFluffyLeft(fluffies[i], fluffies[i].isAlive ? "sold" : "taken", req.price);
     if (typeof noteSoldFromCage === "function") noteSoldFromCage(fluffies[i]); // (CageLife.js: the others saw)
     if (getBuyerKind(req.buyer).dark) {
       darkMarket.sold = (darkMarket.sold || 0) + 1;

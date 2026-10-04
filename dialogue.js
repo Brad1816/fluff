@@ -1096,6 +1096,51 @@ const DIALOGUE = {
     ],
   },
 
+  // Snitches and hidden foals (Snitch.js)
+  SNITCH: {
+    DEAL: ["Tweats fow tewwing? <Speaker> tewl evewyting!", "<Speaker> see evewyting! Tewl fow nummies!"],
+    HIDDEN: ["Psst! <Target> hide babbeh! Undew dewe!", "<Target> hab secwet babbeh! <Speaker> show!"],
+    HOARDER: ["<Target> nu gib miwkies tu aww babbehs! Bad mummah!", "<Target> keep miwkies fow bestest onwy!"],
+    BULLY: ["<Target> am meanie! Push udda fwuffies!", "<Target> pick on widdwe ones!"],
+    FIGHTS: ["<Target> stawt fight! <Speaker> see!", "<Target> do hitties!"],
+    SMARTY: ["<Target> gon' be bad smawty! <Speaker> knyo!", "<Target> act wike smawty awweady!"],
+    HIDE: ["Shhh, babbeh... stay hidden... nu wet hoomin see...", "Babbeh stay hewe. Mummah keep yu safe."],
+    FOUND: ["NU! Nu take babbeh!! Babbeh am gud babbeh!!", "Pwease! Nu huwt <target>!! Mummah wub <target>!"],
+  },
+  // Hereditary defects (Defects.js)
+  DEFECT: {
+    GRUNT: ["*grunt*", "*hnnh*", "*low grunting*", "*snuffle grunt*"],
+    SHAKY_FALL: ["Weggies am wobbwy...", "*thump* Fwoow huwt...", "Nu can stand up..."],
+  },
+  // The wobbles, from eating fluffy (BadMeat.js)
+  WOBBLES: {
+    FALL: ["Whoa... fwoow move...", "Weggies nu wowk...", "*thump* Huu...?"],
+    ODD: ["Wowwd am aww spinny...", "Who dat? ...Who <speaker>?", "Heehee... nummies tawk tu <speaker>...", "Hoofsies am su faw 'way..."],
+  },
+  // Stray dogs (Dogs.js)
+  DOG: {
+    FLEE: ["BIG MUNSTAH!! WUN WAY!!", "SCAWY BAWKY MUNSTAH!! HEWP!!", "NU EAT FWUFFY!! WUN!!"],
+    CHIRPY: ["*terrified peeping*", "*CHEEP CHEEP CHEEP*"],
+    GRAB: ["Come, <target>! Mummah sabe yu!", "Hab tu wun! Mummah gotchu, <target>!"],
+    LEFT_BEHIND: {
+      DEFAULT: ["Mummah?! Mummah, wait!! Nu weave babbeh!!", "MUMMAH!! Come back!!", "Wai mummah weave?! Huu huu..."],
+      CHIRPY: ["*lost, frightened peeping*", "*peep?* *PEEEP?*"],
+    },
+    BITTEN: ["SCREEEE!! MUNSTAH BITE!!", "OWIES!! Huwties su bad!!", "HEWP!! Bad munstah huwt fwuffy!!"],
+  },
+  // Glue traps (GlueTrap.js)
+  GLUE: {
+    CAUGHT: ["HUUU?! Hoofsies nu move!!", "STUCKIES!! HEWP!!", "Wai fwoow su sticky?! NU!!"],
+    STUCK: ["Hewp... <speaker> stuck...", "Pwease, sumwun... hoofsies huwt...", "Nu can move... huu huu...", "Wan' go 'way fwom sticky pwace..."],
+    CHIRPY: ["*frantic peeping*", "*cheep cheep* *CHEEEP*", "*tiny struggling peeps*"],
+    TORN: ["SCREEEE!! FWUFF COME OFF!!", "OWIES! OWIES! Huu huuu...", "*sobbing* Huwt su much..."],
+    FREED: ["Hoofsies fwee! Fank yu!", "Nu mowe sticky! *sniff*"],
+  },
+  // The pet flap (PetFlap.js)
+  PET_FLAP: {
+    OUT: ["Outside-time! Go pway in gwassy pwace!", "<Speaker> go outside!", "Fwappy doow! Wheee!"],
+    LOCKED: ["Fwappy doow nu open...", "*scratch scratch* Wet <speaker> out?", "Doow stuck..."],
+  },
   // Special friends (SpecialFriends.js)
   SPECIAL_FRIEND: {
     REFUSED: ["Wai nu can be speshuw fwens wif <target>?", "Hoomin say nu... *sniff*", "<Speaker> stiww wub <target>..."],
