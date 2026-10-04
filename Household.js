@@ -221,12 +221,29 @@ function _drawHouseholdRow(c, r, over) {
   // Room
   c.font = "13px Arial";
   c.fillStyle = f.scene === currentScene ? "#ffd6f0" : "rgba(255,255,255,0.85)";
-  c.fillText(fitText(c, room + (f.scene === currentScene ? " (here)" : ""), col("hearts") - col("room") - 8), col("room"), r.y + 33);
+  c.fillText(fitText(c, room + (f.scene === currentScene ? " (here)" : ""), col("hearts") - col("room") - 8), col("room"), r.y + 26);
+  // ...and what it's up to (UIInspection.js describeDoing)
+  const doing = typeof describeDoing === "function" ? describeDoing(f) : null;
+  if (doing) {
+    c.font = "11px Arial";
+    c.fillStyle = "rgba(255,255,255,0.55)";
+    c.fillText(fitText(c, doing[0], col("hearts") - col("room") - 8), col("room"), r.y + 43);
+  }
   // Hearts
   c.font = "15px Arial";
   c.fillStyle = "#ff8fbf";
   const hearts = typeof affectionHeartText === "function" ? affectionHeartText(f) : "";
-  c.fillText(hearts, col("hearts"), r.y + 33);
+  c.fillText(hearts, col("hearts"), r.y + 26);
+  // Three little bars under them: happiness, food, health
+  if (typeof inspectionVitalLevel === "function") {
+    const bw = Math.max(18, Math.min(30, (col("needs") - col("hearts") - 20) / 3 - 4));
+    ["Happiness", "Hunger", "Health"].forEach((k, i) => {
+      const v = inspectionVitalLevel(f, k) ?? 1;
+      const bx = col("hearts") + i * (bw + 4);
+      fillRoundRect(c, bx, r.y + 38, bw, 6, 3, "rgba(255,255,255,0.12)");
+      fillRoundRect(c, bx, r.y + 38, Math.max(3, bw * v), 6, 3, v > 0.6 ? "#7dff8a" : v > 0.3 ? "#ffe066" : "#ff6b6b");
+    });
+  }
   // Needs chips, then lessons
   let x = col("needs");
   const maxX = r.x + r.w - 10;
@@ -322,7 +339,7 @@ function drawHousehold(c) {
   const colX = (k) => L.x + 20 + HH_COLS[k] * ((L.w - 40 - 24) / 940);
   c.fillText("Fluffy", colX("name"), L.y + 130);
   c.fillText("Where", colX("room"), L.y + 130);
-  c.fillText("Affection", colX("hearts"), L.y + 130);
+  c.fillText("Affection", colX("hearts"), L.y + 130); // (with happiness, food and health bars under the hearts)
   c.fillText("Needs", colX("needs"), L.y + 130);
 
   if (!L.rows.length) {

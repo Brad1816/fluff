@@ -3136,3 +3136,6 @@ from. Nothing player-facing reads it yet except the debug view.
   recruited one isn't "taken" (`_towerKnown` resets on load); the sire's long
   coat is kept on the mare at conception (`sireLongCoat`); the hook and hot
   plate don't catch a fluffy dropped into a cage.
+- **Household:** three little bars under the hearts (happiness, food,
+  health: `inspectionVitalLevel`) and what it's doing under its room
+  (`describeDoing`).
