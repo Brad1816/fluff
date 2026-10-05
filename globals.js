@@ -1114,6 +1114,8 @@ function setRelationship(id1, id2, rel) {
 function handleDropping(item) {
   item.isDragging = false;
   isGlobalDragging = false;
+  // (a stray that let itself in through the pet flap: put down by you, it's yours - PetFlap.js)
+  if (item._viaFlap) item._viaFlap = undefined;
 
   if (typeof isPlaceableWorldTool === "function" && isPlaceableWorldTool(item)) {
     if (typeof removeToolFromToolbox === "function") {

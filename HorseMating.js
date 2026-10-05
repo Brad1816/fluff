@@ -27,6 +27,10 @@ function forcedBreedingProblem(male, mare) {
   return null;
 }
 
+// A stallion's rest after breeding (game seconds; an hour is 50)
+const STALLION_REST = 6;
+const STALLION_REST_APHRO = 2;
+
 let _breedingCageSaidAt = -1e9;
 function sayBreedingCageProblem(text) {
   const now = typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -93,7 +97,7 @@ addHorseMethods({
     friend.initBehavior("BENDING_2");
 
     if (this.gender === "male") {
-      this.specialHuggiesCooldown = this.isUnderAphrodisiac() ? 10 : 30;
+      this.specialHuggiesCooldown = this.isUnderAphrodisiac() ? STALLION_REST_APHRO : STALLION_REST;
     }
 
     this.matingState.isMating = true;

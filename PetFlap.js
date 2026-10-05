@@ -250,6 +250,9 @@ function updatePetFlaps(dt) {
       continue;
     }
     _pfThrough(f, t.to, flap);
+    // Wild: it let itself in - that doesn't make it yours (carry it in to keep it)
+    if (!f.adopted && t.to === "in") f._viaFlap = true;
+    if (t.to === "out") f._viaFlap = undefined;
     if (!f.adopted && t.to === "in" && now - _pfWildToldAt > 120 && typeof addUIMessage === "function") {
       _pfWildToldAt = now;
       addUIMessage("Something wild got in through the pet flap!");
@@ -261,6 +264,11 @@ function updatePetFlaps(dt) {
   for (const flap of flaps) {
     for (const f of fluffies) {
       if (f._flapTrip || !_pfCanGo(f)) continue;
+      // A wild one that got in: it may wander back out
+      if (!f.adopted && f._viaFlap && f.scene === flap.scene) {
+        if (!flap.locked && Math.random() < PET_FLAP_IN_CHANCE) f._flapTrip = { to: "out", flapId: flap.id, at: now };
+        continue;
+      }
       if (f.adopted && f.scene === flap.scene) {
         if (_pfWantsOut(f)) {
           f._flapTrip = { to: "out", flapId: flap.id, at: now };

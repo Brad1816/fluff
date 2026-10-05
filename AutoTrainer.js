@@ -194,9 +194,23 @@ const AUTO_TRAINER_CAGE_NEAR = 160;
 function _atThroughBars(t, f) {
   const c = f.currentCage;
   if (!c || t.currentCage === c) return false;
+  if (typeof c.updateBounds === "function" && !c.bounds) c.updateBounds();
   const b = c.bounds;
+  if (!b) return false;
+  // (beside it, in front of it or behind it - or standing over it)
   const dx = t.x < b.left ? b.left - t.x : t.x > b.right ? t.x - b.right : 0;
-  return dx <= AUTO_TRAINER_CAGE_NEAR && Math.abs(t.y - b.bottom) < 200;
+  const dy = t.y < b.top ? b.top - t.y : t.y > b.bottom ? t.y - b.bottom : 0;
+  return dx <= AUTO_TRAINER_CAGE_NEAR && dy <= AUTO_TRAINER_CAGE_NEAR;
+}
+
+// Where a caged fluffy stands for the machine: as near to it as the cage
+// lets it get (inside the cage with it, or at the bars nearest it)
+function _atCagedSpot(t, f) {
+  const lim = f.positioning && typeof f.positioning.getCageLimits === "function" ? f.positioning.getCageLimits() : null;
+  if (!lim) return { x: f.x, y: f.y };
+  const wantX = t.currentCage === f.currentCage ? t.x + (f.x < t.x ? -55 : 55) : t.x;
+  // (a cage has one floor to stand on)
+  return { x: Math.max(lim.minX, Math.min(lim.maxX, wantX)), y: typeof lim.y === "number" ? lim.y : f.y };
 }
 
 // One go at the machine
@@ -251,19 +265,20 @@ function updateAutoTrainers(dt) {
     }
     let spotX = t.x + (f.x < t.x ? -55 : 55);
     let spotY = t.y + 10;
-    // (in a cage: to the bars nearest the machine)
-    const bars = f.currentCage && t.currentCage !== f.currentCage;
-    if (bars) {
-      if (!_atThroughBars(t, f)) {
-        _atEnd(t, f);
-        continue;
-      }
-      const lim = f.positioning.getCageLimits();
-      spotX = Math.max(lim.minX, Math.min(lim.maxX, t.x));
-      spotY = f.y;
+    // (in a cage - with the machine or beside it: as near as the cage lets it)
+    const caged = !!f.currentCage;
+    const bars = caged && t.currentCage !== f.currentCage;
+    if (bars && !_atThroughBars(t, f)) {
+      _atEnd(t, f);
+      continue;
+    }
+    if (caged) {
+      const spot = _atCagedSpot(t, f);
+      spotX = spot.x;
+      spotY = spot.y;
     }
     if (!s.arrived) {
-      if (bars ? Math.abs(f.x - spotX) > 25 : Math.hypot(f.x - spotX, f.y - spotY) > AUTO_TRAINER_REACH) {
+      if (caged ? Math.abs(f.x - spotX) > 25 || Math.abs(f.y - spotY) > 40 : Math.hypot(f.x - spotX, f.y - spotY) > AUTO_TRAINER_REACH) {
         if (now - s.at > AUTO_TRAINER_WALK) {
           _atEnd(t, f);
           continue;

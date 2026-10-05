@@ -315,10 +315,10 @@ function getFluffyInspectionInfo(f) {
     const [cText, cTone] = describeInspectionColorism(f);
     care.push({ label: "Colour views", value: cText, tone: cTone });
   }
-  // Resting after a litter (Population.js)
-  if (f.isAlive && typeof describeBreedingRest === "function") {
-    const rest = describeBreedingRest(f);
-    if (rest) care.push({ label: "Breeding", value: rest[0], tone: rest[1] });
+  // When it can breed again (a bar on the Overview: breedReadiness)
+  if (f.isAlive) {
+    const br = breedReadiness(f);
+    if (br) care.push({ label: "Breeding", value: br.text, tone: br.tone });
   }
   // Fears (Fears.js)
   if (f.isAlive && typeof describeFears === "function") {
@@ -437,7 +437,39 @@ function getFluffyInspectionLines(f) {
 // says what it means (INSPECT_ROW_HELP) - and any extra it has (row.tip).
 // A row no tab lists yet lands in Work's second column, never lost.
 
-const INSPECT_VITALS = ["Happiness", "Hunger", "Health", "Sleep", "Cleanliness", "Boredom", "Warmth"];
+const INSPECT_VITALS = ["Happiness", "Hunger", "Health", "Sleep", "Cleanliness", "Boredom", "Warmth", "Breeding"];
+
+// Can it breed now - and if not, how long till it can? { level 0-1 (full:
+// ready), text, tone } or null (dead)
+function breedReadiness(f) {
+  if (!f || !f.isAlive) return null;
+  const left = (secs) => (typeof fluffyAgeText === "function" && secs >= DAY_LENGTH ? fluffyAgeText(secs / DAY_LENGTH) : secs >= HOUR_LENGTH ? `${Math.ceil(secs / HOUR_LENGTH)} h` : "a few minutes");
+  if (f.growth < 1) return { level: Math.max(0, Math.min(1, f.growth)), text: "Too young yet", tone: "" };
+  if (f.gender === "female") {
+    if (f.spayed) return { level: 0, text: "Spayed: no foals", tone: "" };
+    if (typeof tooOldToBreed === "function" && tooOldToBreed(f)) return { level: 0, text: "Too old for foals", tone: "" };
+    if (f.isPregnant) {
+      const p = typeof f.getPregnancyProgress === "function" ? f.getPregnancyProgress() : 0.5;
+      return { level: Math.max(0, Math.min(1, p)), text: `Pregnant: ${Math.round(p * 100)}%`, tone: "ok" };
+    }
+    if (typeof restingAfterBirth === "function" && restingAfterBirth(f)) {
+      const total = (typeof MARE_REST_DAYS === "number" ? MARE_REST_DAYS : 1) * DAY_LENGTH;
+      const since = timePlayed - f.lastBirthAt;
+      return { level: Math.max(0, Math.min(1, since / total)), text: `After her litter: ${left(total - since)}`, tone: "ok" };
+    }
+  } else {
+    const banded = f.accessories && f.accessories.ABOVE_LUMPS && f.accessories.ABOVE_LUMPS.id === "castration_band";
+    if (banded || (f.limbs && !f.limbs.lumps)) return { level: 0, text: "Can't sire foals", tone: "" };
+    const cd = f.specialHuggiesCooldown || 0;
+    if (cd > 0) {
+      const rest = typeof STALLION_REST === "number" ? STALLION_REST : 6;
+      return { level: Math.max(0, Math.min(1, 1 - cd / Math.max(rest, cd))), text: "Catching his breath", tone: "ok" };
+    }
+  }
+  if (f.isSensitive && f.isSensitive() && typeof sensitiveCanBreed === "function" && !sensitiveCanBreed(f))
+    return { level: Math.max(0, 1 - (f.breedWear || 0)), text: "Too worn out to breed", tone: "" };
+  return { level: 1, text: "Ready to breed", tone: "good" };
+}
 // Shown under "Right now" on the Overview when they're there
 const INSPECT_RIGHT_NOW = ["Cause of death", "Last desire", "Doing", "Frightened", "On its mind", "Pregnant", "Birth", "Resting", "Settling in", "Mourning", "Heat", "Wet", "Diaper", "Burn", "Near death", "Tummy", "Dizzy", "Stuck", "Milk stand", "Surgery job", "Growing up"];
 
@@ -539,7 +571,7 @@ const INSPECT_ROW_HELP = {
   "Sells for": "What a buyer would start at; condition and taste change the offer.",
   "Colour tier": "How its colour sells: 1 is the best, 4 a poopie coat.",
   "Litter trained": "Praise it after it uses the box; it gets better.",
-  Breeding: "Whether it can breed now, and how worn out it is.",
+  Breeding: "Whether it can breed now. If not, the bar fills as it gets there: a pregnancy, a mare resting after her litter, a stallion catching his breath (only a few minutes), or a foal growing up.",
   Grudges: "Fluffies it holds a grudge against.",
   Friends: "Who it likes best.",
   Scars: "Hover for how each one happened.",
@@ -757,6 +789,10 @@ function inspectionVitalLevel(f, label) {
       return c(1 - (f.boredom || 0));
     case "Warmth":
       return c(f.warmth ?? 1);
+    case "Breeding": {
+      const br = breedReadiness(f);
+      return br ? c(br.level) : null;
+    }
   }
   return null;
 }

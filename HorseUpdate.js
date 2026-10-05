@@ -861,7 +861,9 @@ addHorseMethods({
 
   // In the adoption room
   _updateAdoptionRoom() {
-    if (getSceneConfig(this.scene).isAdoptionRoom) {
+    // (not one that let itself in through the pet flap - PetFlap.js - or a
+    // neighbour's you're minding: Neighbours.js. Carry it in yourself to keep it)
+    if (getSceneConfig(this.scene).isAdoptionRoom && !this._viaFlap && this.nbOwner == null) {
       if (!this.adopted && !this.tooYoungToSpeak() && (this.canSee() || this.canHear())) {
         const key = this.isSmarty() ? ["ADOPTED", "SMARTY"] : ["ADOPTED"];
         this.speak(getDialogue(key, this));
