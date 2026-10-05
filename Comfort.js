@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Comfort and the mind (plan round 8): the mummah blankie, lights left on,
-// "babbehs am at da vet", "da towew", the last straw and crowding collapse.
+// "babbehs am at da vet", "da go-'way van", the last straw and crowding collapse.
 //
 // MUMMAH BLANKIE (Fluff Mart, Home & Housing, BLANKIE_PRICE; in the shopping
 // bag): leave it by a mum while she rests and it picks up her smell
@@ -21,10 +21,12 @@
 // For VET_LIE_DAYS she doesn't grieve them ("Babbehs come back soon!");
 // then she works it out, and it hits harder (VET_LIE_HIT, and less trust).
 //
-// "DA TOWEW": when one of yours is taken for good (sold, culled, ground up,
-// fed to the machine...) the others who knew it tell scary stories about
-// where it went (f.towerFear, saved): a bit sadder, a bit better behaved
-// (calmer: temper eased), nightmares about it. It fades (TOWER_FADE a day).
+// "DA GO-'WAY VAN" (was "da towew"): when one of yours is taken for good
+// (sold, culled, ground up, fed to the machine...) the others who knew it
+// tell scary stories about the van that took it away (f.towerFear, saved): a
+// bit sadder, a bit better behaved (calmer: temper eased), nightmares about
+// it. It fades (TOWER_FADE a day). Scared ones panic when a buyer knocks
+// (onBuyerAtDoor: VAN_KNOCK_FEAR) - the van's come for someone.
 //
 // THE LAST STRAW: a gentle fluffy picked on again and again (FoalLife.js
 // bullying) builds up pressure (f.strawPressure). At LAST_STRAW it goes for
@@ -285,7 +287,7 @@ function _vetLieFoundOut(mum) {
   if (typeof recordStory === "function") recordStory("turning", mum, { x: `${fluffyDisplayName(mum)} worked out her foals were never coming back from the vet.` });
 }
 
-// ---- "Da towew" ----
+// ---- "Da go-'way van" ----
 let _towerKnown = null; // id -> { scene, alive }
 
 function _towerTaken(f, scene, killed = false) {
@@ -302,9 +304,27 @@ function _towerTaken(f, scene, killed = false) {
   }
 }
 
+// A buyer at the door: the ones who've heard the stories think the van's
+// come for someone (Buyers.js, via script.js)
+const VAN_KNOCK_FEAR = 0.3;
+function onBuyerAtDoor(req) {
+  if (typeof fluffies === "undefined") return 0;
+  let n = 0;
+  for (const f of fluffies) {
+    if (!f.isAlive || !f.adopted || f.scene !== currentScene || (f.towerFear || 0) < VAN_KNOCK_FEAR) continue;
+    if (f.currentStateKey === "SLEEPING" || f.tooYoungToSpeak()) continue;
+    if (Math.random() > 0.3 + f.towerFear * 0.5) continue;
+    f.expressionOverride = "CRYING_SHOCKED";
+    f.expressionOverrideTimer = 3;
+    if (n < 2) _cSay(f, ["TOWER", req && req.fluffyId === f.id ? "KNOCK_ME" : "KNOCK"]);
+    n++;
+  }
+  return n;
+}
+
 function hearTowerStory(o, amount) {
   o.towerFear = Math.min(1, (o.towerFear || 0) + amount);
-  o.changeHappiness(-0.03, "Scary stories about the tower");
+  o.changeHappiness(-0.03, "Scary stories about the go-'way van");
   if (!o.traitShift || typeof o.traitShift !== "object") o.traitShift = {};
   o.traitShift.temper = Math.max(-0.4, (o.traitShift.temper || 0) - 0.03); // (better behaved)
 }
@@ -326,7 +346,7 @@ function _towerCheck() {
 }
 
 if (typeof DREAM_SOURCES !== "undefined") {
-  DREAM_SOURCES.push((f) => ((f.towerFear || 0) > 0.15 ? [{ good: false, weight: 4 * f.towerFear, icon: null, text: "Nu! Nu wan' go tu da towew!" }] : []));
+  DREAM_SOURCES.push((f) => ((f.towerFear || 0) > 0.15 ? [{ good: false, weight: 4 * f.towerFear, icon: null, text: "Nu! Nu wan' go in da go-'way van!" }] : []));
 }
 
 // ---- The last straw ----
@@ -452,7 +472,7 @@ function updateComfort(dt) {
       if (!vetLieActive(f)) _vetLieFoundOut(f);
       else if (Math.random() < 0.004 * step) _cSay(f, ["VET_LIE", "WAITING"], null, false);
     }
-    // Da towew: told and retold, fading
+    // Da go-'way van: told and retold, fading
     if ((f.towerFear || 0) > 0) {
       f.towerFear = Math.max(0, f.towerFear - (TOWER_FADE * step) / DAY_LENGTH);
       if (f.towerFear > 0.3 && f.scene === currentScene && Math.random() < 0.006 * step && f.currentStateKey !== "SLEEPING" && !f.tooYoungToSpeak()) {
@@ -499,7 +519,7 @@ function describeComfortMind(f) {
   if (vetLieActive(f)) parts.push("thinks her babbehs are at the vet");
   if ((f.badPoopies || 0) > 0) parts.push(`thinks it's "bad poopies"`);
   if (f.lostDays) parts.push("lost track of the days (the light's always on)");
-  if ((f.towerFear || 0) > 0.15) parts.push("scared of \"da towew\"");
+  if ((f.towerFear || 0) > 0.15) parts.push("scared of \"da go-'way van\"");
   if (isListless(f)) parts.push("listless (the room's crowded too long)");
   if (f.crowdRaised) parts.push("grew up in a crowd: a misfit");
   if ((f.strawPressure || 0) >= 3) parts.push("at the end of its tether with a bully");

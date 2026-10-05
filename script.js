@@ -68,6 +68,7 @@ function updateMoneyAndRequests(dt) {
 
         // A buyer with tastes picks one they like (Buyers.js)
         currentSellRequest = makeSellRequest(candidates);
+        if (currentSellRequest && typeof onBuyerAtDoor === "function") onBuyerAtDoor(currentSellRequest); // (da go-'way van: Comfort.js)
       }
       sellRequestTimer =
         sellRequestAverage / 2 + Math.random() * sellRequestAverage;

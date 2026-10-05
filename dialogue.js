@@ -1286,9 +1286,11 @@ const DIALOGUE = {
     WAITING: ["When babbeh come home?", "Mummah stiww waitin'...", "Babbeh at vet wong time..."],
     FOUND_OUT: ["Babbeh nu come home... babbeh nebah at vet...", "Yu say vet! Yu wie tu mummah!", "*sob* Babbeh gone fowebah..."],
   },
-  // Tales of the tower (Comfort.js)
+  // Tales of da go-'way van (Comfort.js; the key was the tower's)
   TOWER: {
-    TELL: ["Fwuffies go tu towew an' nebah come back...", "<Target>... nu make hoomin angwy. Ow da towew.", "Shhh... da towew am wistenin'..."],
+    TELL: ["Fwuffies go in da go-'way van an' nebah come back...", "<Target>... nu make hoomin angwy. Ow da go-'way van come.", "Shhh... da go-'way van am wistenin'..."],
+    KNOCK: ["Knock knock... am da go-'way van?!", "Nu! Da go-'way van am hewe! Hide!", "Who da van come fow?! Nu fwuffy, pwease..."],
+    KNOCK_ME: ["Nu! Da van come fow <speaker>?! Nu wan' go!", "Pwease nu put <speaker> in da go-'way van!"],
   },
   // Pushed too far (Comfort.js)
   LAST_STRAW: {

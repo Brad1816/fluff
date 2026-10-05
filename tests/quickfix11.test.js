@@ -95,4 +95,32 @@ module.exports = [
       check(r.noShout, "caged, no 'coming!'");
     },
   },
+  {
+    name: "quickfix11: \"da towew\" is now \"da go-'way van\" - its stories, nightmares and the magnifying glass; scared ones panic when a buyer knocks",
+    run: async (page) => {
+      const r = await page.evaluate((setup) => {
+        eval(setup)();
+        const out = {};
+        const lines = JSON.stringify(DIALOGUE.TOWER);
+        out.lines = /go-'way van/.test(lines) && !/towew/.test(lines);
+        const f = __mk(400, { growth: 1 });
+        f.towerFear = 0.8;
+        currentScene = "INDOORS";
+        out.desc = JSON.stringify(typeof describeComfortWorries === "function" ? describeComfortWorries(f) : "");
+        const dreams = DREAM_SOURCES.flatMap((d) => d(f) || []).map((d) => d.text).join(" ");
+        out.dream = /go-'way van/.test(dreams) && !/towew/.test(dreams);
+        const rnd = Math.random;
+        Math.random = () => 0.01;
+        f.speech.text = null;
+        out.panic = onBuyerAtDoor({ fluffyId: f.id }) === 1 && f.expressionOverride === "CRYING_SHOCKED";
+        Math.random = rnd;
+        const calm = __mk(500, { growth: 1 });
+        calm.towerFear = 0;
+        out.calm = calm.expressionOverride !== "CRYING_SHOCKED";
+        return out;
+      }, SETUP);
+      check(r.lines && r.dream, "the van, not the tower");
+      check(r.panic && r.calm, "scared ones panic at a knock; calm ones don't");
+    },
+  },
 ];
