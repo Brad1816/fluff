@@ -863,6 +863,12 @@ function _spawnFeralGroup(targetScene, forcedScenario = null) {
       mq,
       gender,
     );
+    // Ferals - even ones that came in over your backyard fence - aren't yours
+    // until you take them in (the Horse constructor counts the yard as yours)
+    if (h.adopted) {
+      h.adopted = false;
+      if (typeof TRUST_START_FERAL === "number") h.playerTrust = TRUST_START_FERAL;
+    }
     let fx = spawnX + (Math.random() - 0.5) * 50;
     let fy = spawnY + (Math.random() - 0.5) * 50;
     if (hasRiver) {
@@ -1490,7 +1496,8 @@ function updateSimulation(dt) {
           (o) =>
             o instanceof Bed && o.type === "cardboard_box" && o.scene === s,
         ).length;
-        return count < 3 && s !== currentScene; // (not popping up in front of you)
+        // (not popping up in front of you, nor across the lanes of the road)
+        return count < 3 && s !== currentScene && s !== "ALLEY_ROAD";
       });
       if (candidateScenes.length > 0) {
         const targetScene = candidateScenes[Math.floor(Math.random() * candidateScenes.length)];
@@ -1521,10 +1528,13 @@ function updateSimulation(dt) {
       const carImg = images[car.carType];
       const carW = carImg ? carImg.width : 400;
       const carH = carImg ? carImg.height : 150;
+      // (it drives through the pools on the road: Car.js)
+      if (typeof carWearPuddles === "function") carWearPuddles(car, dt, car.x, car.x + carW, car.y + 100, car.y + carH + 20);
 
       for (let j = fluffies.length - 1; j >= 0; j--) {
         const f = fluffies[j];
-        if (f.scene === "ALLEY_ROAD" && !f.isDestroyed && !f.heldWithThrowTool && !f.isFallingFromThrow) {
+        // (one thrown into a passing car is hit too - not one still on the throw tool)
+        if (f.scene === "ALLEY_ROAD" && !f.isDestroyed && !f.heldWithThrowTool) {
           const fRadius = 30 * f.scale;
           const fHeight = 50 * f.scale;
 
@@ -1559,13 +1569,14 @@ function updateSimulation(dt) {
           if (hit) {
             playSound("amputation");
 
+            const groundY = f.isFallingFromThrow && typeof f.throwStartY === "number" ? f.throwStartY : f.y;
             f.anatomy.explodeFromCar(car);
 
             if (typeof addPointToPuddle !== "undefined") {
               addPointToPuddle(
                 "ALLEY_ROAD",
                 f.x,
-                f.y,
+                groundY,
                 "#8a0303",
                 0.1,
                 0.3,

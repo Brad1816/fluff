@@ -415,6 +415,8 @@ class HorseAnatomy {
           : null,
         hasHorn: !!(this.horse.limbs && this.horse.limbs.horn),
         hornSizeFactor: this.horse.hornSizeFactor || 1.0,
+        // A foal's mane hasn't grown in yet (as HorseRenderer.getManeScale)
+        maneScale: Math.min(1, (this.horse.growth || 0) / 0.35),
       };
     } else if (part === "torso") {
       img = this.horse.tinted.torso;
@@ -968,12 +970,14 @@ class HorseAnatomy {
 
     // Add a decent velocity to each of the gibs in the direction of the car
     const sign = Math.sign(car.vx);
+    // (one hit in mid-air comes down where it would have landed)
+    const groundY = this.horse.isFallingFromThrow && typeof this.horse.throwStartY === "number" ? this.horse.throwStartY : this.horse.y;
     for (const gib of spawnedGibs) {
       gib.vx = sign * (200 + Math.random() * 400); // 200 - 600 px/sec
       gib.vy = -(300 + Math.random() * 300); // Fly upwards
       gib.freeGib = false;
       gib.isRoadkill = true;
-      gib.roadkillFloorY = this.horse.y + (Math.random() - 0.5) * 80; // Small randomness
+      gib.roadkillFloorY = groundY + (Math.random() - 0.5) * 80; // Small randomness
       gib.bounds = null; // Bounces on roadkillFloorY instead
       gib.carCollisionCooldown = 3.0; // Cooldown of 3 seconds
     }

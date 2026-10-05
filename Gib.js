@@ -31,6 +31,8 @@ class Gib {
     this.gradientConfig = faceData?.gradientConfig || null;
     this.hasHorn = faceData?.hasHorn || false;
     this.hornSizeFactor = faceData?.hornSizeFactor || 1.0;
+    // A foal's head: little or no mane yet (1 = grown)
+    this.maneScale = faceData && typeof faceData.maneScale === "number" ? faceData.maneScale : 1;
     this.faceRendered = false;
 
     if (this.isFaceGib()) {
@@ -140,7 +142,7 @@ class Gib {
         : 0;
     const maneKey = "mane_" + maneIdx;
     const maneImg = images[maneKey] || images.mane_0;
-    if (maneImg) {
+    if (maneImg && this.maneScale > 0) {
       const maneColor = this.maneColor || this.color;
       const tintedMane = tintImage(
         maneImg,
@@ -150,7 +152,16 @@ class Gib {
         this.gradientConfig,
       );
       if (tintedMane) {
-        ctx.drawImage(tintedMane, 0, 0);
+        if (this.maneScale >= 1) ctx.drawImage(tintedMane, 0, 0);
+        else {
+          // (grown from the same pivot as on a living foal)
+          const px = canvas.width * 0.25, py = canvas.height * 0.85;
+          ctx.save();
+          ctx.translate(px, py);
+          ctx.scale(this.maneScale, this.maneScale);
+          ctx.drawImage(tintedMane, -px, -py);
+          ctx.restore();
+        }
       }
     }
 
@@ -313,6 +324,7 @@ class Gib {
         : null,
       hasHorn: this.hasHorn,
       hornSizeFactor: this.hornSizeFactor,
+      maneScale: this.maneScale < 1 ? this.maneScale : undefined,
     };
   }
 
@@ -330,6 +342,7 @@ class Gib {
             gradientConfig: data.gradientConfig,
             hasHorn: data.hasHorn,
             hornSizeFactor: data.hornSizeFactor,
+            maneScale: data.maneScale,
           }
         : null;
 

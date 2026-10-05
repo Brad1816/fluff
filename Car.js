@@ -107,3 +107,20 @@ class Car {
     ctx.restore();
   }
 }
+
+// A car driving through a pool on the road scatters it: blood, pee and mess
+// under it shrink a little with every car that goes over them (the way the
+// sprinkler washes them away), and a big one takes a few cars to clear.
+const CAR_PUDDLE_WEAR = 0.35; // (puddle scale lost per second under a car)
+function carWearPuddles(car, dt, left, right, top, bottom) {
+  if (typeof puddles === "undefined") return;
+  for (const p of puddles) {
+    if (p.scene !== car.scene || p.type === "water" || p.type === "tears") continue;
+    for (let j = p.points.length - 1; j >= 0; j--) {
+      const pt = p.points[j];
+      if (pt.x < left || pt.x > right || pt.y < top || pt.y > bottom) continue;
+      if (pt.targetScale && pt.scale < pt.targetScale - 0.01) continue; // (still spreading: the one it just made)
+      p.shrinkPoint(j, CAR_PUDDLE_WEAR * dt, 0.03);
+    }
+  }
+}

@@ -871,6 +871,14 @@ addHorseMethods({
       }
       if (!this.adopted && this.formerPet && typeof onFormerPetHome === "function") onFormerPetHome(this); // (Runaways.js)
       this.adopted = true;
+    } else if (!this.adopted && this.isAlive && this.motherId != null && this.growth < 1 && !this._viaFlap && this.nbOwner == null && !this.rivalDump && getSceneConfig(this.scene).insidePlayerQuarters) {
+      // A foal of one of yours, in one of your rooms, is yours too (one born
+      // before its mum was adopted, or from an older save: it couldn't be sold)
+      const mum = fluffyById(this.motherId);
+      if (mum && mum.adopted && mum.nbOwner == null) {
+        this.adopted = true;
+        if (typeof TRUST_START === "number" && this.playerTrust < TRUST_START) this.playerTrust = TRUST_START;
+      }
     }
   },
 
