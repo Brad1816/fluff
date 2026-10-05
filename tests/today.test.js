@@ -70,11 +70,11 @@ module.exports = [
       check(/urgent: You owe \$120 \(2 days in debt\): the power goes off in 1 day\./.test(text), `debt: ${text}`);
       check(/urgent: The welfare inspector is coming tomorrow/.test(text), `inspector: ${text}`);
       check(/urgent: Wren is starving\./.test(text), `starving: ${text}`);
-      check(/chance: Rowan wishes for: a toy of its own\./.test(text), `wish: ${text}`);
+      check(/info: Rowan has a wish \(Mind tab\)\./.test(text), `wish (a quiet one: one line): ${text}`);
       check(/chance: Pip - Healing: Broken → Survivor \(nearly there\)\./.test(text), `healing: ${text}`);
       check(/info: Living room feels tense: fights/.test(text), `room: ${text}`);
       checkEqual(r.items[0][0], "urgent", "urgent first");
-      check(r.counts.urgent >= 3 && r.counts.chance >= 2, `counts ${JSON.stringify(r.counts)}`);
+      check(r.counts.urgent >= 3 && r.counts.chance >= 1, `counts ${JSON.stringify(r.counts)}`);
       checkEqual(r.err, null, "draws");
       checkEqual(JSON.stringify(r.went), JSON.stringify([false, true]), "a row goes to the fluffy");
     },

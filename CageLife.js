@@ -192,9 +192,12 @@ function reactToCage(f, cage) {
 // Friends and family across the bars (one direction)
 function _clRelKey(from, to) {
   const rel = (typeof relationships !== "undefined" && relationships[from.id] && relationships[from.id][to.id]) || null;
+  // (MUM / DAD: talking to its mum or dad; BABY / BABY_DAD: a mum or a dad
+  // talking to its foal)
   if (rel === "mother") return "MUM";
-  if (rel === "baby_child" || rel === "child") return "BABY";
-  if (rel === "father" || rel === "brother" || rel === "sister") return "FAMILY";
+  if (rel === "father") return "DAD";
+  if (rel === "baby_child" || rel === "child") return from.gender === "male" ? "BABY_DAD" : "BABY";
+  if (rel === "brother" || rel === "sister") return "FAMILY";
   if (rel === "special_friend") return "SPECIAL";
   if (rel === "friend" || (typeof getLiking === "function" && getLiking(from, to) >= 0.45)) return "FRIEND";
   return null;

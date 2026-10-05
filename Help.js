@@ -586,7 +586,7 @@ const HELP_TOPICS = [
       "  ears hang back.",
       "",
       "# Crowding",
-      "- A room has space for about 20 fluffies, the backyard 30 (a foal",
+      "- A room has space for about 30 fluffies, the backyard 40 (a foal",
       "  takes half a place). Over that, everyone there gets unhappier and",
       "  grumpy ones start shoving. The room name at the top turns red.",
       "",

@@ -649,6 +649,17 @@ class HorseAnatomy {
       babyGenes,
     );
     baby.fatherId = this.horse.babyDaddyId;
+    // Yours only if its mum is: a stray or a neighbour's mare foaling in your
+    // house or yard doesn't hand you her foals
+    if (!!baby.adopted !== !!this.horse.adopted) {
+      baby.adopted = !!this.horse.adopted;
+      if (typeof TRUST_START === "number") baby.playerTrust = baby.adopted ? TRUST_START : TRUST_START_FERAL;
+    }
+    if (this.horse._viaFlap) baby._viaFlap = true; // (PetFlap.js)
+    if (this.horse.nbOwner != null) {
+      baby.nbOwner = this.horse.nbOwner; // (Neighbours.js)
+      baby._nbBorn = true;
+    }
     baby.birthRotation = Math.PI / 2;
     baby.currentCage = this.horse.currentCage;
     baby.hunger = 0.4;

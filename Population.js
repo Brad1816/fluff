@@ -22,7 +22,7 @@
 // PARK_WILD_MAX (ParkLife.js). So winters and a crowded park mean fewer foals.
 // ---------------------------------------------------------------------------
 
-const ROOM_SPACE = { house: 20, BACKYARD: 30 }; // (a family or two per room)
+const ROOM_SPACE = { house: 30, BACKYARD: 40 }; // (a few families per room; was 20/30)
 const CROWD_UNHAPPY = 0.04; // happiness a game hour, x how far over (1 = double)
 const CROWD_SCUFFLE = 0.0015; // a second, x how far over, x (1 + temper), per grumpy grown-up
 const MARE_REST_DAYS = 1.25; // about 5-6 weeks (a game day ~ a month, Aging.js; was 2 - playtest 7)

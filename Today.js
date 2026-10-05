@@ -138,10 +138,15 @@ function todayItems() {
 
   // ---- Chances ----
   const parties = [];
+  const quietWishes = [];
   for (const f of own) {
     const n = fluffyDisplayName(f);
     const wish = typeof wishText === "function" ? wishText(f) : null;
-    if (wish) add("chance", `${n} wishes for: ${wish.charAt(0).toLowerCase()}${wish.slice(1)}.`, f);
+    // Only the ones aching for their wish (or promised it) get a line; the
+    // rest are one line together (Wishes.js)
+    const aching = wish && f.wish && (typeof _wDays === "function" ? _wDays(f.wish) >= WISH_PATIENCE_DAYS : false);
+    if (wish && (aching || f.wish.promisedAt !== undefined)) add("chance", `${n} is aching for a wish: ${wish.charAt(0).toLowerCase()}${wish.slice(1)}.`, f);
+    else if (wish) quietWishes.push(f);
     const party = typeof partyOccasion === "function" ? partyOccasion(f) : null;
     if (party) parties.push({ f, name: party.name });
     const change = typeof describeTitleProgress === "function" ? describeTitleProgress(f) : null;
@@ -149,6 +154,7 @@ function todayItems() {
     const why = typeof needsSitWith === "function" ? needsSitWith(f) : null;
     if (why && why !== "frightened" && why !== "broken") add("chance", `${n} is ${why} - you could sit with it.`, f);
   }
+  if (quietWishes.length) add("info", quietWishes.length === 1 ? `${fluffyDisplayName(quietWishes[0])} has a wish (Mind tab).` : `${quietWishes.length} fluffies have wishes (Mind tab in the magnifying glass).`, quietWishes[0]);
   // (several reasons for a party: one line)
   if (parties.length <= 2) for (const p of parties) add("chance", `A reason for a party: ${p.name}.`, p.f);
   else add("chance", `Reasons for a party: ${parties[0].name}, ${parties[1].name} and ${parties.length - 2} more.`, parties[0].f);

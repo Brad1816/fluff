@@ -1086,6 +1086,8 @@ const DIALOGUE = {
     DEFAULT: ["Mummah? Mummah!", "MUMMAH! <Speaker> nee' mummah!", "Wan' mummah!", "Mummah, whewe am yu?"],
     CHIRPY: ["*cheep cheep* MUMMAH!", "*loud peeping*", "*chirp* *CHIRP*!", "*peep?* *PEEEP!*"],
   },
+  // (a foster dad: Fostering.js)
+  DADDEH_COMIN: ["Daddeh comin' <target>!", "Nu cwy <target>! Daddeh comin'!!", "<Target>!! Daddeh hewe, daddeh make it aww betta!!"],
   MUMMAH_COMIN: [
     "Mummah comin' <target>!",
     "Nu cwy anymowe <target>! Mummah comin'!!",
@@ -1175,16 +1177,24 @@ const DIALOGUE = {
   },
   // Through the bars (CageLife.js)
   CAGE_TALK: {
+    // (the one in the cage: MUM/DAD to its mum or dad outside, BABY/BABY_DAD
+    // a mum or a dad to its foal outside)
     INSIDE: {
       MUM: ["Mummah! <Speaker> in boxie! Hewp!", "Mummah, come cwose? <Speaker> miss mummah..."],
+      DAD: ["Daddeh! <Speaker> in boxie! Hewp!", "Daddeh, come cwose? <Speaker> miss daddeh..."],
       BABY: ["Babbeh! Mummah hewe! Mummah nu can come out...", "Mummah wub yu, babbeh! Be gud!"],
+      BABY_DAD: ["Babbeh! Daddeh hewe! Daddeh nu can come out...", "Daddeh wub yu, babbeh! Be gud fow mummah!"],
       FAMILY: ["<Target>! <Speaker> stuck in boxie!", "<Target>, stay cwose? Pwease?"],
       SPECIAL: ["Speshuw fwen! <Speaker> miss yu!", "Wait fow <speaker>, speshuw fwen..."],
       FRIEND: ["<Target>! Hewwo! <Speaker> in boxie...", "Wan' pway wif <target>... nu can come out...", "Tewl <speaker> 'bout outside, <target>?"],
     },
+    // (the answer from outside: MUM/DAD a foal to its mum or dad in the cage,
+    // BABY/BABY_DAD a mum or a dad to its foal in the cage)
     OUTSIDE: {
-      MUM: ["Mummah hewe, babbeh! Nu cwy!", "Babbeh be bwave! Mummah nu go 'way!"],
-      BABY: ["Mummah! Come out an' gib huggies!", "Wai mummah in boxie?"],
+      MUM: ["Mummah! Come out an' gib huggies!", "Wai mummah in boxie?"],
+      DAD: ["Daddeh! Come out an' pway!", "Wai daddeh in boxie?"],
+      BABY: ["Mummah hewe, babbeh! Nu cwy!", "Babbeh be bwave! Mummah nu go 'way!"],
+      BABY_DAD: ["Daddeh hewe, babbeh! Nu cwy!", "Babbeh be bwave! Daddeh stay cwose!"],
       FAMILY: ["<Target>! <Speaker> stay cwose!", "Nu be scawed, <target>!"],
       SPECIAL: ["<Speaker> wait fow yu, speshuw fwen!", "<Speaker> miss <target> suu much..."],
       FRIEND: ["Hewwo <target>! Come out soon?", "<Speaker> save toysies fow <target>!", "Wai <target> in boxie? <Target> am gud fwuffy!"],

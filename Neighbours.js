@@ -579,6 +579,8 @@ function nbEndSit(h, f) {
   f.petSitting = undefined;
   if (h.request && h.request.kind === "sit") h.request = null;
   _nbLawnSpot(f, h.slot);
+  // (any foals she had while she was with you go home with her)
+  for (const o of fluffies) if (o.nbOwner === h.id && o.motherId === f.id && o.isAlive && !o.petSitting && o.scene !== NB_SCENE && o.scene !== NB_HOME_SCENE) _nbLawnSpot(o, h.slot);
   _nbTell(h, `${h.who} came back for ${nbName(f)} and ${how}.${pay ? ` Paid $${pay}.` : ""}`);
   return { pay, d };
 }

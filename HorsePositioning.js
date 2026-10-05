@@ -7,8 +7,10 @@ class HorsePositioning {
     if (this.horse.speech.text) return false;
 
     const other = this.horse.tooFarFromBaby();
+    // (shut in a cage, it can't go to its foal: no "comin'!" on repeat)
+    if (other && this.horse.currentCage && other.currentCage !== this.horse.currentCage) return false;
     if (other) {
-      this.horse.speak(getDialogue("MUMMAH_COMIN", this.horse, other));
+      this.horse.speak(getDialogue(this.horse.gender === "male" ? "DADDEH_COMIN" : "MUMMAH_COMIN", this.horse, other));
 
       // Initialize behavior first (resets target)
       this.horse.initBehavior("MOVING");

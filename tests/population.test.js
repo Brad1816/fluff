@@ -33,7 +33,7 @@ module.exports = [
         const few = [];
         for (let i = 0; i < 16; i++) few.push(__mk(100 + i * 60));
         out.fine = crowding("INDOORS");
-        for (let i = 0; i < 14; i++) few.push(__mk(120 + i * 60, "female", "INDOORS", true));
+        for (let i = 0; i < 29; i++) few.push(__mk(120 + i * 35, "female", "INDOORS", true));
         out.load = [roomLoad("INDOORS"), roomSpace("INDOORS"), +crowding("INDOORS").toFixed(2)];
         out.lines = crowdedRoomLines();
         const h0 = few[0].happiness;
@@ -71,8 +71,8 @@ module.exports = [
         return out;
       }, SETUP);
       checkEqual(r.fine, 0, "16 fluffies: fine");
-      checkEqual(JSON.stringify(r.load), JSON.stringify([30, 20, 0.5]), "30 in a room for 20");
-      check(r.lines.length === 1 && /Living room: crowded \(30\/20\)/.test(r.lines[0]), `Household line ${r.lines}`);
+      checkEqual(JSON.stringify(r.load), JSON.stringify([45, 30, 0.5]), "45 in a room for 30");
+      check(r.lines.length === 1 && /Living room: crowded \(45\/30\)/.test(r.lines[0]), `Household line ${r.lines}`);
       check(r.unhappier > 0.1, `unhappier over 20 game minutes ${r.unhappier}`);
       check(r.attacks >= 1, `grumpy ones scuffle (${r.attacks})`);
       checkEqual(r.intent, "CROWDED", "as a crowded scuffle");

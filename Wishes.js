@@ -36,7 +36,8 @@ const WISH_ACHE_MAX = 0.3;
 const WISH_JOY = 0.2;
 const WISH_CONTENT_DAYS = 3;
 const WISH_CONTENT_TARGET = 0.1; // how much higher its happiness settles
-const WISH_COOLDOWN_DAYS = 1;
+const WISH_COOLDOWN_DAYS = 2; // (was 1: wishes were everywhere)
+const WISH_START_DAYS = 2; // with no wish, a new one comes along every this many days or so
 const WISH_PROMISE_DAYS = 1.5;
 const WISH_PROMISE_BOOST = 1.3;
 const WISH_SAY_CHANCE = 0.03; // per wishing fluffy per 30s check
@@ -342,6 +343,8 @@ function updateWish(f, step) {
   if (!f.wish) {
     if (f.wishCooldownUntil !== undefined && now < f.wishCooldownUntil) return;
     if (f.tooYoungToWalk()) return;
+    // (not every fluffy is wishing for something all the time)
+    if (Math.random() >= 1 - Math.exp(-step / (WISH_START_DAYS * DAY_LENGTH))) return;
     pickWish(f);
     return;
   }

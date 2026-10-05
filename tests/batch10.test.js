@@ -51,7 +51,7 @@ module.exports = [
         rot: [ROT_START, ROT_FULL, ROT_GONE],
       }));
       check(r.vol <= 0.2 + 1e-9, `volume starts at 20%: ${r.vol}`);
-      check(r.house >= 20 && r.yard >= 30, `room space: house ${r.house}, yard ${r.yard}`);
+      check(r.house >= 30 && r.yard >= 30, `room space: house ${r.house}, yard ${r.yard}`);
       check(r.regrow >= 200, `grass regrows slower: ${r.regrow}`);
       check(r.poop <= 0.3 && r.rain <= 0.005, `poop fades slowly (${r.poop}), rain washes slowly (${r.rain})`);
       check(r.rot[2] <= 720, `rots away within ~14 hours: ${r.rot}`);
