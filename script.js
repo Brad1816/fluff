@@ -173,6 +173,8 @@ function attemptDrop() {
             continue;
           let hitPart = f.hitTest(mouse.x, mouse.y);
           if (hitPart) {
+            // Water puts out a burning fluffy
+            if (isSpray && f.isOnFire) f.extinguishFire();
             if (
               f.placedOn instanceof OperatingTable &&
               f.placedOn.category !== "DEFAULT"
@@ -368,7 +370,10 @@ function attemptDrop() {
         }
         if (!hitFluffy) obj.onDrop();
         return true;
-      } else if (typeof CattleProd !== "undefined" && obj instanceof CattleProd) {
+      } else if (
+        typeof CattleProd !== "undefined" &&
+        obj instanceof CattleProd
+      ) {
         let hitFluffy = false;
         for (const f of fluffies) {
           if (f.scene !== obj.scene || !f.isAlive) continue;
@@ -397,6 +402,10 @@ function attemptDrop() {
           }
         }
         if (!hitFluffy) obj.onDrop();
+        return true;
+      } else if (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch) {
+        // Stays in hand if released on a fluffy, like the cattle prod
+        if (!obj.getTargetFluffy()) obj.onDrop();
         return true;
       } else if (typeof ThrowTool !== "undefined" && obj instanceof ThrowTool) {
         let hitFluffy = false;
@@ -433,7 +442,11 @@ function attemptDrop() {
                   mom.setShock(2.0);
                   mom.speak(
                     getDialogue(
-                      ["UPSIES", "WITNESS_BABY", mom.adopted ? "DEFAULT" : "FERAL"],
+                      [
+                        "UPSIES",
+                        "WITNESS_BABY",
+                        mom.adopted ? "DEFAULT" : "FERAL",
+                      ],
                       mom,
                     ),
                   );
@@ -452,7 +465,9 @@ function attemptDrop() {
                   f.expressionOverrideTimer = 2.0;
                 }
               } else {
-                let key = f.adopted ? ["UPSIES", "BAD"] : ["UPSIES", "BAD", "FERAL"];
+                let key = f.adopted
+                  ? ["UPSIES", "BAD"]
+                  : ["UPSIES", "BAD", "FERAL"];
                 f.speak(getDialogue(key, f));
                 f.changeHappiness(HAPPINESS_PENALTY_BAD_UPSIES);
                 f.expressionOverride = null;
@@ -471,7 +486,7 @@ function attemptDrop() {
             }
 
             if (f.throwStartY === null) {
-                f.throwStartY = f.y;
+              f.throwStartY = f.y;
             }
             f.throwShadowY =
               typeof f.getBottomY === "function"
@@ -1475,6 +1490,64 @@ function updateDayCare(dt) {
   }
 }
 
+// Objects a passing car can smash: anything resting in the road, but not
+// something the player is dragging or a fluffy is carrying
+function canCarDestroyObject(obj) {
+  return !(
+    obj.shouldDespawn ||
+    obj.isDestroyed ||
+    obj.isDragging ||
+    obj.heldBy
+  );
+}
+
+// Rough footprint of an object, standing up from where it touches the ground
+function getCarCollisionBox(obj) {
+  if (obj.bounds && obj.bounds.right > obj.bounds.left) {
+    return obj.bounds;
+  }
+  const img = typeof obj.getImage === "function" ? obj.getImage() : null;
+  const w = img && img.width ? img.width * (obj.scale || 1) : 40;
+  const h = img && img.height ? img.height * (obj.scale || 1) : 40;
+  const bottom =
+    typeof obj.getBottomY === "function" ? obj.getBottomY() : obj.y;
+  return { left: obj.x - w / 2, right: obj.x + w / 2, top: bottom - h, bottom };
+}
+
+// Removes an object hit by a car, freeing anything attached to it
+function destroyObjectHitByCar(obj) {
+  if (typeof obj.releaseFluffy === "function" && obj.securedFluffy) {
+    obj.releaseFluffy();
+  }
+  for (const f of fluffies) {
+    if (f.placedOn === obj) f.placedOn = null;
+    if (f.claimedBed === obj) f.claimedBed = null;
+    if (f.litterboxUsed === obj) f.litterboxUsed = null;
+  }
+  for (const o of objects) {
+    if (o.stackedOn === obj) o.stackedOn = null;
+    if (o.attachedTo === obj) o.attachedTo = null;
+  }
+
+  playSound("thud");
+  if (typeof poofs !== "undefined") {
+    const box = getCarCollisionBox(obj);
+    const cx = (box.left + box.right) / 2;
+    const cy = (box.top + box.bottom) / 2;
+    for (let k = 0; k < 6; k++) {
+      poofs.push(
+        new Poof(
+          cx + (Math.random() - 0.5) * (box.right - box.left),
+          cy + (Math.random() - 0.5) * (box.bottom - box.top),
+          obj.scene,
+        ),
+      );
+    }
+  }
+  // Removed (with one more poof) by the object update loop
+  obj.shouldDespawn = true;
+}
+
 function updateSimulation(dt) {
   timePlayed += dt;
   updatePuddles(dt);
@@ -1594,7 +1667,8 @@ function updateSimulation(dt) {
         return count < 3 && s !== currentScene;
       });
       if (candidateScenes.length > 0) {
-        const targetScene = candidateScenes[Math.floor(Math.random() * candidateScenes.length)];
+        const targetScene =
+          candidateScenes[Math.floor(Math.random() * candidateScenes.length)];
         const box = new Bed(targetScene, "cardboard_box");
         const topWallHeight = height * 0.15;
         box.x = 100 + Math.random() * (width - 200);
@@ -1625,7 +1699,13 @@ function updateSimulation(dt) {
 
       for (let j = fluffies.length - 1; j >= 0; j--) {
         const f = fluffies[j];
-        if (f.scene === "ALLEY_ROAD" && !f.isDestroyed && !f.heldWithThrowTool && !f.isFallingFromThrow) {
+        if (
+          f.scene === "ALLEY_ROAD" &&
+          !f.isDestroyed &&
+          !f.heldWithThrowTool &&
+          !f.isFallingFromThrow &&
+          (!f.currentCage || !f.currentCage.isDragging)
+        ) {
           const fRadius = 30 * f.scale;
           const fHeight = 50 * f.scale;
 
@@ -1652,15 +1732,7 @@ function updateSimulation(dt) {
             f.anatomy.explodeFromCar(car);
 
             if (typeof addPointToPuddle !== "undefined") {
-              addPointToPuddle(
-                "ALLEY_ROAD",
-                f.x,
-                f.y,
-                "blood",
-                0.1,
-                0.3,
-                0.8,
-              );
+              addPointToPuddle("ALLEY_ROAD", f.x, f.y, "blood", 0.1, 0.3, 0.8);
             }
 
             if (typeof poofs !== "undefined") {
@@ -1727,6 +1799,19 @@ function updateSimulation(dt) {
             }
           }
         }
+      }
+
+      // Collisions with objects placed on the road
+      for (const obj of objects) {
+        if (obj.scene !== "ALLEY_ROAD" || !canCarDestroyObject(obj)) continue;
+        const box = getCarCollisionBox(obj);
+        const hit = !(
+          box.right < car.x ||
+          box.left > car.x + carW ||
+          box.bottom < car.y + 100 ||
+          box.top > car.y + carH + 20
+        );
+        if (hit) destroyObjectHitByCar(obj);
       }
     }
 
@@ -2029,7 +2114,8 @@ window.addEventListener("keydown", (e) => {
     }
     if (typeof unequipCurrentTool === "function") {
       const heldTool = objects.some(
-        (o) => o.isDragging && typeof isToolObject === "function" && isToolObject(o),
+        (o) =>
+          o.isDragging && typeof isToolObject === "function" && isToolObject(o),
       );
       if (heldTool) {
         unequipCurrentTool();

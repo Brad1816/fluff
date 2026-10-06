@@ -11,7 +11,7 @@ class HorseActionHandler {
       return false;
 
     if (this.horse.currentCage != null) {
-        this.horse.positioning.constrainTargetToCage();
+      this.horse.positioning.constrainTargetToCage();
     }
 
     this.horse.attemptUseTargetLitterbox();
@@ -455,12 +455,7 @@ class HorseActionHandler {
       )
         continue;
 
-      const proposedPerception = f.genetics.calculateColorismPerception();
-      if (
-        worldSettings.colorism &&
-        Math.random() * this.horse.coloristDegree > proposedPerception
-      )
-        continue;
+      if (fluffyColoristAgainstOtherFluffy(this.horse, f)) continue;
 
       if (
         f !== this.horse &&
@@ -521,10 +516,15 @@ class HorseActionHandler {
         this.horse.speech.timer <= 0 &&
         !this.horse.tooYoungToSpeak() &&
         this.horse.canSee() &&
-        this.horse.currentStateKey !== "FOCUSING" &&
+        !isFocusingState(this.horse.currentStateKey) &&
         rels[closestFriend.id] === "friend"
       ) {
-        this.horse.speak(getDialogue(["HELLO", "FRIEND"], this.horse));
+        // A friend in a used diaper gets remarked on instead
+        const key =
+          closestFriend.hasUsedDiaper() && Math.random() < 0.5
+            ? ["DIAPER", "SMELLY"]
+            : ["HELLO", "FRIEND"];
+        this.horse.speak(getDialogue(key, this.horse, closestFriend));
       }
 
       if (minFriendDist < 50 && Math.random() < 0.3 && this.horse.canSee()) {
@@ -764,14 +764,9 @@ class HorseActionHandler {
           child.scene === h.scene &&
           child.currentCage === h.currentCage
         ) {
-          const dist = Math.sqrt(
-            (h.x - child.x) ** 2 + (h.y - child.y) ** 2,
-          );
+          const dist = Math.sqrt((h.x - child.x) ** 2 + (h.y - child.y) ** 2);
           if (dist < 100) {
-            if (
-              child.genetics &&
-              h.coloristDegree > child.genetics.calculateColorismPerception()
-            ) {
+            if (fluffyColoristAgainstOtherFluffy(h, child)) {
               h.performAttack(child, "COLOR");
               h.speak(getDialogue(["ATTACK", "COLOR"], h));
               relationships[h.id][child.id] = "estranged_child";
@@ -927,9 +922,7 @@ class HorseActionHandler {
           }
         }
 
-        const dist = Math.sqrt(
-          (h.x - target.x) ** 2 + (h.y - target.y) ** 2,
-        );
+        const dist = Math.sqrt((h.x - target.x) ** 2 + (h.y - target.y) ** 2);
         if (dist < 50 && h.attackCooldown <= 0) {
           const isMaleOnMaleUnconsensual =
             h.gender === "male" &&
@@ -954,19 +947,12 @@ class HorseActionHandler {
               h.chaseTarget = null;
               h.chaseReason = null;
             }
-          } else if (
-            h.chaseReason === "ATTACK" ||
-            target.gender === "male"
-          ) {
+          } else if (h.chaseReason === "ATTACK" || target.gender === "male") {
             if (h.isSmarty()) {
               h.performAttack(target, "SMARTY_VIOLENCE");
               h.speak(
                 getDialogue(
-                  [
-                    "ATTACK",
-                    "SMARTY",
-                    h.tooYoungToSpeak() ? "BABY" : "ADULT",
-                  ],
+                  ["ATTACK", "SMARTY", h.tooYoungToSpeak() ? "BABY" : "ADULT"],
                   h,
                 ),
               );
@@ -1007,11 +993,7 @@ class HorseActionHandler {
             (h.x - width / 2) ** 2 + (h.y - (height * 0.15 + 50)) ** 2,
           );
 
-          if (
-            distToDoor < 300 &&
-            !h.isFrantic &&
-            !h.tooYoungToSpeak()
-          ) {
+          if (distToDoor < 300 && !h.isFrantic && !h.tooYoungToSpeak()) {
             let text = null;
             const recent = recentOutdoorDialogue.filter(
               (d) => Date.now() - d.time < 10000,
@@ -1081,9 +1063,7 @@ class HorseActionHandler {
             // Accessibility Check
             if (h.currentCage !== bowl.currentCage) continue;
 
-            const dist = Math.sqrt(
-              (h.x - bowl.x) ** 2 + (h.y - bowl.y) ** 2,
-            );
+            const dist = Math.sqrt((h.x - bowl.x) ** 2 + (h.y - bowl.y) ** 2);
             if (dist < 50) {
               if (bowl.eat()) {
                 h.hunger = 1.0;
@@ -1148,17 +1128,12 @@ class HorseActionHandler {
     // Cannibalism interaction
     if (h.cannibalTarget && !h.isDragging) {
       // Prioritize nearby gibs over horses
-      if (
-        h.cannibalTarget instanceof Horse &&
-        typeof gibs !== "undefined"
-      ) {
+      if (h.cannibalTarget instanceof Horse && typeof gibs !== "undefined") {
         let nearestGib = null;
         let minGibDist = Infinity;
         for (const gib of gibs) {
           if (gib.scene === h.scene && gib.freeGib) {
-            const d = Math.sqrt(
-              (h.x - gib.x) ** 2 + (h.y - gib.y) ** 2,
-            );
+            const d = Math.sqrt((h.x - gib.x) ** 2 + (h.y - gib.y) ** 2);
             if (d < 300 && d < minGibDist) {
               minGibDist = d;
               nearestGib = gib;
@@ -1183,9 +1158,7 @@ class HorseActionHandler {
       if (!isStillValid) {
         h.cannibalTarget = null;
       } else {
-        const dist = Math.sqrt(
-          (h.x - target.x) ** 2 + (h.y - target.y) ** 2,
-        );
+        const dist = Math.sqrt((h.x - target.x) ** 2 + (h.y - target.y) ** 2);
         const isGagged =
           h.accessories &&
           h.accessories.mouth &&
@@ -1215,12 +1188,7 @@ class HorseActionHandler {
   updateMotherChase() {
     const h = this.horse;
     // Mother chasing grabbed baby logic
-    if (
-      !h.isDragging &&
-      !h.placedOn &&
-      !h.tooYoungToWalk() &&
-      h.canSee()
-    ) {
+    if (!h.isDragging && !h.placedOn && !h.tooYoungToWalk() && h.canSee()) {
       const rels = relationships[h.id];
 
       if (rels) {

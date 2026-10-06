@@ -221,6 +221,11 @@ class Horse {
     this.tasedPoint = null;
     this.smokePoints = [];
     this.smokeParticleTimer = 0;
+    this.isOnFire = false;
+    this.fireElapsed = 0; // Seconds since catching fire
+    this.fireScreamTimer = 0;
+    this.fireSmokeTimer = 0;
+    this.fireEmberTimer = 0;
     this.bloodstream = {};
 
     // Physics / Interaction
@@ -390,6 +395,9 @@ class Horse {
     this.moveSoundTimer = 0;
     this.drowningTimer = 0;
     this.isBlinking = false;
+    this.wantsUpsies = false; // Sitting and reaching up at a nearby cursor
+    this.upsiesWigglePhase = 0;
+    this.hugSwayPhase = 0; // Drives arm swaying while hugging
     this.bloodTolerance = 0;
     this.bloodReactionTimer = 0;
     this.lastPuddleReactionTime = 0;
@@ -435,7 +443,9 @@ class Horse {
       }
     }
     this.processGenes();
-    this.coloristDegree = this.genetics.calculateColorismPerception();
+    this.coloristDegree = Math.floor(
+      this.genetics.calculateColorismPerception(),
+    );
     if (this.type === "alicorn") {
       this.alicornTolerance = true;
       this.limbs.horn = true;
@@ -468,11 +478,7 @@ class Horse {
         ) {
           relType = "estranged_child";
         }
-        if (
-          worldSettings.colorism &&
-          mom &&
-          mom.coloristDegree > this.genetics.calculateColorismPerception()
-        ) {
+        if (mom && fluffyColoristAgainstOtherFluffy(mom, this)) {
           relType = "estranged_child";
         }
         relationships[motherId][this.id] = relType;
@@ -590,6 +596,17 @@ class Horse {
 
   attemptFeedFromMare(mare) {
     if (
+      mare &&
+      mare.isAlive &&
+      mare.lactatingTimer > 0 &&
+      mare.id === this.motherId &&
+      this.isBehindBarrierFrom(mare)
+    ) {
+      mare.failToNurseBehindBarrier(this);
+      this.milkCooldown = 3.0;
+      return false;
+    }
+    if (
       !mare ||
       !mare.isAlive ||
       mare.lactatingTimer <= 0 ||
@@ -615,14 +632,7 @@ class Horse {
     if (mare.milkCharges > 0) {
       if (mare.happiness <= WAN_DIE_THRESHOLD) {
         key2 = "DEFAULT";
-      } else if (
-        worldSettings.colorism &&
-        canSee &&
-        mare.genetics &&
-        this.genetics &&
-        Math.random() * mare.coloristDegree >
-          this.genetics.calculateColorismPerception()
-      ) {
+      } else if (canSee && fluffyColoristAgainstOtherFluffy(mare, this)) {
         // Colorism rejection!
         key1 = "ATTACK";
         key2 = "COLOR";
@@ -651,7 +661,13 @@ class Horse {
         if (!mareTolerant) {
           key2 = "ALICORN";
         }
-        if (mare.attackCooldown <= 0 && mare.babiesToBirth <= 0) {
+        // No need to fight off a milk thief while the udders are
+        // covered by a diaper
+        if (
+          mare.attackCooldown <= 0 &&
+          mare.babiesToBirth <= 0 &&
+          !mare.getDiaper()
+        ) {
           mare.performAttack(this, "MUNSTAH_BABBEH_ATTACK");
         }
         // 50% chance to fear the mare for 1 minute
@@ -678,6 +694,25 @@ class Horse {
       success = false;
     }
 
+    // A diaper covers the udders: no milk, whether or not she wanted to
+    // feed this foal
+    if (mare.getDiaper() && mare.milkCharges > 0 && key1 !== "ATTACK") {
+      const wanted =
+        success &&
+        (key2 === "DEFAULT" || key2 === "ADOPTION" || key2 === "BLIND");
+      const unwanted =
+        key1 === "DENY_MILKIES" ||
+        (success && (key2 === "LEGLESS" || key2 === "ALICORN"));
+      success = false;
+      this.milkCooldown = 3.0;
+      if (wanted || unwanted) {
+        key1 = "DIAPER";
+        key2 = wanted ? "CANT_NURSE" : "DENY_NURSE";
+        mare.expressionOverride = wanted ? "MISERABLE" : "SMUG";
+        mare.expressionOverrideTimer = 3.0;
+      }
+    }
+
     if (success) {
       mare.milkCharges--;
       this.hunger = 1.0;
@@ -687,9 +722,11 @@ class Horse {
         if (this.renderer) this.renderer.tinted = null;
         this.vomitTimer = 4.0 + Math.random() * 6.0;
       }
-      this.speak(getDialogue("DRINK_MILKIES", this, mare), false, true);
+      if (!this.tooYoungToSpeak()) {
+        this.speak(getDialogue("DRINK_MILKIES", this, mare), false, true);
+      }
     }
-    if (mare.happiness > WAN_DIE_THRESHOLD) {
+    if (mare.happiness > WAN_DIE_THRESHOLD && !mare.tooYoungToSpeak()) {
       mare.speak(getDialogue([key1, key2], mare, this));
     }
 
@@ -826,7 +863,12 @@ class Horse {
       }
     }
 
-    if (!text && this.currentCage && this.currentCage.causesUnhappiness() && this.happiness > WAN_DIE_THRESHOLD) {
+    if (
+      !text &&
+      this.currentCage &&
+      this.currentCage.causesUnhappiness() &&
+      this.happiness > WAN_DIE_THRESHOLD
+    ) {
       if (this.tooYoungToSpeak()) {
         text = getDialogue(["LOST", "MOTHER", "CHIRPY"], this);
       } else if (this.isSmarty()) {
@@ -993,6 +1035,161 @@ class Horse {
     return false;
   }
 
+  // Separated by a cage, enclosure or can (one of them is shut in one, and
+  // they aren't in the same one)
+  isBehindBarrierFrom(other) {
+    return (
+      this.currentCage !== other.currentCage &&
+      (this.currentCage instanceof Cage || other.currentCage instanceof Cage)
+    );
+  }
+
+  // A mare who can't reach her hungry foal through a cage to nurse it
+  failToNurseBehindBarrier(foal) {
+    const now =
+      typeof performance !== "undefined" ? performance.now() / 1000 : 0;
+    if (now < (this.nextBarrierNurseTime || 0)) return;
+    this.nextBarrierNurseTime = now + BARRIER_NURSE_COOLDOWN;
+
+    this.changeHappiness(HAPPINESS_PENALTY_BARRIER_NURSE);
+    if (this.happiness > WAN_DIE_THRESHOLD && !this.tooYoungToSpeak()) {
+      this.expressionOverride = "CRYING_SHOCKED";
+      this.expressionOverrideTimer = 3.0;
+      this.speak(getDialogue(["GIVE_MILKIES", "BEHIND_BARRIER"], this, foal));
+    }
+  }
+
+  igniteFire() {
+    if (!this.isAlive || this.isOnFire) return;
+    this.isOnFire = true;
+    this.fireElapsed = 0;
+    this.fireScreamTimer = 0;
+    this.fireSmokeTimer = 0;
+    this.isFrantic = true;
+  }
+
+  // Put out by the sprinkler or spray bottle
+  extinguishFire() {
+    if (!this.isOnFire) return;
+    this.isOnFire = false;
+    this.fireElapsed = 0;
+    if (this.isAlive) this.isFrantic = this.calculateIsFrantic();
+    if (typeof poofs !== "undefined") {
+      poofs.push(new Poof(this.x, this.y - 20 * this.scale, this.scene));
+    }
+  }
+
+  // Burning: screams, panics, smokes, spreads to fluffies close by in the
+  // same cage, and dies FIRE_DEATH_TIME seconds after catching fire
+  updateFire(dt) {
+    if (!this.isOnFire) return;
+    this.fireElapsed += dt;
+    this.health = Math.min(
+      this.health,
+      100 * (1 - this.fireElapsed / FIRE_DEATH_TIME),
+    );
+    if (this.fireElapsed >= FIRE_DEATH_TIME) {
+      this.die("fire", "Burned to death");
+      return;
+    }
+
+    this.isFrantic = true;
+    this.expressionOverride = "CRYING_SHOCKED";
+    this.expressionOverrideTimer = Math.max(this.expressionOverrideTimer, 0.5);
+
+    this.fireScreamTimer -= dt;
+    if (this.fireScreamTimer <= 0) {
+      this.fireScreamTimer = 1.2 + Math.random() * 0.8;
+      const key = this.tooYoungToSpeak() ? "BABY" : "DEFAULT";
+      this.speak(getDialogue(["BURNING", key], this), true, true);
+    }
+
+    // Run about in a panic
+    if (
+      !this.isMovingOrRunning() &&
+      !this.isDragging &&
+      !this.placedOn &&
+      this.avoidStateChangerActions()
+    ) {
+      this.positioning.pickNewTarget();
+      this.initBehavior(canRun(this) ? "RUNNING" : "MOVING");
+    }
+
+    // Orange fire puffs and grey smoke rising off the body
+    if (typeof poofs !== "undefined") {
+      const e = this.positioning.getExtentsForCage();
+      const puffAt = (color) =>
+        new SmokePoof(
+          e.left + Math.random() * (e.right - e.left),
+          e.top + (e.bottom - e.top) * (0.2 + Math.random() * 0.4),
+          this.scene,
+          color,
+        );
+      this.fireEmberTimer -= dt;
+      if (this.fireEmberTimer <= 0) {
+        this.fireEmberTimer = FIRE_PARTICLE_INTERVAL;
+        poofs.push(puffAt(FIRE_PARTICLE_COLOR));
+      }
+      this.fireSmokeTimer -= dt;
+      if (this.fireSmokeTimer <= 0) {
+        this.fireSmokeTimer = SMOKE_PARTICLE_FREQUENCY;
+        poofs.push(puffAt(CATTLE_PROD_SMOKE_COLOR));
+      }
+    }
+
+    // Spread to fluffies close by in the same cage (or both outside one)
+    const spreadChance = 1 - Math.exp(-FIRE_SPREAD_RATE * dt);
+    for (const f of fluffies) {
+      if (
+        f === this ||
+        !f.isAlive ||
+        f.isOnFire ||
+        f.scene !== this.scene ||
+        f.currentCage !== this.currentCage
+      )
+        continue;
+      if (
+        Math.hypot(f.x - this.x, f.y - this.y) < FIRE_SPREAD_DISTANCE &&
+        Math.random() < spreadChance
+      ) {
+        f.igniteFire();
+      }
+    }
+  }
+
+  getDiaper() {
+    const d = this.accessories && this.accessories.diaper;
+    return d && d.id === "diaper" ? d : null;
+  }
+
+  hasUsedDiaper() {
+    const d = this.getDiaper();
+    return !!d && (d.fill || 0) > 0;
+  }
+
+  // Catches excretion in a diaper if one is worn and not yet full.
+  // Returns true if it was caught (so no puddle is made).
+  absorbIntoDiaper(amount) {
+    const diaper = this.getDiaper();
+    if (!diaper || (diaper.fill || 0) >= DIAPER_CAPACITY) return false;
+    diaper.fill = Math.min(DIAPER_CAPACITY, (diaper.fill || 0) + amount);
+    return true;
+  }
+
+  // A stallion's special huggies blocked by a diaper (his own, or his
+  // partner's when lineKey is "PARTNER_DIAPER")
+  refuseMatingInDiaper(lineKey = "CANT_MATE") {
+    this.specialHuggiesCooldown = Math.max(
+      this.specialHuggiesCooldown || 0,
+      DIAPER_MATE_LINE_COOLDOWN,
+    );
+    if (this.happiness > WAN_DIE_THRESHOLD && !this.tooYoungToSpeak()) {
+      this.expressionOverride = "MISERABLE";
+      this.expressionOverrideTimer = 3.0;
+      this.speak(getDialogue(["DIAPER", lineKey], this));
+    }
+  }
+
   babbleFamilyDialogue() {
     if (this.tooYoungToSpeak() || (!this.canSee() && !this.canHear()))
       return null;
@@ -1027,6 +1224,21 @@ class Horse {
     const key1 = "HELLO";
     const key2 = getSimpleRelationship(relation);
     const key3 = getSimpleRelationship(relationships[other.id][this.id]); // get the other side of the relationship
+
+    // Mummah can only talk to her foal through the cage/enclosure walls
+    if (
+      key2 === "baby" &&
+      this.gender === "female" &&
+      this.isBehindBarrierFrom(other)
+    ) {
+      this.changeHappiness(HAPPINESS_PENALTY_BARRIER_TALK);
+      return getDialogue([key1, "BEHIND_BARRIER"], this, other);
+    }
+
+    // Remarking on a relative's smelly diaper instead of chatting
+    if (other.hasUsedDiaper() && Math.random() < 0.5) {
+      return getDialogue(["DIAPER", "SMELLY"], this, other);
+    }
 
     this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
     other.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
@@ -1167,7 +1379,10 @@ class Horse {
             this.expressionOverride = "ANGRY_PUFFED";
             this.expressionOverrideTimer = 3.0;
           }
-          if (obj.channel !== "OFF" && ((this.y > obj.y) || (obj.currentCage != null))) {
+          if (
+            obj.channel !== "OFF" &&
+            (this.y > obj.y || obj.currentCage != null)
+          ) {
             return obj;
           }
         }
@@ -1197,7 +1412,6 @@ class Horse {
       this.tvFocus = null;
       return;
     }
-    if (this.placedOn) return;
     if (this.currentStateKey === "SLEEPING") return;
     if (this.happiness <= WAN_DIE_THRESHOLD) {
       this.tvFocus = null;
@@ -1217,7 +1431,7 @@ class Horse {
         tv.currentCage === this.currentCage;
       if (!tvValid || this.hunger < 0.5) {
         this.tvFocus = null;
-        if (this.currentStateKey === "FOCUSING") {
+        if (isFocusingState(this.currentStateKey)) {
           this.initBehavior("IDLE");
         }
         return;
@@ -1230,6 +1444,30 @@ class Horse {
       }
       return;
     }
+
+    // Racked fluffies can't choose to watch (their brain doesn't run
+    // while strapped down), so they watch any TV in view
+    if (
+      this.placedOn &&
+      this.hunger >= 0.5 &&
+      !this.isScared &&
+      !this.isFrantic
+    ) {
+      const tv = this.findNearbyTV();
+      if (tv) this.startWatchingTV(tv);
+    }
+  }
+
+  // Fluffies that can't sit up (racked, too weak or missing legs) watch
+  // lying down
+  getTVFocusState() {
+    return this.isCrawling ? "FOCUSING_LYING" : "FOCUSING";
+  }
+
+  startWatchingTV(tv) {
+    if (!this.placedOn) this.facingRight = tv.x > this.x;
+    this.tvFocus = { tv: tv, timer: 30 + Math.random() * 30 };
+    this.initBehavior(this.getTVFocusState());
   }
 
   avoidStateChangerActions() {
@@ -1452,9 +1690,6 @@ class Horse {
   }
 
   initBehavior(stateKey) {
-    if (stateKey === "FLUFFY_BITE") {
-      this.spawnMouthPoof("#8a0303");
-    }
     if (stateKey === "FLUFFY_KNOCKED_DOWN") {
       this._interruptMating();
       this.headKnockTimer = headKnockTime;
@@ -1708,6 +1943,7 @@ class Horse {
 
   calculateIsFrantic(hasMissing = null) {
     if (!this.isAlive) return false;
+    if (this.isOnFire) return true;
     const wanDieThreshold = WAN_DIE_THRESHOLD;
     if (this.happiness <= wanDieThreshold) return false;
     const missing =
@@ -1835,7 +2071,24 @@ class Horse {
     const behavior = arr[Math.floor(Math.random() * arr.length)];
     this.initBehavior(behavior);
 
+    // Cooldown for the attacker so they don't spam attack
+    this.attackCooldown = 1.5;
+    if (this.chaseReason !== "MATING" && Math.random() < 0.25) {
+      this.chaseTarget = null;
+    }
+
+    if (target.currentCage !== this.currentCage) {
+      if (!this.tooYoungToSpeak()) {
+        this.speak(getDialogue(["UNABLE_TO_ATTACK_CAGE"], this, target));
+      }
+      return;
+    }
+
     // Target reacts
+    if (behavior === "FLUFFY_BITE") {
+      this.spawnMouthPoof("#8a0303");
+    }
+
     target.wasAttackedBy(this);
     target.health -= 10;
     if (target.health <= 0) {
@@ -1856,11 +2109,6 @@ class Horse {
       }
     }
 
-    // Cooldown for the attacker so they don't spam attack
-    this.attackCooldown = 1.5;
-    if (this.chaseReason !== "MATING" && Math.random() < 0.25) {
-      this.chaseTarget = null;
-    }
     if (Math.random() < 0.15) {
       target.bleedingTimer = 5;
     }
@@ -1870,6 +2118,14 @@ class Horse {
 
   mateWith(friend, maleForced = false, femaleForced = false) {
     if (this.gender === "male" && this.specialHuggiesCooldown > 0) return false;
+    if (this.gender === "male" && this.getDiaper()) {
+      this.refuseMatingInDiaper();
+      return false;
+    }
+    if (this.gender === "male" && friend && friend.getDiaper()) {
+      this.refuseMatingInDiaper("PARTNER_DIAPER");
+      return false;
+    }
     if (this.gender === "male" && this.isSensitive()) return false;
     const force = maleForced || femaleForced;
     if (
@@ -2249,7 +2505,10 @@ class Horse {
     if (targetBlock) {
       this.blockTarget = true;
       this.initBehavior("MOVING");
-      this.setTargetPosition(targetBlock.x, targetBlock.currentCage ? this.y : targetBlock.y);
+      this.setTargetPosition(
+        targetBlock.x,
+        targetBlock.currentCage ? this.y : targetBlock.getCenterY(),
+      );
       this.constrainTargetToCage();
     } else {
       // find block stack to knock over
@@ -2265,7 +2524,7 @@ class Horse {
       if (targetBlock) {
         this.blockTowerKnockOverTarget = true;
         this.initBehavior("MOVING");
-        this.setTargetPosition(targetBlock.x, targetBlock.y);
+        this.setTargetPosition(targetBlock.x, targetBlock.getCenterY());
         this.constrainTargetToCage();
       }
     }
@@ -2348,28 +2607,34 @@ class Horse {
     this.health = Math.max(0, this.health - damage);
 
     const vol = Math.min(1.0, Math.max(0.4, speed / 1500));
-    const pitch = Math.max(0.7, 1.2 - (Math.abs(this.scale) || 0.5) * 0.4 * (1 + Math.random()));
+    const pitch = Math.max(
+      0.7,
+      1.2 - (Math.abs(this.scale) || 0.5) * 0.4 * (1 + Math.random()),
+    );
     playSound("thud", vol, pitch);
 
     this.expressionOverride = "CRYING_SHOCKED";
     this.expressionOverrideTimer = 2.0;
 
-    const line = getDialogue(["THROW_IMPACT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], this);
+    const line = getDialogue(
+      ["THROW_IMPACT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"],
+      this,
+    );
     const s = Math.abs(this.scale * Math.min(damage, 100));
     const initialScale = s / 200;
     const targetScale = (3 * s) / 200;
     const pX = this.x;
     const pY = this.y;
     if (this.isAlive) {
-        addPointToPuddle(
-            this.scene,
-            pX,
-            pY,
-            "blood",
-            initialScale,
-            targetScale,
-            0.05,
-        );
+      addPointToPuddle(
+        this.scene,
+        pX,
+        pY,
+        "blood",
+        initialScale,
+        targetScale,
+        0.05,
+      );
     }
     if (this.health <= 0) {
       this.die("throw", "Impact");
@@ -2402,7 +2667,10 @@ class Horse {
           this.throwTool.x = mouse.x;
           this.throwTool.y = mouse.y;
         }
-        if (typeof objects !== "undefined" && !objects.includes(this.throwTool)) {
+        if (
+          typeof objects !== "undefined" &&
+          !objects.includes(this.throwTool)
+        ) {
           objects.push(this.throwTool);
         }
         if (typeof isGlobalDragging !== "undefined") {
@@ -2414,8 +2682,7 @@ class Horse {
       this.throwFallVy = mouseVel.vy;
 
       const isLifted =
-        typeof this.throwStartY === "number" &&
-        this.y < this.throwStartY - 0.5;
+        typeof this.throwStartY === "number" && this.y < this.throwStartY - 0.5;
       const hasUpwardVelocity = this.throwFallVy < -10;
       const hasDownwardVelocity = this.throwFallVy > THROW_IMPACT_MIN_SPEED;
       const hasHorizontalVelocity = Math.abs(this.throwFallVx) > 10;
@@ -2583,6 +2850,9 @@ class Horse {
       this.updateHappinessPenalties(dt);
       this.updateExpression(dt);
       this.updateCooldowns(dt);
+      this.updateUpsiesBegging(dt);
+      this.updateFire(dt);
+      this.updateHugSway(dt);
       this.updateAphrodisiacUtterances(dt);
       this.actionHandler.updateCounterattack(dt);
       this.anatomy.updateLactation(dt);
@@ -2642,6 +2912,7 @@ class Horse {
       if (!this.anatomy.updateHealth(dt)) return;
       this.anatomy.updateBowelConditions(dt);
       this.anatomy.updateCastrationBand(dt);
+      this.anatomy.updateDiaper(dt);
       this.actionHandler.updateBowlEating();
       this.updateIncapacitation();
 
@@ -2664,6 +2935,9 @@ class Horse {
 
       if (this.isCrawling && this.currentStateKey === "SITTING") {
         this.initBehavior("IDLE");
+      }
+      if (this.isCrawling && this.currentStateKey === "FOCUSING") {
+        this.currentStateKey = "FOCUSING_LYING";
       }
 
       this.anatomy.updateGrowth(dt);
@@ -2741,6 +3015,32 @@ class Horse {
     this.updateLayout();
   }
 
+  // Advances the arm sway animation while hugging, so it pauses with the game
+  updateHugSway(dt) {
+    if (this.currentStateKey === "HUGGING") {
+      this.hugSwayPhase = (this.hugSwayPhase + dt) % (Math.PI * 2);
+    }
+  }
+
+  // Sitting fluffies that can see the cursor close by turn to it and wiggle
+  // their hooves up at it. Done here rather than when drawing so it stops
+  // while the game is paused.
+  updateUpsiesBegging(dt) {
+    this.wantsUpsies =
+      !this.isDragging &&
+      this.currentStateKey === "SITTING" &&
+      this.canSee() &&
+      Math.sqrt((mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2) < 200;
+
+    if (this.wantsUpsies) {
+      this.upsiesWigglePhase =
+        (this.upsiesWigglePhase + dt * 10) % (Math.PI * 2);
+      this.facingRight = mouse.x > this.x;
+    } else {
+      this.upsiesWigglePhase = 0;
+    }
+  }
+
   // Sleep deprivation and bed/box sleeping comfort
   updateSleep(dt) {
     if (this.currentStateKey === "SLEEPING") {
@@ -2750,8 +3050,7 @@ class Horse {
         this.claimedBed &&
         this.claimedBed.scene === this.scene &&
         this.claimedBed.currentCage === this.currentCage &&
-        (this.x - this.claimedBed.x) ** 2 +
-          (this.y - this.claimedBed.y) ** 2 <
+        (this.x - this.claimedBed.x) ** 2 + (this.y - this.claimedBed.y) ** 2 <
           10000;
 
       if (inBed && this.happiness > WAN_DIE_THRESHOLD) {
@@ -2762,10 +3061,7 @@ class Horse {
             (this.boxWhimperTimer || 5 + Math.random() * 15) - dt;
           if (this.boxWhimperTimer <= 0) {
             this.boxWhimperTimer = 15.0 + Math.random() * 20.0;
-            if (
-              !this.tooYoungToSpeak() &&
-              typeof getDialogue !== "undefined"
-            ) {
+            if (!this.tooYoungToSpeak() && typeof getDialogue !== "undefined") {
               this.speak(getDialogue(["BED", "BOX_SLEEP"], this));
             }
           }
@@ -2788,11 +3084,7 @@ class Horse {
 
     // Cage penalty: -0.1 per minute (not below WAN_DIE_THRESHOLD)
     if (
-      ((this.currentCage &&
-        !(
-          this.currentCage instanceof Cage &&
-          !this.currentCage.causesUnhappiness()
-        )) ||
+      ((this.currentCage && this.currentCage.causesUnhappiness()) ||
         this.placedOn instanceof LitterpalBox) &&
       this.happiness > WAN_DIE_THRESHOLD + 0.05
     ) {
@@ -3237,17 +3529,20 @@ class Horse {
 
       // Size based on amount and growth
       const baseTargetScale =
-        ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.growth);
+        ((60 * amount) / 200) * Math.max(CHIRPY_THRESHOLD, this.scale);
 
-      addPointToPuddle(
-        this.scene,
-        pX,
-        pY,
-        puddleType,
-        5 / 200,
-        baseTargetScale,
-        0.02,
-      );
+      // A diaper catches it until it's full
+      if (!this.absorbIntoDiaper(amount)) {
+        addPointToPuddle(
+          this.scene,
+          pX,
+          pY,
+          puddleType,
+          5 / 200,
+          baseTargetScale,
+          0.02,
+        );
+      }
 
       if (nearLitterbox && lbIsFull) {
         nearLitterbox.use();
@@ -3307,6 +3602,7 @@ class Horse {
     this.litterboxJitterOffset = 0;
   }
   excretePoop(dt) {
+    if (this.absorbIntoDiaper(0.3 * dt)) return;
     const torsoWidth = this.layout ? this.layout.torso.w : 100;
     const offsetX = (torsoWidth / 2) * (this.facingRight ? -1 : 1) * this.scale;
     const pX = this.x + offsetX;
@@ -3314,10 +3610,10 @@ class Horse {
     const puddleType = "poop";
 
     // Increment area-based target scale
-    const targetAddedAreaPerSec = 0.05;
+    const targetAddedAreaPerSec = 0.05 * this.scale * this.scale;
     const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt);
 
-    const addedAreaPerSec = 0.01;
+    const addedAreaPerSec = 0.01 * this.scale * this.scale;
     const scaleInc = Math.sqrt(addedAreaPerSec * dt);
 
     addPointToPuddle(
@@ -3331,6 +3627,7 @@ class Horse {
     );
   }
   excretePee(dt) {
+    if (this.absorbIntoDiaper(0.3 * dt)) return;
     const torsoWidth = this.layout ? this.layout.torso.w : 100;
     const offsetX =
       (torsoWidth / 2) * (this.facingRight ? -0.5 : 0.5) * this.scale;
@@ -3339,10 +3636,10 @@ class Horse {
     const puddleType = "pee";
 
     // Increment area-based target scale
-    const targetAddedAreaPerSec = 0.05;
+    const targetAddedAreaPerSec = 0.05 * this.scale * this.scale;
     const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt);
 
-    const addedAreaPerSec = 0.01;
+    const addedAreaPerSec = 0.01 * this.scale * this.scale;
     const scaleInc = Math.sqrt(addedAreaPerSec * dt);
 
     addPointToPuddle(
@@ -3361,10 +3658,10 @@ class Horse {
     const puddleType = "blood";
 
     // Increment area-based target scale
-    const targetAddedAreaPerSec = 0.1;
+    const targetAddedAreaPerSec = 0.1 * this.scale;
     const targetScaleInc = Math.sqrt(targetAddedAreaPerSec * dt);
 
-    const addedAreaPerSec = 0.025;
+    const addedAreaPerSec = 0.025 * this.scale;
     const scaleInc = Math.sqrt(addedAreaPerSec * dt);
 
     addPointToPuddle(
@@ -3391,7 +3688,13 @@ class Horse {
           : this.claimedBed.y - BED_HEIGHT / 2 - this.scale * 40;
     }
     this.birthIntervalTimer = 3;
-    this.speak(getDialogue(["BIRTH", "START"], this), true);
+    this.speak(
+      getDialogue(
+        ["BIRTH", "START", this.tooYoungToSpeak() ? "BABY" : "DEFAULT"],
+        this,
+      ),
+      true,
+    );
     this.initBehavior("BENDING_2");
     this.stateTimer = 0.8;
   }
@@ -3417,7 +3720,7 @@ class Horse {
     py,
     multiplier = this.isBeingTased && this.isBeingTased()
       ? CATTLE_PROD_HITBOX_MULTIPLIER
-      : 1.0
+      : 1.0,
   ) {
     if (!this.layout) this.updateLayout();
     if (!this.layout) return false;
@@ -3637,7 +3940,11 @@ class Horse {
         : 0;
     ly -= bodyY;
 
-    const torso = (this.layout && this.layout.torso) || { x: 0, y: 0, angle: 0 };
+    const torso = (this.layout && this.layout.torso) || {
+      x: 0,
+      y: 0,
+      angle: 0,
+    };
     const tdx = lx - (torso.x || 0);
     const tdy = ly - (torso.y || 0);
     const torsoAngle = torso.angle || 0;
@@ -3658,7 +3965,11 @@ class Horse {
 
   getWorldPositionFromTorsoOffset(ox, oy) {
     if (!this.layout) this.updateLayout();
-    const torso = (this.layout && this.layout.torso) || { x: 0, y: 0, angle: 0 };
+    const torso = (this.layout && this.layout.torso) || {
+      x: 0,
+      y: 0,
+      angle: 0,
+    };
     const torsoAngle = torso.angle || 0;
     let tdx = ox;
     let tdy = oy;
@@ -3763,7 +4074,11 @@ class Horse {
     }
     if (this.positioning) {
       const extents = this.positioning.getExtentsForCage();
-      if (extents && typeof extents.bottom === "number" && !isNaN(extents.bottom)) {
+      if (
+        extents &&
+        typeof extents.bottom === "number" &&
+        !isNaN(extents.bottom)
+      ) {
         return extents.bottom;
       }
     }
@@ -3843,13 +4158,7 @@ class Horse {
     if (!other || !other.isAlive || this.speech.timer > 0) return;
     this.speak(getDialogue("PROPOSE_FRIEND", this));
 
-    if (
-      worldSettings.colorism &&
-      other.canSee() &&
-      other.genetics &&
-      this.genetics &&
-      other.coloristDegree > this.genetics.calculateColorismPerception()
-    ) {
+    if (other.canSee() && fluffyColoristAgainstOtherFluffy(other, this)) {
       other.speak(getDialogue(["REJECT_FRIEND_COLOR"], other));
       other.expressionOverride = "ANGRY_PUFFED";
       other.expressionOverrideTimer = 3.0;
@@ -4040,6 +4349,8 @@ class Horse {
       poisoned: this.isPoisoned,
       isToxoplasmosis: this.isToxoplasmosis,
       isToxoVaccinated: this.isToxoVaccinated,
+      isOnFire: this.isOnFire,
+      fireElapsed: this.fireElapsed,
       bloodstream: JSON.parse(JSON.stringify(this.bloodstream || {})),
       smokeTimer: this.smokeTimer || 0,
       smokeOffset: this.smokeOffset
@@ -4088,15 +4399,7 @@ class Horse {
     if (typeof addPointToPuddle !== "undefined") {
       const scale = (10 * this.scale) / 200;
       const targetScale = ((25 + Math.random() * 25) * this.scale) / 200;
-      addPointToPuddle(
-        this.scene,
-        px,
-        py,
-        "vomit",
-        scale,
-        targetScale,
-        0.08,
-      );
+      addPointToPuddle(this.scene, px, py, "vomit", scale, targetScale, 0.08);
     }
   }
 
@@ -4194,6 +4497,8 @@ class Horse {
         ? data.isToxoplasmosis || false
         : false;
     horse.isToxoVaccinated = data.isToxoVaccinated || false;
+    horse.isOnFire = !!data.isOnFire && horse.isAlive;
+    horse.fireElapsed = data.fireElapsed || 0;
     if (Array.isArray(data.smokePoints)) {
       horse.smokePoints = data.smokePoints.map((sp) => ({
         offset: {

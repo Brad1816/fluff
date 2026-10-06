@@ -6,11 +6,7 @@ class HorseAnatomy {
   amputate(part, weapon = null) {
     this.horse.bloodTolerance = 1;
     this.horse.bloodReactionTimer = 15;
-    this.horse.bleedingTimer =
-      weapon &&
-      (weapon.type === "scalpel")
-        ? 0
-        : 10;
+    this.horse.bleedingTimer = weapon && weapon.type === "scalpel" ? 0 : 10;
     this.horse.sleepTargetSet = false;
     if (part === "head") {
       const nearEar = this.horse.facingRight ? "rightEar" : "leftEar";
@@ -148,6 +144,7 @@ class HorseAnatomy {
     }
     this.horse.isAlive = false;
     this.horse.hunger = 0;
+    this.horse.isOnFire = false;
     if (this.horse.speech) {
       this.horse.speech.text = null;
       this.horse.speech.timer = 0;
@@ -361,32 +358,7 @@ class HorseAnatomy {
       type = "head";
       growthVal = 0.1;
 
-      let activeExp = "NEUTRAL";
-      if (
-        this.horse.expressionOverride &&
-        this.horse.expressionOverrideTimer > 0
-      ) {
-        activeExp = this.horse.expressionOverride;
-      } else if (this.horse.expression) {
-        activeExp = this.horse.expression;
-      } else if (!this.horse.isAlive) {
-        activeExp = "SAD";
-      }
-
-      faceData = {
-        expression: activeExp,
-        eyeColor: this.horse.colors ? this.horse.colors.pupil : "black",
-        maneType: this.horse.maneType !== undefined ? this.horse.maneType : 0,
-        maneColor: this.horse.colors ? this.horse.colors.mane : null,
-        gradientConfig: this.horse.hasGradient
-          ? {
-              color: this.horse.colors.gradient,
-              intensity: this.horse.gradientIntensity,
-            }
-          : null,
-        hasHorn: !!(this.horse.limbs && this.horse.limbs.horn),
-        hornSizeFactor: this.horse.hornSizeFactor || 1.0,
-      };
+      faceData = this.horse.renderer.getFaceData();
     } else if (part === "torso") {
       img = this.horse.tinted.torso;
       type = "torso";
@@ -508,7 +480,12 @@ class HorseAnatomy {
       grinder,
       grinder
         ? null
-        : { left: 0, right: width, top: 0, bottom: this.horse.getBottomY() },
+        : {
+            left: 0,
+            right: width,
+            top: 0,
+            bottom: this.horse.getBottomY(),
+          },
       s,
       growthVal * g,
       pregnancyData,
@@ -584,12 +561,14 @@ class HorseAnatomy {
 
     // Positioning
     if (this.horse.layout) {
-        const torsoWidth = this.horse.layout ? this.horse.layout.torso.w : 100;
-        const offsetX =
-          (torsoWidth / 2) * (this.horse.facingRight ? -0.5 : 0.5) * this.horse.scale;
-        birthPosX = this.horse.x + offsetX;
-        birthPosY = this.horse.getBottomY() - 10;
-    } 
+      const torsoWidth = this.horse.layout ? this.horse.layout.torso.w : 100;
+      const offsetX =
+        (torsoWidth / 2) *
+        (this.horse.facingRight ? -0.5 : 0.5) *
+        this.horse.scale;
+      birthPosX = this.horse.x + offsetX;
+      birthPosY = this.horse.getBottomY() - 10;
+    }
 
     // Too early in the pregnancy for anything recognisable to be born
     const progress = this.horse.getPregnancyProgress();
@@ -659,11 +638,10 @@ class HorseAnatomy {
       addPointToPuddle(baby.scene, pX, pY, "blood", 10 / 200, 20 / 200);
     }
 
-
     fluffies.push(baby);
     if (isViable) {
       baby.speak(getDialogue("BABY_PEEP", baby, this.horse));
-    } else {
+    } else if (!this.horse.tooYoungToSpeak()) {
       this.horse.speak(getDialogue(["BIRTH", "DEAD_BABY"], this.horse, baby));
     }
   }
@@ -723,20 +701,7 @@ class HorseAnatomy {
           let img = null;
           if (partType === "head") {
             img = dummy.tinted ? dummy.tinted.head : null;
-            faceData = {
-              expression: dummy.expression || "NEUTRAL",
-              eyeColor: dummy.colors ? dummy.colors.pupil : "black",
-              maneType: dummy.maneType !== undefined ? dummy.maneType : 0,
-              maneColor: dummy.colors ? dummy.colors.mane : null,
-              gradientConfig: dummy.hasGradient
-                ? {
-                    color: dummy.colors.gradient,
-                    intensity: dummy.gradientIntensity,
-                  }
-                : null,
-              hasHorn: !!(dummy.limbs && dummy.limbs.horn),
-              hornSizeFactor: dummy.hornSizeFactor || 1.0,
-            };
+            faceData = dummy.renderer.getFaceData();
           }
 
           const gib = new Gib(
@@ -926,10 +891,8 @@ class HorseAnatomy {
       const restingAtBed =
         h.claimedBed &&
         h.claimedBed.scene === h.scene &&
-        Math.sqrt(
-          (h.x - h.claimedBed.x) ** 2 +
-            (h.y - h.claimedBed.y) ** 2,
-        ) < 120 &&
+        Math.sqrt((h.x - h.claimedBed.x) ** 2 + (h.y - h.claimedBed.y) ** 2) <
+          120 &&
         !h.isMovingOrRunning() &&
         h.currentStateKey !== "SLEEPING";
       h.milkRegenTimer += dt;
@@ -986,8 +949,7 @@ class HorseAnatomy {
       h.bleedingTimer <= 0 &&
       !h.isPoisoned &&
       (!h.isToxoplasmosis ||
-        (typeof worldSettings !== "undefined" &&
-          !worldSettings.toxoplasmosis))
+        (typeof worldSettings !== "undefined" && !worldSettings.toxoplasmosis))
     ) {
       h.health = Math.min(100, h.health + 5 * h.growth * dt);
     }
@@ -1051,8 +1013,8 @@ class HorseAnatomy {
     // The time can be arbitrarily defined, check out anxiety incontinence.
     if (h.isDiarrhea) {
       // Delays diarrhea until fluffy has at least enough poopstorage
-      if (!h.diarrheaTimer || h.diarrheaTimer <= 0) { 
-        if (h.poopStorage >= 0.2) { 
+      if (!h.diarrheaTimer || h.diarrheaTimer <= 0) {
+        if (h.poopStorage >= 0.2) {
           h.diarrheaTimer = h.poopStorage * 10;
         }
       }
@@ -1075,8 +1037,8 @@ class HorseAnatomy {
     // Incontinence logic. A fluffy will empty its bladder where it stands regardless of what's going on.
     if (h.isIncontinent) {
       // Delays incontinence until fluffy has at least enough peestorage
-      if (!h.incontinenceTimer || h.incontinenceTimer <= 0) { 
-        if (h.peeStorage >= 0.2) { 
+      if (!h.incontinenceTimer || h.incontinenceTimer <= 0) {
+        if (h.peeStorage >= 0.2) {
           h.incontinenceTimer = h.peeStorage * 10;
         }
       }
@@ -1101,12 +1063,40 @@ class HorseAnatomy {
       if (!h.scareCheck && h.poopStorage > 0.3 && !h.isDiarrhea) {
         h.scareCheck = true;
         if (Math.random() < 0.25) {
-          h.diarrheaTimer = 0.5; 
-          h.isDiarrhea = true;          
+          h.diarrheaTimer = 0.5;
+          h.isDiarrhea = true;
         }
       }
     } else {
       h.scareCheck = false;
+    }
+  }
+
+  // Diapers irritate: a miserable complaint every so often
+  updateDiaper(dt) {
+    const h = this.horse;
+    if (!h.getDiaper()) {
+      h.diaperComplainTimer = 0;
+      return;
+    }
+    if (!h.diaperComplainTimer) {
+      h.diaperComplainTimer =
+        DIAPER_COMPLAIN_MIN_INTERVAL +
+        Math.random() *
+          (DIAPER_COMPLAIN_MAX_INTERVAL - DIAPER_COMPLAIN_MIN_INTERVAL);
+    }
+    h.diaperComplainTimer -= dt;
+    if (h.diaperComplainTimer > 0) return;
+    h.diaperComplainTimer = 0; // Re-rolled next update
+
+    h.changeHappiness(HAPPINESS_PENALTY_DIAPER_ITCH);
+    if (h.happiness > WAN_DIE_THRESHOLD && !h.tooYoungToSpeak()) {
+      h.expressionOverride = "MISERABLE";
+      h.expressionOverrideTimer = 3.0;
+      // A used diaper smells, too
+      const key =
+        h.hasUsedDiaper() && Math.random() < 0.5 ? "USED" : "COMPLAIN";
+      h.speak(getDialogue(["DIAPER", key], h));
     }
   }
 
@@ -1247,15 +1237,11 @@ class HorseAnatomy {
 
     // Peeing and Pooping
     if (
-      (h.avoidStateChangerActions() ||
-        h.placedOn instanceof LitterpalBox) &&
+      (h.avoidStateChangerActions() || h.placedOn instanceof LitterpalBox) &&
       !h.hasBlockOnBack()
     ) {
       // Pooping logic
-      if (
-        Math.max(h.poopStorage, h.peeStorage) >
-        0.6 + h.pottyTraining * 0.2
-      ) {
+      if (Math.max(h.poopStorage, h.peeStorage) > 0.6 + h.pottyTraining * 0.2) {
         h.attemptPoop();
       }
     }
@@ -1302,9 +1288,7 @@ class HorseAnatomy {
               ? h.claimedBed
               : null;
           const distToBed = birthBed
-            ? Math.sqrt(
-                (birthBed.x - h.x) ** 2 + (birthBed.y - h.y) ** 2,
-              )
+            ? Math.sqrt((birthBed.x - h.x) ** 2 + (birthBed.y - h.y) ** 2)
             : Infinity;
 
           if (birthBed && distToBed > 30) {
@@ -1325,9 +1309,7 @@ class HorseAnatomy {
             : null;
         const atBed =
           birthBed &&
-          Math.sqrt(
-            (birthBed.x - h.x) ** 2 + (birthBed.y - h.y) ** 2,
-          ) <= 30;
+          Math.sqrt((birthBed.x - h.x) ** 2 + (birthBed.y - h.y) ** 2) <= 30;
         if (atBed || h.birthBedSeekTimeout <= 0 || !birthBed) {
           h.seekingBirthBed = false;
           h._startActiveLabor();
@@ -1387,26 +1369,38 @@ class HorseAnatomy {
     h.changeHappiness(HAPPINESS_PENALTY_CATTLE_PROD * dt);
 
     h.continuousTasedTimer = (h.continuousTasedTimer || 0) + dt;
-    h.continuousTasedSmokeTimer =
-      (h.continuousTasedSmokeTimer || 0) + dt;
+    h.continuousTasedSmokeTimer = (h.continuousTasedSmokeTimer || 0) + dt;
     if (h.continuousTasedSmokeTimer >= CATTLE_PROD_SMOKE_THRESHOLD) {
-      h.continuousTasedSmokeTimer -= CATTLE_PROD_SMOKE_THRESHOLD;
-      const hitPoint =
-        h.tasedPoint ||
-        (typeof mouse !== "undefined"
-          ? { x: mouse.x, y: mouse.y }
-          : { x: h.x, y: h.y });
-      const offset = h.getTorsoOffsetFromPoint(
-        hitPoint.x,
-        hitPoint.y
-      );
-      if (!h.smokePoints) h.smokePoints = [];
-      h.smokePoints.push({
-        offset: { x: offset.x, y: offset.y },
-        x: offset.x,
-        y: offset.y,
-        timer: CATTLE_PROD_SMOKE_DURATION,
-      });
+      // Prodded past the threshold: keep the spot under the prod smoking
+      // (it puffs every SMOKE_PARTICLE_FREQUENCY and lingers afterwards)
+      h.tasedSmokeSpawnTimer = (h.tasedSmokeSpawnTimer || 0) - dt;
+      if (h.tasedSmokeSpawnTimer <= 0) {
+        h.tasedSmokeSpawnTimer = SMOKE_PARTICLE_FREQUENCY;
+        const hitPoint =
+          h.tasedPoint ||
+          (typeof mouse !== "undefined"
+            ? { x: mouse.x, y: mouse.y }
+            : { x: h.x, y: h.y });
+        const offset = h.getTorsoOffsetFromPoint(hitPoint.x, hitPoint.y);
+        if (!h.smokePoints) h.smokePoints = [];
+        // Refresh the spot already smoking here rather than stacking
+        // up new ones; start a new spot if the prod has moved
+        const existing = h.smokePoints.find(
+          (sp) =>
+            Math.hypot(sp.offset.x - offset.x, sp.offset.y - offset.y) <
+            CATTLE_PROD_SMOKE_SPOT_RADIUS,
+        );
+        if (existing) {
+          existing.timer = CATTLE_PROD_SMOKE_DURATION;
+        } else {
+          h.smokePoints.push({
+            offset: { x: offset.x, y: offset.y },
+            x: offset.x,
+            y: offset.y,
+            timer: CATTLE_PROD_SMOKE_DURATION,
+          });
+        }
+      }
     }
 
     const growth = h.growth !== undefined ? h.growth : 1.0;
@@ -1427,15 +1421,19 @@ class HorseAnatomy {
     }
 
     if (h.isAlive) {
-      if (
-        h.tasedOverrideTimer === undefined ||
-        h.tasedOverrideTimer <= 0
-      ) {
+      if (h.tasedOverrideTimer === undefined || h.tasedOverrideTimer <= 0) {
         h.tasedOverrideTimer = CATTLE_PROD_OVERRIDE_DURATION;
         h.expressionOverride = "CRYING_SHOCKED";
         h.expressionOverrideTimer = CATTLE_PROD_OVERRIDE_DURATION;
         if (h.happiness > WAN_DIE_THRESHOLD && h.canTalk()) {
-          h.speak(getDialogue(["CATTLE_PROD", h.tooYoungToSpeak() ? "BABY" : "DEFAULT"], h), false, true);
+          h.speak(
+            getDialogue(
+              ["CATTLE_PROD", h.tooYoungToSpeak() ? "BABY" : "DEFAULT"],
+              h,
+            ),
+            false,
+            true,
+          );
         }
       } else {
         h.tasedOverrideTimer -= dt;

@@ -291,7 +291,10 @@ function drawToolBadge(ctx, tool, x, y, size, countOverride) {
         badgeColor = "#ff9999";
       } else if (typeof TrashBag !== "undefined" && tool instanceof TrashBag) {
         badgeColor = "#ffff99";
-      } else if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack) {
+      } else if (
+        typeof Thumbtack !== "undefined" &&
+        tool instanceof Thumbtack
+      ) {
         badgeColor = "#ffffff";
       }
     }
@@ -378,7 +381,8 @@ function drawToolboxAndToolbar(ctx) {
     }
     if (pages.length === 0) pages.push([]);
     if (typeof toolboxPage === "undefined") toolboxPage = 0;
-    if (toolboxPage >= pages.length) toolboxPage = Math.max(0, pages.length - 1);
+    if (toolboxPage >= pages.length)
+      toolboxPage = Math.max(0, pages.length - 1);
 
     const currentSlots = pages[toolboxPage];
 
@@ -416,7 +420,11 @@ function drawToolboxAndToolbar(ctx) {
           });
 
           const img = getToolImage(tool);
-          if (typeof isDrawableImage === "function" ? isDrawableImage(img) : (img && (img.complete || img.width > 0))) {
+          if (
+            typeof isDrawableImage === "function"
+              ? isDrawableImage(img)
+              : img && (img.complete || img.width > 0)
+          ) {
             const inset = 6;
             const maxW = btnSize - inset * 2;
             const maxH = btnSize - inset * 2;
@@ -474,9 +482,7 @@ function drawToolboxAndToolbar(ctx) {
       // Slot button
       drawGlassButton(x, toolbarBoxY, slotSize, slotSize, "", {
         borderRadius: 8,
-        normalFill: isActive
-          ? "rgba(255, 215, 0, 0.25)"
-          : "rgba(0, 0, 0, 0.2)",
+        normalFill: isActive ? "rgba(255, 215, 0, 0.25)" : "rgba(0, 0, 0, 0.2)",
         hoverFill: isActive
           ? "rgba(255, 215, 0, 0.35)"
           : "rgba(255, 255, 255, 0.25)",
@@ -485,7 +491,11 @@ function drawToolboxAndToolbar(ctx) {
 
       if (slot.tool) {
         const img = getToolImage(slot.tool);
-        if (typeof isDrawableImage === "function" ? isDrawableImage(img) : (img && (img.complete || img.width > 0))) {
+        if (
+          typeof isDrawableImage === "function"
+            ? isDrawableImage(img)
+            : img && (img.complete || img.width > 0)
+        ) {
           const inset = 8;
           const maxW = slotSize - inset * 2;
           const maxH = slotSize - inset * 2;
@@ -527,7 +537,11 @@ function drawToolboxAndToolbar(ctx) {
       : null;
 
     const lines = [titleText];
-    if (hoveredIsToolbox && hoveredToolboxItem && hoveredToolboxItem.count > 1) {
+    if (
+      hoveredIsToolbox &&
+      hoveredToolboxItem &&
+      hoveredToolboxItem.count > 1
+    ) {
       lines.push(`Count in toolbox: ${hoveredToolboxItem.count}`);
     }
     if (descText) {
@@ -638,7 +652,8 @@ function toolboxAndToolbarClick() {
     }
     if (pages.length === 0) pages.push([]);
     if (typeof toolboxPage === "undefined") toolboxPage = 0;
-    if (toolboxPage >= pages.length) toolboxPage = Math.max(0, pages.length - 1);
+    if (toolboxPage >= pages.length)
+      toolboxPage = Math.max(0, pages.length - 1);
     const currentSlots = pages[toolboxPage];
 
     for (let i = 0; i < currentSlots.length; i++) {
@@ -663,7 +678,9 @@ function toolboxAndToolbarClick() {
     }
 
     // If clicking anywhere on the toolbox bounds, absorb click
-    if (isPointInRect(mouse.x, mouse.y, toolboxX, toolboxY, toolboxW, toolboxH)) {
+    if (
+      isPointInRect(mouse.x, mouse.y, toolboxX, toolboxY, toolboxW, toolboxH)
+    ) {
       return true;
     }
   }
@@ -1459,7 +1476,7 @@ function drawTVMessages(ctx) {
 }
 
 function drawDoorMessages(ctx) {
-  if (!getSceneConfig(currentScene).isAdoptionRoom) return;
+  if (currentScene !== "INDOORS") return;
 
   for (const msg of doorMessages) {
     const padding = 10;
@@ -1952,7 +1969,8 @@ function drawUI(ctx) {
         obj instanceof AccessoryItem ||
         (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
         (typeof Syringe !== "undefined" && obj instanceof Syringe) ||
-        (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
+        (typeof CattleProd !== "undefined" && obj instanceof CattleProd) ||
+        (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch)
       ) {
         hit = obj.hitTest(mouse.x, mouse.y);
         if (hit) {
@@ -1978,20 +1996,18 @@ function drawUI(ctx) {
             type = "thumbtack";
           else if (typeof Syringe !== "undefined" && obj instanceof Syringe)
             type = "syringe";
-          else if (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
+          else if (
+            typeof CattleProd !== "undefined" &&
+            obj instanceof CattleProd
+          )
             type = "cattle_prod";
+          else if (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch)
+            type = "blowtorch";
         }
       } else if (obj instanceof Cage) {
-        if (obj.getImage()) {
-          const img = obj.getImage();
-          hit = isPointInRect(
-            mouse.x,
-            mouse.y,
-            obj.x - img.width / 2,
-            obj.y - img.height / 2,
-            img.width,
-            img.height,
-          );
+        if (obj.canBeSold() && obj.getImage()) {
+          const r = obj.getHitRect();
+          hit = isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
           if (hit) type = obj instanceof Enclosure ? "enclosure" : "cage";
         }
       } else if (obj instanceof Litterbox) {
@@ -2081,12 +2097,7 @@ function drawUI(ctx) {
         });
 
         if (bestType === "accessory") {
-          const cost =
-            typeof ACCESSORY_DB !== "undefined" &&
-            ACCESSORY_DB[bestItem.accessoryId]
-              ? ACCESSORY_DB[bestItem.accessoryId].cost
-              : 0;
-          sellPrice = Math.floor(cost / 2);
+          sellPrice = bestItem.getSellValue();
         } else if (action) {
           let price = action.cost;
           // Handle partially consumed items
@@ -2236,16 +2247,8 @@ function drawUI(ctx) {
   if (!isGlobalDragging) {
     for (const obj of objects) {
       if (obj instanceof FoalInACan && obj.scene === currentScene) {
-        const img = images.foal_in_a_can;
-        let bw = 60,
-          bh = 70;
-        if (img && img.complete && img.width > 0) {
-          bw = img.width;
-          bh = img.height;
-        }
-        if (
-          isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh)
-        ) {
+        const r = obj.getHitRect();
+        if (isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h)) {
           const tooltipText = `Right click to extract foal (Formula: ${obj.formulaCharges})`;
           ctx.font = "bold 14px Arial";
           const padding = 10;
@@ -3222,19 +3225,14 @@ function sellModeClick() {
           type = "syringe";
         else if (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
           type = "cattle_prod";
+        else if (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch)
+          type = "blowtorch";
       }
     } else if (obj instanceof Cage) {
       if (type) continue;
-      if (obj.getImage()) {
-        const img = obj.getImage();
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - img.width / 2,
-          obj.y - img.height / 2,
-          img.width,
-          img.height,
-        );
+      if (obj.canBeSold() && obj.getImage()) {
+        const r = obj.getHitRect();
+        hit = isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
         if (hit) type = "cage";
       }
     } else if (obj instanceof Litterbox) {
@@ -3299,6 +3297,7 @@ function sellModeClick() {
 
         // Spawn the accessory back into the world
         const droppedAcc = new AccessoryItem(currentScene, accData.id);
+        droppedAcc.fill = accData.fill || 0;
         droppedAcc.x = bestItem.x;
         droppedAcc.y = bestItem.y - 20;
         droppedAcc.color = accData.color;
@@ -3448,7 +3447,8 @@ function sellModeClick() {
       poofs.push(
         new Poof(
           bestItem.x,
-          bestItem.y - (bestItem.getImage() ? bestItem.getImage().height / 2 : 10),
+          bestItem.y -
+            (bestItem.getImage() ? bestItem.getImage().height / 2 : 10),
           bestItem.scene,
         ),
       );
@@ -3511,16 +3511,15 @@ function sellModeClick() {
       poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
     } else if (bestType === "accessory") {
       if (bestItem.isDragging) isGlobalDragging = false;
-      const cost =
-        typeof ACCESSORY_DB !== "undefined" &&
-        ACCESSORY_DB[bestItem.accessoryId]
-          ? ACCESSORY_DB[bestItem.accessoryId].cost
-          : 0;
-      money += Math.floor(cost / 2);
+      money += bestItem.getSellValue();
       poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
     } else if (bestType === "cattle_prod") {
       if (bestItem.isDragging) isGlobalDragging = false;
       money += 750;
+      poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
+    } else if (bestType === "blowtorch") {
+      if (bestItem.isDragging) isGlobalDragging = false;
+      money += 2500;
       poofs.push(new Poof(bestItem.x, bestItem.y, bestItem.scene));
     } else if (bestType === "fluffy") {
       if (bestItem.isDragging) isGlobalDragging = false;
@@ -3665,7 +3664,11 @@ function drawChatLogPanel(ctx, panelY) {
       const entry = logs[i];
       const namePrefix = `${entry.name}: `;
       const lines = wrapChatText(ctx, namePrefix, entry.text, clipW - 8);
-      formattedEntries.push({ name: entry.name, lines, color: entry.color });
+      formattedEntries.push({
+        name: entry.name,
+        lines,
+        color: entry.color,
+      });
       totalHeight += lines.length * lineHeight + msgPadding;
     }
 
@@ -3925,7 +3928,10 @@ function actionButtonsClick() {
             g.x = width / 2;
             g.y = height / 2;
             objects.push(g);
-          } else if (action.isItem === "cage" || action.isItem === "enclosure") {
+          } else if (
+            action.isItem === "cage" ||
+            action.isItem === "enclosure"
+          ) {
             if (!showDebugMenu) money -= action.cost;
             const c =
               action.isItem === "enclosure"
@@ -4212,39 +4218,17 @@ canvas.addEventListener("mousedown", (e) => {
     }
   }
 
-  // 3. Right Click: Cycle Cage Tags
+  // 3. Right Click: cycle cage modes / free a canned foal
   if (mouse.rightDown) {
     for (const obj of objects) {
       if (obj instanceof Cage && obj.scene === currentScene) {
+        const r = obj.getHitRect();
         if (obj.getImage()) {
-          const img = obj.getImage();
-          const w = img.width * obj.scale;
-          const h = img.height * obj.scale;
-          if (
-            isPointInRect(mouse.x, mouse.y, obj.x - w / 2, obj.y - h / 2, w, h)
-          ) {
-            obj.cycleTag();
+          if (isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h)) {
+            obj.onRightClick();
             mouse.rightDown = false; // Prevent multiple cycles
             return;
           }
-        }
-      } else if (obj instanceof FoalInACan && obj.scene === currentScene) {
-        let bw = 60,
-          bh = 70;
-        if (
-          images.foal_in_a_can &&
-          images.foal_in_a_can.complete &&
-          images.foal_in_a_can.width > 0
-        ) {
-          bw = images.foal_in_a_can.width;
-          bh = images.foal_in_a_can.height;
-        }
-        if (
-          isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh)
-        ) {
-          obj.freeFoal();
-          mouse.rightDown = false;
-          return;
         }
       } else if (obj instanceof OperatingTable && obj.scene === currentScene) {
         if (obj.hitTest(mouse.x, mouse.y)) {
@@ -4591,21 +4575,11 @@ canvas.addEventListener("mousedown", (e) => {
       }
     } else if (obj instanceof Cage) {
       if (obj.getImage()) {
-        bw = obj.getImage().width;
-        bh = obj.getImage().height;
-        hit = isPointInRect(
-          mouse.x,
-          mouse.y,
-          obj.x - bw / 2,
-          obj.y - bh / 2,
-          bw,
-          bh,
-        );
+        const r = obj.getHitRect();
+        bw = r.w;
+        bh = r.h;
+        hit = isPointInRect(mouse.x, mouse.y, r.x, r.y, r.w, r.h);
       }
-    } else if (obj instanceof FoalInACan) {
-      bw = images.foal_in_a_can ? images.foal_in_a_can.width : 60;
-      bh = images.foal_in_a_can ? images.foal_in_a_can.height : 70;
-      hit = isPointInRect(mouse.x, mouse.y, obj.x - bw / 2, obj.y - bh, bw, bh);
     } else if (obj instanceof Litterbox) {
       if (images.litterbox) {
         bw = images.litterbox.width;
@@ -4697,7 +4671,8 @@ canvas.addEventListener("mousedown", (e) => {
       if (
         (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
         (typeof Syringe !== "undefined" && obj instanceof Syringe) ||
-        (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
+        (typeof CattleProd !== "undefined" && obj instanceof CattleProd) ||
+        (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch)
       ) {
         obj.dragOffset.x = 0;
         obj.dragOffset.y = 0;

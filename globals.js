@@ -114,7 +114,6 @@ function getSceneConfig(sceneName) {
   if (sceneName === "day_care" || sceneName === "DAY_CARE")
     return SCENES.DAY_CARE;
   if (sceneName.startsWith("INDOORS")) {
-    const isMain = sceneName === "INDOORS";
     return {
       id: sceneName,
       isIndoor: true,
@@ -122,7 +121,7 @@ function getSceneConfig(sceneName) {
       isOutdoor: false,
       isGrassy: false,
       isAlley: false,
-      isAdoptionRoom: isMain,
+      isAdoptionRoom: true,
       hasRiver: false,
       backgroundTexture: "texture_carpet",
       topWallColor: "#444",
@@ -848,6 +847,15 @@ function changeScene(newScene) {
       }
     }
   }
+
+  if (typeof gibs !== "undefined") {
+    for (const gib of gibs) {
+      if (gib.isDragging) {
+        gib.scene = newScene;
+      }
+    }
+  }
+
   if (typeof objects !== "undefined") {
     for (const o of objects) {
       if (o.isDragging) {
@@ -860,14 +868,6 @@ function changeScene(newScene) {
           };
           if (typeof fluffies !== "undefined") fluffies.forEach(syncScene);
           if (typeof objects !== "undefined") objects.forEach(syncScene);
-        }
-        if (typeof FoalInACan !== "undefined" && o instanceof FoalInACan) {
-          if (typeof fluffies !== "undefined") {
-            const foal = fluffies.find((f) => f.currentCage === o);
-            if (foal) {
-              foal.scene = newScene;
-            }
-          }
         }
       }
     }
@@ -927,7 +927,10 @@ function handleDropping(item) {
   item.isDragging = false;
   isGlobalDragging = false;
 
-  if (typeof isPlaceableWorldTool === "function" && isPlaceableWorldTool(item)) {
+  if (
+    typeof isPlaceableWorldTool === "function" &&
+    isPlaceableWorldTool(item)
+  ) {
     if (typeof removeToolFromToolbox === "function") {
       removeToolFromToolbox(item, true);
     }
@@ -958,12 +961,7 @@ function handleDropping(item) {
     ) {
       item.currentCage = null;
     } else if (typeof Cage !== "undefined" && item instanceof Cage) {
-      // Do nothing, cages don't have currentCage
-    } else if (
-      typeof FoalInACan !== "undefined" &&
-      item instanceof FoalInACan
-    ) {
-      // Do nothing
+      // Do nothing, cages (and cans) don't go inside other cages
     } else if (
       (typeof Knife !== "undefined" && item instanceof Knife) ||
       (typeof SutureKit !== "undefined" && item instanceof SutureKit) ||
@@ -978,13 +976,17 @@ function handleDropping(item) {
       (typeof Sprinkler !== "undefined" && item instanceof Sprinkler) ||
       (typeof Thumbtack !== "undefined" && item instanceof Thumbtack) ||
       (typeof Syringe !== "undefined" && item instanceof Syringe) ||
-      (typeof CattleProd !== "undefined" && item instanceof CattleProd)
+      (typeof CattleProd !== "undefined" && item instanceof CattleProd) ||
+      (typeof Blowtorch !== "undefined" && item instanceof Blowtorch)
     ) {
       item.currentCage = null;
     } else {
       item.currentCage = null;
       const cages = objects.filter(
-        (o) => o instanceof Cage && o.scene === item.scene,
+        (o) =>
+          o instanceof Cage &&
+          o.scene === item.scene &&
+          o.acceptsDroppedItems(),
       );
       for (const cage of cages) {
         const b = cage.bounds;
@@ -1393,6 +1395,15 @@ const CATTLE_PROD_USE_ANIMATION_DURATION = 0.05;
 const CATTLE_PROD_SMOKE_THRESHOLD = 2.0; // Prod used for more than 2 seconds in a row
 const CATTLE_PROD_SMOKE_DURATION = 5.0; // Sets horse smokeTimer to 5s
 const SMOKE_PARTICLE_FREQUENCY = 0.25; // Spawns smoke poof every 0.25s
+const FIRE_DEATH_TIME = 15; // Seconds a fluffy survives being on fire
+const FIRE_PARTICLE_INTERVAL = 0.08; // Seconds between orange fire puffs on a burning fluffy
+const FIRE_PARTICLE_COLOR = "rgba(255, 120, 0, 0.75)";
+const FIRE_SPREAD_DISTANCE = 70; // Fluffies this close (same cage) can catch fire
+const FIRE_SPREAD_RATE = 1.0; // Chance per second (roughly) of catching it while that close
+const BLOWTORCH_FLAME_LENGTH = 45; // px from nozzle to flame tip
+const BLOWTORCH_NOZZLE_OFFSET_Y = 11; // Nozzle is this far down from the image's top-left
+const BLOWTORCH_IGNITE_TIME = 0.3; // Seconds the flame must touch a fluffy to set it alight
+const CATTLE_PROD_SMOKE_SPOT_RADIUS = 10; // Prod hits this close reuse the same smoke spot
 const CATTLE_PROD_SMOKE_COLOR = "rgba(60, 60, 60, 0.5)"; // Dark grey translucent
 const CATTLE_PROD_BASE_DAMAGE = 3.0;
 const CATTLE_PROD_GROWTH_FACTOR_BASE = 3.0;
@@ -1428,6 +1439,10 @@ const HAPPINESS_PENALTY_BABBEH_GRABBED = -0.0125;
 const HAPPINESS_PENALTY_BAD_UPSIES = -0.025;
 const HAPPINESS_PENALTY_WITNESS_VIOLENCE = -0.00625;
 const HAPPINESS_PENALTY_LOST_RELATIVE = -0.025;
+const HAPPINESS_PENALTY_BARRIER_TALK = -0.02; // Mummah talking to her foal through a cage
+const HAPPINESS_PENALTY_BARRIER_NURSE = -0.05; // Mummah unable to nurse her foal through a cage
+const BARRIER_NURSE_DISTANCE = 150; // How close mummah gets before realising she can't reach
+const BARRIER_NURSE_COOLDOWN = 8; // Seconds between failed nursing attempts
 const HAPPINESS_PENALTY_TRAUMA_MISCARRIAGE = -0.05;
 const HAPPINESS_PENALTY_DIRTY_PUDDLE = -0.02;
 const HAPPINESS_PENALTY_MATE_FORCED_MARE = -0.1;
@@ -1461,6 +1476,39 @@ const POOPIE_ANCHORS = [
 ];
 
 const MAX_COLOR_DIST = Math.sqrt(255 ** 2 + 255 ** 2 + 255 ** 2);
+
+// How much a fluffy's colorist degree must exceed another's color score before
+// it rejects them, so near-identical colors (e.g. a 1.0 mare and her 0.98
+// foal) are tolerated
+const COLORISM_SLACK = 0.05;
+
+// Whether colorist rejects other because of other's body color
+function fluffyColoristAgainstOtherFluffy(colorist, other) {
+  if (typeof worldSettings === "undefined" || !worldSettings.colorism) {
+    return false;
+  }
+  if (!colorist || !other || !other.genetics) return false;
+  return (
+    colorist.coloristDegree - other.genetics.calculateColorismPerception() >
+    COLORISM_SLACK
+  );
+}
+
+const DIAPER_CAPACITY = 2.0; // Excretion a diaper holds (a full poop or pee is 1)
+const DIAPER_COMPLAIN_MIN_INTERVAL = 8; // Seconds between diaper complaints
+const DIAPER_COMPLAIN_MAX_INTERVAL = 15;
+const HAPPINESS_PENALTY_DIAPER_ITCH = -0.01; // Each time the diaper irritates them
+const DIAPER_MATE_LINE_COOLDOWN = 10; // Seconds a diapered stallion waits before trying again
+
+// Image for an accessory, accounting for e.g. a used or full diaper
+function getAccessoryImageKey(accDef, data) {
+  const fill = (data && data.fill) || 0;
+  if (accDef.fullImageKey && fill >= DIAPER_CAPACITY) {
+    return accDef.fullImageKey;
+  }
+  if (accDef.usedImageKey && fill > 0) return accDef.usedImageKey;
+  return accDef.imageKey;
+}
 
 const ACCESSORY_DB = {
   fez: {
@@ -1624,6 +1672,22 @@ const ACCESSORY_DB = {
     offsetX: 0,
     offsetY: -70,
     scale: 1.0,
+  },
+  diaper: {
+    id: "diaper",
+    name: "Diaper",
+    cost: 1000,
+    slot: "diaper",
+    imageKey: "accessory_diaper",
+    usedImageKey: "accessory_diaper_used", // Shown once partly filled
+    fullImageKey: "accessory_diaper_full", // Shown once filled to DIAPER_CAPACITY
+    canColor: false,
+    layer: "OVER_BODY",
+    offsetX: -55, // Over the rear of the torso
+    offsetY: 5,
+    scale: 1.0,
+    descOverride:
+      "Holds a certain amount of fluffy excrement but irritates the wearer.",
   },
   castration_band: {
     id: "castration_band",
@@ -1914,6 +1978,12 @@ const SPAWN_ACTIONS = [
     isItem: "cattle_prod",
   },
   {
+    name: "Blowtorch",
+    desc: "Burns fluffies \u2014 fluffies can spread the fire to other fluffies as well.",
+    cost: 5000,
+    isItem: "blowtorch",
+  },
+  {
     name: "Bed",
     desc: "Fluffies will seek this out when sleeping. A couple will share a bed, and the second spot is reserved for the claimant's special friend.",
     cost: 75,
@@ -2042,10 +2112,12 @@ function isToolObject(obj) {
     (typeof TrashBag !== "undefined" && obj instanceof TrashBag) ||
     (typeof SorryStick !== "undefined" && obj instanceof SorryStick) ||
     (typeof SprayBottle !== "undefined" && obj instanceof SprayBottle) ||
-    (typeof MagnifyingGlass !== "undefined" && obj instanceof MagnifyingGlass) ||
+    (typeof MagnifyingGlass !== "undefined" &&
+      obj instanceof MagnifyingGlass) ||
     (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
     (typeof Syringe !== "undefined" && obj instanceof Syringe) ||
     (typeof CattleProd !== "undefined" && obj instanceof CattleProd) ||
+    (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch) ||
     (typeof ThrowTool !== "undefined" && obj instanceof ThrowTool) ||
     (typeof IVBag !== "undefined" && obj instanceof IVBag && !obj.attachedTo)
   );
@@ -2067,6 +2139,7 @@ function isToolData(oData) {
       "Thumbtack",
       "Syringe",
       "CattleProd",
+      "Blowtorch",
       "ThrowTool",
     ].includes(type)
   ) {
@@ -2093,6 +2166,7 @@ function isToolAction(action) {
     "thumbtack",
     "syringe",
     "cattle_prod",
+    "blowtorch",
     "iv_bag",
   ].includes(action.isItem);
 }
@@ -2110,8 +2184,10 @@ function isMultiPurchaseToolAction(action) {
 function isMultiPurchaseTool(tool) {
   if (!tool) return false;
   if (typeof IVBag !== "undefined" && tool instanceof IVBag) return true;
-  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack) return true;
-  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit) return true;
+  if (typeof Thumbtack !== "undefined" && tool instanceof Thumbtack)
+    return true;
+  if (typeof SutureKit !== "undefined" && tool instanceof SutureKit)
+    return true;
   if (typeof TrashBag !== "undefined" && tool instanceof TrashBag) return true;
   return false;
 }
@@ -2139,6 +2215,8 @@ function getToolTypeKey(tool) {
     return "syringe";
   if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
     return "cattle_prod";
+  if (typeof Blowtorch !== "undefined" && tool instanceof Blowtorch)
+    return "blowtorch";
   if (typeof ThrowTool !== "undefined" && tool instanceof ThrowTool)
     return "throw_tool";
   if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
@@ -2185,6 +2263,8 @@ function matchesToolAction(tool, action) {
       return typeof Syringe !== "undefined" && tool instanceof Syringe;
     case "cattle_prod":
       return typeof CattleProd !== "undefined" && tool instanceof CattleProd;
+    case "blowtorch":
+      return typeof Blowtorch !== "undefined" && tool instanceof Blowtorch;
     case "iv_bag":
       return (
         typeof IVBag !== "undefined" &&
@@ -2236,6 +2316,8 @@ function createToolFromAction(action) {
       return new Syringe(scene);
     case "cattle_prod":
       return new CattleProd(scene);
+    case "blowtorch":
+      return new Blowtorch(scene);
     case "iv_bag":
       return new IVBag(scene, action.bagType);
     default:
@@ -2283,6 +2365,9 @@ function createToolFromData(oData) {
       break;
     case "CattleProd":
       tool = new CattleProd(scene);
+      break;
+    case "Blowtorch":
+      tool = new Blowtorch(scene);
       break;
     case "ThrowTool":
       tool = new ThrowTool(scene);
@@ -2620,6 +2705,8 @@ function getToolName(tool) {
     return "Syringe";
   if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
     return "Prod";
+  if (typeof Blowtorch !== "undefined" && tool instanceof Blowtorch)
+    return "Torch";
   if (typeof ThrowTool !== "undefined" && tool instanceof ThrowTool)
     return "Throw";
   if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
@@ -2657,6 +2744,8 @@ function getToolFullName(tool) {
   }
   if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
     return "Cattle prod";
+  if (typeof Blowtorch !== "undefined" && tool instanceof Blowtorch)
+    return "Blowtorch";
   if (typeof ThrowTool !== "undefined" && tool instanceof ThrowTool)
     return "Throw tool";
   if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
@@ -2692,6 +2781,8 @@ function getToolDesc(tool) {
     return "Click an IV bag to draw fluid, click fluffy to inject.";
   if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
     return "Electrocutes fluffies while grabbed and holding mouse down.";
+  if (typeof Blowtorch !== "undefined" && tool instanceof Blowtorch)
+    return "Hold mouse down to fire. Hold the flame on a fluffy to set it alight. Lit fluffies can be extinguished with the spray bottle, river, or sprinkler.";
   if (typeof ThrowTool !== "undefined" && tool instanceof ThrowTool)
     return "Drag fluffies with this tool to lift them up and release to throw.";
   if (typeof IVBag !== "undefined" && tool instanceof IVBag)
@@ -2702,8 +2793,10 @@ function getToolDesc(tool) {
 function isDrawableImage(img) {
   if (!img) return false;
   if (
-    (typeof HTMLCanvasElement !== "undefined" && img instanceof HTMLCanvasElement) ||
-    (typeof OffscreenCanvas !== "undefined" && img instanceof OffscreenCanvas) ||
+    (typeof HTMLCanvasElement !== "undefined" &&
+      img instanceof HTMLCanvasElement) ||
+    (typeof OffscreenCanvas !== "undefined" &&
+      img instanceof OffscreenCanvas) ||
     (img.getContext && typeof img.getContext === "function")
   ) {
     return img.width > 0 && img.height > 0;
@@ -2741,14 +2834,18 @@ function getToolImage(tool) {
     return images.syringe;
   if (typeof CattleProd !== "undefined" && tool instanceof CattleProd)
     return images.cattle_prod;
+  if (typeof Blowtorch !== "undefined" && tool instanceof Blowtorch)
+    return images.blowtorch;
   if (typeof ThrowTool !== "undefined" && tool instanceof ThrowTool) {
     return images.throw_tool_unheld;
   }
   if (typeof IVBag !== "undefined" && tool instanceof IVBag) {
-    if (tool.tintedSprite && tool.tintedSprite.width > 0) return tool.tintedSprite;
+    if (tool.tintedSprite && tool.tintedSprite.width > 0)
+      return tool.tintedSprite;
     if (typeof tool.createTintedSprite === "function") {
       tool.createTintedSprite();
-      if (tool.tintedSprite && tool.tintedSprite.width > 0) return tool.tintedSprite;
+      if (tool.tintedSprite && tool.tintedSprite.width > 0)
+        return tool.tintedSprite;
     }
     return images.iv_bag;
   }
@@ -2825,8 +2922,7 @@ function initDefaultToolbar() {
     {
       key: "4",
       check: (t) =>
-        typeof MagnifyingGlass !== "undefined" &&
-        t instanceof MagnifyingGlass,
+        typeof MagnifyingGlass !== "undefined" && t instanceof MagnifyingGlass,
     },
     {
       key: "5",
@@ -3739,8 +3835,12 @@ function resetGameState(customWorldSettings = null) {
 
   // 5. Clear active sound loops from existing objects/tools before wiping
   const allExistingItems = [
-    ...(typeof objects !== "undefined" && Array.isArray(objects) ? objects : []),
-    ...(typeof toolbox !== "undefined" && Array.isArray(toolbox) ? toolbox : []),
+    ...(typeof objects !== "undefined" && Array.isArray(objects)
+      ? objects
+      : []),
+    ...(typeof toolbox !== "undefined" && Array.isArray(toolbox)
+      ? toolbox
+      : []),
   ];
   for (const item of allExistingItems) {
     if (item && typeof item.stopTaserSound === "function") {
@@ -3837,7 +3937,11 @@ function resetGameState(customWorldSettings = null) {
           const growth = 0.5 + Math.random() * 1.5;
 
           let spawnX = x;
-          if (config.hasRiver && typeof images !== "undefined" && images.grass) {
+          if (
+            config.hasRiver &&
+            typeof images !== "undefined" &&
+            images.grass
+          ) {
             spawnX =
               width * 0.25 +
               images.grass.width +

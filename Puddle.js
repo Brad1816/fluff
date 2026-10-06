@@ -227,7 +227,10 @@ class Puddle {
     ) {
       const roundUp = (v) =>
         Math.ceil(v / PUDDLE_CACHE_SLACK) * PUDDLE_CACHE_SLACK;
-      this.cache = new OffscreenCanvas(roundUp(this.cacheW), roundUp(this.cacheH));
+      this.cache = new OffscreenCanvas(
+        roundUp(this.cacheW),
+        roundUp(this.cacheH),
+      );
     }
 
     const c = this.cache.getContext("2d");

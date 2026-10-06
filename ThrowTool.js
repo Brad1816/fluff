@@ -26,7 +26,9 @@ class ThrowTool {
   drawOffScreen(ctx) {
     if (!images.throw_tool_unheld || !images.throw_tool_held) return;
 
-    const img = this.heldHorse ? images.throw_tool_held : images.throw_tool_unheld; 
+    const img = this.heldHorse
+      ? images.throw_tool_held
+      : images.throw_tool_unheld;
 
     const oldAlpha = ctx.globalAlpha;
     ctx.save();
@@ -55,7 +57,10 @@ class ThrowTool {
     }
     this.isDragging = false;
     if (typeof objects !== "undefined") {
-      const idx = objects.indexOf(this); if (idx !== -1) { objects.splice(idx, 1); }
+      const idx = objects.indexOf(this);
+      if (idx !== -1) {
+        objects.splice(idx, 1);
+      }
     }
     if (typeof isGlobalDragging !== "undefined") {
       isGlobalDragging =

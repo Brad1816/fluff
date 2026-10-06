@@ -114,7 +114,8 @@ class IVBag {
   }
 
   createTintedSprite() {
-    if (!images.iv_bag || !images.iv_bag.complete || !images.iv_bag.width) return;
+    if (!images.iv_bag || !images.iv_bag.complete || !images.iv_bag.width)
+      return;
     const color =
       typeof getDrugColor === "function"
         ? getDrugColor(this.type, "#add8e6")

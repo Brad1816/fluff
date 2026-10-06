@@ -191,6 +191,9 @@ function loadObject(oData) {
     case "CattleProd":
       obj = new CattleProd(oData.scene);
       break;
+    case "Blowtorch":
+      obj = new Blowtorch(oData.scene);
+      break;
     case "ThrowTool":
       obj = new ThrowTool(oData.scene);
       break;

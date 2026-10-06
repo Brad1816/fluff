@@ -93,7 +93,10 @@ const channel_speeches = {
     { text: "DISORDER! DISORDER!", weight: 1 },
     { text: "TRAPPED IN MYSELF! BODY MY HOLDING CELL!", weight: 1 },
     { text: "WHO'S! TO SAY WHAT'S FOR ME TO BE!", weight: 1 },
-    { text: "RED FLUID OF LIFE IS FLOWING RIGHT ALONG MY ARMS!", weight: 1 },
+    {
+      text: "RED FLUID OF LIFE IS FLOWING RIGHT ALONG MY ARMS!",
+      weight: 1,
+    },
     { text: "WAKEUP! GRABABRUSHANDPUTALITTLEMAKEUP!", weight: 1 },
     { text: "ONE MONTH IN THE GRAVE TWISTED AND HALF-DECAYED", weight: 1 },
     { text: "THE SUN IS FALLLING FROM THE SKY", weight: 1 },
@@ -112,8 +115,14 @@ const channel_speeches = {
       text: "Wook cwose to needwe? SCREEEE!! Huuuhuuu fwuffy's see-pwace!",
       weight: 1,
     },
-    { text: "*hack* *cough* Nuu! Fwuff- *cough* nu am ashtway!", weight: 1 },
-    { text: "Mummaaahhh... why did mummah gib biwth to fwuffy?", weight: 1 }, //Reference to a Yukkuri abuse doujin
+    {
+      text: "*hack* *cough* Nuu! Fwuff- *cough* nu am ashtway!",
+      weight: 1,
+    },
+    {
+      text: "Mummaaahhh... why did mummah gib biwth to fwuffy?",
+      weight: 1,
+    }, //Reference to a Yukkuri abuse doujin
     {
       text: '"Say goodbye to your babies, you little shit!" "NUUUUUUUUUUU!!"',
       weight: 1,
@@ -131,7 +140,10 @@ const channel_speeches = {
       text: "Huu huu... fwuffy poopie pwace hab worstest huwties...",
       weight: 1,
     },
-    { text: "Nuu! Fwuffy nu wan gib speshuw huggies to sissie!", weight: 1 },
+    {
+      text: "Nuu! Fwuffy nu wan gib speshuw huggies to sissie!",
+      weight: 1,
+    },
     {
       text: "Daddeh! Spinny-boxie too hot! Fwuffy too ho- *splortch*",
       weight: 1,

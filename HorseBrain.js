@@ -119,7 +119,10 @@ class HorseBrain {
       if (item.score <= 0) continue;
       if (item.desire.execute(this.horse)) {
         this.currentDesire = item.desire;
-        this.horse.lastDesire = { desire: item.desire.name, value: item.score };
+        this.horse.lastDesire = {
+          desire: item.desire.name,
+          value: item.score,
+        };
         executed = true;
         break;
       }
@@ -748,13 +751,9 @@ class WatchTVDesire extends Desire {
     return 0;
   }
   execute(horse) {
-    if (horse.currentStateKey !== "FOCUSING") {
+    if (!isFocusingState(horse.currentStateKey)) {
       const tv = horse.findNearbyTV();
-      if (tv) {
-        horse.facingRight = tv.x > horse.x;
-        horse.tvFocus = { tv: tv, timer: 30 + Math.random() * 30 };
-        horse.initBehavior("FOCUSING");
-      }
+      if (tv) horse.startWatchingTV(tv);
     }
     return true;
   }
@@ -780,7 +779,10 @@ class PlayWithBallDesire extends Desire {
     let hasBall =
       typeof objects !== "undefined" &&
       objects.some(
-        (o) => o instanceof Ball && o.scene === horse.scene && horse.currentCage === o.currentCage,
+        (o) =>
+          o instanceof Ball &&
+          o.scene === horse.scene &&
+          horse.currentCage === o.currentCage,
       );
     if (!hasBall) return 0;
 
@@ -1065,7 +1067,7 @@ class RandomBabbleDesire extends Desire {
       !horse.isAlive ||
       horse.isDragging ||
       horse.currentStateKey === "SLEEPING" ||
-      horse.currentStateKey === "FOCUSING" ||
+      isFocusingState(horse.currentStateKey) ||
       !horse.canBabble()
     ) {
       return 0;

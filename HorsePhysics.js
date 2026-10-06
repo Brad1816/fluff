@@ -18,6 +18,8 @@ class HorsePhysics {
       !this.horse.currentCage &&
       !this.horse.isFallingFromThrow
     ) {
+      // The water puts out a burning fluffy straight away
+      this.horse.extinguishFire();
       this.horse.drowningTimer = Math.max(
         1.0,
         Math.min(5, this.horse.drowningTimer + dt),
@@ -130,7 +132,8 @@ class HorsePhysics {
     this.horse.lastY = this.horse.y;
     let slamDistance = 0;
 
-    const grabbedCorrectly = !this.horse.grabbedPart || this.horse.grabbedPart === "torso";
+    const grabbedCorrectly =
+      !this.horse.grabbedPart || this.horse.grabbedPart === "torso";
 
     // Handle Grabbing Physics
     if (grabbedCorrectly) {
@@ -139,8 +142,8 @@ class HorsePhysics {
       let oldY = this.horse.y;
       this.horse.y = mouse.y + this.horse.dragOffset.y;
       if (this.horse.heldWithThrowTool) {
-          this.horse.y = Math.min(this.horse.throwStartY, this.horse.y);
-          slamDistance = this.horse.y - oldY;
+        this.horse.y = Math.min(this.horse.throwStartY, this.horse.y);
+        slamDistance = this.horse.y - oldY;
       }
       // Basic Swing
       this.horse.vx = (this.horse.x - this.horse.lastX) / dt;
@@ -219,8 +222,8 @@ class HorsePhysics {
       let oldY = this.horse.y;
       this.horse.y = mouse.y - rotY;
       if (this.horse.heldWithThrowTool) {
-          this.horse.y = Math.min(this.horse.throwStartY, this.horse.y);
-          slamDistance = this.horse.y - oldY;
+        this.horse.y = Math.min(this.horse.throwStartY, this.horse.y);
+        slamDistance = this.horse.y - oldY;
       }
 
       this.horse.vx = (this.horse.x - this.horse.lastX) / dt;
@@ -245,13 +248,17 @@ class HorsePhysics {
               typeof getSceneConfig === "function" &&
               getSceneConfig(this.horse.scene)?.topWallColor
             );
-      minY = hasWall ? (typeof height !== "undefined" ? height * 0.15 + 50 : 170) : 0;
+      minY = hasWall
+        ? typeof height !== "undefined"
+          ? height * 0.15 + 50
+          : 170
+        : 0;
     }
     if (this.horse.heldWithThrowTool) {
       this.horse.y = Math.min(this.horse.throwStartY, this.horse.y);
-      let slammed = (this.horse.y === this.horse.throwStartY);
+      let slammed = this.horse.y === this.horse.throwStartY;
       if (slammed) {
-        this.horse.handleThrowImpact(slamDistance * 0.3 / dt);
+        this.horse.handleThrowImpact((slamDistance * 0.3) / dt);
       }
     }
 
@@ -304,18 +311,28 @@ class HorsePhysics {
         this.horse.wasHeldHigh = true;
         const isWinged = this.horse.hasBothWings();
         const isChirpy = this.horse.tooYoungToSpeak();
-        const targetExp = isWinged && !isChirpy ? this.horse.grabbedPart === "torso" ? "GOOD_UPSIES" : null : "CRYING_SHOCKED";
+        const targetExp =
+          isWinged && !isChirpy
+            ? this.horse.grabbedPart === "torso"
+              ? "GOOD_UPSIES"
+              : null
+            : "CRYING_SHOCKED";
 
         if (
           this.horse.expressionOverride !== targetExp ||
-          this.horse.expressionOverrideTimer <= 0 
+          this.horse.expressionOverrideTimer <= 0
         ) {
           this.horse.expressionOverride = targetExp;
           this.horse.expressionOverrideTimer = 2.0;
 
-          if (this.horse.happiness > WAN_DIE_THRESHOLD && (!isWinged || isChirpy || this.horse.grabbedPart === "torso")) {
+          if (
+            this.horse.happiness > WAN_DIE_THRESHOLD &&
+            (!isWinged || isChirpy || this.horse.grabbedPart === "torso")
+          ) {
             const dialogueType = isChirpy
-                ? "CHIRPY" : isWinged ? "WINGED"
+              ? "CHIRPY"
+              : isWinged
+                ? "WINGED"
                 : "DEFAULT";
             const line = getDialogue(
               ["THROW_HELD_HIGH", dialogueType],
@@ -363,14 +380,13 @@ class HorsePhysics {
             typeof getSceneConfig === "function" &&
             getSceneConfig(h.scene)?.isIndoor
           );
-    const groundYMin =
-      h.heldWithThrowTool
-        ? isIndoor
-          ? -50
-          : -Infinity
-        : hasWall
-          ? topWallHeight + 50
-          : 0;
+    const groundYMin = h.heldWithThrowTool
+      ? isIndoor
+        ? -50
+        : -Infinity
+      : hasWall
+        ? topWallHeight + 50
+        : 0;
     return groundYMin;
   }
 
@@ -379,10 +395,7 @@ class HorsePhysics {
     const h = this.horse;
     if (h.shouldFlail()) {
       h.animPhase += 20.0 * dt;
-      if (
-        h.currentStateKey === "SITTING" &&
-        h.grabbedPart === "torso"
-      ) {
+      if (h.currentStateKey === "SITTING" && h.grabbedPart === "torso") {
         h.animPhase -= 15.0 * dt;
       }
       h.flailAngle = Math.sin(h.animPhase) * 0.8;
@@ -394,10 +407,7 @@ class HorsePhysics {
   // Crying out while drowning
   updateDrowningPanic() {
     const h = this.horse;
-    if (
-      h.currentStateKey === "DROWNING" &&
-      h.expressionOverrideTimer <= 1
-    ) {
+    if (h.currentStateKey === "DROWNING" && h.expressionOverrideTimer <= 1) {
       if (h.happiness !== WAN_DIE_THRESHOLD) {
         h.expressionOverride = "CRYING_SHOCKED";
         h.expressionOverrideTimer = 2.0;
@@ -472,10 +482,7 @@ class HorsePhysics {
         h.y >= h.throwStartY &&
         h.throwFallVy >= 0
       ) {
-        const impactSpeed = Math.hypot(
-          h.throwFallVx || 0,
-          h.throwFallVy || 0,
-        );
+        const impactSpeed = Math.hypot(h.throwFallVx || 0, h.throwFallVy || 0);
         h.y = h.throwStartY;
         h.throwFallVy = 0;
         h.throwFallVx = 0;
