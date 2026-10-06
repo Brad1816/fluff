@@ -951,22 +951,14 @@ function handleCheatCode(code) {
       "World Sensitive Baby Syndrome: " + (worldSettings.sbs ? "ON" : "OFF"),
     );
   } else if (first === "worldt") {
-    // ("worldt 25": how easily it spreads, as a percentage)
-    const pct = Number(arr[1]);
-    if (arr[1] !== undefined && !isNaN(pct)) {
-      worldSettings.toxoChance = Math.max(0, Math.min(100, pct));
-      worldSettings.toxoplasmosis = worldSettings.toxoChance > 0;
-    } else {
-      worldSettings.toxoplasmosis = !worldSettings.toxoplasmosis;
-      if (worldSettings.toxoplasmosis && !(worldSettings.toxoChance > 0)) worldSettings.toxoChance = 100;
-    }
+    worldSettings.toxoplasmosis = !worldSettings.toxoplasmosis;
     if (!worldSettings.toxoplasmosis && typeof fluffies !== "undefined") {
       for (const f of fluffies) {
         f.isToxoplasmosis = false;
       }
     }
     addUIMessage(
-      "World Toxoplasmosis: " + (worldSettings.toxoplasmosis ? `ON (${worldSettings.toxoChance ?? 100}%)` : "OFF"),
+      "World Toxoplasmosis: " + (worldSettings.toxoplasmosis ? "ON" : "OFF"),
     );
   } else if (first === "error") {
     throw new Error("Placeholder error triggered by cheat!");

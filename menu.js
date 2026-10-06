@@ -435,20 +435,19 @@ function drawWorldSettingsPrompt() {
   // Checkbox Row 3
   const row3Y = listY + 156;
 
-  // Toxoplasmosis: how easily it spreads, as a percentage (tap for the next
-  // step: 100, 75, 50, 25, 10, off)
-  const toxoLabel = wsPromptToxoChance > 0 ? `${wsPromptToxoChance}%` : "Off";
-  drawGlassButton(col1X, row3Y, 64, checkH, toxoLabel, { borderRadius: 6 });
-  ctx.font = "bold 20px Arial";
-  ctx.textAlign = "left";
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "black";
-  ctx.fillStyle = "white";
-  ctx.strokeText("Toxoplasmosis", col1X + 78, row3Y + 22);
-  ctx.fillText("Toxoplasmosis", col1X + 78, row3Y + 22);
-  ctx.font = "13px Arial";
-  ctx.fillStyle = "#cfcfcf";
-  ctx.fillText("how easily it spreads (tap to change)", col1X + 230, row3Y + 21);
+  // Checkbox 5: Toxoplasmosis
+  drawGlassButton(
+    col1X,
+    row3Y,
+    checkW,
+    checkH,
+    wsPromptToxoplasmosis ? "✓" : "",
+    {
+      borderRadius: 6,
+    },
+  );
+  ctx.strokeText("Toxoplasmosis", col1X + 44, row3Y + 22);
+  ctx.fillText("Toxoplasmosis", col1X + 44, row3Y + 22);
 
   // Horizontal separator
   const sepY = listY + 202;
@@ -536,12 +535,9 @@ function handleWorldSettingsClick() {
     return;
   }
 
-  // Toxoplasmosis: the next step (100, 75, 50, 25, 10, off)
-  if (isPointInRect(mouse.x, mouse.y, col1X - 5, row3Y - 5, 230, 40)) {
-    const steps = typeof TOXO_STEPS !== "undefined" ? TOXO_STEPS : [100, 0];
-    const i = steps.indexOf(wsPromptToxoChance);
-    wsPromptToxoChance = steps[(i + 1) % steps.length];
-    wsPromptToxoplasmosis = wsPromptToxoChance > 0;
+  // Checkbox 5: Toxoplasmosis
+  if (isPointInRect(mouse.x, mouse.y, col1X - 5, row3Y - 5, 200, 40)) {
+    wsPromptToxoplasmosis = !wsPromptToxoplasmosis;
     return;
   }
 
@@ -561,7 +557,6 @@ function handleWorldSettingsClick() {
       wsPromptSBS,
       fluffySexualitySliderSet.getValues(),
       wsPromptToxoplasmosis,
-      wsPromptToxoChance,
     );
     showWorldSettingsPrompt = false;
 
@@ -1439,7 +1434,6 @@ function handleTitleScreenClick() {
       wsPromptSmarties = true;
       wsPromptSBS = true;
       wsPromptToxoplasmosis = true;
-      wsPromptToxoChance = 100;
       wsPromptSexuality = { ...DEFAULT_SEXUALITY };
       fluffySexualitySliderSet.setValues(wsPromptSexuality);
       showWorldSettingsPrompt = true;

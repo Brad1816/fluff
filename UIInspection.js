@@ -244,7 +244,7 @@ function getFluffyInspectionInfo(f) {
     about.push({ label: "Herd", value: describeHerd(f) });
     for (const [label, fn] of [...INSPECT_ROWS, ["Fake alicorn", "describeFakeAlicorn"], ["Mouth", "describeMouth"], ["Kept little", "describeForeverFoal"], ["Dizzy", "describeDizzy"], ["Heat", "describeHeat"], ["Size", "describeMicro"], ["Stuck", "describeGlued"], ["Born with", "describeDefect"], ["Bad meat", "describeBadMeat"], ["Stud", "describeStud"], ["Snitch", "describeSnitch"]]) {
       const r = typeof window[fn] === "function" ? window[fn](f) : null; // (Trade.js, Tools.js)
-      if (r) about.push({ label, value: r[0], tone: r[1] });
+      if (r) about.push({ label, value: r[0], tone: r[1], ...(r[2] ? { tip: r[2] } : {}) });
     }
     const machine = typeof describeFoalMachine === "function" ? describeFoalMachine(f) : null; // FoalMachine.js
     if (machine) about.push({ label: "The machine", value: machine[0], tone: machine[1] });
@@ -471,7 +471,7 @@ function breedReadiness(f) {
   return { level: 1, text: "Ready to breed", tone: "good" };
 }
 // Shown under "Right now" on the Overview when they're there
-const INSPECT_RIGHT_NOW = ["Cause of death", "Last desire", "Doing", "Frightened", "On its mind", "Pregnant", "Birth", "Resting", "Settling in", "Mourning", "Heat", "Wet", "Diaper", "Burn", "Near death", "Tummy", "Dizzy", "Stuck", "Milk stand", "Surgery job", "Growing up"];
+const INSPECT_RIGHT_NOW = ["Cause of death", "Last desire", "Doing", "Toxoplasmosis", "Frightened", "On its mind", "Pregnant", "Birth", "Resting", "Settling in", "Mourning", "Heat", "Wet", "Diaper", "Burn", "Near death", "Tummy", "Dizzy", "Stuck", "Milk stand", "Surgery job", "Growing up"];
 
 // What it's up to (the Overview's "Right now")
 const DOING_WORDS = {
@@ -494,6 +494,23 @@ function describeDoing(f) {
 }
 INSPECT_ROWS.push(["Doing", "describeDoing"]);
 
+// Toxoplasmosis: how far along it is - the percentage of the way to death
+// (playtest). It wears its health down (HorseUpdate._updateAilments: TOXO_DRAIN
+// a second, and TOXO_SICK each time it's sick, every ~23 s) until it dies at
+// none; the vet cures it (Vet.js).
+const TOXO_DRAIN = 0.2 + 5 / 23; // health a second, on average
+function describeToxo(f) {
+  if (!f || !f.isAlive || !f.isToxoplasmosis || f.isToxoVaccinated) return null;
+  if (typeof worldSettings !== "undefined" && worldSettings && worldSettings.toxoplasmosis === false) return null;
+  const health = Math.max(0, Math.min(100, f.health || 0));
+  const pct = Math.max(0, Math.min(100, Math.round(100 - health)));
+  const secs = health / TOXO_DRAIN;
+  const hours = secs / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
+  const left = hours >= 1 ? `about ${Math.round(hours)} h left` : "under an hour left";
+  return [`${pct}% of the way to death · ${left}`, "bad", "Toxoplasmosis wears its health down until it dies: the percentage is how much it has lost. The vet can cure it."];
+}
+INSPECT_ROWS.push(["Toxoplasmosis", "describeToxo"]);
+
 // The Overview's "Who it is" (under the bars)
 const INSPECT_WHO = ["Personality", "Smarts", "Title", "Wishes for", "Loves most", "Tricks", "Favourite toy"];
 
@@ -512,7 +529,7 @@ const INSPECTION_TABS = [
     id: "body",
     name: "Body",
     cols: [
-      { title: "Health", rows: ["Conditions", "Missing parts", "Injuries", "Near death", "Burn", "Tummy", "Surgery", "Spayed", "Worn out", "Wings", "Mouth", "Size", "Kept little", "Born with", "Bad meat", "Dizzy", "Stuck", "Elder", "Incubator", "Wild"] },
+      { title: "Health", rows: ["Conditions", "Toxoplasmosis", "Missing parts", "Injuries", "Near death", "Burn", "Tummy", "Surgery", "Spayed", "Worn out", "Wings", "Mouth", "Size", "Kept little", "Born with", "Bad meat", "Dizzy", "Stuck", "Elder", "Incubator", "Wild"] },
       { title: "Daily care", rows: ["Diet", "Weight", "Favourite food", "Resting", "Litter trained", "Bath time", "Wet", "Diaper", "Heat", "Coat length", "Favourite toy", "Comfort toy"] },
     ],
   },

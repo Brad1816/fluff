@@ -1,5 +1,5 @@
 // Playtest notes (Oct 5, evening): smarty foals and enfies, the Fluff-Bot,
-// Space to pause, smarts, Today, the planner, toxoplasmosis as a
+// Space to pause, smarts, Today, the planner, how far toxoplasmosis has got (a
 // percentage, shorter pregnancies and Foal-B-Gone, bodies indoors, a mum
 // seeing her foal die, blocks, and skipping ahead faster
 const { check, checkEqual } = require("./helpers");
@@ -108,7 +108,7 @@ module.exports = [
     },
   },
   {
-    name: "quickfix13: the planner counts every fluffy that can have foals (a young alicorn too), best chance first; toxoplasmosis as a percentage (saved); pregnancy is back to 300; Foal-B-Gone ends a pregnancy, all stillborn",
+    name: "quickfix13: the planner counts every fluffy that can have foals (a young alicorn too), best chance first; toxoplasmosis shows how far along it is (a percentage to death); pregnancy is back to 300; Foal-B-Gone ends a pregnancy, all stillborn",
     run: async (page) => {
       const r = await page.evaluate((setup) => {
         eval(setup)();
@@ -126,15 +126,16 @@ module.exports = [
         out.young = rows.length ? rows[0].young : false;
         out.sorted = rows.every((x, i) => i === 0 || rows[i - 1].chance >= x.chance);
         genePlan = {};
-        // Toxo
-        worldSettings = new WorldSettings(true, true, true, true, null, true, 50);
-        out.half = toxoSpread() === 0.5;
-        const back = WorldSettings.deserialize(JSON.parse(JSON.stringify(worldSettings.serialize())));
-        out.saved = back.toxoChance === 50;
-        worldSettings = new WorldSettings(true, true, true, true, null, true, 0);
-        out.off = toxoSpread() === 0 && worldSettings.toxoplasmosis === false;
-        worldSettings = new WorldSettings();
-        out.full = toxoSpread() === 1;
+        // Toxoplasmosis: how far along, in the magnifying glass
+        const sick = __mk(600, { growth: 1 });
+        sick.isToxoplasmosis = true;
+        sick.isToxoVaccinated = false;
+        sick.health = 38;
+        const row = describeToxo(sick);
+        out.toxoText = row ? row[0] : "";
+        out.toxoShown = (getFluffyInspectionInfo(sick).about || []).some((a) => a.label === "Toxoplasmosis");
+        sick.isToxoplasmosis = false;
+        out.toxoGone = describeToxo(sick) === null;
         // Pregnancy
         out.duration = pregnancyDuration;
         mare.triggerPregnancy(stud);
@@ -152,7 +153,7 @@ module.exports = [
       checkEqual(r.pairs, 2, "both stallions, the young alicorn too");
       check(r.top && r.young, "the young alicorn's pair is the best, marked not grown yet");
       check(r.sorted, "best chance first");
-      check(r.half && r.saved && r.off && r.full, "toxoplasmosis: 0-100%");
+      check(/^62% of the way to death/.test(r.toxoText) && r.toxoShown && r.toxoGone, "toxoplasmosis: " + r.toxoText);
       checkEqual(r.duration, 300, "pregnancy: 300");
       check(r.pregnant && r.over && r.allStill, `Foal-B-Gone: the litter comes stillborn (${r.born})`);
     },

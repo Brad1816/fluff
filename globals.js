@@ -937,7 +937,6 @@ let wsPromptAlicorn = true;
 let wsPromptSmarties = true;
 let wsPromptSBS = true;
 let wsPromptToxoplasmosis = true;
-let wsPromptToxoChance = 100; // (0: off)
 let wsPromptSexuality = { ...DEFAULT_SEXUALITY };
 let saveList = [];
 
@@ -3328,7 +3327,6 @@ class WorldSettings {
     sbs = true,
     sexuality = null,
     toxoplasmosis = true,
-    toxoChance = 100,
   ) {
     this.colorism = colorism;
     this.alicornIntolerance = alicornIntolerance;
@@ -3353,10 +3351,6 @@ class WorldSettings {
           : DEFAULT_SEXUALITY.homosexual,
     };
     this.toxoplasmosis = toxoplasmosis !== undefined ? toxoplasmosis : true;
-    // How easily it spreads, 0-100% of the usual (playtest: a percentage,
-    // not just on/off). 0 is the same as off.
-    this.toxoChance = typeof toxoChance === "number" ? Math.max(0, Math.min(100, toxoChance)) : 100;
-    if (this.toxoChance <= 0) this.toxoplasmosis = false;
   }
 
   get sexualityRegular() {
@@ -3375,7 +3369,6 @@ class WorldSettings {
       sbs: this.sbs,
       sexuality: { ...this.sexuality },
       toxoplasmosis: this.toxoplasmosis,
-      toxoChance: this.toxoChance,
     };
   }
 
@@ -3389,20 +3382,9 @@ class WorldSettings {
       data.sbs !== undefined ? data.sbs : true,
       sex,
       data.toxoplasmosis !== undefined ? data.toxoplasmosis : true,
-      typeof data.toxoChance === "number" ? data.toxoChance : 100,
     );
   }
 }
-
-// How likely toxoplasmosis is to pass on, 0..1 of the usual (world setting:
-// HorseToilet.js eating poop, a Litterpal) - 0 when it's off
-function toxoSpread() {
-  if (typeof worldSettings === "undefined" || !worldSettings) return 1;
-  if (worldSettings.toxoplasmosis === false) return 0;
-  return typeof worldSettings.toxoChance === "number" ? worldSettings.toxoChance / 100 : 1;
-}
-// The settings screen's steps (tap to go to the next)
-const TOXO_STEPS = [100, 75, 50, 25, 10, 0];
 
 let worldSettings = new WorldSettings();
 
