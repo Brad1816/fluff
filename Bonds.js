@@ -351,7 +351,7 @@ function describeGrudges(f, max = 2) {
 // ---- Desires (added in the Horse constructor) ----
 
 function _bondCandidates(horse, test) {
-  return fluffies.filter(
+  return fluffiesInScene(horse.scene).filter(
     (f) =>
       f !== horse &&
       f.isAlive &&

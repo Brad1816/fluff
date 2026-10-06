@@ -208,6 +208,34 @@ function fluffyById(id) {
   return f;
 }
 
+// (speed-up) The fluffies in each area, sorted once a step: a fluffy looking
+// for someone near it only goes through the ones in its own area. (One that
+// moved this step may be missed until the next: callers still check .scene.)
+// Don't change the list you get back.
+let _bySceneMap = null;
+let _bySceneAt = NaN;
+let _bySceneLen = -1;
+let _bySceneArr = null;
+const _NO_FLUFFIES = Object.freeze([]);
+function fluffiesInScene(scene) {
+  if (typeof fluffies === "undefined") return _NO_FLUFFIES;
+  // (outside a step - tests, a click - things may have just moved: look properly)
+  if (typeof simActive === "undefined" || !simActive) return fluffies.filter((f) => f.scene === scene);
+  const t = typeof simStep === "number" ? simStep : 0;
+  if (!_bySceneMap || _bySceneAt !== t || _bySceneLen !== fluffies.length || _bySceneArr !== fluffies) {
+    _bySceneMap = new Map();
+    for (const f of fluffies) {
+      let l = _bySceneMap.get(f.scene);
+      if (!l) _bySceneMap.set(f.scene, (l = []));
+      l.push(f);
+    }
+    _bySceneAt = t;
+    _bySceneLen = fluffies.length;
+    _bySceneArr = fluffies;
+  }
+  return _bySceneMap.get(scene) || _NO_FLUFFIES;
+}
+
 function isAlleyScene(sceneName) {
   const s =
     sceneName || (typeof currentScene !== "undefined" ? currentScene : null);
@@ -467,6 +495,8 @@ window.addEventListener("mouseup", (e) => {
     }
     // The scoop's box is done: lift what's in it (Scoop.js)
     if (typeof scoopMouseUp === "function") scoopMouseUp();
+    // An Eject cage tapped on the spot empties below (CageTip.js)
+    if (typeof cageTapRelease === "function") cageTapRelease();
   }
   if (e.button === 2) mouse.rightDown = false;
 });

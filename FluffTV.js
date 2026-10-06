@@ -268,6 +268,8 @@ class FluffTV {
 
   _triggerFocusReactions() {
     if (typeof fluffies === "undefined") return;
+    // Chirpies can't watch, but they hear it (BodyParts.js)
+    if (this.channel === "HEAVY_METAL" && typeof chirpiesHearMetal === "function") chirpiesHearMetal(this);
     const isTvOff = this.channel === "OFF";
     const isPlayTimeEquality = this.channel === "PLAY_TIME";
     const isBabiesLine = this.channel === "BABIES";

@@ -525,6 +525,7 @@ class HorseAnatomy {
       stripesConfig,
       faceData,
     );
+    gib.ownerId = this.horse.id; // (whose it was: BodyParts.js)
     gibs.push(gib);
     return gib;
   }

@@ -1086,6 +1086,7 @@ function knifeCut(f, hitPart, knife) {
           stripesConfig,
           faceData,
         );
+        gib.ownerId = f.id; // (whose it was: BodyParts.js)
         gibs.push(gib);
       }
 

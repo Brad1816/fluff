@@ -77,7 +77,7 @@ function notifyViolence(
 }
 
 const THINK_EVERY_HERE = 0.05; // seconds between a fluffy's decisions where you're looking
-const THINK_EVERY_AWAY = 0.1; // ...and elsewhere
+const THINK_EVERY_AWAY = 0.2; // ...and elsewhere (speed-up: they still eat, sleep, breed and grow on time)
 
 // True while Horse.deserialize builds a fluffy from a save (see the constructor)
 let horseBeingLoaded = false;
@@ -1915,7 +1915,14 @@ class Horse {
     }
 
     if (this.isAlive) {
-      this.updateSpeed();
+      // (speed-up) worked out a few times a second, or when what it's doing
+      // changes - not every step
+      this._speedTimer = (this._speedTimer || 0) - dt;
+      if (this._speedTimer <= 0 || this._speedFor !== this.currentStateKey) {
+        this._speedTimer = 0.25;
+        this._speedFor = this.currentStateKey;
+        this.updateSpeed();
+      }
       if (this.ragdollRotation !== 0 && !this.isDragging) {
         this.ragdollRotation = lerpAngle(this.ragdollRotation, 0, smoothStep(10, dt));
         if (Math.abs(this.ragdollRotation) < 0.01) this.ragdollRotation = 0;

@@ -681,6 +681,8 @@ function attemptDrop() {
             break;
           }
         }
+        // A body on a table: cut a part off (BodyParts.js)
+        if (!hitFluffy && typeof cutBodyAt === "function" && cutBodyAt(knife, mouse.x, mouse.y)) hitFluffy = true;
         if (!hitFluffy) missWithTool(obj);
         return true;
       } else if (obj instanceof MagnifyingGlass) {
@@ -1225,6 +1227,9 @@ function updateFerals(dt) {
 }
 
 let lastTime = 0;
+const SIM_MAX_STEP = 1 / 30; // game seconds in one step at most (smoothStep etc. keep it stable)
+const SIM_MIN_STEP = 1 / 65; // a frame shorter than this waits for the next (120Hz screens)
+let _frameCarry = 0;
 let renderFrameCount = 0; // frames drawn so far (Horse.hitTestAsSeen)
 // One frame going wrong mustn't stop the game for good: the error is
 // reported (Systems.js) and the next frame comes anyway
@@ -1260,7 +1265,17 @@ function _animateFrame(timestamp) {
   if (typeof updateParkCamera === "function") updateParkCamera(elapsed);
   if (typeof mouseToWorld === "function") mouseToWorld();
 
-  const fixedStep = 0.016; // ~60fps steps for physics stability
+  // (speed-up) One step per frame, up to a 30th of a second (it was a 60th:
+  // a phone that took a little longer than that over a frame did two steps,
+  // the second tiny - more work, so the next frame was slower still). On a
+  // 120Hz screen, a step every other frame: the game moves 60 times a second.
+  const fixedStep = SIM_MAX_STEP;
+  _frameCarry += elapsed;
+  elapsed = 0;
+  if (_frameCarry >= SIM_MIN_STEP) {
+    elapsed = _frameCarry;
+    _frameCarry = 0;
+  }
   // An open menu (Today, Household, the vet...) holds time still (Screens.js)
   const menuPause = gameState === "PLAYING" && typeof screenPausesGame === "function" && screenPausesGame();
   const realElapsed = menuPause ? 0 : elapsed; // for fast forward (GameSpeed.js)
@@ -1426,7 +1441,20 @@ function destroyObjectHitByCar(obj) {
   obj.shouldDespawn = true;
 }
 
+// Counts simulation steps (speed-up: answers that can't change within a step
+// are kept for the step - HorsePositioning.getExtentsForCage)
+let simStep = 0;
+let simActive = false; // inside a step (globals.js fluffiesInScene)
 function updateSimulation(dt) {
+  simStep++;
+  simActive = true;
+  try {
+    _updateSimulationStep(dt);
+  } finally {
+    simActive = false;
+  }
+}
+function _updateSimulationStep(dt) {
   timePlayed += dt;
   // Every registered system: family records, bonds, herds, territory,
   // weather, goals, flu, ageing... in order (Systems.js; each file
@@ -1915,7 +1943,10 @@ function render() {
   }
 
   // Draw Visible Renderables to offscreen buffer
+  // (speed-up) In the park, fluffies well off camera aren't drawn
+  const camPad = 260;
   for (const r of renderables) {
+    if (parkCam && r instanceof Horse && !r.isDragging && (r.x < parkCam.x - camPad || r.x > parkCam.x + width + camPad || r.y < parkCam.y - camPad || r.y > parkCam.y + height + camPad)) continue;
     if (r.drawOffScreen) {
       r.drawOffScreen(osCtx);
     } else {
@@ -1929,6 +1960,7 @@ function render() {
   if (typeof drawExtPlayerHud === "function") drawExtPlayerHud(osCtx); // what Grab would do (ExterminatorPlayer.js)
 
   drawVFX(osCtx);
+  if (typeof drawCageTipHint === "function") drawCageTipHint(osCtx); // (where a carried Eject cage would tip: CageTip.js)
   if (typeof drawConfetti === "function") drawConfetti(osCtx); // (HouseLife.js)
   // Foxes in the park at night (NightEvents.js)
   if (parkCam && typeof drawNightPredators === "function") drawNightPredators(osCtx);

@@ -473,7 +473,7 @@ class FrightDesire extends Desire {
 
 // Horse.draw: shakes while frightened. True if it changed the canvas.
 function beginFrightShake(c, f) {
-  if (!f.isAlive || !isFrightened(f)) return false;
+  if (!f.isAlive || !(isFrightened(f) || (f._trembleUntil && f._trembleUntil > timePlayed))) return false; // (a chirpy hearing heavy metal: BodyParts.js)
   c.save();
   c.translate(Math.sin(timePlayed * 55 + f.id) * 1.6, 0);
   return true;

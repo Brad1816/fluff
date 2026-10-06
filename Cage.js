@@ -59,9 +59,10 @@ class Cage {
     return true;
   }
 
-  // Whether fluffies/objects dropped onto it go inside
+  // Whether fluffies/objects dropped onto it go inside (not while it's
+  // tipping them out: CageTip.js)
   acceptsDroppedItems() {
-    return true;
+    return !this._tipping;
   }
 
   onRightClick() {
@@ -197,6 +198,12 @@ class Cage {
       return true;
     }
     if (this.tag === "eject") {
+      // (eject anywhere: picked up - let go on the spot, it empties below;
+      // carried over something and let go, it tips them in: CageTip.js)
+      if (typeof tipCageAt === "function") {
+        this._ejectPress = { x: mouse.x, y: mouse.y, cx: this.x, cy: this.y };
+        return false;
+      }
       this.ejectContents();
       return true;
     }
@@ -302,6 +309,7 @@ class Cage {
     this.wasDragging = this.isDragging;
 
     this.updateCull(dt);
+    if (this._tipQueue && typeof updateCageTip === "function") updateCageTip(this, dt); // (into the grinder, one by one: CageTip.js)
 
     const lastX = this.x;
     const lastY = this.y;
@@ -372,12 +380,16 @@ class Cage {
       this.snapToNeighbour();
       if (this.x !== snapX || this.y !== snapY) this.moveContents(this.x - snapX, this.y - snapY);
     }
+    this._ejectPress = null;
     if (!transitioned && wasClick) {
       if (this.tag === "cull") {
         this.askCull();
       } else if (this.tag === "eject") {
         this.ejectContents();
       }
+    } else if (!transitioned && this.tag === "eject" && typeof tipCageAt === "function") {
+      // Carried over a grinder, the river, the road, a table or a cage (CageTip.js)
+      tipCageAt(this, mouse.x, mouse.y);
     }
     if (transitioned) {
       const dx = this.x - lastX;

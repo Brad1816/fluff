@@ -1243,6 +1243,29 @@ const DIALOGUE = {
     PEGGED: ["Nu! Pwease! <Speaker> hangin'! Scawy!", "Wet me down! Wet me DOWN!", "Huuu! Nu can touch gwound! Hewp!"],
   },
   // Diapers (Diapers.js)
+  // Body parts (BodyParts.js)
+  PARTS: {
+    PUZZLED: ["Wha' dis? Fwuffy weggie...?", "Why weggie aww by sewf?", "Dis toy smeww funny..."],
+    SCARED: ["EEEK! Fwuffy pawt! Scawy!", "Nu wike! Nu wike! Take 'way!", "Why weggie nu hab fwuffy?! Huuu!"],
+    SCARED_HEAD: ["SCREEEE! Fwuffy face! Nu move! Nu tawk!", "AAAH! Fwuffy head aww by sewf! NU!", "Huuu... it wookin' at <speaker>... make it stop!"],
+    GRIEF: ["Dat... dat am <target>'s... huu huu...", "Nu! Nu am <target>! Pwease nu!", "Wai <target> in pieces?! Huu huu huu..."],
+    GRIEF_HEAD: ["<TARGET>!! <TARGET> WAKE UP!! PWEASE!!", "Nu... nu nu nu... <target>... huu huu...", "Wha' happen tu <target>?! HUU HUU!"],
+    METAL_CHIRPY: ["PEEEEP! PEEEEEP!", "*cheep cheep cheep*", "Peep... peep... *shiver*"],
+  },
+  // A mum (or dad) kept from a foal by bars, glass or a pen fence (MumBars.js)
+  BARS: {
+    CALL: ["Mummah hewe, babbeh! Mummah hewe!", "<Target>! Mummah wight hewe!", "Nu be scawed babbeh, mummah cwose!", "Mummah nu go 'way, babbeh. Mummah stay."],
+    CALL_DAD: ["Daddeh hewe, babbeh!", "<Target>! Daddeh wight hewe!", "Nu cwy babbeh, daddeh hewe..."],
+    CANT_FEED: ["Babbeh hungwy... nu can gib miwkies!", "Miwkies wight hewe babbeh... why nu can weach?", "*sob* babbeh nee' miwkies an' mummah nu can..."],
+    PUZZLED: ["Wai babbeh in boxie?", "Nu-see waww in way...", "Why mummah nu can go to babbeh?", "Dummeh boxie! Wet mummah in!"],
+    PUZZLED_GLASS: ["Wai babbeh in gwass boxie?", "Mummah see babbeh... but nu can touch...", "Nu-see waww! Babbeh wight dewe!"],
+    BEG: ["Pwease wet babbeh out!", "Daddeh, pwease! Gib babbeh back tu mummah!", "Pwease! Mummah jus' wan' huggies babbeh!"],
+    FOAL_CALL: ["Mummah!", "MUMMAH! <Speaker> hewe!", "Mummah... wan' mummah..."],
+    FOAL_CALL_DAD: ["Daddeh!", "Daddeh! <Speaker> hewe!"],
+    FOAL_CRY: ["Peep! Peeeep!", "*cheep cheep*", "Peeeeep..."],
+    RELIEF: ["Babbeh! Mummah hab babbeh again!", "Huggies! Nu mowe boxie!", "Mummah missed babbeh su much!"],
+    RELIEF_DAD: ["Babbeh! Daddeh hewe!", "Huggies fow babbeh!"],
+  },
   DIAPER: {
     ON: ["Wha' dis? Nu wike poopie pants...", "Fwuffy am nu babbeh! Nu wan' poopie pants!", "Su itchy... huu..."],
     CHANGED: ["Fwesh pants! Tank yu!", "Nu mowe icky... <speaker> feew bettew!", "Cwean! Yay!"],

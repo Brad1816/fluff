@@ -202,6 +202,7 @@ class Gib {
         : null,
       isRoadkill: this.isRoadkill,
       roadkillFloorY: this.roadkillFloorY,
+      ownerId: this.ownerId ?? null,
       expression: this.expression,
       eyeColor: this.eyeColor,
       maneType: this.maneType,
@@ -268,6 +269,7 @@ class Gib {
     g.freeGib = data.freeGib;
     g.isRoadkill = data.isRoadkill || false;
     g.roadkillFloorY = data.roadkillFloorY || 0;
+    g.ownerId = data.ownerId ?? null;
     return g;
   }
 
@@ -473,6 +475,8 @@ class Gib {
         }
       }
     }
+    // Set down near fluffies: they react (BodyParts.js)
+    if (typeof onBodyPartDropped === "function") onBodyPartDropped(this);
   }
 }
 

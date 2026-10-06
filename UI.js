@@ -837,6 +837,17 @@ canvas.addEventListener("mousedown", (e) => {
     return;
   }
 
+  // Holding something and tapping another room's wall hint: go there,
+  // carrying it (as WASD does) - a body part, a fluffy, a tool... (UIScenes.js)
+  if (isGlobalDragging && !mouse.rightDown && typeof houseNavChipAt === "function") {
+    const sm = typeof screenMouse === "function" ? screenMouse() : mouse;
+    const chip = houseNavChipAt(sm.x, sm.y);
+    if (chip) {
+      changeScene(chip.portal.target);
+      return;
+    }
+  }
+
   // 1. If already dragging something, drop it
 
   if (attemptDrop()) {

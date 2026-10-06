@@ -701,6 +701,14 @@ function houseKeyTowardsLocked(p) {
 }
 
 // Mouse down (UI.js): the wall hints
+// The house room chip under (x, y) that you can go through, or null
+function houseNavChipAt(x, y) {
+  for (const chip of houseNavChips()) {
+    if (!chip.portal.locked && isPointInRect(x, y, chip.x, chip.y, chip.w, chip.h)) return chip;
+  }
+  return null;
+}
+
 function houseNavClick() {
   const lc = _lightsChip;
   if (lc && lc.scene === currentScene && typeof toggleLights === "function" && isPointInRect(mouse.x, mouse.y, lc.x, lc.y, lc.w, lc.h)) {

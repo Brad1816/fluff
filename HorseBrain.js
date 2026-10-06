@@ -55,6 +55,24 @@ function _desireRank(name) {
   return i === undefined ? 999 : i;
 }
 
+// (speed-up: HorseBrain.think) game seconds before a desire that wanted
+// nothing is asked again
+const DESIRE_IDLE_RECHECK = 0.2;
+// Can its "nothing" be trusted for a moment? Not if asking it rolls dice.
+function _desireCanIdle(desire) {
+  const proto = Object.getPrototypeOf(desire);
+  if (!Object.prototype.hasOwnProperty.call(proto, "_canIdle")) {
+    let ok = true;
+    try {
+      ok = !/Math\.random/.test(String(proto.evaluate));
+    } catch (e) {
+      ok = false;
+    }
+    proto._canIdle = ok;
+  }
+  return proto._canIdle;
+}
+
 // More desires from other files: classes pushed here are given to every fluffy
 const EXTRA_DESIRES = [];
 // Other files can rule a desire out for a fluffy for now: (horse, name) =>
@@ -84,10 +102,22 @@ class HorseBrain {
     const aphro = this.horse.isUnderAphrodisiac();
     let evaluatedDesires = [];
     const vetoes = DESIRE_VETOES.length ? DESIRE_VETOES : null;
+    // (speed-up) A desire that wanted nothing a moment ago isn't asked again
+    // for DESIRE_IDLE_RECHECK game seconds - most of them want nothing most of
+    // the time, and asking was most of a crowded room's cost. Not for ones
+    // that roll dice when asked (that would make them rarer), or the one
+    // it's doing.
+    const now = typeof timePlayed === "number" ? timePlayed : 0;
     for (const desire of this.desires) {
       if (vetoes && vetoes.some((v) => v(this.horse, desire.name))) continue;
+      const idleAt = desire._idleAt;
+      if (idleAt !== undefined && now > idleAt && now - idleAt < DESIRE_IDLE_RECHECK && desire !== this.currentDesire) continue;
       let score = desire.evaluate(this.horse);
-      if (!(score > 0)) continue;
+      if (!(score > 0)) {
+        if (_desireCanIdle(desire)) desire._idleAt = now;
+        continue;
+      }
+      desire._idleAt = undefined;
       // Aphrodisiac override: pause most other desires
       if (aphro && !_APHRO_DESIRES.has(desire.name)) continue;
       // Personality traits make some desires stronger or weaker (Traits.js)
@@ -604,6 +634,7 @@ class FeedHungryFoalDesire extends Desire {
   evaluate(horse) {
     if (horse.isScared || horse.isStacking) return 0;
     if (horse.lactatingTimer <= 0 || horse.milkCharges <= 0) return 0;
+    if (horse.happiness <= WAN_DIE_THRESHOLD) return 0; // (given up: she doesn't come - a bug report)
     if (typeof mumAway === "function" && mumAway(horse)) return 0; // (time away from her foals, BadMummah.js)
     if (!horse.positioning.scoutForHungryFoal()) return 0;
     return 90; // High priority fixed score, let execute find a hungry foal

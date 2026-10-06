@@ -47,13 +47,11 @@ class HorsePositioning {
 
     for (const [id, relation] of Object.entries(rels)) {
       if (relation !== "baby_child") continue;
-      const foal = fluffies.find(
-        (f) =>
-          f.id == id &&
-          f.isAlive &&
-          f.scene === this.horse.scene &&
-          f.growth < 0.4,
-      );
+      const foal = fluffyById(id);
+      if (!foal || !foal.isAlive || foal.scene !== this.horse.scene || foal.growth >= 0.4) continue;
+      // (out of reach - bars, glass, a pen fence: she waits by them instead
+      // of walking back and forth, MumBars.js)
+      if (typeof barsKind === "function" && barsKind(this.horse, foal)) continue;
       if (foal && foal.hunger < 0.4 && foal.hunger < worstHunger) {
         worstHunger = foal.hunger;
         hungryFoal = foal;
@@ -62,7 +60,7 @@ class HorsePositioning {
 
     // Her bestest babbeh first, if it's at all hungry (Favourites.js)
     const best = typeof bestestOf === "function" ? bestestOf(this.horse) : null;
-    if (best && best.isAlive && best.scene === this.horse.scene && best.hunger < 0.55 && best.growth < 0.4) hungryFoal = best;
+    if (best && best.isAlive && best.scene === this.horse.scene && best.hunger < 0.55 && best.growth < 0.4 && !(typeof barsKind === "function" && barsKind(this.horse, best))) hungryFoal = best;
     if (!hungryFoal) return false;
 
     // Foal shut in a cage/enclosure: walk up to it, then find she can't
@@ -157,7 +155,7 @@ class HorsePositioning {
     // 2. Look for Corpses
     let nearestCorpse = null;
     let minCorpseDist = Infinity;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (!dead) break;
       if (
         !f.isAlive &&
@@ -192,7 +190,7 @@ class HorsePositioning {
     // 3. Look for Victims (the weakest it can reach)
     let nearestVictim = null;
     let minVictimDist = Infinity;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (!live) break;
       if (
         f !== this.horse &&
@@ -244,7 +242,7 @@ class HorsePositioning {
     let targetMatingSession = null;
     let minDist = Infinity;
 
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (
         f !== this.horse &&
         f.scene === this.horse.scene &&
@@ -394,7 +392,7 @@ class HorsePositioning {
     let bestScore = Infinity;
 
     if (this.horse.canSee()) {
-      for (const f of fluffies) {
+      for (const f of fluffiesInScene(this.horse.scene)) {
         if (
           f !== this.horse &&
           f.scene === this.horse.scene &&
@@ -873,7 +871,7 @@ class HorsePositioning {
       bestD = Infinity,
       pregnant = null,
       pregnantD = Infinity;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (
         f !== this.horse &&
         f.growth >= 1.0 &&
@@ -931,7 +929,7 @@ class HorsePositioning {
 
     let minDist = Infinity;
     let target = null;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (
         f !== this.horse &&
         f.growth >= 1.0 &&
@@ -988,7 +986,7 @@ class HorsePositioning {
         ? relationships[this.horse.id]
         : null;
     if (!rels) return null;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (this.horse.gender === "female" && f.gender !== "female") continue;
       if (
         f.growth >= 1.0 &&
@@ -1247,7 +1245,7 @@ class HorsePositioning {
     if (rels && Math.random() < 0.4) {
       let closestFriend = null;
       let minDist = Infinity;
-      for (const f of fluffies) {
+      for (const f of fluffiesInScene(this.horse.scene)) {
         if (
           f !== this.horse &&
           f.isAlive &&
@@ -1357,15 +1355,25 @@ class HorsePositioning {
   // never change how close it can get to the cage walls. Top/bottom follow
   // the current pose so it still sits on the cage floor correctly.
   getExtentsForCage() {
-    this.horse.updateLayout();
-    const current = this.getExtentsForLayout(this.horse.layout);
+    // (speed-up) asked many times a step - for drawing order, cages, hit
+    // tests: worked out once a step while it stays put
+    const h = this.horse;
+    const step = typeof simStep === "number" ? simStep : -1;
+    const c = this._extCache;
+    if (c && step >= 0 && c.step === step && c.x === h.x && c.y === h.y && c.f === h.facingRight && c.s === h.scale && c.k === h.currentStateKey && c.d === h.isDragging && c.g === h.growth && c.t === h.renderer.tinted) {
+      return { left: c.r.left, right: c.r.right, top: c.r.top, bottom: c.r.bottom };
+    }
+    h.updateLayout();
+    const current = this.getExtentsForLayout(h.layout);
     const standing = this.getStandingExtents();
-    return {
+    const r = {
       left: standing.left,
       right: standing.right,
       top: current.top,
       bottom: current.bottom,
     };
+    this._extCache = { step, x: h.x, y: h.y, f: h.facingRight, s: h.scale, k: h.currentStateKey, d: h.isDragging, g: h.growth, t: h.renderer.tinted, r };
+    return { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
   }
 
   // Extents of the horse standing still and upright, facing its current way
@@ -1570,7 +1578,7 @@ class HorsePositioning {
     if (!worldSettings.alicornIntolerance) return null;
     let closest = null;
     let minDist = Infinity;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (
         f.scene === this.horse.scene &&
         f.isAlive &&
@@ -1593,7 +1601,7 @@ class HorsePositioning {
   findScaryFearedFluffy() {
     let closest = null;
     let minDist = Infinity;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (
         f.scene === this.horse.scene &&
         f.isAlive &&
@@ -1656,7 +1664,7 @@ class HorsePositioning {
     let closest = null;
     let minDist = Infinity;
     const rels = relationships[this.horse.id] || {};
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       // (the cheap tests first: only bodies in this room count)
       if (f.isAlive || f.scene !== this.horse.scene || f.buried) continue; // (covered with leaves: Wild.js)
       if (
@@ -1706,7 +1714,7 @@ class HorsePositioning {
   findChasingSmarty() {
     let closest = null;
     let minDist = Infinity;
-    for (const f of fluffies) {
+    for (const f of fluffiesInScene(this.horse.scene)) {
       if (
         f.chaseTarget === this.horse && // (the cheap test first)
         f.isAlive &&

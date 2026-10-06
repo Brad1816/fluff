@@ -51,6 +51,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "weanTag", fallback: null }, // Grading.js
   { name: "wet", fallback: 0 }, // WetFur.js
   { name: "diaper", fallback: null }, // Diapers.js
+  { name: "metalUsed", fallback: 0 }, // used to FluffTV's heavy metal (BodyParts.js)
   { name: "job", fallback: null }, // Jobs.js
   { name: "clientJob", fallback: null }, // SurgeryJobs.js
   { name: "machineFear", fallback: 0 }, // FoalMachine.js
