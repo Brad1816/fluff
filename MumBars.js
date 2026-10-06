@@ -95,17 +95,30 @@ function barsSpot(p, f) {
   const clampY = (y) => Math.max(topY, y);
   const fc = f.currentCage;
   const pc = p.currentCage;
+  // (half her width, so she stands against the bars, not in them)
+  let half = 45 * (p.scale || 1);
+  if (p.positioning && typeof p.positioning.getExtentsForCage === "function") {
+    const e = p.positioning.getExtentsForCage();
+    if (e && e.right > e.left) half = (e.right - e.left) / 2;
+  }
   if (fc && fc !== pc && fc.bounds) {
     const b = fc.bounds;
     const cx = (b.left + b.right) / 2;
     if (!pc) {
-      return { x: p.x < cx ? b.left - 28 : b.right + 28, y: clampY(Math.min(Math.max(f.y, b.top + 30), b.bottom)) };
+      // (the side she's on, unless it's off the edge of the room)
+      const sw = typeof sceneW === "function" ? sceneW(p.scene) : typeof width === "number" ? width : 1280;
+      const lx = b.left - half - 6;
+      const rx = b.right + half + 6;
+      let left = p.x < cx;
+      if (left && lx < half) left = false;
+      else if (!left && rx > sw - half) left = true;
+      return { x: left ? lx : rx, y: clampY(Math.min(Math.max(f.y, b.top + 30), b.bottom)) };
     }
   }
   if (pc && pc.bounds) {
     const b = pc.bounds;
     const cx = (b.left + b.right) / 2;
-    return { x: f.x < cx ? b.left + 30 : b.right - 30, y: clampY(Math.min(Math.max(f.y, b.top + 30), b.bottom - 10)) };
+    return { x: f.x < cx ? b.left + half + 6 : b.right - half - 6, y: clampY(Math.min(Math.max(f.y, b.top + 30), b.bottom - 10)) };
   }
   // A fence (or both in different cages): head for it and be stopped
   return { x: f.x + (f.x > p.x ? -30 : 30), y: clampY(f.y) };

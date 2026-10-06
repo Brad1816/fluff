@@ -501,7 +501,7 @@ class Cage {
 
     // Draw Tag (with what a tap does, for cull and eject)
     if (this.tag && this.tag !== "none") {
-      const hint = { cull: " \u00b7 tap to seal", eject: " \u00b7 tap to empty" }[this.tag];
+      const hint = { cull: " \u00b7 tap to seal", eject: " \u00b7 tap to empty, drag to tip" }[this.tag];
       const label = this.tag.toUpperCase() + (hint && !this.cullPhase && this.getOccupants().length ? hint : "");
       ctx.font = "bold 12px Arial";
       ctx.textAlign = "center";

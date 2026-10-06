@@ -166,7 +166,8 @@ module.exports = [
         gameState = "PLAYING";
         if (typeof transitionPhase !== "undefined") transitionPhase = "OFF";
         isGlobalDragging = false;
-        const { cage, inside } = __ejectCage(400, 2);
+        if (typeof tutorialTimer !== "undefined") tutorialTimer = 0; // (the tips box)
+        const { cage, inside } = __ejectCage(800, 2);
         window.__tc = { cage, inside };
         return { x: cage.x + 30, y: cage.bounds.top + 20 }; // (the bars, not a fluffy)
       }, [SETUP, TIP_SETUP]);
@@ -178,9 +179,9 @@ module.exports = [
       check(r1.out && !r1.held, `a click empties it below (${JSON.stringify(r1)})`);
       const p2 = await page.evaluate(() => {
         objects.splice(objects.indexOf(__tc.cage), 1);
-        const { cage, inside } = __ejectCage(300, 2);
+        const { cage, inside } = __ejectCage(700, 2);
         const g = new Grinder("INDOORS");
-        g.x = 900;
+        g.x = 1050;
         g.y = 520;
         objects.push(g);
         g.update(0);
