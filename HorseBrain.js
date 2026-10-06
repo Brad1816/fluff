@@ -830,7 +830,7 @@ class PlayWithBlocksDesire extends Desire {
       return 0;
     if (horse.happiness <= WAN_DIE_THRESHOLD) return 0;
     if (horse.sleepingOrTargetSet()) return 0;
-    if (horse.hasBlockOnBack() || horse.isStacking) return 95; // MUST finish tower!
+    if (horse.hasBlockOnBack() || horse.isStacking || horse._blockLift) return 95; // MUST finish tower!
 
     let hasBlock =
       typeof objects !== "undefined" &&

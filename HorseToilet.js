@@ -82,7 +82,7 @@ addHorseMethods({
               if (
                 (typeof worldSettings === "undefined" || worldSettings.toxoplasmosis) &&
                 !this.isToxoplasmosis &&
-                Math.random() < 0.3 * dt &&
+                Math.random() < 0.3 * dt * (typeof toxoSpread === "function" ? toxoSpread() : 1) &&
                 puddle.type === "poop"
               ) {
                 this.isToxoplasmosis = true;
@@ -240,7 +240,7 @@ addHorseMethods({
         if (
           (typeof worldSettings === "undefined" || worldSettings.toxoplasmosis) &&
           this.isToxoplasmosis &&
-          Math.random() < 0.3
+          Math.random() < 0.3 * (typeof toxoSpread === "function" ? toxoSpread() : 1)
         ) {
           nearLitterbox.securedFluffy.isToxoplasmosis = true;
         }

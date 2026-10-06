@@ -32,6 +32,8 @@ function rebuildFluffyGrid() {
 // Living fluffies in `scene` within `r` px of (x, y) (as of the last rebuild)
 function fluffiesNear(scene, x, y, r) {
   const out = [];
+  // (a fluffy somewhere impossible mustn't send this round forever)
+  if (!isFinite(x) || !isFinite(y) || !isFinite(r) || Math.abs(x) > 1e6 || Math.abs(y) > 1e6 || r > 1e5) return out;
   const c0 = Math.floor((x - r) / FLUFFY_GRID_CELL);
   const c1 = Math.floor((x + r) / FLUFFY_GRID_CELL);
   const r0 = Math.floor((y - r) / FLUFFY_GRID_CELL);

@@ -111,9 +111,10 @@ module.exports = [
         const adults = Array.from({ length: 20 }, () => _makeWild(1, { x: 800, y: 700 }, { personalities: ["true_feral"] }));
         const foal = _makeWild(0.5, { x: 800, y: 700 }, { personalities: [] });
         restockMarket(2);
-        const bought = buyStockListing(stockMarket.listings[0].id) || null;
+        // (a grown one: young stock's age goes by how grown it is)
+        const grown = () => stockMarket.listings.find((l) => l.growth >= 1) || stockMarket.listings[0];
         money = 1e6;
-        const b = bought || buyStockListing(stockMarket.listings[0].id);
+        const b = buyStockListing(grown().id);
         return {
           days: adults.map((f) => ageDays(f)),
           foal: foal.age,

@@ -577,14 +577,17 @@ module.exports = [
           f.type = t; // (an "earthy" with random genes can come out with a horn)
           return f;
         };
-        const out = { scores: ["earthy", "pegasus", "unicorn", "alicorn"].map((t) => smartsScore(mk(t))) };
+        // (each fluffy is a little either side of its breed: Intelligence.js
+        // BREED_SMARTS_SPREAD - taken off here)
+        const base = (f) => Math.round(50 + 50 * (smartsOf(f) - (BREED_SMARTS_SPREAD[f.type] ?? 0.2) * _smartsJitter(f)));
+        const out = { scores: ["earthy", "pegasus", "unicorn", "alicorn"].map((t) => base(mk(t))) };
         const peg = mk("pegasus");
         out.text = describeSmarts(peg)[0];
         const g = traitValue(peg.genes, "wits");
         peg.traitShift = { wits: 1 - g };
-        out.clever = smartsScore(peg);
+        out.clever = base(peg);
         peg.traitShift = { wits: -1 - g };
-        out.dim = smartsScore(peg);
+        out.dim = base(peg);
         // Wild ones on the map
         const w1 = __mk(300, { scene: "OUTDOORS", adopted: false });
         const w2 = __mk(400, { scene: "OUTDOORS", adopted: false });
@@ -599,7 +602,7 @@ module.exports = [
         return out;
       }, SETUP);
       checkEqual(JSON.stringify(r.scores), "[50,35,60,90]", "breed averages");
-      check(/^35\/100: learns/.test(r.text) && !/dim|pegasi/.test(r.text), r.text);
+      check(/^\d+\/100: learns/.test(r.text) && !/dim|pegasi/.test(r.text), r.text);
       check(r.clever === 60 && r.dim === 10, `wits move it 25 either way: ${r.clever} / ${r.dim}`);
       check(r.wild && r.sel && r.edges >= 1, `wild map: ${JSON.stringify(r)}`);
       check(r.yours, "back to yours");

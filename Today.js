@@ -53,6 +53,15 @@ function _tdRoom(scene) {
   return typeof householdRoomName === "function" ? householdRoomName(scene) : scene;
 }
 
+// Several fluffies with the same thing: one line, naming a few (playtest:
+// the sad ones and the wishes filled the list)
+function _tdNames(list, max = 3) {
+  const names = list.slice(0, max).map((f) => fluffyDisplayName(f));
+  const more = list.length - names.length;
+  if (more > 0) return `${names.join(", ")} and ${more} more`;
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+}
+
 // [{ level: "urgent"|"chance"|"info", text, f? }]
 function todayItems() {
   const now = typeof performance !== "undefined" ? performance.now() : 0;
@@ -85,6 +94,7 @@ function todayItems() {
   if (typeof inspector !== "undefined" && inspector && inspector.warned !== null && inspector.warned !== undefined) {
     add("urgent", "The welfare inspector is coming tomorrow morning. (They don't look in back rooms or cages.)");
   }
+  const givingUp = [];
   for (const f of own) {
     const n = fluffyDisplayName(f);
     if (f.hunger < 0.25) add("urgent", `${n} is starving.`, f);
@@ -100,7 +110,7 @@ function todayItems() {
           add("urgent", hoursLeft <= 0 ? `${n}'s TPN drip is empty - it can't eat by itself.` : `${n}'s TPN drip runs dry in about ${Math.max(1, Math.round(hoursLeft))} game hour${Math.round(hoursLeft) === 1 ? "" : "s"} - it can't eat by itself.${drip.autoRefill ? " (Not enough money for auto-refill.)" : ""}`, f);
       }
     }
-    else if (f.happiness < GIVING_UP_SOON) add("urgent", `${n} is close to giving up - cheer it up before it stops eating.`, f);
+    else if (f.happiness < GIVING_UP_SOON) givingUp.push(f);
     if (typeof isFrightened === "function" && isFrightened(f)) add("urgent", `${n} is frightened - pick it up or sit with it.`, f);
     if (f.bleedingTimer > 0) add("urgent", `${n} is bleeding.`, f);
     // Born early and frail, cold or hungry (Premature.js)
@@ -115,6 +125,8 @@ function todayItems() {
       else if (typeof runAwayChance === "function" && runAwayChance(f) > 0) add("urgent", `${n} is miserable and frightened of you: it may run away.`, f);
     }
   }
+  if (givingUp.length === 1) add("urgent", `${fluffyDisplayName(givingUp[0])} is close to giving up - cheer it up before it stops eating.`, givingUp[0]);
+  else if (givingUp.length) add("urgent", `Close to giving up - cheer them up before they stop eating: ${_tdNames(givingUp)}.`, givingUp[0]);
   // Mums that turn on their own foals (the colourism and alicorn world
   // settings): the commonest way foals die at home in the long test games
   for (const f of own) {
@@ -139,20 +151,31 @@ function todayItems() {
   // ---- Chances ----
   const parties = [];
   const quietWishes = [];
+  const achingWishes = [];
+  const lonely = {}; // why -> [fluffies] (sad, grieving...: sit with it)
   for (const f of own) {
     const n = fluffyDisplayName(f);
     const wish = typeof wishText === "function" ? wishText(f) : null;
     // Only the ones aching for their wish (or promised it) get a line; the
     // rest are one line together (Wishes.js)
     const aching = wish && f.wish && (typeof _wDays === "function" ? _wDays(f.wish) >= WISH_PATIENCE_DAYS : false);
-    if (wish && (aching || f.wish.promisedAt !== undefined)) add("chance", `${n} is aching for a wish: ${wish.charAt(0).toLowerCase()}${wish.slice(1)}.`, f);
+    if (wish && (aching || f.wish.promisedAt !== undefined)) achingWishes.push({ f, wish });
     else if (wish) quietWishes.push(f);
     const party = typeof partyOccasion === "function" ? partyOccasion(f) : null;
     if (party) parties.push({ f, name: party.name });
     const change = typeof describeTitleProgress === "function" ? describeTitleProgress(f) : null;
     if (change && !/breaking/.test(change) && (/Healing|Winning/.test(change) || /most of the way|nearly there/.test(change))) add("chance", `${n} - ${change}.`, f);
     const why = typeof needsSitWith === "function" ? needsSitWith(f) : null;
-    if (why && why !== "frightened" && why !== "broken") add("chance", `${n} is ${why} - you could sit with it.`, f);
+    if (why && why !== "frightened" && why !== "broken" && !(why === "sad" && givingUp.includes(f))) (lonely[why] = lonely[why] || []).push(f);
+  }
+  if (achingWishes.length === 1) {
+    const { f, wish } = achingWishes[0];
+    add("chance", `${fluffyDisplayName(f)} is aching for a wish: ${wish.charAt(0).toLowerCase()}${wish.slice(1)}.`, f);
+  } else if (achingWishes.length) add("chance", `Aching for their wishes (Mind tab): ${_tdNames(achingWishes.map((a) => a.f))}.`, achingWishes[0].f);
+  for (const why in lonely) {
+    const list = lonely[why];
+    if (list.length === 1) add("chance", `${fluffyDisplayName(list[0])} is ${why} - you could sit with it.`, list[0]);
+    else add("chance", `${why.charAt(0).toUpperCase()}${why.slice(1)} - you could sit with them: ${_tdNames(list)}.`, list[0]);
   }
   if (quietWishes.length) add("info", quietWishes.length === 1 ? `${fluffyDisplayName(quietWishes[0])} has a wish (Mind tab).` : `${quietWishes.length} fluffies have wishes (Mind tab in the magnifying glass).`, quietWishes[0]);
   // (several reasons for a party: one line)

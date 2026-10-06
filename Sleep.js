@@ -18,6 +18,16 @@ const SLEEP_WAKE_HOUR = 6; // (the morning report time: DayReport.js REPORT_HOUR
 // the fights, illness and deaths of a normal night; at 0.1 (how often
 // fluffies in other rooms think anyway) it came out the same.
 const SLEEP_STEP = 0.1;
+// ...but a busy house took a minute of real time to skip 12 hours (playtest:
+// "can we simulate that faster?"). So the step grows, up to SLEEP_MAX_STEP,
+// as much as it takes to be done in about SLEEP_TARGET_MS (+ a little for
+// each hour): a quiet house still runs at SLEEP_STEP, a crowded one in
+// bigger steps - everything that counts time (hunger, growing up,
+// pregnancies, births, ageing, illness) comes out the same; fluffies just
+// make fewer small decisions along the way.
+const SLEEP_MAX_STEP = 1.0;
+const SLEEP_TARGET_MS = 3000; // real time for a skip...
+const SLEEP_TARGET_HOUR_MS = 450; // ...and this much more for each game hour (12 hours: about 8 seconds)
 const SLEEP_BUDGET_MS = 100; // real time a frame spent sleeping...
 const SLEEP_DRAW_EVERY_MS = 250; // ...and the room's only drawn this often (drawing is slow on some computers)
 let _sleepDrawnAt = 0;
@@ -68,7 +78,7 @@ function skipRefusal() {
 function startSkip(hours) {
   if (skipRefusal()) return false;
   const now = typeof timePlayed === "number" ? timePlayed : 0;
-  sleepState = { from: now, until: now + hours * HOUR_LENGTH, skip: hours };
+  sleepState = { from: now, until: now + hours * HOUR_LENGTH, skip: hours, ..._sleepPace(hours * HOUR_LENGTH) };
   if (typeof setGameSpeed === "function") setGameSpeed(1);
   return true;
 }
@@ -114,7 +124,7 @@ function askSleep() {
 function startSleep() {
   if (sleepRefusal()) return false;
   const now = typeof timePlayed === "number" ? timePlayed : 0;
-  sleepState = { from: now, until: now + secondsToMorning() };
+  sleepState = { from: now, until: now + secondsToMorning(), ..._sleepPace(secondsToMorning()) };
   if (typeof setGameSpeed === "function") setGameSpeed(1);
   return true;
 }
@@ -127,13 +137,34 @@ function wakeUp(early = false) {
   return true;
 }
 
+// How fast to go: { realStart, targetMs, msPerStep }
+function _sleepPace(gameSeconds) {
+  const hours = gameSeconds / (typeof HOUR_LENGTH === "number" ? HOUR_LENGTH : 50);
+  return { realStart: performance.now(), targetMs: SLEEP_TARGET_MS + SLEEP_TARGET_HOUR_MS * hours, msPerStep: null };
+}
+
+// The step to take now, to be done on time (SLEEP_STEP .. SLEEP_MAX_STEP)
+function sleepStepNow(st = sleepState) {
+  if (!st || !st.msPerStep) return SLEEP_STEP;
+  const left = st.until - timePlayed;
+  const realLeft = Math.max(500, st.targetMs - (performance.now() - st.realStart));
+  // (about two thirds of each frame goes on it: the rest is drawing)
+  const steps = Math.max(1, (realLeft * 0.65) / st.msPerStep);
+  return Math.max(SLEEP_STEP, Math.min(SLEEP_MAX_STEP, left / steps));
+}
+
 // script.js animate(), every frame: run the night on
 function runSleep(budgetMs = SLEEP_BUDGET_MS) {
   if (!sleepState) return false;
   if (typeof gameState !== "undefined" && gameState !== "PLAYING") return false;
   const deadline = performance.now() + budgetMs;
   while (timePlayed < sleepState.until - 1e-6 && performance.now() < deadline) {
-    updateSimulation(Math.min(SLEEP_STEP, sleepState.until - timePlayed));
+    const st = sleepState;
+    const t0 = performance.now();
+    updateSimulation(Math.min(sleepStepNow(st), st.until - timePlayed));
+    // (how long a step takes here, smoothed)
+    const took = performance.now() - t0;
+    st.msPerStep = st.msPerStep ? st.msPerStep * 0.9 + took * 0.1 : took;
     if (!sleepState) return true; // (woken by something)
   }
   if (timePlayed >= sleepState.until - 1e-6) wakeUp(false);

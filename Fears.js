@@ -74,7 +74,9 @@ const FRIGHT_TIME = { thunder: 20, dark: 15, bot: 12, fire: 15, cages: 15, bath:
 const FRIGHT_REST = { thunder: 0, dark: 200, bot: 300, fire: 40, cages: 90, bath: 30 }; // seconds after a fright before the same thing can start another
 const BOT_NEAR = 70; // px: the Fluff-Bot driving this close can set one off
 const BOT_FRIGHT_MIN = 0.35; // a bump only frightens one this scared of it
-const BOT_GET_USED = 0.03; // fear of it lost each bump that does no harm
+const BOT_GET_USED = 0.12; // fear of it lost each bump (playtest: they took far too long to get used to it)
+const BOT_FRIGHT_USED = 0.08; // ...and each time a fright of it wears off (it was only the Fluff-Bot)
+const BOT_PASS_USED = 0.01; // ...and each second it drives by close without a fright
 const DARK_FRIGHT_CHANCE = 0.004; // a second, x fear, awake in a dark room
 const NIGHT_LIGHT_PRICE = 30;
 
@@ -518,6 +520,7 @@ function updateFears(dt) {
       if (f.fright.until <= now || f.fright.until - now > 120) {
         const key = endFright(f);
         if (near) _fSay(f, "CALMED");
+        else if (key === "bot") changeFear(f, "bot", -BOT_FRIGHT_USED); // (it's only the Fluff-Bot: it gets used to it)
         else if (f.adopted) changeFear(f, key, FEAR_WORSEN); // cried it out alone
         continue;
       }
@@ -570,10 +573,10 @@ function updateFears(dt) {
     const botFear = fearOf(f, "bot");
     if (botFear >= FEAR_MIN && f.currentStateKey !== "SLEEPING") {
       for (const b of bots) {
-        if (b.scene === f.scene && Math.hypot(b.x - f.x, b.y - f.y) < BOT_NEAR && Math.random() < 0.02 * botFear * step) {
-          startFright(f, "bot");
-          break;
-        }
+        if (b.scene !== f.scene || Math.hypot(b.x - f.x, b.y - f.y) >= BOT_NEAR) continue;
+        if (Math.random() < 0.02 * botFear * step) startFright(f, "bot");
+        else changeFear(f, "bot", -BOT_PASS_USED * step); // (it went by, and nothing happened)
+        break;
       }
     }
   }

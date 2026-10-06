@@ -951,14 +951,22 @@ function handleCheatCode(code) {
       "World Sensitive Baby Syndrome: " + (worldSettings.sbs ? "ON" : "OFF"),
     );
   } else if (first === "worldt") {
-    worldSettings.toxoplasmosis = !worldSettings.toxoplasmosis;
+    // ("worldt 25": how easily it spreads, as a percentage)
+    const pct = Number(arr[1]);
+    if (arr[1] !== undefined && !isNaN(pct)) {
+      worldSettings.toxoChance = Math.max(0, Math.min(100, pct));
+      worldSettings.toxoplasmosis = worldSettings.toxoChance > 0;
+    } else {
+      worldSettings.toxoplasmosis = !worldSettings.toxoplasmosis;
+      if (worldSettings.toxoplasmosis && !(worldSettings.toxoChance > 0)) worldSettings.toxoChance = 100;
+    }
     if (!worldSettings.toxoplasmosis && typeof fluffies !== "undefined") {
       for (const f of fluffies) {
         f.isToxoplasmosis = false;
       }
     }
     addUIMessage(
-      "World Toxoplasmosis: " + (worldSettings.toxoplasmosis ? "ON" : "OFF"),
+      "World Toxoplasmosis: " + (worldSettings.toxoplasmosis ? `ON (${worldSettings.toxoChance ?? 100}%)` : "OFF"),
     );
   } else if (first === "error") {
     throw new Error("Placeholder error triggered by cheat!");
@@ -1243,7 +1251,8 @@ function handleCheatCode(code) {
 window.addEventListener("keydown", (e) => {
   if (gameState !== "PLAYING") return;
 
-  if (e.code === "Space") {
+  // (the \` key, left of 1: Space pauses now - script.js)
+  if (e.code === "Backquote") {
     e.preventDefault();
     const code = prompt("Enter Cheat Code:");
     handleCheatCode(code);

@@ -217,6 +217,8 @@ class HorseAnatomy {
         }
       }
     }
+    // A foal dying in front of its mum (FoalLife.js)
+    if (typeof onFoalDied === "function") onFoalDied(this.horse, weaponType, cause);
     // Its name on the memorial plaque, and those close to it mourn (MemorialTree.js)
     if (typeof mournTheLost === "function") mournTheLost(this.horse); // (MemorialTree.js)
     // Its comfort plushie goes to one of its foals (Plushie.js)

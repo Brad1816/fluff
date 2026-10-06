@@ -84,13 +84,28 @@ function genesMatchPlan(genes, plan = genePlan) {
   return true;
 }
 
+// Who can be a parent in a plan: every living fluffy of yours that can (or
+// will, once grown) have foals - foals too, marked as not grown yet
+// (playtest: a young alicorn was left out, and a better pair with it never
+// showed). Not a spayed mare, a gelded or banded stallion.
+function planParentOk(f) {
+  if (!f || !f.isAlive || !f.adopted || f.nbOwner != null) return false;
+  if (f.gender === "female") return !f.spayed;
+  const banded = f.accessories && f.accessories.ABOVE_LUMPS && f.accessories.ABOVE_LUMPS.id === "castration_band";
+  return !banded && !(f.limbs && !f.limbs.lumps);
+}
+
 function _planKey() {
-  const ids = fluffies.filter((f) => f.isAlive && f.adopted && f.growth >= 1).map((f) => f.id).join(",");
+  const ids = fluffies
+    .filter(planParentOk)
+    .map((f) => f.id + (f.growth >= 1 ? "" : "y"))
+    .sort()
+    .join(",");
   return JSON.stringify(genePlan) + "|" + ids;
 }
 
 function _planStart() {
-  const grown = (g) => fluffies.filter((f) => f.isAlive && f.adopted && f.gender === g && f.growth >= 1);
+  const grown = (g) => fluffies.filter((f) => planParentOk(f) && f.gender === g);
   const pairs = [];
   for (const m of grown("female")) for (const d of grown("male")) pairs.push([m, d]);
   _planJob = {
@@ -124,7 +139,7 @@ function _planWork(maxPairs = PLAN_PAIRS_PER_FRAME) {
       const kin = typeof relatedness === "function" ? relatedness(mom, dad) : 0;
       let alive = typeof geneLabViability === "function" ? geneLabViability(mom.genes, dad.genes) : 1;
       if (typeof INBRED_KIN === "number" && kin >= INBRED_KIN) alive += (1 - alive) * INBRED_PULL_THROUGH;
-      J.results.push({ mom, dad, chance: hit / PLAN_SAMPLES, alive, kin });
+      J.results.push({ mom, dad, chance: hit / PLAN_SAMPLES, alive, kin, young: !(mom.growth >= 1 && dad.growth >= 1) });
     }
   } finally {
     Math.random = realRandom;
@@ -160,12 +175,13 @@ function genePlannerLayout() {
   return { chips, clear: { x: 30, y: Math.min(GL_H - 70, y + 6), w: 120, h: 34 }, results: { x: 540, y: 110, w: GL_W - 560, h: GL_H - 160 } };
 }
 
+// Best chance first (then the most born alive); all of them - as many as
+// fit are drawn
 function _planRows() {
   if (!_planJob) return [];
   return _planJob.results
     .filter((r) => r.chance > 0)
-    .sort((a, b) => b.chance * (0.5 + 0.5 * b.alive) - a.chance * (0.5 + 0.5 * a.alive))
-    .slice(0, 10);
+    .sort((a, b) => b.chance - a.chance || b.alive - a.alive);
 }
 
 function drawGenePlanner(c, m) {
@@ -207,15 +223,18 @@ function drawGenePlanner(c, m) {
   y += 8;
   const rows = _planRows();
   if (J && !J.pairs.length) {
-    canvasText(c, "You need a grown mare and a grown stallion.", R.x + 20, y + 22, "rgba(255,255,255,0.6)", "14px Arial");
+    canvasText(c, "You need a mare and a stallion that can have foals.", R.x + 20, y + 22, "rgba(255,255,255,0.6)", "14px Arial");
   } else if (done && !rows.length) {
     canvasText(c, "None of your pairs can give that. Look for fluffies that", R.x + 20, y + 22, "rgba(255,255,255,0.7)", "14px Arial");
     canvasText(c, "carry it (the shelter, breeding stock) - or pick less.", R.x + 20, y + 40, "rgba(255,255,255,0.7)", "14px Arial");
   }
+  let hidden = 0;
+  const bottom = R.y - 10 + R.h - 6;
   for (const r of rows) {
     const ry = y + 10;
-    if (ry + 38 > R.y - 10 + R.h - 6) {
+    if (ry + 38 > bottom - (rows.length > 1 ? 18 : 0)) {
       r._box = null; // (no room left in the panel)
+      hidden++;
       continue;
     }
     const box = { x: R.x + 14, y: ry, w: R.w - 28, h: 38 };
@@ -226,14 +245,18 @@ function drawGenePlanner(c, m) {
     c.fill();
     const pct = r.chance >= 0.1 ? Math.round(r.chance * 100) : Math.round(r.chance * 1000) / 10;
     canvasText(c, `${pct}%`, box.x + 12, ry + 25, r.chance >= 0.25 ? "#7dff8a" : r.chance >= 0.08 ? "#ffe066" : "#ffb86b", "bold 17px Arial");
-    let names = `${fluffyDisplayNameById(r.mom.id)} ♀ + ${fluffyDisplayNameById(r.dad.id)} ♂`;
+    // (each name gets half the room, so you can see who both are)
     c.font = "14px Arial";
-    while (names.length > 8 && c.measureText(names).width > box.w - 260) names = names.slice(0, -2);
+    const room = box.w - (r.young ? 330 : 260);
+    const half = Math.max(40, (room - c.measureText(" ♀ +  ♂").width) / 2);
+    const cut = (t) => (typeof fitText === "function" ? fitText(c, t, half) : t);
+    const names = `${cut(fluffyDisplayNameById(r.mom.id))} ♀ + ${cut(fluffyDisplayNameById(r.dad.id))} ♂`;
     canvasText(c, names, box.x + 76, ry + 24, "white", "14px Arial");
-    const note = `${Math.round(r.alive * 100)}% alive${r.kin >= (typeof INBRED_KIN === "number" ? INBRED_KIN : 0.125) ? " · kin!" : ""}`;
-    canvasText(c, note, box.x + box.w - 12, ry + 24, r.kin >= 0.125 ? "#ffb86b" : "#cfcfcf", "13px Arial", "right");
+    const note = `${r.young ? "not grown yet · " : ""}${Math.round(r.alive * 100)}% alive${r.kin >= (typeof INBRED_KIN === "number" ? INBRED_KIN : 0.125) ? " · kin!" : ""}`;
+    canvasText(c, note, box.x + box.w - 12, ry + 24, r.kin >= 0.125 ? "#ffb86b" : r.young ? "#9fd3ff" : "#cfcfcf", "13px Arial", "right");
     y += 44;
   }
+  if (hidden) canvasText(c, `...and ${hidden} more pair${hidden === 1 ? "" : "s"} with a lower chance`, R.x + 20, bottom - 2, "rgba(255,255,255,0.55)", "13px Arial");
 }
 
 // A click in planner mode (lab coordinates). True if used.

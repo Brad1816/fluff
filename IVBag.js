@@ -164,6 +164,7 @@ class IVBag {
       if (this.type === "toxo_parasite") label = "Tpr";
       if (this.type === "laxative") label = "Lax";
       if (this.type === "diuretic") label = "Diu";
+      if (this.type === "abortifacient") label = "FBG";
       if (this.type === "lethal") label = "LTH"; // (Handling.js)
       ctx.fillText(label, 0, -4);
       ctx.fillText(Math.ceil(this.charges), 0, 10);

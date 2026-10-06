@@ -103,11 +103,25 @@ const DIALOGUE = {
   },
 
   // Herds (Herds.js)
+  // A foal dying in front of them (FoalLife.js onFoalDied)
+  FOAL_DIED: {
+    MUM: ["NUUUU!! BABBEH!!", "<TARGET>!! NU!! NUUUU!!", "Wai babbeh nu move?! BABBEH!! WAKE UP!!", "Mummah's babbeh... nu... NUUUUU!!", "Babbeh... come back tu mummah... pwease..."],
+    DAD: ["Nu... <target>...", "Daddeh's babbeh... huu huu...", "<Target>! NU!"],
+    OTHER: ["Nu! Widdwe babbeh!!", "Poow babbeh... huu huu...", "Babbeh nu move... *sniff*", "Nu, nu, nu... babbeh..."],
+    DROWNING: ["BABBEH!! BABBEH IN WATEW!!", "HEWP!! BABBEH NU CAN SWIM!!", "<Target>! Come back tu mummah!!", "SUMWUN HEWP BABBEH!! PWEASE!!"],
+  },
   HERD: {
     FORGET: ["<Speaker> wiww stiww wub owd fwens... but dis am home nao.", "Nu need owd hewd. Hab nyu famiwy!", "Bye-bye owd hewd..."],
     // A war with a feuding herd (HerdWars.js)
     WAR: ["Get dummeh hewd! Make dem go 'way fowebah!", "Dey huwt hewd befowe! Nu mowe!", "Hewd! Fight! Fight fow meadow!", "Bad hewd am back! Get dem!"],
     // A clever one taking a dead body away from the herd
+    // Indoors there's nowhere to take it: it asks you instead (HerdWars.js)
+    BODY_TELL: [
+      "Daddeh... <target> nu wake up. Pwease take <target> 'way, su nu make sickies.",
+      "Daddeh! <Target> am fowebah sweepies... babbehs nu undewstan'. Pwease hewp.",
+      "Housie nu hab faw away pwace... daddeh take <target>?",
+      "<Target> getting stinky, daddeh... <speaker> nu knyo whewe tu put.",
+    ],
     BODY: ["Nu weave fwiend hewe... make hewd sickies. <Speaker> take away.", "Stinky... bad fow hewd. Hab tu take faw away.", "<Speaker> take sweepy fwiend faw away, su nu make sickies."],
     NEW_HERD: [
       "Aww fwens stay togedda! Am hewd nao!",
@@ -3278,6 +3292,10 @@ const DIALOGUE = {
   },
 };
 
+// (getDialogue: lines a foal won't say - asking for enfies or gud feews; a
+// foal saying no to them is fine)
+const _GROWNUP_LINE = /enfie|gud feews|enfie mawe|speshuw huggies/i;
+const _GROWNUP_OK = /\bnu\b|bad enfie|nee enfie/i;
 function getDialogue(keys = [], speaker = null, target = null) {
   // Set from string, set defaults, destructure
   if (typeof keys === "string") keys = [keys];
@@ -3305,6 +3323,12 @@ function getDialogue(keys = [], speaker = null, target = null) {
   }
   if (!text && DIALOGUE[key1 + "_" + key2]) {
     text = DIALOGUE[key1 + "_" + key2];
+  }
+  // A foal - even a smarty one - doesn't ask for enfies (nor anything else
+  // that's for grown-ups): those lines are skipped if there are others
+  if (Array.isArray(text) && speaker && typeof speaker.growth === "number" && speaker.growth < 1) {
+    const kid = text.filter((s) => typeof s !== "string" || !_GROWNUP_LINE.test(s) || _GROWNUP_OK.test(s));
+    if (kid.length) text = kid;
   }
   // Get random from array
   if (Array.isArray(text)) text = text[Math.floor(Math.random() * text.length)];

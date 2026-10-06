@@ -135,7 +135,8 @@ function onLabourStarts(mare) {
   const c = pregnancyCareScore(mare);
   let n = mare.babiesToBirth > 0 ? mare.babiesToBirth : plannedLitterSize(mare);
   const viability = Array.isArray(mare.foalViability) ? mare.foalViability.slice() : [];
-  while (viability.length < n) viability.push(true);
+  while (viability.length < n) viability.push(!mare._aborted); // (ended with Foal-B-Gone: none live)
+  mare._aborted = false;
   // Poor care: some foals are lost before birth
   let lost = 0;
   if (c < CARE_OK) lost = Math.min(n - 1, Math.floor((CARE_OK - c) * 4 + Math.random()));
@@ -297,3 +298,18 @@ function updateMareRest(dt) {
   }
 }
 registerSystem("mareRest", updateMareRest, 126);
+
+// ---- Ending a pregnancy (Foal-B-Gone, globals.js DRUG_METABOLISM) ----
+// The foals come within MISCARRIAGE_LABOR_DELAY seconds, all stillborn
+// however far along she was. It takes it out of her (the miscarriage's own
+// sadness and trauma, HorseMating.beginMiscarriage). True if it took.
+function abortPregnancy(f) {
+  if (!f || !f.isAlive || !f.isPregnant) return false;
+  const n = Math.max(1, f.babiesToBirth || (Array.isArray(f.foalViability) ? f.foalViability.length : 0) || 1);
+  if (!Array.isArray(f.foalViability) || !f.foalViability.length) f.foalViability = [];
+  while (f.foalViability.length < n) f.foalViability.push(false);
+  f.foalViability = f.foalViability.map(() => false);
+  f._aborted = true; // (onLabourStarts keeps them stillborn)
+  if (typeof f.beginMiscarriage === "function") f.beginMiscarriage();
+  return true;
+}

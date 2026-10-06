@@ -4,7 +4,8 @@
 // smartsOf(f), -1 (very dim) .. +1 (brilliant) - shown as 0-100
 // (smartsScore: 50 + 50 x smartsOf) - is made of:
 //   - its breed (BREED_SMARTS): on average earthies 50, pegasi 35,
-//     unicorns 60, alicorns 90
+//     unicorns 60, alicorns 90 - each one a little either side of that
+//     (BREED_SMARTS_SPREAD)
 //   - its own wits: an inherited trait (Traits.js "wits": Clever / Dim),
 //     up to WITS_WEIGHT either way (+-25 points)
 //   - being a smarty (SMARTY_SMARTS): smarties are a little brighter than
@@ -58,9 +59,21 @@ function rollSmartyKind(f) {
   f.smartyKind = Math.random() < chance ? "good" : "bad";
 }
 
+// Each one's own little difference within its breed (playtest: smarts came
+// out in steps of 10): +- this much, fixed for that fluffy (from its id, so
+// nothing to save)
+const BREED_SMARTS_SPREAD = { alicorn: 0.12, unicorn: 0.2, earthy: 0.24, pegasus: 0.2 }; // (+-6, 10, 12, 10 points)
+function _smartsJitter(f) {
+  let h = (Number(f.id) || 0) * 2654435761;
+  h = ((h ^ (h >>> 15)) * 2246822519) >>> 0;
+  h = (h ^ (h >>> 13)) >>> 0;
+  return (h / 4294967295) * 2 - 1; // -1..1
+}
+
 function smartsOf(f) {
   if (!f) return 0;
   let s = BREED_SMARTS[_breedOf(f)] ?? 0;
+  s += (BREED_SMARTS_SPREAD[_breedOf(f)] ?? 0.2) * _smartsJitter(f);
   if (typeof traitValue === "function") s += WITS_WEIGHT * traitValue(f, "wits");
   if (typeof hasDeformity === "function" && hasDeformity(f, "dim")) s -= DIM_SMARTS; // simple-minded (Inbreeding.js)
   if (isGoodSmarty(f)) s += SMARTY_SMARTS.good;

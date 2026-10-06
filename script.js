@@ -2073,6 +2073,22 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
+  // Space: pause, and Space again to carry on (the debug box moved to the
+  // \` key: Cheats.js)
+  if (e.code === "Space" && (typeof transitionPhase === "undefined" || transitionPhase === "OFF")) {
+    if (gameState === "PLAYING") {
+      e.preventDefault();
+      if (typeof capturePauseScreenshot === "function") capturePauseScreenshot();
+      gameState = "PAUSED";
+      return;
+    }
+    if (gameState === "PAUSED" && !(typeof showSaveList !== "undefined" && showSaveList)) {
+      e.preventDefault();
+      gameState = "PLAYING";
+      return;
+    }
+  }
+
   if (gameState !== "PLAYING") return;
   if (!document.hasFocus()) return;
 

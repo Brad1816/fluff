@@ -335,7 +335,15 @@ class HorseRenderer {
         this.horse.currentStateKey === "FOCUSING"
       ) {
         leftLegAngle = rightLegAngle = Math.PI / 4;
+        // Lifting a block or setting it on the tower (Block.js): its front
+        // hooves up, holding it - and it doesn't turn to wave at you
+        const busyWithBlock = this.horse._blockLift || this.horse.isStacking;
+        if (busyWithBlock && typeof blockHoovesUp === "function" && blockHoovesUp(this.horse)) {
+          leftLegAngle = -Math.PI / 2 - 0.15;
+          rightLegAngle = -Math.PI / 2 + 0.1;
+        }
         if (
+          !busyWithBlock &&
           this.horse.currentStateKey === "SITTING" &&
           // (not while the game's paused: it shouldn't turn and wave at you then)
           (typeof gameState === "undefined" || gameState === "PLAYING") &&

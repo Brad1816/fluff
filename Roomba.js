@@ -24,6 +24,9 @@ const ROOMBA_PRICE = 250;
 const ROOMBA_SPEED = 70; // px a second
 const ROOMBA_CLEAN = 0.35; // puddle size cleaned a second
 const ROOMBA_BUMP_EVERY = 6; // seconds before the same fluffy reacts again
+const ROOMBA_GET_USED = 0.25; // a timid fluffy: how much more used to it each bump
+const ROOMBA_LET_SETTLE = 25; // seconds: it leaves the mess by a fluffy it just bumped (or one frightened) alone
+const ROOMBA_SETTLE_NEAR = 100; // px
 const FLUFFBOT_LITTER_AT = 0.25; // of a litterbox's uses: time to empty it
 
 class Roomba {
@@ -88,11 +91,21 @@ class Roomba {
     const now = typeof timePlayed === "number" ? timePlayed : 0;
     let best = null;
     let bestD = Infinity;
+    // Fluffies it just frightened (or bumped), or frightened by anything:
+    // it doesn't go straight back to the mess they made (playtest: a scared
+    // foal wet itself, the bot came back for it, and scared it again)
+    const shy = [];
+    for (const f of fluffies) {
+      if (!f.isAlive || f.scene !== this.scene) continue;
+      const bumped = this._bumped[f.id] !== undefined && now - this._bumped[f.id] < ROOMBA_LET_SETTLE;
+      if (bumped || (typeof isFrightened === "function" && isFrightened(f))) shy.push(f);
+    }
     for (const p of puddles) {
       if (p.scene !== this.scene || p.color === "rgba(100, 150, 255, 0.3)") continue;
       for (const pt of p.points) {
         if (pt.x < B.left - 28 || pt.x > B.right + 28 || pt.y < B.top - 18 || pt.y > B.bottom + 18) continue;
         if (pt._botSkipUntil && pt._botSkipUntil > now) continue;
+        if (shy.length && shy.some((f) => Math.abs(f.x - pt.x) < ROOMBA_SETTLE_NEAR && Math.abs(f.y - pt.y) < ROOMBA_SETTLE_NEAR)) continue;
         const d = (pt.x - this.x) ** 2 + (pt.y - this.y) ** 2;
         if (d < bestD) {
           bestD = d;
@@ -324,8 +337,11 @@ function reactToRoomba(f, bot) {
     return "fun";
   }
   // Most just get out of its way; only a timid one minds (playtest 7: they
-  // freaked out about it too much)
-  if (brave > -0.25) {
+  // freaked out about it too much) - and even a timid one soon gets used to
+  // it (f.botUsed, saved: a quarter more each bump)
+  const used = typeof f.botUsed === "number" ? f.botUsed : 0;
+  f.botUsed = Math.min(1, used + ROOMBA_GET_USED);
+  if (brave > -0.25 || Math.random() < used) {
     if (talk && Math.random() < 0.25) f.speak(getDialogue(["ROOMBA", "FUN"], f));
     return "fine";
   }

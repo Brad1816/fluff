@@ -350,7 +350,7 @@ addHorseMethods({
       // Random angle avoiding 1/3 pi to 2/3 pi
       this.limbs.targetEarFlopAngle = (Math.random() < 0.5 ? Math.random() / 4 : 3 / 4 + Math.random() / 4) * Math.PI;
     }
-    this.limbs.earFlopValue = lerpAngle(this.limbs.earFlopValue || 0, this.limbs.targetEarFlopAngle, 5 * dt);
+    this.limbs.earFlopValue = lerpAngle(this.limbs.earFlopValue || 0, this.limbs.targetEarFlopAngle, smoothStep(5, dt));
   },
 
   // Cannibalism
@@ -984,7 +984,10 @@ addHorseMethods({
 
   // Stacking blocks
   _updateStacking(dt) {
+    if (this._blockLift) this._updateBlockLift(dt);
     if (this.isStacking) {
+      // (it faces the tower it's building)
+      if (this.stackTargetBlock && Math.abs(this.stackTargetBlock.x - this.x) > 4) this.facingRight = this.stackTargetBlock.x > this.x;
       this.stackingTimer += dt;
       if (
         this.stackingTimer > 12.0 ||
@@ -1025,6 +1028,20 @@ addHorseMethods({
         this.initBehavior("IDLE");
       }
     }
+  },
+
+  // Lifting a block onto its back (startBlockLift): sitting, it raises it
+  // in its hooves, then swings it onto its back
+  _updateBlockLift(dt) {
+    const L = this._blockLift;
+    const b = L.block;
+    if (!b || b.heldBy !== this || b.isDragging || this.isDragging || !this.isAlive || this.currentStateKey !== "SITTING") {
+      endBlockLift(this, false);
+      return;
+    }
+    if (Math.abs(L.x0 - this.x) > 4) this.facingRight = L.x0 > this.x;
+    L.t += dt;
+    if (L.t >= L.dur) endBlockLift(this, true);
   },
 
   // Crying tears
@@ -1143,8 +1160,8 @@ addHorseMethods({
       }
 
       // 2. Smoothly move offset to target
-      this.pupilOffset.x = lerp(this.pupilOffset.x, targetX, 10 * dt);
-      this.pupilOffset.y = lerp(this.pupilOffset.y, targetY, 10 * dt);
+      this.pupilOffset.x = lerp(this.pupilOffset.x, targetX, smoothStep(10, dt));
+      this.pupilOffset.y = lerp(this.pupilOffset.y, targetY, smoothStep(10, dt));
 
       // 3. Pupil Twitching
       this.pupilTwitchTimer -= dt;

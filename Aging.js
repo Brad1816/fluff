@@ -17,7 +17,7 @@
 //   old age   from OLD_AGE_RISK_DAYS (78 = 6.5 years) there's a chance each
 //             day of dying peacefully of old age, rising until MAX_AGE_DAYS
 //             (96 = 8 years), when it always happens.
-// Pregnancy lasts about 2 weeks (Horse.js pregnancyDuration, ~11 game hours)
+// Pregnancy lasts about a week (Horse.js pregnancyDuration, 6 game hours)
 // and a mare nurses from conception until her foals can walk
 // (LACTATION_TIME, HorseAnatomy.triggerPregnancy).
 //

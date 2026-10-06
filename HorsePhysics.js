@@ -28,10 +28,14 @@ class HorsePhysics {
         this.horse.isAlive
       ) {
         this.horse.initBehavior("DROWNING");
+        if (typeof onFoalDrowning === "function") onFoalDrowning(this.horse); // (its mum: FoalLife.js)
       }
       this.horse.y += Math.random() * 2.0;
       this.horse.x += this.pingPong(-0.5, 0.1, 1, performance.now() / 1000);
       if (this.horse.drowningTimer >= 5) {
+        // (it dies properly - its story, the memorial, its mum - then the
+        // river takes it)
+        if (this.horse.isAlive && this.horse.anatomy) this.horse.anatomy.die(null, "Drowned");
         this.horse.isAlive = false;
         this.horse.isDestroyed = true;
       }

@@ -800,6 +800,7 @@ class HorsePositioning {
   }
 
   scoutForBlock() {
+    if (this.horse._blockLift) return true; // (busy lifting one: Block.js)
     if (
       !this.horse.canSee() ||
       this.horse.isDragging ||

@@ -1,4 +1,4 @@
-const pregnancyDuration = 560; // about 2 weeks (Aging.js: a game day ~ a month)
+const pregnancyDuration = 300; // about a week: back to the original length (playtest: 560 was too long a wait for a game)
 
 function areSpecialFriends(id1, id2) {
   if (!relationships[id1] || !relationships[id2]) return false;
@@ -807,6 +807,7 @@ class Horse {
   }
 
   dropHeldBlock() {
+    if (this._blockLift && typeof endBlockLift === "function") endBlockLift(this, false);
     this.isStacking = false;
     if (this.hasBlockOnBack() || this.stackTargetBlock) {
       this.failStackBlocks(this.stackTargetBlock);
@@ -1292,7 +1293,10 @@ class Horse {
     if (targetBlock) {
       this.blockTarget = true;
       this.initBehavior("MOVING");
-      this.setTargetPosition(targetBlock.x, targetBlock.currentCage ? this.y : targetBlock.y);
+      // Beside it, on the side it's coming from (not on top of it: it turned
+      // round and round trying to reach the middle - playtest)
+      const side = this.x <= targetBlock.x ? -1 : 1;
+      this.setTargetPosition(targetBlock.x + side * BLOCK_STAND_OFF, targetBlock.currentCage ? this.y : targetBlock.y);
       this.constrainTargetToCage();
     } else {
       // find block stack to knock over
@@ -1347,7 +1351,17 @@ class Horse {
         // Force Y so visual bottom is at cage bottom
         // (an incubator's floor is the top of its base: Incubator.js)
         const floor = typeof this.currentCage.floorOffset === "function" ? this.currentCage.floorOffset() : CAGE_FLOOR_OFFSET;
-        this.y = b.bottom - localBottom - floor;
+        let y = b.bottom - localBottom - floor;
+        // (never far from where it'd stand: with long steps - skipping
+        // ahead, Sleep.js - its pose could feed back on itself and send it
+        // flying off, a little further each step, until the game froze)
+        const st = this.positioning._standCache;
+        if (st && isFinite(st.b)) {
+          const yStand = b.bottom - st.b - floor;
+          const slack = 60 * (this.scale || 0.5) + 10;
+          y = Math.max(yStand - slack, Math.min(yStand + slack, y));
+        }
+        if (isFinite(y)) this.y = y;
         this.x = clamp(this.x, b.left - localLeft, b.right - localRight);
       }
     }
@@ -1702,7 +1716,7 @@ class Horse {
     if (this.isAlive) {
       this.updateSpeed();
       if (this.ragdollRotation !== 0 && !this.isDragging) {
-        this.ragdollRotation = lerpAngle(this.ragdollRotation, 0, 10 * dt);
+        this.ragdollRotation = lerpAngle(this.ragdollRotation, 0, smoothStep(10, dt));
         if (Math.abs(this.ragdollRotation) < 0.01) this.ragdollRotation = 0;
       }
 
@@ -1833,7 +1847,7 @@ class Horse {
       this.bloodTolerance = Math.max(0, this.bloodTolerance - 0.001 * dt);
     }
 
-    const lerpFactor = 5.0 * dt;
+    const lerpFactor = smoothStep(5.0, dt); // (stable at any step: Sleep.js skips in big ones)
     const targetConfig = ANIMATION_STATES[this.currentStateKey];
     let targetHeadAngle = targetConfig.headAngle;
     if (this.currentStateKey === "LYING" && this.hunger <= 0.1) {
@@ -1928,7 +1942,7 @@ class Horse {
   }
 
   setAnimLerps(dt) {
-    const lerpFactor = 5.0 * dt;
+    const lerpFactor = smoothStep(5.0, dt); // (stable at any step: Sleep.js skips in big ones)
     const targetConfig = ANIMATION_STATES[this.currentStateKey];
     this.anim.headBobAmp = lerp(
       this.anim.headBobAmp,
@@ -2258,6 +2272,8 @@ class Horse {
     horse.sensitiveBaby = data.sensitiveBaby || false;
     horse.spayed = data.spayed || false;
     horse.pregnancyTimer = data.pregnancyTimer;
+    // (a save from when pregnancy was longer: no more than a whole one left)
+    if (typeof horse.pregnancyTimer === "number" && horse.pregnancyTimer > pregnancyDuration) horse.pregnancyTimer = pregnancyDuration;
     horse.babiesToBirth =
       data.babiesToBirth !== undefined ? data.babiesToBirth : 0;
     horse.foalViability = data.foalViability || [];

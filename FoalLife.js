@@ -680,3 +680,84 @@ function describeBullying(f) {
   else if (s >= 1 && f.adopted) parts.push("teach it Play nice (needs a stuffy in the room)");
   return parts.length ? [parts.join(" · "), tone] : null;
 }
+
+// ---- A foal dying in front of its mum (playtest) ----
+// When a foal dies (not a stillborn), its mum - if she's there and can see
+// or hear it - screams, is struck (FOAL_DEATH_MUM_SAD, a shock) and runs to
+// it, or to where it went (a foal that drowned is swept off). Its dad reacts
+// too, more quietly; another grown fluffy that sees it may (a gentle one, or
+// a mum herself: FOAL_DEATH_KIND_CHANCE) - "poow babbeh". While a foal is
+// drowning its mum runs to the bank calling for it (onFoalDrowning).
+// A mum who turns on it (its coat, an alicorn she can't stand) doesn't mourn.
+const FOAL_DEATH_MUM_SAD = -0.25;
+const FOAL_DEATH_DAD_SAD = -0.12;
+const FOAL_DEATH_OTHER_SAD = -0.05;
+const FOAL_DEATH_SEE = 450; // px: another fluffy this close may see it
+const FOAL_DEATH_KIND_CHANCE = 0.6;
+
+function _fdHardHearted(o, foal) {
+  if (typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(o, foal)) return true;
+  if (typeof mumRejectsFoalColour === "function" && mumRejectsFoalColour(o, foal)) return true;
+  return false;
+}
+
+// Where she runs to: the body, or the bank of the river by where it went under
+function _fdRunTo(o, foal) {
+  let x = foal.x;
+  let y = foal.y;
+  if (foal.scene === "RIVER" && typeof width === "number") x = Math.max(x, width * 0.25 + 60);
+  x += (o.x < x ? -40 : 40);
+  if (o.isDragging || o.placedOn || o.currentCage || o.currentStateKey === "SLEEPING" || (o.tooYoungToWalk && o.tooYoungToWalk())) return;
+  if (typeof canFluffyReach === "function" && !canFluffyReach(o, x, y)) return;
+  o.initBehavior("MOVING");
+  o.setTargetPosition(x, y);
+  o.currentStateKey = "RUNNING";
+}
+
+function _fdNotices(o, foal, near) {
+  if (!o.isAlive || o === foal || o.scene !== foal.scene || o.growth < 1) return false;
+  if (Math.hypot(o.x - foal.x, o.y - foal.y) > near) return false;
+  if (o.currentStateKey === "SLEEPING") return Math.hypot(o.x - foal.x, o.y - foal.y) < 200; // (woken by it)
+  return (o.canSee && o.canSee()) || (o.canHear && o.canHear());
+}
+
+// HorseAnatomy.die
+function onFoalDied(foal, weapon, cause) {
+  if (!foal || foal.growth >= 1 || /^Born /.test(cause || "") || typeof fluffies === "undefined") return;
+  const now = typeof timePlayed === "number" ? timePlayed : 0;
+  for (const o of fluffies) {
+    if (o === foal || !o.isAlive) continue;
+    const mum = foal.motherId === o.id;
+    const dad = !mum && foal.fatherId === o.id;
+    const near = mum ? Infinity : FOAL_DEATH_SEE;
+    if (!_fdNotices(o, foal, near) || _fdHardHearted(o, foal)) continue;
+    if (!mum && !dad) {
+      const gentle = typeof traitValue === "function" ? -traitValue(o, "temper") : 0;
+      const isMum = Object.values((typeof relationships !== "undefined" && relationships[o.id]) || {}).some((r) => r === "baby_child" || r === "child");
+      if (!(gentle > 0.2 || isMum) || Math.random() > FOAL_DEATH_KIND_CHANCE) continue;
+    }
+    if (o.currentStateKey === "SLEEPING" && typeof o.initBehavior === "function") o.initBehavior("IDLE");
+    o.expressionOverride = "CRYING_SHOCKED";
+    o.expressionOverrideTimer = mum ? 6 : 3;
+    if (typeof o.setShock === "function") o.setShock(mum ? 4 : 2);
+    o.changeHappiness(mum ? FOAL_DEATH_MUM_SAD : dad ? FOAL_DEATH_DAD_SAD : FOAL_DEATH_OTHER_SAD, mum ? "Saw her foal die" : dad ? "Saw his foal die" : "Saw a foal die");
+    o._sawFoalDieAt = now;
+    if (!o.tooYoungToSpeak()) o.speak(getDialogue(["FOAL_DIED", mum ? "MUM" : dad ? "DAD" : "OTHER"], o, foal), true);
+    if (mum) {
+      // She knows it's gone (no puzzling over it later)
+      if (typeof relationships !== "undefined" && relationships[o.id] && relationships[o.id][foal.id]) relationships[o.id][foal.id] = "dead_baby_child";
+      _fdRunTo(o, foal);
+    }
+  }
+}
+
+// HorsePhysics.updateRiverDrowning: it's gone under - mum runs to the bank
+function onFoalDrowning(foal) {
+  if (!foal || foal.growth >= 1 || foal.motherId == null) return;
+  const mum = fluffyById(foal.motherId);
+  if (!mum || !_fdNotices(mum, foal, Infinity) || _fdHardHearted(mum, foal)) return;
+  if (!mum.tooYoungToSpeak()) mum.speak(getDialogue(["FOAL_DIED", "DROWNING"], mum, foal), true);
+  mum.expressionOverride = "CRYING_SHOCKED";
+  mum.expressionOverrideTimer = 4;
+  _fdRunTo(mum, foal);
+}

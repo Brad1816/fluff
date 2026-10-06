@@ -925,7 +925,8 @@ function drawInspectionModal(ctx) {
   ctx.font = "bold 24px Arial";
   ctx.fillStyle = "white";
   ctx.fillText(typeof fitText === "function" ? fitText(ctx, name, L.listW - 330) : name, hx, py + 30);
-  const sym = f.gender === "male" ? "♂" : "♀";
+  // (spelt out: the symbol alone was easy to miss - playtest)
+  const sym = f.gender === "male" ? "♂ male" : "♀ female";
   const age = data.rows.Age ? data.rows.Age.value : "";
   ctx.font = "15px Arial";
   ctx.fillStyle = "#cfc6e0";

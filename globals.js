@@ -713,6 +713,7 @@ const DRUG_COLORS = {
   toxo_vaccine: "#5555aa", // Blue
   laxative: "#5c4033", //brown
   diuretic: "#f1c40f", //yellow
+  abortifacient: "#c0392b", // dark red (Foal-B-Gone)
 };
 
 function getDrugColor(drugType, defaultColor = "#ffffff") {
@@ -833,6 +834,16 @@ const DRUG_METABOLISM = {
       }
     },
   },
+  // Foal-B-Gone: ends a pregnancy - the foals come within a minute, all
+  // stillborn however far along she was (playtest: a way to abort)
+  abortifacient: {
+    rate: 20,
+    color: DRUG_COLORS.abortifacient,
+    onApplication: (horse, amount) => {},
+    effect: (horse, amount) => {
+      if (typeof abortPregnancy === "function") abortPregnancy(horse);
+    },
+  },
   toxo_vaccine: {
     rate: 20,
     color: DRUG_COLORS.toxo_vaccine,
@@ -926,6 +937,7 @@ let wsPromptAlicorn = true;
 let wsPromptSmarties = true;
 let wsPromptSBS = true;
 let wsPromptToxoplasmosis = true;
+let wsPromptToxoChance = 100; // (0: off)
 let wsPromptSexuality = { ...DEFAULT_SEXUALITY };
 let saveList = [];
 
@@ -965,6 +977,14 @@ window.addEventListener("keydown", (e) => {
 });
 
 // --- Utils ---
+// How far to ease towards a target this step, at `rate` per second: the
+// same as rate * dt for small steps, but never past it for big ones (a
+// factor over 1 overshoots, and over 2 grows each step until it blows up -
+// fluffies flew off the floor when skipping ahead in big steps)
+function smoothStep(rate, dt) {
+  return 1 - Math.exp(-rate * Math.max(0, dt || 0));
+}
+
 function lerp(start, end, t) {
   return start * (1 - t) + end * t;
 }
@@ -2146,6 +2166,13 @@ const SPAWN_ACTIONS = [
     bagType: "diuretic",
   },
   {
+    name: "Foal-B-Gone",
+    desc: "Ends a pregnancy. A mare given it loses her foals within a minute - all stillborn, however far along she was. It's hard on her.",
+    cost: 400,
+    isItem: "iv_bag",
+    bagType: "abortifacient",
+  },
+  {
     name: "Aphrodisiac",
     desc: "An aphrodisiac for male fluffies. Induces intense mating urges and seeking of bad enfies.",
     cost: 1000,
@@ -3301,6 +3328,7 @@ class WorldSettings {
     sbs = true,
     sexuality = null,
     toxoplasmosis = true,
+    toxoChance = 100,
   ) {
     this.colorism = colorism;
     this.alicornIntolerance = alicornIntolerance;
@@ -3325,6 +3353,10 @@ class WorldSettings {
           : DEFAULT_SEXUALITY.homosexual,
     };
     this.toxoplasmosis = toxoplasmosis !== undefined ? toxoplasmosis : true;
+    // How easily it spreads, 0-100% of the usual (playtest: a percentage,
+    // not just on/off). 0 is the same as off.
+    this.toxoChance = typeof toxoChance === "number" ? Math.max(0, Math.min(100, toxoChance)) : 100;
+    if (this.toxoChance <= 0) this.toxoplasmosis = false;
   }
 
   get sexualityRegular() {
@@ -3343,6 +3375,7 @@ class WorldSettings {
       sbs: this.sbs,
       sexuality: { ...this.sexuality },
       toxoplasmosis: this.toxoplasmosis,
+      toxoChance: this.toxoChance,
     };
   }
 
@@ -3356,9 +3389,20 @@ class WorldSettings {
       data.sbs !== undefined ? data.sbs : true,
       sex,
       data.toxoplasmosis !== undefined ? data.toxoplasmosis : true,
+      typeof data.toxoChance === "number" ? data.toxoChance : 100,
     );
   }
 }
+
+// How likely toxoplasmosis is to pass on, 0..1 of the usual (world setting:
+// HorseToilet.js eating poop, a Litterpal) - 0 when it's off
+function toxoSpread() {
+  if (typeof worldSettings === "undefined" || !worldSettings) return 1;
+  if (worldSettings.toxoplasmosis === false) return 0;
+  return typeof worldSettings.toxoChance === "number" ? worldSettings.toxoChance / 100 : 1;
+}
+// The settings screen's steps (tap to go to the next)
+const TOXO_STEPS = [100, 75, 50, 25, 10, 0];
 
 let worldSettings = new WorldSettings();
 

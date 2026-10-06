@@ -70,14 +70,10 @@ class HorseActionHandler {
         );
         if (block) {
           if (!this.horse.hasBlockOnBack()) {
-            this.horse.blockOnBack = block;
-            block.heldBy = this.horse;
-            block.stackedOn = null;
-            this.horse.speak(getDialogue(["PLAY", "BLOCK"], this.horse));
-            this.horse.expressionOverride = "GOOD_UPSIES";
-            this.horse.expressionOverrideTimer = 2.0;
-            this.horse.changeHappiness(HAPPINESS_BONUS_PLAY, "Played");
-            if (typeof onFluffyPlayed === "function") onFluffyPlayed(this.horse, "block"); // Play.js
+            // It sits down by it, lifts it up in its hooves and puts it on
+            // its back (playtest: it used to jump straight on, and flip
+            // about): the lift itself is HorseUpdate._updateBlockLift
+            startBlockLift(this.horse, block);
           } else {
             // Start Stacking
             this.horse.isStacking = true;
@@ -687,6 +683,8 @@ class HorseActionHandler {
   _nearBlock(b) {
     const h = this.horse;
     if (h.currentCage && b.currentCage === h.currentCage) return Math.abs(b.x - h.x) < 70;
+    // (beside it on the floor - where it walks to - or just behind it, as before)
+    if (Math.abs(b.x - h.x) < 75 && Math.abs(b.getBottomY() - h.y) < 30) return true;
     return Math.sqrt((b.x - h.x) ** 2 + (b.getBottomY() - 50 - h.y) ** 2) < 50;
   }
 

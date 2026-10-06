@@ -125,6 +125,7 @@ const SAVED_HORSE_FIELDS = [
   { name: "mateRule", fallback: null, clone: true }, // told not to mate (MatingRule.js)
   { name: "met", fallback: null, clone: true }, // who it's met (Acquaintance.js)
   { name: "fears", fallback: null, clone: true }, // Fears.js
+  { name: "botUsed", fallback: 0 }, // Roomba.js: used to the Fluff-Bot
   { name: "bellLearn", fallback: 0 }, // FeedBot.js
   { name: "feedBotTips", fallback: 0 },
   { name: "lastBirthAt", fallback: null }, // Population.js

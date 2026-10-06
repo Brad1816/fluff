@@ -21,8 +21,9 @@
 // (Illness.js flu; BODY_SICK a game hour at full rot, within BODY_SICK_NEAR).
 // A herd with a clever head (its cleverest grown member's smarts, Intelligence.js,
 // of BODY_SMARTS or more) sees to it: that one carries the body well away
-// from the herd (to the far edge of the area) and leaves it there. Dimmer
-// herds leave it lying - and catch what it carries.
+// from the herd (to the far edge of the area) and leaves it there. In your
+// house or yard there's nowhere to take it: it asks you to (once a body).
+// Dimmer herds leave it lying - and catch what it carries.
 // ---------------------------------------------------------------------------
 
 const FEUD_TAKEOVER = 1.0;
@@ -230,6 +231,16 @@ function _hwBodyCare() {
       .filter((b) => !b._carriedBy && Math.hypot(b.x - centre.x, b.y - centre.y) < BODY_CARE_NEAR && (corpseRot(b) > 0 || (typeof bodyConfusesFoals === "function" && bodyConfusesFoals(b))))
       .sort((p, q) => Math.hypot(p.x - minder.x, p.y - minder.y) - Math.hypot(q.x - minder.x, q.y - minder.y))[0];
     if (!body) continue;
+    // In your house or yard there's nowhere to take it (playtest: they
+    // dragged foals' bodies to the wall and left them there): it asks you to
+    // instead, once for each body
+    if (getSceneConfig(scene).insidePlayerQuarters) {
+      if (body._bodyTold) continue;
+      body._bodyTold = true;
+      if (!minder.tooYoungToSpeak()) minder.speak(getDialogue(["HERD", "BODY_TELL"], minder, body), true);
+      if (minder.adopted && typeof addUIMessage === "function" && typeof fluffyDisplayName === "function") addUIMessage(`${fluffyDisplayName(minder)} wants you to take ${fluffyDisplayName(body)}'s body away.`);
+      continue;
+    }
     // Far edge of the area, away from the herd
     const W = typeof sceneW === "function" ? sceneW(scene) : width;
     const toX = centre.x < W / 2 ? W - 60 : 60;
