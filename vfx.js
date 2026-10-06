@@ -97,3 +97,38 @@ function drawVFX(ctx) {
   }
   if (typeof drawAffectionPops === "function") drawAffectionPops(ctx); // Affection.js
 }
+
+// A flickering flame with its base at (x, y), pointing along `angle`
+// (0 = right, -PI/2 = up). `t` is a time in seconds driving the flicker, and
+// `seed` offsets it so neighbouring flames don't flicker in sync.
+function drawFlame(ctx, x, y, length, width, angle, t, seed = 0) {
+  const flicker =
+    0.85 + 0.1 * Math.sin(t * 23 + seed * 7.1) + 0.05 * Math.sin(t * 41 + seed);
+  const len = length * flicker;
+  const sway = Math.sin(t * 13 + seed * 3.3) * width * 0.25;
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  const drawTongue = (l, w, inner, outer) => {
+    const grad = ctx.createLinearGradient(0, 0, l, 0);
+    grad.addColorStop(0, inner);
+    grad.addColorStop(1, outer);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, -w / 2);
+    ctx.quadraticCurveTo(l * 0.55, -w * 0.6 + sway, l, sway);
+    ctx.quadraticCurveTo(l * 0.55, w * 0.6 + sway, 0, w / 2);
+    ctx.quadraticCurveTo(-w * 0.35, 0, 0, -w / 2);
+    ctx.fill();
+  };
+  drawTongue(len, width, "rgba(255, 120, 0, 0.9)", "rgba(255, 40, 0, 0)");
+  drawTongue(
+    len * 0.65,
+    width * 0.55,
+    "rgba(255, 245, 160, 0.95)",
+    "rgba(255, 170, 0, 0)",
+  );
+  ctx.restore();
+}

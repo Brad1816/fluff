@@ -348,7 +348,11 @@ const fluffySexualitySliderSet = new MutuallyExclusiveSliderSet({
       label: "Heterosexual",
       value: DEFAULT_SEXUALITY.heterosexual,
     },
-    { id: "bisexual", label: "Bisexual", value: DEFAULT_SEXUALITY.bisexual },
+    {
+      id: "bisexual",
+      label: "Bisexual",
+      value: DEFAULT_SEXUALITY.bisexual,
+    },
     {
       id: "homosexual",
       label: "Homosexual",

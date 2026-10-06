@@ -59,6 +59,15 @@ addHorseMethods({
 
   performAttack(target, intent = "SMARTY_VIOLENCE") {
     if (!target || !target.isAlive) return;
+    // Through cage bars: it swings at them and hits the bars (the author's
+    // update) - "Meanie nu-see waww!!"
+    if (target.scene === this.scene && target.currentCage !== this.currentCage && (this.currentCage instanceof Cage || target.currentCage instanceof Cage)) {
+      this.facingRight = target.x > this.x;
+      this.attackCooldown = 1.5;
+      if (this.chaseReason !== "MATING" && Math.random() < 0.25) this.chaseTarget = null;
+      if (!this.tooYoungToSpeak()) this.speak(getDialogue(["UNABLE_TO_ATTACK_CAGE"], this, target));
+      return;
+    }
     // Can't reach them through a fence
     if (typeof canFluffiesReachEachOther === "function" && !canFluffiesReachEachOther(this, target)) return;
 
@@ -93,6 +102,8 @@ addHorseMethods({
 
     const behavior = arr[Math.floor(Math.random() * arr.length)];
     this.initBehavior(behavior);
+    // (a bite draws blood - not biting a boot: ExterminatorFerals.js)
+    if (behavior === "FLUFFY_BITE") this.spawnMouthPoof(this._biteNoBlood ? "white" : "#8a0303");
 
     // Target reacts
     target.wasAttackedBy(this);

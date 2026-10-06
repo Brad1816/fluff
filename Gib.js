@@ -31,8 +31,13 @@ class Gib {
     this.gradientConfig = faceData?.gradientConfig || null;
     this.hasHorn = faceData?.hasHorn || false;
     this.hornSizeFactor = faceData?.hornSizeFactor || 1.0;
-    // A foal's head: little or no mane yet (1 = grown)
-    this.maneScale = faceData && typeof faceData.maneScale === "number" ? faceData.maneScale : 1;
+    this.hasLeftEar = faceData?.hasLeftEar !== false;
+    this.hasRightEar = faceData?.hasRightEar !== false;
+    this.hasRightEye = faceData?.hasRightEye !== false;
+    this.maneScale =
+      typeof faceData?.maneScale === "number" ? faceData.maneScale : 1.0;
+    this.eyesClosed = !!faceData?.eyesClosed;
+    this.sensitive = !!faceData?.sensitive;
     this.faceRendered = false;
 
     if (this.isFaceGib()) {
@@ -105,6 +110,7 @@ class Gib {
     return this.imgKey === "head" || this.type === "head";
   }
 
+  // Draws the head with its face using the same code as living fluffies
   renderFaceSprite(baseHeadImg = null) {
     if (
       typeof images === "undefined" ||
@@ -114,7 +120,17 @@ class Gib {
       return null;
     }
 
-    const baseHead =
+    const headImages = buildHorseHeadImages({
+      bodyColor: this.color,
+      maneColor: this.maneColor,
+      pupilColor: this.eyeColor,
+      maneType: this.maneType,
+      gradient: this.gradientConfig,
+      sensitive: this.sensitive,
+      hasHorn: this.hasHorn,
+    });
+    // Keep the exact head coloring (spots/stripes) it was given
+    headImages.head =
       baseHeadImg ||
       (this.color
         ? tintImage(
@@ -124,165 +140,36 @@ class Gib {
             this.stripesConfig,
           )
         : images.head);
+    if (!headImages.head) return null;
 
-    if (!baseHead) return null;
-
+    const w = images.head.width;
+    const h = images.head.height;
     const canvas = document.createElement("canvas");
-    canvas.width = images.head.width;
-    canvas.height = images.head.height;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
-
-    // 1. Base head
-    ctx.drawImage(baseHead, 0, 0);
-
-    // 2. Mane
-    const maneIdx =
-      this.maneType !== null && this.maneType !== undefined
-        ? this.maneType
-        : 0;
-    const maneKey = "mane_" + maneIdx;
-    const maneImg = images[maneKey] || images.mane_0;
-    if (maneImg && this.maneScale > 0) {
-      const maneColor = this.maneColor || this.color;
-      const tintedMane = tintImage(
-        maneImg,
-        maneColor,
-        null,
-        null,
-        this.gradientConfig,
-      );
-      if (tintedMane) {
-        if (this.maneScale >= 1) ctx.drawImage(tintedMane, 0, 0);
-        else {
-          // (grown from the same pivot as on a living foal)
-          const px = canvas.width * 0.25, py = canvas.height * 0.85;
-          ctx.save();
-          ctx.translate(px, py);
-          ctx.scale(this.maneScale, this.maneScale);
-          ctx.drawImage(tintedMane, -px, -py);
-          ctx.restore();
-        }
-      }
-    }
-
-    // 3. Horn (if unicorn / alicorn)
-    if (this.hasHorn && images.horn) {
-      const tintedHorn = this.color
-        ? tintImage(images.horn, this.color)
-        : images.horn;
-      if (tintedHorn) {
-        ctx.save();
-        const hS = this.hornSizeFactor || 1.0;
-        const pivotX = canvas.width * 0.25;
-        const pivotY = canvas.height * 0.85;
-        ctx.translate(pivotX, pivotY);
-        ctx.translate(0, (1 - hS) * tintedHorn.height);
-        ctx.scale(hS, hS);
-        ctx.drawImage(tintedHorn, (pivotX * 2.0) / hS, -pivotY / hS);
-        ctx.restore();
-      }
-    }
-
-    // 4. Expression & Eyes
-    const expConfig =
-      typeof getExpressionConfig === "function"
-        ? getExpressionConfig(this.expression || "NEUTRAL", true)
-        : { eye: "normal", pupilSize: 1.0, mouth: "neutral", cheek: "normal" };
-
-    const eyeX = canvas.width * 0.7;
-    const eyeY = canvas.height * 0.525;
-    let drawnExp = false;
-
-    if (expConfig.eye === "pained" && images.eye_pained) {
-      ctx.drawImage(
-        images.eye_pained,
-        eyeX - images.eye_pained.width / 2,
-        eyeY - images.eye_pained.height / 2,
-      );
-      drawnExp = true;
-    } else if (expConfig.eye === "happy" && images.eye_happy) {
-      ctx.drawImage(
-        images.eye_happy,
-        eyeX - images.eye_happy.width / 2,
-        eyeY - images.eye_happy.height / 2,
-      );
-      drawnExp = true;
-    }
-
-    if (!drawnExp) {
-      if (images.eye) {
-        const eyeImg =
-          this.expression === "CRYING_SHOCKED"
-            ? tintImage(images.eye, "#ffcccc")
-            : images.eye;
-        ctx.drawImage(
-          eyeImg,
-          eyeX - eyeImg.width / 2,
-          eyeY - eyeImg.height / 2,
-        );
-      }
-
-      if (images.pupil) {
-        const pColor = this.eyeColor || "black";
-        const pupilImg = tintImage(images.pupil, pColor);
-        const s = expConfig.pupilSize || 1.0;
-        if (pupilImg) {
-          ctx.drawImage(
-            pupilImg,
-            eyeX - (pupilImg.width * s) / 2 + 2,
-            eyeY - (pupilImg.height * s) / 2 + 2,
-            pupilImg.width * s,
-            pupilImg.height * s,
-          );
-        }
-      }
-
-      if (expConfig.eye === "sad" && images.eye_sad) {
-        ctx.drawImage(
-          images.eye_sad,
-          eyeX - images.eye_sad.width / 2,
-          eyeY - images.eye_sad.height / 2,
-        );
-      }
-
-      if (expConfig.eye === "angry" && images.eye_angry) {
-        ctx.drawImage(
-          images.eye_angry,
-          eyeX - images.eye_angry.width / 2,
-          eyeY - images.eye_angry.height / 2,
-        );
-      }
-    }
-
-    // 5. Mouth
-    let mouthImg = null;
-    if (expConfig.mouth === "shock") mouthImg = images.mouth_shock;
-    else if (expConfig.mouth === "happy") mouthImg = images.mouth_happy;
-    else if (expConfig.mouth === "sad") mouthImg = images.mouth_sad;
-    else mouthImg = images.mouth_neutral;
-
-    if (mouthImg) {
-      const mouthX = canvas.width * 0.85;
-      const mouthY = canvas.height * 0.8;
-      ctx.drawImage(
-        mouthImg,
-        mouthX - mouthImg.width / 2,
-        mouthY - mouthImg.height / 2,
-      );
-    }
-
-    // 6. Cheek
-    if (expConfig.cheek) {
-      const rawCheek =
-        expConfig.cheek === "puffed" ? images.puffed_cheek : images.cheek;
-      if (rawCheek) {
-        const cheekImg = this.color ? tintImage(rawCheek, this.color) : rawCheek;
-        if (cheekImg) {
-          ctx.drawImage(cheekImg, 0, 0);
-        }
-      }
-    }
-
+    ctx.translate(w * HORSE_HEAD_PIVOT.x, h * HORSE_HEAD_PIVOT.y);
+    drawHorseHead(ctx, headImages, {
+      w,
+      h,
+      maneScale: this.maneScale,
+      headScale: 1,
+      earScale: 1,
+      farEar: this.hasLeftEar,
+      nearEar: this.hasRightEar,
+      nearEye: this.hasRightEye,
+      horn: this.hasHorn,
+      hornSizeFactor: this.hornSizeFactor,
+      earFlop: 0,
+      doubleChin: this.sensitive,
+      expression: getExpressionConfig(this.expression || "NEUTRAL", true),
+      isAlive: true,
+      eyesClosed: this.eyesClosed,
+      pinkEye: this.expression === "CRYING_SHOCKED",
+      pupilOffset: { x: 0, y: 0 },
+      pupilAlpha: 1,
+      tears: null,
+    });
     return canvas;
   }
 
@@ -324,7 +211,12 @@ class Gib {
         : null,
       hasHorn: this.hasHorn,
       hornSizeFactor: this.hornSizeFactor,
-      maneScale: this.maneScale < 1 ? this.maneScale : undefined,
+      hasLeftEar: this.hasLeftEar,
+      hasRightEar: this.hasRightEar,
+      hasRightEye: this.hasRightEye,
+      maneScale: this.maneScale,
+      eyesClosed: this.eyesClosed,
+      sensitive: this.sensitive,
     };
   }
 
@@ -342,7 +234,12 @@ class Gib {
             gradientConfig: data.gradientConfig,
             hasHorn: data.hasHorn,
             hornSizeFactor: data.hornSizeFactor,
+            hasLeftEar: data.hasLeftEar,
+            hasRightEar: data.hasRightEar,
+            hasRightEye: data.hasRightEye,
             maneScale: data.maneScale,
+            eyesClosed: data.eyesClosed,
+            sensitive: data.sensitive,
           }
         : null;
 
@@ -373,7 +270,6 @@ class Gib {
     g.roadkillFloorY = data.roadkillFloorY || 0;
     return g;
   }
-
 
   hitTest(px, py) {
     const rw = (this.img.width / 2) * this.scale;

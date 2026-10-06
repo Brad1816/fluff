@@ -256,7 +256,7 @@ function _scoopArrange() {
 // The cage the pointer's over that would take a fluffy
 function _scoopCageAt(x, y) {
   if (typeof Cage === "undefined") return null;
-  const cages = objects.filter((o) => o instanceof Cage && o.scene === currentScene && !o.isDragging);
+  const cages = objects.filter((o) => o instanceof Cage && o.scene === currentScene && !o.isDragging && o.acceptsDroppedItems());
   for (let i = cages.length - 1; i >= 0; i--) {
     const b = cages[i].bounds;
     if (b && x > b.left && x < b.right && y > b.top && y < b.bottom) return cages[i];

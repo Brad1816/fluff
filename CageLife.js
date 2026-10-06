@@ -56,7 +56,7 @@ const CAGE_LITTER_LEARN = 0.03; // potty training per accident with a box in the
 const cageLifeTicker = new Ticker(CAGE_LIFE_EVERY);
 
 function messyCage(c) {
-  return !!c && c instanceof Cage && c.causesUnhappiness() && !(typeof Enclosure !== "undefined" && c instanceof Enclosure) && !(typeof Incubator !== "undefined" && c instanceof Incubator);
+  return !!c && c instanceof Cage && c.causesUnhappiness() && !(typeof FoalInACan !== "undefined" && c instanceof FoalInACan) && !(typeof Enclosure !== "undefined" && c instanceof Enclosure) && !(typeof Incubator !== "undefined" && c instanceof Incubator);
 }
 
 // HorseToilet.excrete, an accident: in a cage it stays in the cage. True if it did.
@@ -278,7 +278,7 @@ function updateCageLife(dt) {
       const first = f._cageIn === undefined;
       f._cageIn = id;
       f._cageInAt = now;
-      if (cage && !first && cage instanceof Cage) reactToCage(f, cage);
+      if (cage && !first && cage instanceof Cage && !(typeof FoalInACan !== "undefined" && cage instanceof FoalInACan)) reactToCage(f, cage);
     }
     if (!cagedAway(f)) continue;
     _clTalk(f, now);

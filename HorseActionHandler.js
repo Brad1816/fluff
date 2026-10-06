@@ -14,7 +14,7 @@ class HorseActionHandler {
       return false;
 
     if (this.horse.currentCage != null) {
-        this.horse.positioning.constrainTargetToCage();
+      this.horse.positioning.constrainTargetToCage();
     }
 
     this.horse.attemptUseTargetLitterbox();
@@ -621,10 +621,15 @@ class HorseActionHandler {
         this.horse.speech.timer <= 0 &&
         !this.horse.tooYoungToSpeak() &&
         this.horse.canSee() &&
-        this.horse.currentStateKey !== "FOCUSING" &&
+        !isFocusingState(this.horse.currentStateKey) &&
         rels[closestFriend.id] === "friend"
       ) {
-        this.horse.speak(getDialogue(["HELLO", "FRIEND"], this.horse));
+        // A friend in a used diaper gets remarked on instead
+        const key =
+          closestFriend.hasUsedDiaper() && Math.random() < 0.5
+            ? ["DIAPER", "SMELLY"]
+            : ["HELLO", "FRIEND"];
+        this.horse.speak(getDialogue(key, this.horse, closestFriend));
         if (typeof onFluffiesChatted === "function") onFluffiesChatted(this.horse, closestFriend); // Bonds.js
       }
 

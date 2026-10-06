@@ -416,7 +416,7 @@ function onBathTime(f) {
 
 // globals.js handleDropping: put in a cage
 function onPutInCage(f, cage) {
-  if (!f || !f.isAlive || !cage || !(cage instanceof Cage) || !cage.causesUnhappiness()) return false;
+  if (!f || !f.isAlive || !cage || !(cage instanceof Cage) || !cage.causesUnhappiness() || (typeof FoalInACan !== "undefined" && cage instanceof FoalInACan)) return false;
   if (fearOf(f, "cages") < FEAR_MIN) return false;
   // it struggles and cries (and doesn't forget who did it)
   const scared = startFright(f, "cages");
@@ -555,7 +555,7 @@ function updateFears(dt) {
     // A cage: set to cull nearby, or in one
     const cages = fearOf(f, "cages");
     if (cages >= FEAR_MIN && awake) {
-      const inCage = f.currentCage instanceof Cage && f.currentCage.causesUnhappiness();
+      const inCage = f.currentCage instanceof Cage && f.currentCage.causesUnhappiness() && !(typeof FoalInACan !== "undefined" && f.currentCage instanceof FoalInACan);
       const cullNear = cullCages.some((c) => c.scene === f.scene && Math.hypot(c.x - f.x, c.y - f.y) < CULL_CAGE_NEAR);
       if ((cullNear && Math.random() < 0.3 * cages * step) || (inCage && Math.random() < 0.01 * cages * step)) {
         startFright(f, "cages");

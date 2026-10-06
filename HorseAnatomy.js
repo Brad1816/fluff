@@ -6,11 +6,7 @@ class HorseAnatomy {
   amputate(part, weapon = null) {
     this.horse.bloodTolerance = 1;
     this.horse.bloodReactionTimer = 15;
-    this.horse.bleedingTimer =
-      weapon &&
-      (weapon.type === "scalpel")
-        ? 0
-        : 10;
+    this.horse.bleedingTimer = weapon && weapon.type === "scalpel" ? 0 : 10;
     this.horse.sleepTargetSet = false;
     if (part === "head") {
       const nearEar = this.horse.facingRight ? "rightEar" : "leftEar";
@@ -166,6 +162,7 @@ class HorseAnatomy {
     }
     this.horse.isAlive = false;
     this.horse.hunger = 0;
+    this.horse.isOnFire = false;
     if (this.horse.speech) {
       this.horse.speech.text = null;
       this.horse.speech.timer = 0;
@@ -392,34 +389,7 @@ class HorseAnatomy {
       type = "head";
       growthVal = 0.1;
 
-      let activeExp = "NEUTRAL";
-      if (
-        this.horse.expressionOverride &&
-        this.horse.expressionOverrideTimer > 0
-      ) {
-        activeExp = this.horse.expressionOverride;
-      } else if (this.horse.expression) {
-        activeExp = this.horse.expression;
-      } else if (!this.horse.isAlive) {
-        activeExp = "SAD";
-      }
-
-      faceData = {
-        expression: activeExp,
-        eyeColor: this.horse.colors ? this.horse.colors.pupil : "black",
-        maneType: this.horse.maneType !== undefined ? this.horse.maneType : 0,
-        maneColor: this.horse.colors ? this.horse.colors.mane : null,
-        gradientConfig: this.horse.hasGradient
-          ? {
-              color: this.horse.colors.gradient,
-              intensity: this.horse.gradientIntensity,
-            }
-          : null,
-        hasHorn: !!(this.horse.limbs && this.horse.limbs.horn),
-        hornSizeFactor: this.horse.hornSizeFactor || 1.0,
-        // A foal's mane hasn't grown in yet (as HorseRenderer.getManeScale)
-        maneScale: Math.min(1, (this.horse.growth || 0) / 0.35),
-      };
+      faceData = this.horse.renderer.getFaceData();
     } else if (part === "torso") {
       img = this.horse.tinted.torso;
       type = "torso";
@@ -541,7 +511,12 @@ class HorseAnatomy {
       grinder,
       grinder
         ? null
-        : { left: 0, right: width, top: 0, bottom: this.horse.getBottomY() },
+        : {
+            left: 0,
+            right: width,
+            top: 0,
+            bottom: this.horse.getBottomY(),
+          },
       s,
       growthVal * g,
       pregnancyData,
@@ -631,12 +606,14 @@ class HorseAnatomy {
 
     // Positioning
     if (this.horse.layout) {
-        const torsoWidth = this.horse.layout ? this.horse.layout.torso.w : 100;
-        const offsetX =
-          (torsoWidth / 2) * (this.horse.facingRight ? -0.5 : 0.5) * this.horse.scale;
-        birthPosX = this.horse.x + offsetX;
-        birthPosY = this.horse.getBottomY() - 10;
-    } 
+      const torsoWidth = this.horse.layout ? this.horse.layout.torso.w : 100;
+      const offsetX =
+        (torsoWidth / 2) *
+        (this.horse.facingRight ? -0.5 : 0.5) *
+        this.horse.scale;
+      birthPosX = this.horse.x + offsetX;
+      birthPosY = this.horse.getBottomY() - 10;
+    }
 
     // Born early? How early decides how it goes (Premature.js)
     const early = typeof prematureStage === "function" ? prematureStage(this.horse.getPregnancyProgress()) : null;
@@ -716,7 +693,6 @@ class HorseAnatomy {
       addPointToPuddle(baby.scene, pX, pY, "blood", 10 / 200, 20 / 200);
     }
 
-
     fluffies.push(baby);
     // Litter size, and how strong it is from mum's care (Pregnancy.js)
     if (typeof onFoalBorn === "function") onFoalBorn(this.horse, baby, isViable);
@@ -730,7 +706,7 @@ class HorseAnatomy {
     if (early && typeof applyPrematureBirth === "function") applyPrematureBirth(baby, early, isViable);
     if (isViable) {
       baby.speak(getDialogue("BABY_PEEP", baby, this.horse));
-    } else {
+    } else if (!this.horse.tooYoungToSpeak()) {
       this.horse.speak(getDialogue(this.horse.isSensitive() ? ["SENSITIVE", "DEAD_BABY"] : ["BIRTH", "DEAD_BABY"], this.horse, baby));
     }
     return isViable; // (born alive)
@@ -791,20 +767,7 @@ class HorseAnatomy {
           let img = null;
           if (partType === "head") {
             img = dummy.tinted ? dummy.tinted.head : null;
-            faceData = {
-              expression: dummy.expression || "NEUTRAL",
-              eyeColor: dummy.colors ? dummy.colors.pupil : "black",
-              maneType: dummy.maneType !== undefined ? dummy.maneType : 0,
-              maneColor: dummy.colors ? dummy.colors.mane : null,
-              gradientConfig: dummy.hasGradient
-                ? {
-                    color: dummy.colors.gradient,
-                    intensity: dummy.gradientIntensity,
-                  }
-                : null,
-              hasHorn: !!(dummy.limbs && dummy.limbs.horn),
-              hornSizeFactor: dummy.hornSizeFactor || 1.0,
-            };
+            faceData = dummy.renderer.getFaceData();
           }
 
           const gib = new Gib(

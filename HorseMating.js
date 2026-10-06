@@ -42,6 +42,15 @@ function sayBreedingCageProblem(text) {
 addHorseMethods({
   mateWith(friend, maleForced = false, femaleForced = false) {
     if (this.gender === "male" && this.specialHuggiesCooldown > 0) return false;
+    // A diaper in the way, his or hers (Diapers.js)
+    if (this.gender === "male" && this.getDiaper()) {
+      this.refuseMatingInDiaper();
+      return false;
+    }
+    if (this.gender === "male" && friend && friend.getDiaper && friend.getDiaper()) {
+      this.refuseMatingInDiaper("PARTNER_DIAPER");
+      return false;
+    }
     // (a sensitive stallion can't by himself; you can breed him - Inbreeding.js)
     if (this.gender === "male" && this.isSensitive() && !(maleForced && typeof sensitiveCanBreed === "function" && sensitiveCanBreed(this))) return false;
     const force = maleForced || femaleForced;
@@ -307,7 +316,7 @@ addHorseMethods({
     }
     this.birthIntervalTimer = 3;
     if (typeof onLabourStarted === "function") onLabourStarted(this); // the birth buzzer (Mill.js)
-    this.speak(getDialogue(this.isSensitive() ? ["SENSITIVE", "BIRTH"] : ["BIRTH", "START"], this), true, this.isSensitive());
+    this.speak(getDialogue(this.isSensitive() ? ["SENSITIVE", "BIRTH"] : ["BIRTH", "START", this.tooYoungToSpeak() ? "BABY" : "DEFAULT"], this), true, this.isSensitive());
     this.initBehavior("BENDING_2");
     this.stateTimer = 0.8;
   },

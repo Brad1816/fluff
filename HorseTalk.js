@@ -273,6 +273,17 @@ addHorseMethods({
     const key2 = getSimpleRelationship(relation);
     const key3 = getSimpleRelationship((relationships[other.id] || {})[this.id]); // get the other side of the relationship
 
+    // Mummah can only talk to her foal through the cage/enclosure walls (the
+    // author's update): it hurts her (never so far she loops: barrierHurt)
+    if (key2 === "baby" && this.gender === "female" && this.isBehindBarrierFrom(other)) {
+      this.barrierHurt(HAPPINESS_PENALTY_BARRIER_TALK, "Can't reach her foals");
+      return getDialogue([key1, "BEHIND_BARRIER"], this, other);
+    }
+    // Remarking on a relative's smelly diaper instead of chatting
+    if (other.hasUsedDiaper() && Math.random() < 0.5) {
+      return getDialogue(["DIAPER", "SMELLY"], this, other);
+    }
+
     this.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
     other.changeHappiness(HAPPINESS_BONUS_FAMILY_BABBLE);
     if (typeof onFluffiesChatted === "function") onFluffiesChatted(this, other); // Bonds.js

@@ -295,6 +295,8 @@ addHorseMethods({
       isToxoplasmosis: this.isToxoplasmosis,
       isToxoVaccinated: this.isToxoVaccinated,
       bloodstream: JSON.parse(JSON.stringify(this.bloodstream || {})),
+      isOnFire: !!this.isOnFire, // (Blowtorch.js; loaded in Horse.deserialize)
+      fireElapsed: this.fireElapsed || 0,
       smokeTimer: this.smokeTimer || 0,
       smokeOffset: this.smokeOffset ? { x: this.smokeOffset.x, y: this.smokeOffset.y } : null,
       smokePoints: (this.smokePoints || []).map((sp) => ({

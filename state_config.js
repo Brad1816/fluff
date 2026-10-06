@@ -84,6 +84,19 @@ const ANIMATION_STATES = {
     tailAmp: 0.05,
     yOffset: 25,
   },
+  // Watching TV lying down (racked or can't sit up): lying pose
+  FOCUSING_LYING: {
+    bodyAngle: 0,
+    headAngle: (-5 * Math.PI) / 180, // Head raised toward the screen
+    headBobSpeed: 1,
+    headBobAmp: 0.2,
+    bodyBobSpeed: 1,
+    bodyBobAmp: 0.5,
+    legSwingAmp: 0,
+    tailSpeed: 1,
+    tailAmp: 0.05,
+    yOffset: 25,
+  },
   FOCUSING: {
     bodyAngle: -Math.PI / 2.5, // Sit back ~60 degrees
     headAngle: Math.PI / 3, // Look forward/slightly up relative to body
@@ -218,6 +231,11 @@ const ANIMATION_STATES = {
   },
 };
 
+// Watching TV, sitting up or lying down
+function isFocusingState(stateKey) {
+  return stateKey === "FOCUSING" || stateKey === "FOCUSING_LYING";
+}
+
 function canRun(f) {
   return (
     !f.isCrawling &&
@@ -294,6 +312,10 @@ const BEHAVIOR_RULES = {
     getDuration: () => 1 + 2 * Math.random(),
   },
   FOCUSING: {
+    getNextState: (f) => "IDLE",
+    getDuration: () => 30 + 30 * Math.random(),
+  },
+  FOCUSING_LYING: {
     getNextState: (f) => "IDLE",
     getDuration: () => 30 + 30 * Math.random(),
   },

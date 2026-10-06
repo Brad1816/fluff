@@ -283,6 +283,11 @@ class Horse {
     this.tasedPoint = null;
     this.smokePoints = [];
     this.smokeParticleTimer = 0;
+    this.isOnFire = false;
+    this.fireElapsed = 0; // Seconds since catching fire
+    this.fireScreamTimer = 0;
+    this.fireSmokeTimer = 0;
+    this.fireEmberTimer = 0;
     this.bloodstream = {};
 
     // Physics / Interaction
@@ -463,6 +468,9 @@ class Horse {
     this.moveSoundTimer = 0;
     this.drowningTimer = 0;
     this.isBlinking = false;
+    this.wantsUpsies = false; // Sitting and reaching up at a nearby cursor
+    this.upsiesWigglePhase = 0;
+    this.hugSwayPhase = 0; // Drives arm swaying while hugging
     this.bloodTolerance = 0;
     this.bloodReactionTimer = 0;
     this.lastPuddleReactionTime = 0;
@@ -500,7 +508,9 @@ class Horse {
       }
     }
     this.processGenes();
-    this.coloristDegree = this.genetics.calculateColorismPerception();
+    this.coloristDegree = Math.floor(
+      this.genetics.calculateColorismPerception(),
+    );
     if (this.type === "alicorn") {
       this.alicornTolerance = true;
       this.limbs.horn = true;
@@ -731,6 +741,170 @@ class Horse {
     if (amount && typeof noteMood === "function") noteMood(this, cause, newHappiness - oldHappiness, amount);
   }
 
+  // Separated by a cage, enclosure or can (one of them is shut in one, and
+  // they aren't in the same one)
+  isBehindBarrierFrom(other) {
+    return (
+      this.currentCage !== other.currentCage &&
+      (this.currentCage instanceof Cage || other.currentCage instanceof Cage)
+    );
+  }
+
+  // A mare who can't reach her hungry foal through a cage to nurse it
+  failToNurseBehindBarrier(foal) {
+    const now =
+      typeof performance !== "undefined" ? performance.now() / 1000 : 0;
+    if (now < (this.nextBarrierNurseTime || 0)) return;
+    this.nextBarrierNurseTime = now + BARRIER_NURSE_COOLDOWN;
+
+    this.barrierHurt(HAPPINESS_PENALTY_BARRIER_NURSE, "Can't feed her foals");
+    if (this.happiness > WAN_DIE_THRESHOLD && !this.tooYoungToSpeak()) {
+      this.expressionOverride = "CRYING_SHOCKED";
+      this.expressionOverrideTimer = 3.0;
+      this.speak(getDialogue(["GIVE_MILKIES", "BEHIND_BARRIER"], this, foal));
+    }
+  }
+
+  // A mum kept from her foals by bars: it hits her hard, but never so hard
+  // she gives up ("looping": WAN_DIE_THRESHOLD) - Brady's rule
+  barrierHurt(amount, cause) {
+    const floor = WAN_DIE_THRESHOLD + BARRIER_HAPPINESS_FLOOR;
+    if (this.happiness <= floor) return;
+    this.changeHappiness(Math.max(amount, floor - this.happiness), cause);
+  }
+
+  igniteFire() {
+    if (!this.isAlive || this.isOnFire) return;
+    this.isOnFire = true;
+    this.fireElapsed = 0;
+    this.fireScreamTimer = 0;
+    this.fireSmokeTimer = 0;
+    this.isFrantic = true;
+  }
+
+  // Put out by the sprinkler or spray bottle
+  extinguishFire() {
+    if (!this.isOnFire) return;
+    this.isOnFire = false;
+    this.fireElapsed = 0;
+    if (this.isAlive) this.isFrantic = this.calculateIsFrantic();
+    if (typeof poofs !== "undefined") {
+      poofs.push(new Poof(this.x, this.y - 20 * this.scale, this.scene));
+    }
+  }
+
+  // Burning: screams, panics, smokes, spreads to fluffies close by in the
+  // same cage, and dies FIRE_DEATH_TIME seconds after catching fire
+  updateFire(dt) {
+    if (!this.isOnFire) return;
+    // Soaked (a bath, the sprinkler, rain: WetFur.js) puts it out
+    if ((this.wet || 0) > 0.3) {
+      this.extinguishFire();
+      return;
+    }
+    this.fireElapsed += dt;
+    this.health = Math.min(
+      this.health,
+      100 * (1 - this.fireElapsed / FIRE_DEATH_TIME),
+    );
+    if (this.fireElapsed >= FIRE_DEATH_TIME) {
+      this.die("fire", "Burned to death");
+      return;
+    }
+
+    this.isFrantic = true;
+    this.expressionOverride = "CRYING_SHOCKED";
+    this.expressionOverrideTimer = Math.max(this.expressionOverrideTimer, 0.5);
+
+    this.fireScreamTimer -= dt;
+    if (this.fireScreamTimer <= 0) {
+      this.fireScreamTimer = 1.2 + Math.random() * 0.8;
+      const key = this.tooYoungToSpeak() ? "BABY" : "DEFAULT";
+      this.speak(getDialogue(["BURNING", key], this), true, true);
+    }
+
+    // Run about in a panic
+    if (
+      !this.isMovingOrRunning() &&
+      !this.isDragging &&
+      !this.placedOn &&
+      this.avoidStateChangerActions()
+    ) {
+      this.positioning.pickNewTarget();
+      this.initBehavior(canRun(this) ? "RUNNING" : "MOVING");
+    }
+
+    // Orange fire puffs and grey smoke rising off the body
+    if (typeof poofs !== "undefined") {
+      const e = this.positioning.getExtentsForCage();
+      const puffAt = (color) =>
+        new SmokePoof(
+          e.left + Math.random() * (e.right - e.left),
+          e.top + (e.bottom - e.top) * (0.2 + Math.random() * 0.4),
+          this.scene,
+          color,
+        );
+      this.fireEmberTimer -= dt;
+      if (this.fireEmberTimer <= 0) {
+        this.fireEmberTimer = FIRE_PARTICLE_INTERVAL;
+        poofs.push(puffAt(FIRE_PARTICLE_COLOR));
+      }
+      this.fireSmokeTimer -= dt;
+      if (this.fireSmokeTimer <= 0) {
+        this.fireSmokeTimer = SMOKE_PARTICLE_FREQUENCY;
+        poofs.push(puffAt(CATTLE_PROD_SMOKE_COLOR));
+      }
+    }
+
+    // Spread to fluffies close by in the same cage (or both outside one)
+    const spreadChance = 1 - Math.exp(-FIRE_SPREAD_RATE * dt);
+    for (const f of fluffies) {
+      if (
+        f === this ||
+        !f.isAlive ||
+        f.isOnFire ||
+        f.scene !== this.scene ||
+        f.currentCage !== this.currentCage
+      )
+        continue;
+      if (
+        Math.hypot(f.x - this.x, f.y - this.y) < FIRE_SPREAD_DISTANCE &&
+        Math.random() < spreadChance
+      ) {
+        f.igniteFire();
+      }
+    }
+  }
+
+  // The diaper it's wearing (our own Diapers.js: f.diaper { fill }), or null
+  getDiaper() {
+    return typeof wearsDiaper === "function" && wearsDiaper(this) ? this.diaper : null;
+  }
+
+  hasUsedDiaper() {
+    return !!this.getDiaper() && (typeof diaperFill === "function" ? diaperFill(this) : this.diaper.fill || 0) > 0;
+  }
+
+  // Catches excretion in a diaper if one is worn and not yet full.
+  // Returns true if it was caught (so no puddle is made).
+  absorbIntoDiaper(amount, isPoop = true) {
+    return typeof diaperCatches === "function" && !!this.getDiaper() && diaperCatches(this, isPoop, amount);
+  }
+
+  // A stallion's special huggies blocked by a diaper (his own, or his
+  // partner's when lineKey is "PARTNER_DIAPER")
+  refuseMatingInDiaper(lineKey = "CANT_MATE") {
+    this.specialHuggiesCooldown = Math.max(
+      this.specialHuggiesCooldown || 0,
+      DIAPER_MATE_LINE_COOLDOWN,
+    );
+    if (this.happiness > WAN_DIE_THRESHOLD && !this.tooYoungToSpeak()) {
+      this.expressionOverride = "MISERABLE";
+      this.expressionOverrideTimer = 3.0;
+      this.speak(getDialogue(["DIAPER", lineKey], this));
+    }
+  }
+
   isNearRunningGrinder() {
     if (typeof objects === "undefined") return false;
     for (const obj of objects) {
@@ -880,7 +1054,6 @@ class Horse {
       this.tvFocus = null;
       return;
     }
-    if (this.placedOn) return;
     if (this.currentStateKey === "SLEEPING") return;
     if (this.happiness <= WAN_DIE_THRESHOLD) {
       this.tvFocus = null;
@@ -900,7 +1073,7 @@ class Horse {
         tv.currentCage === this.currentCage;
       if (!tvValid || this.hunger < 0.5) {
         this.tvFocus = null;
-        if (this.currentStateKey === "FOCUSING") {
+        if (isFocusingState(this.currentStateKey)) {
           this.initBehavior("IDLE");
         }
         return;
@@ -913,6 +1086,30 @@ class Horse {
       }
       return;
     }
+
+    // Racked fluffies can't choose to watch (their brain doesn't run
+    // while strapped down), so they watch any TV in view
+    if (
+      this.placedOn &&
+      this.hunger >= 0.5 &&
+      !this.isScared &&
+      !this.isFrantic
+    ) {
+      const tv = this.findNearbyTV();
+      if (tv) this.startWatchingTV(tv);
+    }
+  }
+
+  // Fluffies that can't sit up (racked, too weak or missing legs) watch
+  // lying down
+  getTVFocusState() {
+    return this.isCrawling ? "FOCUSING_LYING" : "FOCUSING";
+  }
+
+  startWatchingTV(tv) {
+    if (!this.placedOn) this.facingRight = tv.x > this.x;
+    this.tvFocus = { tv: tv, timer: 30 + Math.random() * 30 };
+    this.initBehavior(this.getTVFocusState());
   }
 
   avoidStateChangerActions() {
@@ -1159,9 +1356,7 @@ class Horse {
   }
 
   initBehavior(stateKey) {
-    if (stateKey === "FLUFFY_BITE") {
-      this.spawnMouthPoof(this._biteNoBlood ? "white" : "#8a0303"); // (biting a boot: nothing bleeds)
-    }
+    // (the bite's puff is in performAttack now: nothing through cage bars)
     if (stateKey === "FLUFFY_KNOCKED_DOWN") {
       this._interruptMating();
       this.headKnockTimer = headKnockTime;
@@ -1413,13 +1608,19 @@ class Horse {
     this.health = Math.max(0, this.health - damage);
 
     const vol = Math.min(1.0, Math.max(0.4, speed / 1500));
-    const pitch = Math.max(0.7, 1.2 - (Math.abs(this.scale) || 0.5) * 0.4 * (1 + Math.random()));
+    const pitch = Math.max(
+      0.7,
+      1.2 - (Math.abs(this.scale) || 0.5) * 0.4 * (1 + Math.random()),
+    );
     playSound("thud", vol, pitch);
 
     this.expressionOverride = "CRYING_SHOCKED";
     this.expressionOverrideTimer = 2.0;
 
-    const line = getDialogue(["THROW_IMPACT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"], this);
+    const line = getDialogue(
+      ["THROW_IMPACT", this.tooYoungToSpeak() ? "CHIRPY" : "DEFAULT"],
+      this,
+    );
     const s = Math.abs(this.scale * Math.min(damage, 100));
     if (this.isAlive) {
       addPointToPuddle(this.scene, this.x, this.y, "blood", s / 200, (3 * s) / 200, 0.05);
@@ -1784,6 +1985,9 @@ class Horse {
 
       if (this.isCrawling && this.currentStateKey === "SITTING") {
         this.initBehavior("IDLE");
+      }
+      if (this.isCrawling && this.currentStateKey === "FOCUSING") {
+        this.currentStateKey = "FOCUSING_LYING";
       }
 
       // Growing up
@@ -2317,6 +2521,8 @@ class Horse {
         ? data.isToxoplasmosis || false
         : false;
     horse.isToxoVaccinated = data.isToxoVaccinated || false;
+    horse.isOnFire = !!data.isOnFire && horse.isAlive;
+    horse.fireElapsed = data.fireElapsed || 0;
     if (Array.isArray(data.smokePoints)) {
       horse.smokePoints = data.smokePoints.map((sp) => ({
         offset: {

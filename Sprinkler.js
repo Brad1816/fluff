@@ -27,6 +27,21 @@ class Sprinkler {
       this.arcPhase += dt * 5;
       this.waterTimer += dt;
 
+      // Puts out burning fluffies within its spray
+      if (typeof fluffies !== "undefined") {
+        for (const f of fluffies) {
+          if (
+            !f.isOnFire ||
+            f.scene !== this.scene ||
+            f.currentCage !== this.currentCage
+          )
+            continue;
+          const dx = f.x - this.x;
+          const dy = (f.y - this.y) * 2; // Elliptical reach
+          if (Math.hypot(dx, dy) < SPRINKLER_RADIUS) f.extinguishFire();
+        }
+      }
+
       // 1. Clean nearby puddles (poop, pee, blood)
       if (typeof puddles !== "undefined") {
         for (let i = puddles.length - 1; i >= 0; i--) {

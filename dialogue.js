@@ -7,6 +7,15 @@ const DIALOGUE = {
   // Idle chatter
   CHIRP: ["*chirp chirp*"],
   HELLO: {
+    // Mummah talking to her foal shut in a cage/enclosure
+    BEHIND_BARRIER: [
+      "Sowwy babbeh, nu-see waww in way...",
+      "Wai babbeh in gwass boxie??",
+      "Daddeh, mummah needs to get to babbeh!",
+      "Mummah hewe babbeh! Mummah hewe!",
+      "Can babbeh see mummah?",
+      "Nu cry <target>, mummah hewe!!",
+    ],
     DEFAULT: {
       // Talk to self
       FERAL_CHIRPY: ["Peep", "Cheep", "Peep peep"],
@@ -1242,6 +1251,27 @@ const DIALOGUE = {
     FULL: ["Pants am fuww! Icky! Pwease!", "Su sqwishy... hewp <speaker>...", "Nu can howd mowe poopies..."],
     DIRTY: ["Stinky pants... pwease change...", "Icky icky icky...", "<Speaker> nu wike stinky..."],
     WEARING: ["Waddwe waddwe... nu can wun...", "Pants make <speaker> waddwe...", "Odda fwuffies wookin' at poopie pants..."],
+    // (the author's update: itching, no milk, no special huggies, the smell)
+    COMPLAIN: [
+      "NU WIKE DUMMEH DIAPIE!!",
+      "DIAPIE GIB ITCHIES TO <SPEAKER>! NU WIKE!!",
+      "HATECHU DUMMEH DIAPIE!",
+    ],
+    // A stallion in a diaper: no special huggies (kept as tame as the
+    // rest of the game's mating lines)
+    CANT_MATE: ["DUMMEH DIAPIE! NU CAN HAB SPESHUW HUGGIES!!", "Huu... dummeh diapie in da way...", "Wai <speaker> hab dummeh diapie?! Nu faiw!!"],
+    // ...or his special friend in one
+    PARTNER_DIAPER: ["Wai speshuw fwen weaw dummeh diapie?! Nu faiw!", "Dummeh diapie in da way of speshuw huggies... huu..."],
+    // Mare in a diaper whose foal wants milk
+    CANT_NURSE: [
+      "HUUHUUHUU DUMMEH DIAPIE WET MUMMAH GIB <SPEAKER> MIWKIES!! BABBEH NEE\u2019 MIWKIES!!!!",
+    ],
+    // Mare in a diaper smug at a milk thief who can't get any
+    DENY_NURSE: ["Hehehehe\u2026 diapie nu wet bad babbeh steaw miwkies\u2026"],
+    // Wearer of a used diaper
+    USED: ["HUUHUU DIAPIE NU SMEWW PWETTY!", "DUMMEH DIAPIE NU SMEWW PWETTY!!!"],
+    // Others talking to a fluffy with a used diaper
+    SMELLY: ["Yackie fwuffy nu smeww pwetty\u2026", "Dummeh diapie fwuffy nee new diapie! Hehehe\u2026."],
   },
   // On the milk stand (MilkStand.js)
   MILK_STAND: {
@@ -1430,6 +1460,16 @@ const DIALOGUE = {
       "<Target> wub miwkies an' mummah! Mummah hab biggest heawt happies!",
       "Cooo... wub <target>...",
     ],
+    // Can't nurse her foal through a cage/enclosure
+    BEHIND_BARRIER: [
+      "*sob* nu can feed babbeh...",
+      "*sob* babbeh hungwy, nu can give miwkies...",
+      "BABBEH NEE' MIWKIES! WHY BABBEH IN BOXIE??!",
+      "HEWP! NEED GIVE BABBEH MIWKIES!",
+      "*sob* Mummah have wotsa miwkies for <target>...",
+      "*sob* have good miwkies but <speaker> am bad mummah...",
+      "Wowst heart hurties... nee give good miwkies...",
+    ],
     ADOPTION: [
       "Babbeh nee' miwkies? <Speaker> hab pwenty of miwkies!",
       "Babbeh nee' mummah? <Speaker> be babbeh's mummah!",
@@ -1560,6 +1600,14 @@ const DIALOGUE = {
       "G-gib nummies?? <Speaker> suuuu hungwy..",
     ],
     CHIRPY: ["Yaaaaawn....", "Yaaaaaaaaaaawwwwn"],
+  },
+  UNABLE_TO_ATTACK_CAGE: {
+    DEFAULT: [
+      "OOF!",
+      "OWWIES! Hoofsie huwties!",
+      "Wai nu can gib huwties to <target>?",
+      "Meanie nu-see waww!!",
+    ],
   },
 
   // [this][ACTION][SELF]
@@ -1835,7 +1883,10 @@ const DIALOGUE = {
 
   // Birth and first words
   BIRTH: {
-    START: ["BIGGEST POOPIES!!!"],
+    START: {
+      DEFAULT: ["BIGGEST POOPIES!!!"],
+      BABY: ["PEEEEEEEEEEEEEEPP!!!!!"],
+    },
     PAIN: [
       "SCREEE!!!!",
       "EEEEEEEEEEEEEK!!!",
@@ -2373,6 +2424,19 @@ const DIALOGUE = {
       "SUU MUCH HUWTIESSS... WIWW MAKE ONWY GUD POOPIES N-NICE DADDEH...",
     ],
   },
+
+  // Screams while on fire
+  BURNING: {
+    DEFAULT: [
+      "HOTTIES!!! HOTTIES!!! AAAAAAHHH!!!!",
+      "SCREEEEEEEEEEE!!!! BUWNIES!!!!",
+      "MAKE HOTTIES STOP!!! PWEEEEASE!!!!",
+      "FWUFFY ON FIYAH!!! HEWP!!! HEWP!!!",
+      "AAAAAAAAAAAAAAAAAA!!!!!",
+    ],
+    BABY: ["PEEEEEEEEEEEEEP!!!!", "SCREEEEEEEEEEE!!!!", "EEEEEEEEEEEEEE!!!!"],
+  },
+
 
   CATTLE_PROD: {
     DEFAULT: [
@@ -3249,11 +3313,7 @@ const DIALOGUE = {
     BABY: ["EEEEEEE!!!!", "PIPIPIPI!!!!!"],
   },
   THROW_IMPACT: {
-    DEFAULT: [
-      "OOF!!!!!",
-      "EEEE!!!!! OWWIES!!!!",
-      "WEGGIE HUWTIES!!",
-    ],
+    DEFAULT: ["OOF!!!!!", "EEEE!!!!! OWWIES!!!!", "WEGGIE HUWTIES!!"],
     CHIRPY: [
       "EEEEEEEEEEEE!!!!",
       "CHEEEEEEEEEEEEEEPPPPPP!!!",
@@ -3270,25 +3330,12 @@ const DIALOGUE = {
       "Yayy!!! <Speaker> am fwying!!!",
       "Wooksies!!! <Speaker> am fwying! Am fwying!!!!",
     ],
-    CHIRPY: [
-      "CHEEEEEEP! CHEEEEEP!",
-      "PIPIPIPI!",
-      "CHEEEEEEEEEEP!",
-    ],
+    CHIRPY: ["CHEEEEEEP! CHEEEEEP!", "PIPIPIPI!", "CHEEEEEEEEEEP!"],
   },
   THROW_DROPPED: {
-    DEFAULT: [
-      "NUUUUUUUUU!!!!!!",
-      "HUUUUU HUUUUUU HUUUUUUUU!!!!!!!!",
-    ],
-    WINGED: [
-      "<Speaker> fwy!!!!",
-      "Wingies am wowking!!!!!",
-    ],
-    CHIRPY: [
-      "PIPIPIPIPIPIPIPI!",
-      "CHEEEEEEEEEEEP!",
-    ],
+    DEFAULT: ["NUUUUUUUUU!!!!!!", "HUUUUU HUUUUUU HUUUUUUUU!!!!!!!!"],
+    WINGED: ["<Speaker> fwy!!!!", "Wingies am wowking!!!!!"],
+    CHIRPY: ["PIPIPIPIPIPIPIPI!", "CHEEEEEEEEEEEP!"],
   },
 };
 

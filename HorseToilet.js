@@ -288,6 +288,8 @@ addHorseMethods({
   },
 
   excretePoop(dt) {
+    // The runs, in a diaper: it soaks it up until it's full (Diapers.js)
+    if (typeof diaperSoaks === "function" && diaperSoaks(this, true, 0.3 * dt)) return;
     if (typeof addDirt === "function") addDirt(this, 0.02 * dt); // the runs are messy (Bath.js)
     if (typeof fluffySound === "function") fluffySound(this, "shitting"); // (the runs)
     const torsoWidth = this.layout ? this.layout.torso.w : 100;
@@ -308,6 +310,7 @@ addHorseMethods({
   },
 
   excretePee(dt) {
+    if (typeof diaperSoaks === "function" && diaperSoaks(this, false, 0.3 * dt)) return;
     const torsoWidth = this.layout ? this.layout.torso.w : 100;
     const offsetX = (torsoWidth / 2) * (this.facingRight ? -0.5 : 0.5) * this.scale;
     const pX = this.x + offsetX;

@@ -17,7 +17,8 @@ class CattleProd {
 
   startTaserSound() {
     if (this.loopingSound) return;
-    if (typeof currentScene !== "undefined" && this.scene !== currentScene) return;
+    if (typeof currentScene !== "undefined" && this.scene !== currentScene)
+      return;
     if (typeof startLoopingSound === "function") {
       this.loopingSound = startLoopingSound("taser");
     } else if (typeof playSound === "function") {
@@ -37,7 +38,8 @@ class CattleProd {
   }
 
   getHoveredFluffy() {
-    if (typeof fluffies === "undefined" || !Array.isArray(fluffies)) return null;
+    if (typeof fluffies === "undefined" || !Array.isArray(fluffies))
+      return null;
 
     const isMouseDown = typeof mouse !== "undefined" && !!mouse.down;
     // When the prod is being used on a fluffy, use the lenient hitbox multiplier to stay on
@@ -47,7 +49,10 @@ class CattleProd {
         sf.isAlive &&
         sf.scene === this.scene &&
         (!sf.currentCage ||
-          !(typeof FoalInACan !== "undefined" && sf.currentCage instanceof FoalInACan))
+          !(
+            typeof FoalInACan !== "undefined" &&
+            sf.currentCage instanceof FoalInACan
+          ))
       ) {
         if (sf.hitTest(mouse.x, mouse.y, CATTLE_PROD_HITBOX_MULTIPLIER)) {
           return sf;
@@ -110,13 +115,14 @@ class CattleProd {
             this.shockedFluffy.continuousTasedTimer = 0;
             this.shockedFluffy.continuousTasedSmokeTimer = 0;
             this.shockedFluffy.tasedPoint = null;
-            if (this.shockedFluffy.updateCrawling) this.shockedFluffy.updateCrawling();
+            if (this.shockedFluffy.updateCrawling)
+              this.shockedFluffy.updateCrawling();
           }
           this.shockedFluffy = hoveredFluffy;
           let hitPart = hoveredFluffy.hitTest(
             mouse.x,
             mouse.y,
-            CATTLE_PROD_HITBOX_MULTIPLIER
+            CATTLE_PROD_HITBOX_MULTIPLIER,
           );
           if (
             hoveredFluffy.placedOn instanceof OperatingTable &&
@@ -135,13 +141,14 @@ class CattleProd {
           this.shockedFluffy.continuousTasedTimer = 0;
           this.shockedFluffy.continuousTasedSmokeTimer = 0;
           this.shockedFluffy.tasedPoint = null;
-          if (this.shockedFluffy.updateCrawling) this.shockedFluffy.updateCrawling();
+          if (this.shockedFluffy.updateCrawling)
+            this.shockedFluffy.updateCrawling();
           this.shockedFluffy = null;
         }
       }
 
       const targetOffset = shouldBeIn ? this.pokeDistance : 0;
-      const speed = this.pokeDistance / CATTLE_PROD_USE_ANIMATION_DURATION; 
+      const speed = this.pokeDistance / CATTLE_PROD_USE_ANIMATION_DURATION;
       if (this.pokeOffset < targetOffset) {
         this.pokeOffset = Math.min(targetOffset, this.pokeOffset + speed * dt);
       } else if (this.pokeOffset > targetOffset) {
@@ -155,7 +162,8 @@ class CattleProd {
         this.shockedFluffy.continuousTasedTimer = 0;
         this.shockedFluffy.continuousTasedSmokeTimer = 0;
         this.shockedFluffy.tasedPoint = null;
-        if (this.shockedFluffy.updateCrawling) this.shockedFluffy.updateCrawling();
+        if (this.shockedFluffy.updateCrawling)
+          this.shockedFluffy.updateCrawling();
       }
       this.shockedFluffy = null;
     }
@@ -171,7 +179,8 @@ class CattleProd {
       this.shockedFluffy.continuousTasedTimer = 0;
       this.shockedFluffy.continuousTasedSmokeTimer = 0;
       this.shockedFluffy.tasedPoint = null;
-      if (this.shockedFluffy.updateCrawling) this.shockedFluffy.updateCrawling();
+      if (this.shockedFluffy.updateCrawling)
+        this.shockedFluffy.updateCrawling();
     }
     this.angle = 0;
     this.pokeOffset = 0;

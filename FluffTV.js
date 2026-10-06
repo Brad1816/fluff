@@ -93,7 +93,10 @@ const channel_speeches = {
     { text: "DISORDER! DISORDER!", weight: 1 },
     { text: "TRAPPED IN MYSELF! BODY MY HOLDING CELL!", weight: 1 },
     { text: "WHO'S! TO SAY WHAT'S FOR ME TO BE!", weight: 1 },
-    { text: "RED FLUID OF LIFE IS FLOWING RIGHT ALONG MY ARMS!", weight: 1 },
+    {
+      text: "RED FLUID OF LIFE IS FLOWING RIGHT ALONG MY ARMS!",
+      weight: 1,
+    },
     { text: "WAKEUP! GRABABRUSHANDPUTALITTLEMAKEUP!", weight: 1 },
     { text: "ONE MONTH IN THE GRAVE TWISTED AND HALF-DECAYED", weight: 1 },
     { text: "THE SUN IS FALLLING FROM THE SKY", weight: 1 },

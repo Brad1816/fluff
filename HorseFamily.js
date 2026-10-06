@@ -101,6 +101,13 @@ addHorseMethods({
       const r = milkStandNurse(mare, this);
       if (r !== null) return r;
     }
+    // Her own foal through the bars of a cage, enclosure or can: she can't
+    // reach it to nurse (the author's update; Horse.failToNurseBehindBarrier)
+    if (mare && mare.isAlive && mare.lactatingTimer > 0 && mare.id === this.motherId && this.isBehindBarrierFrom(mare)) {
+      mare.failToNurseBehindBarrier(this);
+      this.milkCooldown = 3.0;
+      return false;
+    }
     if (
       !mare ||
       !mare.isAlive ||
@@ -205,7 +212,8 @@ addHorseMethods({
         if (!mareTolerant) {
           key2 = "ALICORN";
         }
-        if (mare.attackCooldown <= 0 && mare.babiesToBirth <= 0) {
+        // (no need to fight off a milk thief while her udders are covered by a diaper)
+        if (mare.attackCooldown <= 0 && mare.babiesToBirth <= 0 && !mare.getDiaper()) {
           mare.performAttack(this, "MUNSTAH_BABBEH_ATTACK");
         }
         // 50% chance to fear the mare for 1 minute
@@ -229,6 +237,21 @@ addHorseMethods({
       success = false;
     }
 
+    // A diaper covers the udders: no milk, whether or not she wanted to
+    // feed this foal (Diapers.js; the author's update)
+    if (mare.getDiaper() && mare.milkCharges > 0 && key1 !== "ATTACK") {
+      const wanted = success && (key2 === "DEFAULT" || key2 === "ADOPTION" || key2 === "BLIND");
+      const unwanted = key1 === "DENY_MILKIES" || (success && (key2 === "LEGLESS" || key2 === "ALICORN"));
+      success = false;
+      this.milkCooldown = 3.0;
+      if (wanted || unwanted) {
+        key1 = "DIAPER";
+        key2 = wanted ? "CANT_NURSE" : "DENY_NURSE";
+        mare.expressionOverride = wanted ? "MISERABLE" : "SMUG";
+        mare.expressionOverrideTimer = 3.0;
+      }
+    }
+
     if (success) {
       mare.milkCharges--;
       this.hunger = 1.0;
@@ -242,9 +265,9 @@ addHorseMethods({
         if (this.renderer) this.renderer.tinted = null;
         this.vomitTimer = 4.0 + Math.random() * 6.0;
       }
-      this.speak(getDialogue("DRINK_MILKIES", this, mare), false, true);
+      if (!this.tooYoungToSpeak()) this.speak(getDialogue("DRINK_MILKIES", this, mare), false, true);
     }
-    if (mare.happiness > WAN_DIE_THRESHOLD) {
+    if (mare.happiness > WAN_DIE_THRESHOLD && !mare.tooYoungToSpeak()) {
       mare.speak(getDialogue([key1, key2], mare, this));
     }
 
@@ -446,6 +469,7 @@ addHorseMethods({
 
   calculateIsFrantic(hasMissing = null) {
     if (!this.isAlive) return false;
+    if (this.isOnFire) return true; // (Blowtorch.js)
     const wanDieThreshold = WAN_DIE_THRESHOLD;
     if (this.happiness <= wanDieThreshold) return false;
     const missing = hasMissing !== null ? hasMissing : this.hasMissingRelative();

@@ -33,6 +33,7 @@ const FEAR_FROM_WEAPON = {
   spray: 0.04, // a squirt from the spray bottle: startling, not painful
   thumbtack: 0.2, // thumbtack and syringe
   cattle_prod: 0.25,
+  blowtorch: 0.4, // set alight (Blowtorch.js)
   knife: 0.3,
   scalpel: 0.3,
   grinder: 0.5,
@@ -48,6 +49,7 @@ const MEMORY_TEXT = {
   spray: "Squirted with the spray bottle",
   thumbtack: "Poked with a tack",
   cattle_prod: "Shocked with the prod",
+  blowtorch: "Set on fire",
   knife: "Cut with a knife",
   scalpel: "Cut with a scalpel",
   grinder: "Saw the grinder",
@@ -66,7 +68,7 @@ const MEMORY_TEXT = {
 };
 
 // Memories of harm from you (for the story book, StoryBook.js)
-const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "sprayed_lots", "took_family", "taken_away", "taken_from_mum", "forced_fear"]);
+const MEMORY_HARM_TYPES = new Set(["stick", "thumbtack", "cattle_prod", "blowtorch", "knife", "scalpel", "grinder", "witness", "witness_family", "training", "sprayed_lots", "took_family", "taken_away", "taken_from_mum", "forced_fear"]);
 
 function ensurePlayerMemory(f) {
   if (typeof f.playerTrust !== "number") f.playerTrust = f.adopted ? TRUST_START : TRUST_START_FERAL;

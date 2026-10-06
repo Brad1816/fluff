@@ -1,112 +1,112 @@
 body {
-  margin: 0;
-  overflow: hidden;
-  background-color: #000;
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
 }
 
 canvas {
-  display: block;
+    display: block;
 }
 
 #name-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.95);
-  border: 2px solid white;
-  padding: 20px;
-  color: white;
-  z-index: 1000;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  font-family: Arial, sans-serif;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid white;
+    padding: 20px;
+    color: white;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    font-family: Arial, sans-serif;
 }
 
 #name-modal input {
-  background: #222;
-  border: 1px solid #555;
-  color: white;
-  padding: 8px;
-  font-size: 18px;
-  text-align: center;
+    background: #222;
+    border: 1px solid #555;
+    color: white;
+    padding: 8px;
+    font-size: 18px;
+    text-align: center;
 }
 
 #name-modal .buttons {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 #name-modal button {
-  padding: 8px 20px;
-  cursor: pointer;
-  background: #444;
-  border: 1px solid white;
-  color: white;
+    padding: 8px 20px;
+    cursor: pointer;
+    background: #444;
+    border: 1px solid white;
+    color: white;
 }
 
 #name-modal button:hover {
-  background: #666;
+    background: #666;
 }
 
 #inspection-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.95);
-  border: 2px solid white;
-  padding: 20px;
-  color: white;
-  z-index: 1000;
-  display: none;
-  flex-direction: column;
-  min-width: 300px;
-  max-width: 500px;
-  font-family: Arial, sans-serif;
-  gap: 10px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid white;
+    padding: 20px;
+    color: white;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    min-width: 300px;
+    max-width: 500px;
+    font-family: Arial, sans-serif;
+    gap: 10px;
 }
 
 #inspection-modal .header {
-  font-weight: bold;
-  font-size: 20px;
-  margin-bottom: 10px;
-  text-align: center;
+    font-weight: bold;
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-align: center;
 }
 
 #inspection-modal .info-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
 }
 
 #inspection-modal .cause-of-death {
-  color: #ff5555;
-  margin-top: 5px;
-  text-align: center;
-  font-weight: bold;
+    color: #ff5555;
+    margin-top: 5px;
+    text-align: center;
+    font-weight: bold;
 }
 
 #inspection-modal .buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-  gap: 10px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    gap: 10px;
 }
 
 #inspection-modal button {
-  flex-grow: 1;
-  padding: 10px;
-  cursor: pointer;
-  background: #444;
-  border: 1px solid white;
-  color: white;
+    flex-grow: 1;
+    padding: 10px;
+    cursor: pointer;
+    background: #444;
+    border: 1px solid white;
+    color: white;
 }
 
 #inspection-modal button:hover {
-  background: #666;
+    background: #666;
 }
 
 /* ---- Phones and tablets (Touch.js) ---- */

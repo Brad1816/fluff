@@ -61,7 +61,7 @@ class HorseRenderer {
       this.horse.canSee()
     ) {
       this.horse.expression = "SHOCKED";
-    } else if (this.horse.currentStateKey === "FOCUSING") {
+    } else if (isFocusingState(this.horse.currentStateKey)) {
       this.horse.expression = "FOCUSING";
     } else if (this.horse.currentStateKey === "DROWNING") {
       this.horse.expression = "CRYING_SHOCKED";
@@ -97,7 +97,6 @@ class HorseRenderer {
     return getExpressionConfig(expr, this.horse.isAlive);
   }
 
-
   ensureTintedImages() {
     if (this.tinted) return;
     if (!images.head || images.head.width === 0) return;
@@ -125,37 +124,24 @@ class HorseRenderer {
         }
       : null;
 
-    this.tinted.head = tintImage(
-      images.head,
-      this.horse.colors.body,
-      spotsConfig
-        ? { ...spotsConfig, seed: spotsConfig.seed + 13, isHead: true }
-        : null,
-      stripesConfig
-        ? { ...stripesConfig, seed: stripesConfig.seed + 13, isHead: true }
-        : null,
-    );
-    if (images.sbs_double_chin) {
-      this.tinted.sbs_double_chin = tintImage(
-        images.sbs_double_chin,
-        this.horse.colors.body,
-        spotsConfig
-          ? { ...spotsConfig, seed: spotsConfig.seed + 71, isLeg: true }
-          : null,
-        stripesConfig
-          ? { ...stripesConfig, seed: stripesConfig.seed + 71, isLeg: true }
-          : null,
-      );
-    }
-    this.tinted.ear = tintImage(
-      images.ear,
-      this.horse.colors.body,
-      spotsConfig
-        ? { ...spotsConfig, seed: spotsConfig.seed + 47, isLeg: true }
-        : null,
-      stripesConfig
-        ? { ...stripesConfig, seed: stripesConfig.seed + 47, isLeg: true }
-        : null,
+    // Greyer with age (Aging.js)
+    const maneColor = typeof maneColorFor === "function" ? maneColorFor(this.horse) : this.horse.colors.mane;
+    const maneImg = images["mane_" + (this.horse.maneType || 0)] || images.mane_0;
+    Object.assign(
+      this.tinted,
+      buildHorseHeadImages({
+        bodyColor: this.horse.colors.body,
+        maneColor,
+        pupilColor: this.horse.colors.pupil,
+        maneType: this.horse.maneType,
+        gradient: gradientConfig,
+        spots: spotsConfig,
+        stripes: stripesConfig,
+        // (only once it shows on the face: Micro.js)
+        sensitive: typeof sbsShows === "function" ? sbsShows(this.horse, "head") : this.horse.isSensitive(),
+        // (a glued-on horn too: Trade.js)
+        hasHorn: this.horse.type === "unicorn" || this.horse.type === "alicorn" || !!this.horse.fakeAlicorn,
+      }),
     );
     this.tinted.torso = tintImage(
       images.torso,
@@ -170,27 +156,13 @@ class HorseRenderer {
         ? { ...spotsConfig, seed: spotsConfig.seed + 29, isLeg: true }
         : null,
       stripesConfig
-        ? { ...stripesConfig, seed: stripesConfig.seed + 29, isLeg: true }
+        ? {
+            ...stripesConfig,
+            seed: stripesConfig.seed + 29,
+            isLeg: true,
+          }
         : null,
     );
-    this.tinted.eyelid = tintImage(images.eye, this.horse.colors.body);
-
-    let maneImg = images.mane_0;
-    if (this.horse.maneType === 1) maneImg = images.mane_1;
-    else if (this.horse.maneType === 2) maneImg = images.mane_2;
-    else if (this.horse.maneType === 3) maneImg = images.mane_3;
-    else if (this.horse.maneType === 4) maneImg = images.mane_4;
-    else if (this.horse.maneType === 5) maneImg = images.mane_5;
-    // Greyer with age (Aging.js)
-    const maneColor = typeof maneColorFor === "function" ? maneColorFor(this.horse) : this.horse.colors.mane;
-    this.tinted.mane = tintImage(
-      maneImg,
-      maneColor,
-      null,
-      null,
-      gradientConfig,
-    );
-
     let tailImg = images.tail;
     if (this.horse.tailType === 1) tailImg = images.tail_0;
     else if (this.horse.tailType === 2) tailImg = images.tail_1;
@@ -210,44 +182,11 @@ class HorseRenderer {
       paintManePattern(this.tinted.tail, tailImg, p, second);
     }
 
-    if (images.pupil)
-      this.tinted.pupil = tintImage(images.pupil, this.horse.colors.pupil);
-    this.tinted.eye = images.eye;
-    if (images.eye) this.tinted.eye_pink = tintImage(images.eye, "#ffcccc");
-    if (images.eye) this.tinted.eye_toxo = tintImage(images.eye, "#c8a46a"); // (toxoplasmosis showing: Coats.js)
-    if (images.cheek) {
-      const cheekImgToUse =
-        (typeof sbsShows === "function" ? sbsShows(this.horse, "head") : this.horse.isSensitive()) && images.cheek_sbs
-          ? images.cheek_sbs
-          : images.cheek;
-      this.tinted.cheek = tintImage(cheekImgToUse, this.horse.colors.body);
-    }
-    if (images.puffed_cheek)
-      this.tinted.puffed_cheek = tintImage(
-        images.puffed_cheek,
-        this.horse.colors.body,
-      );
-    if (images.eye_happy) this.tinted.eye_happy = images.eye_happy;
-    if (images.eye_pained) this.tinted.eye_pained = images.eye_pained;
-    if (images.eye_angry)
-      this.tinted.eye_angry = tintImage(
-        images.eye_angry,
-        this.horse.colors.body,
-      );
-    if (images.eye_sad)
-      this.tinted.eye_sad = tintImage(images.eye_sad, this.horse.colors.body);
-
     if (
       (this.horse.type === "pegasus" || this.horse.type === "alicorn" || this.horse.fakeAlicorn) &&
       images.wing
     ) {
       this.tinted.wing = tintImage(images.wing, this.horse.colors.body);
-    }
-    if (
-      (this.horse.type === "unicorn" || this.horse.type === "alicorn" || this.horse.fakeAlicorn) &&
-      images.horn
-    ) {
-      this.tinted.horn = tintImage(images.horn, this.horse.colors.body);
     }
     if (this.horse.gender === "female" && images.horse_udders) {
       if (this.horse.isPoisoned) {
@@ -328,8 +267,6 @@ class HorseRenderer {
       leftLegAngle = swing;
       rightLegAngle = swing;
     } else {
-      let sittingAndMouseClose = false;
-
       if (
         this.horse.currentStateKey === "SITTING" ||
         this.horse.currentStateKey === "FOCUSING"
@@ -342,29 +279,16 @@ class HorseRenderer {
           leftLegAngle = -Math.PI / 2 - 0.15;
           rightLegAngle = -Math.PI / 2 + 0.1;
         }
-        if (
-          !busyWithBlock &&
-          this.horse.currentStateKey === "SITTING" &&
-          // (not while the game's paused: it shouldn't turn and wave at you then)
-          (typeof gameState === "undefined" || gameState === "PLAYING") &&
-          !(typeof screenPausesGame === "function" && screenPausesGame()) && // (nor behind a pop-up that pauses it)
-          this.horse.canSee() &&
-          Math.sqrt(
-            (mouse.x - this.horse.x) ** 2 + (mouse.y - this.horse.y) ** 2,
-          ) < 200
-        ) {
-          sittingAndMouseClose = true;
-        }
       }
-      if (sittingAndMouseClose) {
-        const wiggle = Math.sin(Date.now() / 100) * 0.5;
+      // Reaching up at the cursor (state set in Horse.updateUpsiesBegging)
+      if (this.horse.wantsUpsies && this.horse.currentStateKey === "SITTING") {
+        const wiggle = Math.sin(this.horse.upsiesWigglePhase) * 0.5;
         leftLegAngle = -swing - Math.PI / 2 + wiggle;
         rightLegAngle = swing - Math.PI / 2 - wiggle;
-
-        this.horse.facingRight = mouse.x > this.horse.x;
       }
       if (
         this.horse.currentStateKey === "LYING" ||
+        this.horse.currentStateKey === "FOCUSING_LYING" ||
         this.horse.currentStateKey === "SLEEPING"
       ) {
         leftLegAngle = rightLegAngle = -Math.PI / 2;
@@ -455,13 +379,11 @@ class HorseRenderer {
 
       if (this.horse.currentStateKey === "HUGGING") {
         if (idx === 0) angles.push(backLegAngle);
-        else if (idx === 1)
+        else if (idx === 1 || idx === 2)
+          // Phase advanced in Horse.updateHugSway
           angles.push(
-            -Math.PI / 2 + Math.sin(Date.now() / 1000 + this.horse.id) * 0.5,
-          );
-        else if (idx === 2)
-          angles.push(
-            -Math.PI / 2 + Math.sin(Date.now() / 1000 + this.horse.id) * 0.5,
+            -Math.PI / 2 +
+              Math.sin(this.horse.hugSwayPhase + this.horse.id) * 0.5,
           );
         else if (idx === 3) angles.push(backLegAngle);
         continue;
@@ -916,6 +838,38 @@ class HorseRenderer {
     };
   }
 
+  // Plain description of the face, for head gibs (which outlive the fluffy)
+  getFaceData() {
+    const h = this.horse;
+    let expression = "NEUTRAL";
+    if (h.expressionOverride && h.expressionOverrideTimer > 0) {
+      expression = h.expressionOverride;
+    } else if (h.expression) {
+      expression = h.expression;
+    } else if (!h.isAlive) {
+      expression = "SAD";
+    }
+    const limbs = h.limbs || {};
+    return {
+      expression,
+      eyeColor: h.colors ? h.colors.pupil : "black",
+      maneType: h.maneType !== undefined ? h.maneType : 0,
+      maneColor: h.colors ? h.colors.mane : null,
+      gradientConfig: h.hasGradient
+        ? { color: h.colors.gradient, intensity: h.gradientIntensity }
+        : null,
+      hasHorn: !!limbs.horn,
+      hornSizeFactor: h.hornSizeFactor || 1.0,
+      // Gib faces are drawn facing right: left ear behind, right in front
+      hasLeftEar: !!limbs.leftEar,
+      hasRightEar: !!limbs.rightEar,
+      hasRightEye: !!limbs.rightEye,
+      maneScale: this.getManeScale(),
+      eyesClosed: !h.eyesHaveGrown() || h.isSensitive(),
+      sensitive: h.isSensitive(),
+    };
+  }
+
   // Neutral visual state for snapshots
   getSnapshotView() {
     return {
@@ -943,7 +897,11 @@ class HorseRenderer {
       const a = (i / lobeCount) * Math.PI * 2;
       // Alternate lobe sizes slightly so it doesn't look too regular
       const r = lobeRadius * (i % 2 === 0 ? 1.0 : 0.85);
-      lobes.push({ x: Math.cos(a) * ringRadius, y: Math.sin(a) * ringRadius, r });
+      lobes.push({
+        x: Math.cos(a) * ringRadius,
+        y: Math.sin(a) * ringRadius,
+        r,
+      });
     }
 
     ctx.beginPath();
@@ -1050,11 +1008,7 @@ class HorseRenderer {
   drawShadow(ctx) {
     if (this.horse.isDestroyed || !this.layout) return;
     if (this.horse._riding) return; // (on its mum's back: Carrying.js)
-    if (
-      this.horse.currentCage instanceof Cage ||
-      this.horse.currentCage instanceof FoalInACan
-    )
-      return;
+    if (this.horse.currentCage instanceof Cage) return; // Includes cans
     if (this.horse.drowningTimer >= 5) return;
 
     let alpha =
@@ -1071,7 +1025,10 @@ class HorseRenderer {
     const shadowX = this.horse.x;
     let shadowY = this.horse.y + 83.2 * s;
     if (this.horse.heldWithThrowTool || this.horse.isFallingFromThrow) {
-      if (typeof this.horse.throwShadowY === "number" && !isNaN(this.horse.throwShadowY)) {
+      if (
+        typeof this.horse.throwShadowY === "number" &&
+        !isNaN(this.horse.throwShadowY)
+      ) {
         shadowY = this.horse.throwShadowY;
       }
     } else if (typeof this.horse.getBottomY === "function") {
@@ -1110,7 +1067,7 @@ class HorseRenderer {
     if (!this.tinted) return;
 
     if (this.horse.drowningTimer <= 0) {
-        this.drawShadow(ctx);
+      this.drawShadow(ctx);
     }
 
     ctx.save();
@@ -1275,11 +1232,18 @@ class HorseRenderer {
             slot !== "mouth"
           )
             continue;
-          if (slotCategory === "torso" && slot !== "torso" && slot !== "neck")
+          if (
+            slotCategory === "torso" &&
+            slot !== "torso" &&
+            slot !== "neck" &&
+            slot !== "diaper"
+          )
             continue;
 
           const accImg =
-            typeof images !== "undefined" ? images[accDef.imageKey] : null;
+            typeof images !== "undefined"
+              ? images[getAccessoryImageKey(accDef, data)]
+              : null;
           if (!accImg || !accImg.complete) continue;
 
           ctx.save();
@@ -1298,6 +1262,9 @@ class HorseRenderer {
             ox + rect.w / 2 + accDef.offsetX,
             oy + rect.h / 2 + accDef.offsetY,
           );
+          if (accDef.scale !== undefined && accDef.scale !== 1) {
+            ctx.scale(accDef.scale, accDef.scale);
+          }
 
           if (accDef.canColor && data.color) {
             if (!data.tintedImg || !data.tintedImg.width) {
@@ -1340,279 +1307,50 @@ class HorseRenderer {
         ctx.drawImage(img, ox, oy, rect.w, rect.h);
       }
 
-      // Overlays for head
+      // Head features (shared with head gibs)
       if (rect === layout.head) {
-        const maneScale = this.getManeScale();
-        const headScale = this.getHeadScale();
-
-        // 1. Mane Behind (if applicable)
-        if (
-          maneScale > 0 &&
-          maneScale < MANE_LAYER_THRESHOLD &&
-          this.tinted.mane
-        ) {
-          ctx.save();
-          ctx.translate(ox + rect.w * 0.25, oy + rect.h * 0.85); // Pivot
-          ctx.scale(maneScale, maneScale);
-          ctx.drawImage(this.tinted.mane, -rect.w * 0.25, -rect.h * 0.85);
-          ctx.restore();
-        }
-
-        // 2. Scaled Head Group
-        ctx.save();
-        ctx.translate(ox + rect.w * 0.25, oy + rect.h * 0.85); // Pivot
-        ctx.scale(headScale, headScale);
-
-        // Draw head relative to pivot
-        const localOX = -rect.w * 0.25;
-        const localOY = -rect.h * 0.85;
-
-        // Far Ear
-        const farEar = view.facingRight
-          ? this.horse.limbs.leftEar
-          : this.horse.limbs.rightEar;
-        if (farEar && this.tinted.ear) {
-          ctx.save();
-          const flopAngle = view.earFlop;
-          const eImg = this.tinted.ear;
-          const farX = localOX + 35;
-          const farY = localOY + 5;
-
-          ctx.translate(farX, farY);
-          ctx.scale(0.95, 0.95);
-
-          if (Math.abs(flopAngle) > 0.01) {
-            // Rotate around a point higher than bottom center
-            const pivotOffsetUp = 10;
-            ctx.translate(eImg.width / 2, eImg.height - pivotOffsetUp);
-            ctx.rotate(flopAngle);
-            ctx.drawImage(eImg, -eImg.width / 2, -eImg.height + pivotOffsetUp);
-          } else {
-            ctx.drawImage(eImg, 0, 0);
-          }
-          ctx.restore();
-        }
-
-        ctx.drawImage(this.tinted.head, localOX, localOY, rect.w, rect.h);
-
-        if ((typeof sbsShows === "function" ? sbsShows(this.horse, "neck") : this.horse.isSensitive()) && this.tinted.sbs_double_chin) {
-          ctx.drawImage(
-            this.tinted.sbs_double_chin,
-            localOX - 10,
-            localOY + 100,
-          );
-        }
-
-        // Mane in front
-        if (maneScale >= MANE_LAYER_THRESHOLD && this.tinted.mane) {
-          ctx.save();
-          // maneScale is world-relative, we need it relative to headScale
-          const relManeScale = maneScale / headScale;
-          ctx.scale(relManeScale, relManeScale);
-          ctx.drawImage(this.tinted.mane, localOX, localOY);
-          ctx.restore();
-        }
-
-        if (this.horse.limbs.horn && this.tinted.horn) {
-          ctx.save();
-          const hS = this.horse.hornSizeFactor || 1.0;
-          ctx.translate(0, (1 - hS) * this.tinted.horn.height);
-          ctx.scale(hS, hS);
-          if (typeof isMangled === "function" && isMangled(this.horse, "horn")) drawBrokenHorn(ctx, this.tinted.horn, (rect.w * 0.5) / hS, (localOY * 1.05) / hS); // (Injuries.js)
-          else
-            ctx.drawImage(
-              this.tinted.horn,
-              (rect.w * 0.5) / hS,
-              (localOY * 1.05) / hS,
-            );
-          ctx.restore();
-        }
-
-        drawAccessoryLayer("OVER_HEAD", "head_only");
-
-        const eyeX = rect.w * 0.45;
-        const eyeY = rect.h * -0.325;
-        const pupilX = eyeX + rect.w * 0.02;
-        const pupilY = eyeY + rect.h * 0.01;
-
-        const expConfig = view.expression;
-        const nearEye = view.facingRight
-          ? this.horse.limbs.rightEye
-          : this.horse.limbs.leftEye;
-        let drawnExp = false;
-
-        if (view.isAlive && nearEye) {
-          if (expConfig.eye === "pained" && this.tinted.eye_pained) {
-            const img = this.tinted.eye_pained;
-            ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
-            drawnExp = true;
-          } else if (expConfig.eye === "happy" && this.tinted.eye_happy) {
-            const img = this.tinted.eye_happy;
-            ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
-            drawnExp = true;
-          }
-        }
-
-        if (!drawnExp) {
-          if (this.tinted.eye && nearEye) {
-            const isCrying = view.isAlive && view.tears !== null;
-
-            const toxo = typeof toxoEyesShow === "function" && toxoEyesShow(this.horse);
-            const img = isCrying
-              ? this.tinted.eye_pink || this.tinted.eye
-              : toxo
-                ? this.tinted.eye_toxo || this.tinted.eye
-                : this.tinted.eye;
-
-            ctx.drawImage(
-              img,
-
-              eyeX - img.width / 2,
-
-              eyeY - img.height / 2,
-            );
-          }
-
-          if (this.tinted.pupil && nearEye) {
-            const img = this.tinted.pupil;
-            const s = expConfig.pupilSize;
-
-            const pOffsetX = view.pupilOffset.x;
-            const pOffsetY = view.pupilOffset.y;
-
-            ctx.save();
-            ctx.globalAlpha *= view.pupilAlpha;
-            ctx.drawImage(
-              img,
-              pupilX - (img.width * s) / 2 + pOffsetX,
-              pupilY - (img.height * s) / 2 + pOffsetY,
-              img.width * s,
-              img.height * s,
-            );
-            ctx.restore();
-          }
-
-          if (expConfig.eye === "sad" && this.tinted.eye_sad && nearEye) {
-            const img = this.tinted.eye_sad;
-            ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
-          }
-
-          if (expConfig.eye === "angry" && this.tinted.eye_angry && nearEye) {
-            const img = this.tinted.eye_angry;
-            ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
-          }
-
-          // Blinking (Eyelid)
-          if ((view.eyesClosed || !nearEye) && this.tinted.eyelid) {
-            const img = this.tinted.eyelid;
-            ctx.drawImage(img, eyeX - img.width / 2, eyeY - img.height / 2);
-          }
-        }
-
-        // Draw Mouth
-        let mouthImg = null;
-        if (expConfig.mouth === "shock") mouthImg = images.mouth_shock;
-        else if (expConfig.mouth === "happy") mouthImg = images.mouth_happy;
-        else if (expConfig.mouth === "sad") mouthImg = images.mouth_sad;
-        else mouthImg = images.mouth_neutral;
-
-        if (mouthImg) {
-          const mouthX = rect.w * 0.6;
-          const mouthY = rect.h * -0.0;
-          ctx.drawImage(
-            mouthImg,
-            mouthX - mouthImg.width / 2,
-            mouthY - mouthImg.height / 2,
-          );
-        }
-
-        drawAccessoryLayer("OVER_HEAD", "face_only");
-
-        const nearEar = view.facingRight
-          ? this.horse.limbs.rightEar
-          : this.horse.limbs.leftEar;
-        if (nearEar && this.tinted.ear) {
-          ctx.save();
-          const earScale = this.getEarScale();
-          ctx.scale(earScale, earScale);
-
-          const eImg = this.tinted.ear;
-          const flopAngle = view.earFlop;
-          const pushX = 10;
-          const pushY = 10;
-          const localX = localOX + pushX;
-          const localY = localOY + pushY;
-
-          if (Math.abs(flopAngle) > 0.01) {
-            const pivotOffsetUp = 10;
-            ctx.translate(
-              localX + eImg.width / 2,
-              localY + eImg.height - pivotOffsetUp,
-            );
-            ctx.rotate(flopAngle);
-            ctx.drawImage(eImg, -eImg.width / 2, -eImg.height + pivotOffsetUp);
-          } else {
-            ctx.drawImage(eImg, localX, localY);
-          }
-          ctx.restore();
-        }
-
-        // Draw Cheek
-        if (expConfig.cheek) {
-          const cheekImg =
-            expConfig.cheek === "puffed"
-              ? this.tinted.puffed_cheek
-              : this.tinted.cheek;
-          if (cheekImg) {
-            ctx.drawImage(cheekImg, localOX, localOY);
-          }
-        }
-
-        drawAccessoryLayer("OVER_CHEEKS");
-
-        if (view.tears) {
-          const tears = view.tears;
-          // Tear stream with 5 unit y difference minimum between streaks
-          let fullStartY, fullEndY;
-          if (tears.crying) {
-            fullStartY = eyeY + 12;
-            fullEndY = eyeY + 12 + (72 - 12) * tears.size;
-          } else {
-            // Finishing: disappear from top down
-            fullStartY = eyeY + 12 + (72 - 12) * (1 - tears.size);
-            fullEndY = eyeY + 72;
-          }
-
-          ctx.fillStyle = "rgba(80, 80, 80, 0.65)";
-          const segmentHeight = 10;
-          const gap = 1 * (Math.sin(tears.gapPhase) * 0.5 + 0.5);
-          const totalPeriod = segmentHeight + gap;
-
-          // Offset the starting point by phase
-          let startY_offset =
-            fullStartY - (fullStartY % totalPeriod) + tears.flowPhase;
-          if (startY_offset < fullStartY) startY_offset += totalPeriod;
-
-          for (
-            let y = startY_offset - totalPeriod;
-            y < fullEndY;
-            y += totalPeriod
-          ) {
-            const segStartY = Math.max(y, fullStartY);
-            const segEndY = Math.min(y + segmentHeight, fullEndY);
-
-            if (segEndY > segStartY) {
-              ctx.beginPath();
-              ctx.moveTo(eyeX - 3, segStartY);
-              ctx.lineTo(eyeX - 3, segEndY);
-              ctx.lineTo(eyeX + 3, segEndY);
-              ctx.lineTo(eyeX + 3, segStartY);
-              ctx.fill();
-            }
-          }
-        }
-
-        ctx.restore(); // End head scale group
+        const horse = this.horse;
+        const mangledHorn = typeof isMangled === "function" && isMangled(horse, "horn"); // (Injuries.js)
+        drawHorseHead(
+          ctx,
+          this.tinted,
+          {
+            w: rect.w,
+            h: rect.h,
+            maneScale: this.getManeScale(),
+            headScale: this.getHeadScale(),
+            earScale: this.getEarScale(),
+            farEar: view.facingRight
+              ? horse.limbs.leftEar
+              : horse.limbs.rightEar,
+            nearEar: view.facingRight
+              ? horse.limbs.rightEar
+              : horse.limbs.leftEar,
+            nearEye: view.facingRight
+              ? horse.limbs.rightEye
+              : horse.limbs.leftEye,
+            horn: !!horse.limbs.horn,
+            brokenHorn: mangledHorn,
+            hornSizeFactor: horse.hornSizeFactor || 1.0,
+            earFlop: view.earFlop,
+            // (its SBS only shows on the neck once it does: Micro.js)
+            doubleChin: typeof sbsShows === "function" ? sbsShows(horse, "neck") : horse.isSensitive(),
+            expression: view.expression,
+            isAlive: view.isAlive,
+            eyesClosed: view.eyesClosed,
+            pinkEye: view.isAlive && view.tears !== null,
+            // (toxoplasmosis showing in its eyes: Coats.js)
+            toxoEye: typeof toxoEyesShow === "function" && toxoEyesShow(horse),
+            pupilOffset: view.pupilOffset,
+            pupilAlpha: view.pupilAlpha,
+            tears: view.tears,
+          },
+          {
+            overHead: () => drawAccessoryLayer("OVER_HEAD", "head_only"),
+            overFace: () => drawAccessoryLayer("OVER_HEAD", "face_only"),
+            overCheeks: () => drawAccessoryLayer("OVER_CHEEKS"),
+          },
+        );
       }
       ctx.restore();
     };
@@ -1631,8 +1369,15 @@ class HorseRenderer {
     if (typeof drawScars === "function" && this.horse.scars) drawScars(ctx, this, "torso", layout); // Scars.js
     if (typeof drawBandage === "function" && this.horse.recovery) drawBandage(ctx, this, layout); // Bandages.js
     if (typeof drawCoatExtras === "function") drawCoatExtras(ctx, this, layout); // Coats.js (shaved, long tufts)
-    if (typeof drawDiaperOn === "function" && this.horse.diaper) drawDiaperOn(ctx, this, layout); // Diapers.js
-    if (this.tinted.udders && !this.horse.tooYoungToWalk()) {
+    // A diaper covers the udders and special lumps (and anything on them):
+    // drawn over where they'd be (Diapers.js)
+    const coveredByDiaper = !!this.horse.diaper;
+    if (coveredByDiaper && typeof drawDiaperOn === "function") drawDiaperOn(ctx, this, layout);
+    if (
+      this.tinted.udders &&
+      !this.horse.tooYoungToWalk() &&
+      !coveredByDiaper
+    ) {
       const tW = layout.torso.w,
         tH = layout.torso.h;
       ctx.save();
@@ -1654,7 +1399,8 @@ class HorseRenderer {
       this.horse.gender === "male" &&
       this.tinted.special_lumps &&
       this.horse.limbs.lumps &&
-      !this.horse.tooYoungToWalk()
+      !this.horse.tooYoungToWalk() &&
+      !coveredByDiaper
     ) {
       const tW = layout.torso.w,
         tH = layout.torso.h;
@@ -1675,7 +1421,8 @@ class HorseRenderer {
       this.horse.accessories["ABOVE_LUMPS"] &&
       this.horse.gender === "male" &&
       this.horse.limbs.lumps &&
-      !this.horse.tooYoungToWalk()
+      !this.horse.tooYoungToWalk() &&
+      !coveredByDiaper
     ) {
       const accData = this.horse.accessories["ABOVE_LUMPS"];
       const accDef =

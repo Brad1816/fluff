@@ -355,6 +355,7 @@ function extHitPlayer(f, p, canCling = true) {
   const move = !gagged && r < 0.3 ? "FLUFFY_BITE" : r < 0.65 ? "FLUFFY_JAB" : "FLUFFY_STOMPIE";
   f._biteNoBlood = true;
   f.initBehavior(move);
+  if (move === "FLUFFY_BITE" && typeof f.spawnMouthPoof === "function") f.spawnMouthPoof("white"); // (biting a boot: nothing bleeds)
   f._biteNoBlood = false;
   f.expressionOverride = "ANGRY_PUFFED";
   f.expressionOverrideTimer = 1.5;

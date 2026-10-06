@@ -91,17 +91,27 @@ addHorseMethods({
         this.continuousTasedTimer = (this.continuousTasedTimer || 0) + dt;
         this.continuousTasedSmokeTimer = (this.continuousTasedSmokeTimer || 0) + dt;
         if (this.continuousTasedSmokeTimer >= CATTLE_PROD_SMOKE_THRESHOLD) {
-          this.continuousTasedSmokeTimer -= CATTLE_PROD_SMOKE_THRESHOLD;
-          const hitPoint =
-            this.tasedPoint || (typeof mouse !== "undefined" ? { x: mouse.x, y: mouse.y } : { x: this.x, y: this.y });
-          const offset = this.getTorsoOffsetFromPoint(hitPoint.x, hitPoint.y);
-          if (!this.smokePoints) this.smokePoints = [];
-          this.smokePoints.push({
-            offset: { x: offset.x, y: offset.y },
-            x: offset.x,
-            y: offset.y,
-            timer: CATTLE_PROD_SMOKE_DURATION,
-          });
+          // Keep smoking while held; refresh a nearby spot rather than piling up new ones
+          this.tasedSmokeSpawnTimer = (this.tasedSmokeSpawnTimer || 0) - dt;
+          if (this.tasedSmokeSpawnTimer <= 0) {
+            this.tasedSmokeSpawnTimer = typeof SMOKE_PARTICLE_FREQUENCY !== "undefined" ? SMOKE_PARTICLE_FREQUENCY : 0.25;
+            const hitPoint =
+              this.tasedPoint || (typeof mouse !== "undefined" ? { x: mouse.x, y: mouse.y } : { x: this.x, y: this.y });
+            const offset = this.getTorsoOffsetFromPoint(hitPoint.x, hitPoint.y);
+            if (!this.smokePoints) this.smokePoints = [];
+            const radius = typeof CATTLE_PROD_SMOKE_SPOT_RADIUS !== "undefined" ? CATTLE_PROD_SMOKE_SPOT_RADIUS : 10;
+            const existing = this.smokePoints.find(
+              (sp) => sp.offset && Math.hypot(sp.offset.x - offset.x, sp.offset.y - offset.y) < radius,
+            );
+            if (existing) existing.timer = CATTLE_PROD_SMOKE_DURATION;
+            else
+              this.smokePoints.push({
+                offset: { x: offset.x, y: offset.y },
+                x: offset.x,
+                y: offset.y,
+                timer: CATTLE_PROD_SMOKE_DURATION,
+              });
+          }
         }
 
         const growth = this.growth !== undefined ? this.growth : 1.0;
@@ -1149,7 +1159,7 @@ addHorseMethods({
       const distToMouse = Math.sqrt((mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2);
       let targetX = 0;
       let targetY = 0;
-      if (distToMouse < 400 && this.currentStateKey !== "FOCUSING") {
+      if (distToMouse < 400 && !isFocusingState(this.currentStateKey)) {
         const dx = mouse.x - this.x;
         const dy = mouse.y - (this.y - 20 * this.scale); // Offset towards head approx
         const angle = Math.atan2(dy, dx * (this.facingRight ? 1 : -1));
@@ -1199,7 +1209,42 @@ addHorseMethods({
   },
 
   // Sleep, happiness and other effects of the current state
+  // Advances the arm sway animation while hugging, so it pauses with the game
+  updateHugSway(dt) {
+    if (this.currentStateKey === "HUGGING") {
+      this.hugSwayPhase = ((this.hugSwayPhase || 0) + dt) % (Math.PI * 2);
+    }
+  },
+
+  // Sitting fluffies that can see the cursor close by turn to it and wiggle
+  // their hooves up at it (not one busy with a block: Block.js). Done here
+  // rather than when drawing so it stops while the game is paused.
+  updateUpsiesBegging(dt) {
+    this.wantsUpsies =
+      !this.isDragging &&
+      this.currentStateKey === "SITTING" &&
+      !this._blockLift &&
+      !this.isStacking &&
+      typeof mouse !== "undefined" &&
+      this.scene === (typeof currentScene !== "undefined" ? currentScene : this.scene) &&
+      this.canSee() &&
+      Math.sqrt((mouse.x - this.x) ** 2 + (mouse.y - this.y) ** 2) < 200;
+    if (this.wantsUpsies) {
+      this.upsiesWigglePhase = ((this.upsiesWigglePhase || 0) + dt * 10) % (Math.PI * 2);
+      this.facingRight = mouse.x > this.x;
+    } else {
+      this.upsiesWigglePhase = 0;
+    }
+  },
+
   _updateStateEffects(dt) {
+    // On fire (Blowtorch.js), arms swaying in a hug, reaching up at you (the
+    // author's update: worked out here so they stop while the game's paused)
+    if (this.isAlive) {
+      this.updateUpsiesBegging(dt);
+      this.updateFire(dt);
+      this.updateHugSway(dt);
+    }
     // State-based expressions
     if (this.isAlive) {
       if (this.currentStateKey === "SLEEPING") {

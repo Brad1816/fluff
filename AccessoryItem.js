@@ -12,6 +12,7 @@ class AccessoryItem {
     this.y = 0;
     this.isDragging = false;
     this.dragOffset = { x: 0, y: 0 };
+    this.fill = 0; // Diapers: how much they hold
 
     const accDef = ACCESSORY_DB[this.accessoryId];
     this.name = accDef.name;
@@ -27,6 +28,16 @@ class AccessoryItem {
     }
   }
 
+  // Half its shop price; a used diaper is worth nothing
+  getSellValue() {
+    if ((this.fill || 0) > 0) return 0;
+    const accDef =
+      typeof ACCESSORY_DB !== "undefined"
+        ? ACCESSORY_DB[this.accessoryId]
+        : null;
+    return accDef ? Math.floor(accDef.cost / 2) : 0;
+  }
+
   serialize() {
     return {
       classType: "AccessoryItem",
@@ -35,6 +46,7 @@ class AccessoryItem {
       scene: this.scene,
       accessoryId: this.accessoryId,
       color: this.color,
+      fill: this.fill,
     };
   }
 
@@ -43,17 +55,21 @@ class AccessoryItem {
     item.x = data.x;
     item.y = data.y;
     item.color = data.color;
+    item.fill = data.fill || 0;
     return item;
   }
 
   deserialize(data) {
     this.color = data.color;
+    this.fill = data.fill || 0;
   }
 
   update(dt) {
     const accDef = ACCESSORY_DB[this.accessoryId];
     let img =
-      accDef && typeof images !== "undefined" ? images[accDef.imageKey] : null;
+      accDef && typeof images !== "undefined"
+        ? images[getAccessoryImageKey(accDef, this)]
+        : null;
     if (img && img.complete) {
       const accScale = (accDef.scale !== undefined ? accDef.scale : 1.0) * 0.5;
       this.w = img.width * accScale;
@@ -127,6 +143,7 @@ class AccessoryItem {
         const oldData = fluffy.accessories[accDef.slot];
         const oldItem = new AccessoryItem(this.scene, oldData.id);
         oldItem.color = oldData.color;
+        oldItem.fill = oldData.fill || 0;
         oldItem.x = fluffy.x;
         oldItem.y = fluffy.y;
         objects.push(oldItem);
@@ -135,6 +152,7 @@ class AccessoryItem {
       fluffy.accessories[accDef.slot] = {
         id: this.accessoryId,
         color: this.color,
+        fill: this.fill,
       };
       // A present - or something horrid (Affection.js)
       if (typeof onAccessoryGiven === "function") onAccessoryGiven(fluffy, this.accessoryId);
@@ -154,7 +172,7 @@ class AccessoryItem {
     const accDef = ACCESSORY_DB[this.accessoryId];
     if (!accDef) return;
 
-    let img = images[accDef.imageKey];
+    let img = images[getAccessoryImageKey(accDef, this)];
     if (!img || !img.complete) return;
 
     ctx.save();

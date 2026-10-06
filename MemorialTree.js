@@ -172,7 +172,7 @@ function mournTheLost(f) {
 // Those close to it mourn
 function mournersOf(dead) {
   const rels = (typeof relationships !== "undefined" && relationships) || {};
-  const close = ["mother", "father", "baby_child", "child", "sister", "brother", "special_friend"];
+  const close = ["mother", "father", "baby_child", "dead_baby_child", "child", "sister", "brother", "special_friend"]; // (a mum who saw it die has marked it dead already: FoalLife.onFoalDied)
   return fluffies.filter((o) => {
     if (o === dead || !o.isAlive || !o.adopted) return false;
     if (typeof shrugsOffAlicornDeath === "function" && shrugsOffAlicornDeath(o, dead)) return false; // (an alicorn: AlicornAcceptance.js)

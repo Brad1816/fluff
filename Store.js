@@ -77,6 +77,7 @@ const STORE_AISLES = [
       "glue_trap",
       "thumbtack",
       "cattle_prod",
+      "blowtorch",
       "grinder",
       "foal_machine",
     ],

@@ -200,6 +200,16 @@ function diaperCatches(f, isPoop, amount) {
   return true;
 }
 
+// HorseToilet.excretePoop/excretePee (the runs, wetting itself): a steady
+// trickle soaks in quietly until it's full. True if it took it.
+function diaperSoaks(f, isPoop, amount) {
+  if (!wearsDiaper(f)) return false;
+  const fill = diaperFill(f);
+  if (fill >= 1) return false;
+  f.diaper.fill = Math.min(1, fill + (isPoop ? DIAPER_POOP : 0.25) * amount);
+  return true;
+}
+
 // Horse.updateSpeed
 function diaperSpeed(f) {
   return wearsDiaper(f) ? DIAPER_SPEED : 1;
@@ -216,7 +226,14 @@ function updateDiapers(dt) {
     f.changeHappiness(-DIAPER_SAD * (1 + 2 * fill) * mind * hours, fill > 0.6 ? "A dirty diaper" : "In a diaper");
     if (fill > 0.6 && typeof addDirt === "function") addDirt(f, DIAPER_DIRT * fill * hours);
     if (f.scene === currentScene && Math.random() < 0.01 * step && !f.tooYoungToSpeak() && f.currentStateKey !== "SLEEPING" && typeof getDialogue === "function") {
-      f.speak(getDialogue(["DIAPER", fill > 0.6 ? "DIRTY" : "WEARING"], f));
+      // (the author's itchy complaints too: COMPLAIN, USED)
+      let key = fill > 0.6 ? "DIRTY" : "WEARING";
+      if (Math.random() < 0.5) key = fill > 0.05 && Math.random() < 0.5 ? "USED" : "COMPLAIN";
+      if (!_diaperDoesntMind(f)) {
+        f.expressionOverride = "MISERABLE";
+        f.expressionOverrideTimer = 3.0;
+      }
+      f.speak(getDialogue(["DIAPER", key], f));
     }
   }
 }
@@ -250,6 +267,14 @@ function drawDiaperOn(ctx, renderer, layout) {
   ctx.save();
   ctx.translate(r.x, r.y);
   ctx.rotate(r.angle || 0);
+  // The drawn diaper (assets/diaper*.png): over the rear of the torso
+  const key = fill >= 1 ? "accessory_diaper_full" : fill > 0 ? "accessory_diaper_used" : "accessory_diaper";
+  const img = typeof images !== "undefined" ? images[key] || images.accessory_diaper : null;
+  if (img && img.complete && img.width) {
+    ctx.drawImage(img, -55 - img.width / 2, 5 - img.height / 2);
+    ctx.restore();
+    return;
+  }
   ctx.fillStyle = fill > 0.6 ? "rgba(236, 222, 180, 0.97)" : "rgba(252, 252, 247, 0.97)";
   ctx.strokeStyle = "rgba(120, 135, 150, 0.9)";
   ctx.lineWidth = 1.5;

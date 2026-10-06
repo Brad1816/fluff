@@ -32,6 +32,42 @@ class Cage {
     return this.constructor === Cage ? CAGE_WIDEN : 1;
   }
 
+  // Where (x, y) sits on the image vertically: 0.5 = center, 1 = bottom
+  getAnchorY() {
+    return 0.5;
+  }
+
+  // Drawn size (with a fallback while the image hasn't loaded)
+  getSize() {
+    const img = this.getImage();
+    return img && img.width
+      ? { w: img.width * this.scale * this.widen(), h: img.height * this.scale }
+      : { w: 60 * this.scale * this.widen(), h: 70 * this.scale };
+  }
+
+  getCenterY() {
+    return this.y + this.getSize().h * (0.5 - this.getAnchorY());
+  }
+
+  // Clickable/drawn area
+  getHitRect() {
+    const { w, h } = this.getSize();
+    return { x: this.x - w / 2, y: this.getCenterY() - h / 2, w, h };
+  }
+
+  canBeSold() {
+    return true;
+  }
+
+  // Whether fluffies/objects dropped onto it go inside
+  acceptsDroppedItems() {
+    return true;
+  }
+
+  onRightClick() {
+    this.cycleTag();
+  }
+
   // Whether being kept inside passively lowers happiness
   causesUnhappiness() {
     return true;
@@ -238,7 +274,7 @@ class Cage {
     const insetBottom = h * 0.08;
     return {
       x: this.x - w / 2 + insetX,
-      y: this.y - h / 2 + insetTop,
+      y: this.getCenterY() - h / 2 + insetTop,
       w: w - insetX * 2,
       h: h - insetTop - insetBottom,
     };
@@ -274,12 +310,12 @@ class Cage {
       this.x = mouse.x + this.dragOffset.x;
       this.y = mouse.y + this.dragOffset.y;
 
-      // Simple boundary clamping for the cage itself
+      // Keep the whole image below the wall and on screen
       const topWallHeight = sceneTop(this.scene); // the park has a smaller top edge (Park.js)
-      const w = this.getImage().width * this.scale * this.widen();
-      const h = this.getImage().height * this.scale;
+      const { w, h } = this.getSize();
+      const a = this.getAnchorY();
       this.x = clamp(this.x, w / 2, sceneW(this.scene) - w / 2);
-      this.y = clamp(this.y, topWallHeight + h / 2, sceneH(this.scene) - h / 2);
+      this.y = clamp(this.y, topWallHeight + h * a, sceneH(this.scene) - h * (1 - a));
     }
 
     const dx = this.x - lastX;
@@ -294,13 +330,11 @@ class Cage {
 
   updateBounds() {
     // Hit Test Bounds (Always sync in update)
-    const img = this.getImage();
-    const w = img.width * this.scale * this.widen();
-    const h = img.height * this.scale;
-    this.bounds.left = this.x - w / 2;
-    this.bounds.right = this.x + w / 2;
-    this.bounds.top = this.y - h / 2;
-    this.bounds.bottom = this.y + h / 2;
+    const r = this.getHitRect();
+    this.bounds.left = r.x;
+    this.bounds.right = r.x + r.w;
+    this.bounds.top = r.y;
+    this.bounds.bottom = r.y + r.h;
   }
 
   moveContents(dx, dy) {
@@ -401,8 +435,7 @@ class Cage {
   }
 
   getBottomY() {
-    if (!this.getImage()) return this.y;
-    return this.y + (this.getImage().height * this.scale) / 2;
+    return this.y + this.getSize().h * (1 - this.getAnchorY());
   }
 
   draw(ctx) {
@@ -435,7 +468,7 @@ class Cage {
     const h = img.height * this.scale;
 
     ctx.save();
-    ctx.translate(this.x, this.y);
+    ctx.translate(this.x, this.getCenterY());
     ctx.drawImage(img, -w / 2, -h / 2, w, h);
 
     if (this.glassProgress > 0) {

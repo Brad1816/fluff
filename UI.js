@@ -1199,7 +1199,8 @@ canvas.addEventListener("mousedown", (e) => {
       if (
         (typeof Thumbtack !== "undefined" && obj instanceof Thumbtack) ||
         (typeof Syringe !== "undefined" && obj instanceof Syringe) ||
-        (typeof CattleProd !== "undefined" && obj instanceof CattleProd)
+        (typeof CattleProd !== "undefined" && obj instanceof CattleProd) ||
+        (typeof Blowtorch !== "undefined" && obj instanceof Blowtorch)
       ) {
         obj.dragOffset.x = 0;
         obj.dragOffset.y = 0;

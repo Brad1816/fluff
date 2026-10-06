@@ -359,9 +359,12 @@ const ITEM_TYPES = [
   },
   {
     sellType: "cage",
-    is: (o) => o instanceof Cage,
+    is: (o) => o instanceof Cage && !(typeof FoalInACan !== "undefined" && o instanceof FoalInACan), // (a can is a little cage: its own entry below)
     inCage: "ignore", // cages can't go in cages
-    hitTest: imageHit("cage", "center"),
+    hitTest: (o, x, y) => {
+      const r = o.getHitRect(); // (as drawn: widened - Cage.widen)
+      return isPointInRect(x, y, r.x, r.y, r.w, r.h);
+    },
     sellable: true,
     onRightClick: (cage) => cage.cycleTag(), // none / breeding / sell / eject / cull
     create: () => centered(new Cage(currentScene)),
@@ -466,6 +469,7 @@ const ITEM_TYPES = [
   {
     sellType: "accessory",
     is: (o) => o instanceof AccessoryItem,
+    sellValue: (o) => o.getSellValue(), // (AccessoryItem.js)
     icon: (action) => {
       const def =
         typeof ACCESSORY_DB !== "undefined" ? ACCESSORY_DB[action.accessoryId] : null;
@@ -741,6 +745,23 @@ const ITEM_TYPES = [
     },
   },
   {
+    // (Blowtorch.js) Sets fluffies alight; it doesn't go in cages
+    sellType: "blowtorch",
+    is: (o) => typeof Blowtorch !== "undefined" && o instanceof Blowtorch,
+    inCage: "never",
+    sellable: true,
+    tool: {
+      className: "Blowtorch",
+      create: (scene) => new Blowtorch(scene),
+      key: "blowtorch",
+      toolbarKey: "0",
+      name: "Torch",
+      fullName: "Blowtorch",
+      desc: "Hold mouse down to fire. Hold the flame on a fluffy to set it alight. Lit fluffies can be put out with the spray bottle, river, or sprinkler.",
+      image: () => images.blowtorch,
+    },
+  },
+  {
     // Everyone has one (ThrowTool.js): lift a fluffy up and fling it
     sellType: "throw_tool",
     is: (o) => typeof ThrowTool !== "undefined" && o instanceof ThrowTool,
@@ -811,11 +832,10 @@ const ITEM_TYPES = [
     sellType: "foal_in_a_can",
     is: (o) => o instanceof FoalInACan,
     inCage: "ignore",
-    onRightClick: (can) => can.freeFoal(), // let the foal out
+    onRightClick: (can) => can.onRightClick(), // let the foal out
     hitTest: (o, x, y) => {
-      const bw = images.foal_in_a_can ? images.foal_in_a_can.width : 60;
-      const bh = images.foal_in_a_can ? images.foal_in_a_can.height : 70;
-      return isPointInRect(x, y, o.x - bw / 2, o.y - bh, bw, bh);
+      const r = o.getHitRect();
+      return isPointInRect(x, y, r.x, r.y, r.w, r.h);
     },
   },
   {
@@ -884,6 +904,7 @@ const SAVED_CLASSES = {
   Thumbtack: (d) => new Thumbtack(d.scene),
   Syringe: (d) => new Syringe(d.scene),
   CattleProd: (d) => new CattleProd(d.scene),
+  Blowtorch: (d) => new Blowtorch(d.scene),
   ThrowTool: (d) => new ThrowTool(d.scene), // (ThrowTool.js)
   Scoop: (d) => new Scoop(d.scene), // (Scoop.js)
   DayCareDesk: (d) => new DayCareDesk(d.scene),
